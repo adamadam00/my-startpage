@@ -15,6 +15,7 @@ const FONTS = [
 
 const BG_PRESETS = ['noise', 'dots', 'grid', 'mesh', 'aurora', 'solid']
 
+// btnBg is now dark navy — also applied as migration below
 const DEFAULT_THEME = {
   bg:               '#0c0c0f',
   bg2:              '#13131a',
@@ -30,7 +31,7 @@ const DEFAULT_THEME = {
   accent:           '#6c8fff',
   danger:           '#ff6b6b',
   success:          '#6bffb8',
-  btnBg:            '#2d4fd4',
+  btnBg:            '#1e3a8a',
   btnText:          '#ffffff',
   font:             "'DM Mono', monospace",
   fontSize:         14,
@@ -43,6 +44,9 @@ const DEFAULT_THEME = {
   faviconOpacity:   1,
   faviconGreyscale: false,
 }
+
+// Values that were old defaults and need forced migration
+const MIGRATE = { btnBg: ['#6c8fff', '#2d4fd4'] }
 
 function Toggle({ checked, onChange, title }) {
   return (
@@ -81,7 +85,15 @@ export default function Settings({
   const [theme, setTheme] = useState(() => {
     try {
       const saved = localStorage.getItem('current_theme')
-      return saved ? { ...DEFAULT_THEME, ...JSON.parse(saved) } : DEFAULT_THEME
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        // Migrate old bad button colours to dark navy
+        for (const [key, oldVals] of Object.entries(MIGRATE)) {
+          if (oldVals.includes(parsed[key])) parsed[key] = DEFAULT_THEME[key]
+        }
+        return { ...DEFAULT_THEME, ...parsed }
+      }
+      return DEFAULT_THEME
     } catch { return DEFAULT_THEME }
   })
 
@@ -99,7 +111,6 @@ export default function Settings({
   const [showWeather,  setShowWeather]  = useState(uiVisibility?.showWeather ?? true)
   const [showSearch,   setShowSearch]   = useState(uiVisibility?.showSearch  ?? true)
   const [showNotes,    setShowNotes]    = useState(uiVisibility?.showNotes   ?? true)
-  const [showPins,     setShowPins]     = useState(uiVisibility?.showPins    ?? true)
   const [saving,       setSaving]       = useState(false)
   const [newWsName,    setNewWsName]    = useState('')
   const [addingWs,     setAddingWs]     = useState(false)
@@ -129,10 +140,8 @@ export default function Settings({
     load()
   }, [session])
 
-  // Live-apply all theme vars + notify Sections of column changes
   useEffect(() => {
     localStorage.setItem('current_theme', JSON.stringify(theme))
-    // Tell Sections.jsx to re-read column count
     window.dispatchEvent(new Event('theme_cols_changed'))
 
     const r = document.documentElement.style
@@ -227,7 +236,7 @@ export default function Settings({
         weather_name:    weatherName,
         weather_lat:     parseFloat(weatherLat),
         weather_lon:     parseFloat(weatherLon),
-        showClock, showWeather, showSearch, showNotes, showPins,
+        showClock, showWeather, showSearch, showNotes,
       })
     } finally {
       setSaving(false)
@@ -243,10 +252,7 @@ export default function Settings({
     setAddingWs(false)
   }
 
-  const startRename = (ws) => {
-    setRenamingWs(ws.id)
-    setRenameVal(ws.name)
-  }
+  const startRename = (ws) => { setRenamingWs(ws.id); setRenameVal(ws.name) }
 
   const submitRename = async (e, id) => {
     e.preventDefault()
@@ -280,16 +286,13 @@ export default function Settings({
                   <button
                     className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
                     style={{ flex: 1, textAlign: 'left' }}
-                    onClick={() => onSwitchWorkspace(ws.id)}
-                    title={`Switch to ${ws.name}`}>
+                    onClick={() => onSwitchWorkspace(ws.id)}>
                     {ws.name} {activeWs === ws.id && '✓'}
                   </button>
-                  <button className="icon-btn" onClick={() => startRename(ws)}
-                    title={`Rename ${ws.name}`}>✎</button>
+                  <button className="icon-btn" onClick={() => startRename(ws)} title="Rename">✎</button>
                   {workspaces.length > 1 && (
                     <button className="icon-btn" onClick={() => onDeleteWorkspace(ws.id)}
-                      title={`Delete ${ws.name}`}
-                      style={{ color: 'var(--danger)' }}>✕</button>
+                      title="Delete workspace" style={{ color: 'var(--danger)' }}>✕</button>
                   )}
                 </>
               )}
@@ -307,14 +310,13 @@ export default function Settings({
             </form>
           ) : (
             <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              style={{ fontSize: '0.82em', alignSelf: 'flex-start' }}
-              title="Add workspace (max 5)">
+              style={{ fontSize: '0.82em', alignSelf: 'flex-start' }}>
               + add workspace
             </button>
           )
         )}
         <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          Max 5 workspaces. Active workspace is remembered per device.
+          Max 5 workspaces. Active workspace remembered per device.
         </div>
       </SettingsSection>
 
@@ -324,8 +326,7 @@ export default function Settings({
           {[1,2,3,4].map(slot => (
             <button key={slot}
               className={`preset-slot${activeSlot === slot ? ' active' : ''}`}
-              onClick={() => loadSlot(slot)}
-              title={presets[slot] ? `Load: ${slotNames[slot]}` : `Empty — saves current theme here`}>
+              onClick={() => loadSlot(slot)}>
               {slotNames[slot]}
             </button>
           ))}
@@ -335,8 +336,7 @@ export default function Settings({
             <input className="input" value={slotNames[activeSlot]}
               onChange={e => setSlotNames(n => ({ ...n, [activeSlot]: e.target.value }))}
               placeholder="Preset name" style={{ flex: 1 }} />
-            <button className="btn btn-primary" onClick={() => saveSlot(activeSlot)}
-              title={`Save current theme to slot ${activeSlot}`}>
+            <button className="btn btn-primary" onClick={() => saveSlot(activeSlot)}>
               Save to {activeSlot}
             </button>
           </div>
@@ -346,45 +346,42 @@ export default function Settings({
       {/* ── Colors ── */}
       <SettingsSection title="Colors">
         {[
-          ['Background',    'bg',          'Main page background'],
-          ['Surface',       'bg2',         'Settings panel background'],
-          ['Input / Hover', 'bg3',         'Input fields and hover highlights'],
-          ['Card color',    'card',        'Section card background'],
-          ['Border',        'border',      'Default border color'],
-          ['Border hover',  'borderHover', 'Border color on hover'],
-          ['Text',          'text',        'Primary text color'],
-          ['Text dim',      'textDim',     'Labels and secondary text'],
-          ['Accent',        'accent',      'Highlight and active color'],
-          ['Danger',        'danger',      'Delete and warning color'],
-          ['Success',       'success',     'Success message color'],
-          ['Button BG',     'btnBg',       'Primary button background'],
-          ['Button text',   'btnText',     'Primary button text'],
-        ].map(([label, key, tip]) => (
-          <Row key={key} label={label} tip={tip}>
+          ['Background',    'bg'],
+          ['Surface',       'bg2'],
+          ['Input / Hover', 'bg3'],
+          ['Card color',    'card'],
+          ['Border',        'border'],
+          ['Border hover',  'borderHover'],
+          ['Text',          'text'],
+          ['Text dim',      'textDim'],
+          ['Accent',        'accent'],
+          ['Danger',        'danger'],
+          ['Success',       'success'],
+          ['Button BG',     'btnBg'],
+          ['Button text',   'btnText'],
+        ].map(([label, key]) => (
+          <Row key={key} label={label}>
             <input type="color" className="color-input"
-              value={theme[key]} onChange={e => set(key, e.target.value)} title={tip} />
+              value={theme[key]} onChange={e => set(key, e.target.value)} />
           </Row>
         ))}
       </SettingsSection>
 
       {/* ── Transparency ── */}
       <SettingsSection title="Transparency & Handles">
-        <Row label={`Card opacity: ${Math.round(theme.cardOpacity * 100)}%`}
-          tip="Lower = see background through cards">
+        <Row label={`Card opacity: ${Math.round(theme.cardOpacity * 100)}%`}>
           <input type="range" min="0.05" max="1" step="0.05"
             value={theme.cardOpacity}
             onChange={e => set('cardOpacity', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Border opacity: ${Math.round(theme.borderOpacity * 100)}%`}
-          tip="0% = no visible borders">
+        <Row label={`Border opacity: ${Math.round(theme.borderOpacity * 100)}%`}>
           <input type="range" min="0" max="1" step="0.05"
             value={theme.borderOpacity}
             onChange={e => set('borderOpacity', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Drag handle opacity: ${Math.round((theme.handleOpacity ?? 0.15) * 100)}%`}
-          tip="Visibility of ⠿ drag handles — always brighter on hover">
+        <Row label={`Handle opacity: ${Math.round((theme.handleOpacity ?? 0.15) * 100)}%`}>
           <input type="range" min="0" max="1" step="0.05"
             value={theme.handleOpacity ?? 0.15}
             onChange={e => set('handleOpacity', parseFloat(e.target.value))}
@@ -394,19 +391,19 @@ export default function Settings({
 
       {/* ── Typography ── */}
       <SettingsSection title="Typography">
-        <Row label="Font family" tip="Font used throughout the page">
+        <Row label="Font family">
           <select className="input" style={{ width: 'auto', flex: 1 }}
             value={theme.font} onChange={e => set('font', e.target.value)}>
             {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
           </select>
         </Row>
-        <Row label={`Base size: ${theme.fontSize}px`} tip="Global font size">
+        <Row label={`Base size: ${theme.fontSize}px`}>
           <input type="range" min="11" max="20" step="1"
             value={theme.fontSize}
             onChange={e => set('fontSize', parseInt(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Clock size: ${theme.clockSize}rem`} tip="Size of the clock in the topbar">
+        <Row label={`Clock size: ${theme.clockSize}rem`}>
           <input type="range" min="0.7" max="2" step="0.05"
             value={theme.clockSize}
             onChange={e => set('clockSize', parseFloat(e.target.value))}
@@ -416,36 +413,31 @@ export default function Settings({
 
       {/* ── Layout ── */}
       <SettingsSection title="Layout">
-        <Row label={`Page scale: ${Math.round(theme.pageScale * 100)}%`}
-          tip="Zoom the entire page">
+        <Row label={`Page scale: ${Math.round(theme.pageScale * 100)}%`}>
           <input type="range" min="0.5" max="1.5" step="0.05"
             value={theme.pageScale}
             onChange={e => set('pageScale', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Section columns: ${theme.sectionsCols}`}
-          tip="Number of section columns — applied instantly">
+        <Row label={`Section columns: ${theme.sectionsCols}`}>
           <input type="range" min="1" max="5" step="1"
             value={theme.sectionsCols}
             onChange={e => set('sectionsCols', parseInt(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Card padding: ${theme.cardPadding}rem`}
-          tip="Space inside section cards">
+        <Row label={`Card padding: ${theme.cardPadding}rem`}>
           <input type="range" min="0.1" max="2" step="0.1"
             value={theme.cardPadding}
             onChange={e => set('cardPadding', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Link spacing: ${theme.linkGap}rem`}
-          tip="Vertical gap between links">
+        <Row label={`Link spacing: ${theme.linkGap}rem`}>
           <input type="range" min="0" max="1.5" step="0.05"
             value={theme.linkGap}
             onChange={e => set('linkGap', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label={`Border radius: ${theme.radius}px`}
-          tip="Corner roundness">
+        <Row label={`Border radius: ${theme.radius}px`}>
           <input type="range" min="0" max="24" step="1"
             value={theme.radius}
             onChange={e => set('radius', parseInt(e.target.value))}
@@ -455,17 +447,15 @@ export default function Settings({
 
       {/* ── Favicons ── */}
       <SettingsSection title="Link Icons (Favicons)">
-        <Row label={`Opacity: ${Math.round(theme.faviconOpacity * 100)}%`}
-          tip="0% = icons hidden">
+        <Row label={`Opacity: ${Math.round(theme.faviconOpacity * 100)}%`}>
           <input type="range" min="0" max="1" step="0.05"
             value={theme.faviconOpacity}
             onChange={e => set('faviconOpacity', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        <Row label="Greyscale icons" tip="Make all website icons black and white">
+        <Row label="Greyscale icons">
           <Toggle checked={theme.faviconGreyscale}
-            onChange={v => set('faviconGreyscale', v)}
-            title="Greyscale favicons" />
+            onChange={v => set('faviconGreyscale', v)} />
         </Row>
       </SettingsSection>
 
@@ -476,20 +466,17 @@ export default function Settings({
             <button key={p}
               className={`preset-slot${bgPreset === p ? ' active' : ''}`}
               onClick={() => { setBgPreset(p); onSettingsChange({ bg_preset: p }) }}
-              style={{ flex: 'none' }}
-              title={`Background: ${p}`}>
+              style={{ flex: 'none' }}>
               {p}
             </button>
           ))}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => fileRef.current.click()}
-            title="Upload a local image as background">
+          <button className="btn" onClick={() => fileRef.current.click()}>
             📁 Upload image
           </button>
           {bgImage && (
-            <button className="btn btn-danger" onClick={clearBgImage}
-              title="Remove background image">Remove image</button>
+            <button className="btn btn-danger" onClick={clearBgImage}>Remove image</button>
           )}
           <input ref={fileRef} type="file" accept="image/*"
             style={{ display: 'none' }} onChange={handleBgImage} />
@@ -503,52 +490,40 @@ export default function Settings({
 
       {/* ── Show / Hide ── */}
       <SettingsSection title="Show / Hide Elements">
-        <Row label="Clock in topbar" tip="Toggle clock visibility">
+        <Row label="Clock in topbar">
           <Toggle checked={showClock}
-            onChange={v => { setShowClock(v); onSettingsChange({ showClock: v }) }}
-            title="Toggle clock" />
+            onChange={v => { setShowClock(v); onSettingsChange({ showClock: v }) }} />
         </Row>
-        <Row label="Weather in topbar" tip="Toggle weather visibility">
+        <Row label="Weather in topbar">
           <Toggle checked={showWeather}
-            onChange={v => { setShowWeather(v); onSettingsChange({ showWeather: v }) }}
-            title="Toggle weather" />
+            onChange={v => { setShowWeather(v); onSettingsChange({ showWeather: v }) }} />
         </Row>
-        <Row label="Search bar" tip="Toggle search bar visibility">
+        <Row label="Search bar">
           <Toggle checked={showSearch}
-            onChange={v => { setShowSearch(v); onSettingsChange({ showSearch: v }) }}
-            title="Toggle search bar" />
+            onChange={v => { setShowSearch(v); onSettingsChange({ showSearch: v }) }} />
         </Row>
-        <Row label="Notes panel" tip="Hide to use space for more link columns">
+        <Row label="Notes panel">
           <Toggle checked={showNotes}
-            onChange={v => { setShowNotes(v); onSettingsChange({ showNotes: v }) }}
-            title="Toggle notes panel" />
-        </Row>
-        <Row label="Pin buttons on sections" tip="Toggle section pin icons">
-          <Toggle checked={showPins}
-            onChange={v => { setShowPins(v); onSettingsChange({ showPins: v }) }}
-            title="Toggle pin buttons" />
+            onChange={v => { setShowNotes(v); onSettingsChange({ showNotes: v }) }} />
         </Row>
       </SettingsSection>
 
       {/* ── Clock & Search ── */}
       <SettingsSection title="Clock & Search">
-        <Row label="Clock format" tip="12-hour or 24-hour time">
+        <Row label="Clock format">
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             {['12h','24h'].map(f => (
               <button key={f}
                 className={`engine-tab${clockFormat === f ? ' active' : ''}`}
-                onClick={() => setClockFormat(f)}
-                title={f === '12h' ? '12-hour (1:30 pm)' : '24-hour (13:30)'}>
-                {f}
+                onClick={() => setClockFormat(f)}>{f}
               </button>
             ))}
           </div>
         </Row>
-        <Row label="Open links in new tab" tip="Open clicked links in a new browser tab">
-          <Toggle checked={openNewTab} onChange={setOpenNewTab}
-            title="Toggle new tab for links" />
+        <Row label="Open links in new tab">
+          <Toggle checked={openNewTab} onChange={setOpenNewTab} />
         </Row>
-        <Row label="Search engine URL" tip="Base URL — must end with ?q= or &q=">
+        <Row label="Search engine URL">
           <input
             className="input"
             style={{ flex: 1, fontSize: '0.78em' }}
@@ -557,23 +532,19 @@ export default function Settings({
             onBlur={e => {
               localStorage.setItem('search_url', e.target.value)
               window.dispatchEvent(new Event('search_url_changed'))
-            }}
-            title="Change to use any search engine" />
+            }} />
         </Row>
       </SettingsSection>
 
       {/* ── Weather ── */}
       <SettingsSection title="Weather Location">
-        <input className="input" placeholder="City name (display only)"
-          value={weatherName} onChange={e => setWeatherName(e.target.value)}
-          title="City name shown next to weather" />
+        <input className="input" placeholder="City name"
+          value={weatherName} onChange={e => setWeatherName(e.target.value)} />
         <div style={{ display: 'flex', gap: '0.5rem' }}>
           <input className="input" placeholder="Latitude e.g. -37.8136"
-            value={weatherLat} onChange={e => setWeatherLat(e.target.value)}
-            title="Latitude coordinate" />
+            value={weatherLat} onChange={e => setWeatherLat(e.target.value)} />
           <input className="input" placeholder="Longitude e.g. 144.9631"
-            value={weatherLon} onChange={e => setWeatherLon(e.target.value)}
-            title="Longitude coordinate" />
+            value={weatherLon} onChange={e => setWeatherLon(e.target.value)} />
         </div>
         <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
           Find at{' '}
@@ -585,32 +556,23 @@ export default function Settings({
       {/* ── Import / Export ── */}
       <SettingsSection title="Import / Export">
         <ImportExport session={session} workspaceId={activeWs} onRefresh={() => {}} />
-        <button className="btn" onClick={onExportAll}
-          title="Download full backup of all workspaces, links, notes and settings"
-          style={{ width: '100%' }}>
+        <button className="btn btn-primary" onClick={onExportAll} style={{ width: '100%' }}>
           ⬇ Export everything (full backup)
         </button>
       </SettingsSection>
 
       {/* ── Danger Zone ── */}
       <SettingsSection title="⚠ Danger Zone">
-        <button className="btn btn-danger" onClick={resetTheme}
-          title="Reset all theme colours and layout to defaults"
-          style={{ width: '100%' }}>
+        <button className="btn btn-danger" onClick={resetTheme} style={{ width: '100%' }}>
           ↺ Reset theme to defaults
         </button>
-        <button className="btn btn-danger" onClick={onResetLinks}
-          title="Delete all sections and links in the current workspace"
-          style={{ width: '100%' }}>
+        <button className="btn btn-danger" onClick={onResetLinks} style={{ width: '100%' }}>
           ✕ Clear all links in this workspace
         </button>
       </SettingsSection>
 
-      {/* Sticky footer */}
       <div className="settings-footer">
-        <button className="btn btn-primary" onClick={handleClose} disabled={saving}
-          style={{ flex: 1 }}
-          title="Save settings and close">
+        <button className="btn btn-primary" onClick={handleClose} disabled={saving} style={{ flex: 1 }}>
           {saving ? 'Saving…' : '✓ Save & Close'}
         </button>
       </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import {
-  DndContext, closestCenter, PointerSensor,
+  DndContext, closestCorners, PointerSensor,
   useSensor, useSensors,
 } from '@dnd-kit/core'
 import {
@@ -11,7 +11,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
-// Read column count directly from saved theme — bypasses CSS variable flakiness
 function getColCount() {
   try {
     const t = JSON.parse(localStorage.getItem('current_theme') || '{}')
@@ -20,7 +19,7 @@ function getColCount() {
   } catch { return 2 }
 }
 
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, showPins }) {
+function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming,  setRenaming]  = useState(false)
   const [name,      setName]      = useState(section.name)
@@ -31,19 +30,13 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.35 : 1,
   }
 
   const toggleCollapse = async () => {
     const next = !collapsed
     setCollapsed(next)
     await supabase.from('sections').update({ collapsed: next }).eq('id', section.id)
-  }
-
-  const togglePin = async (e) => {
-    e.stopPropagation()
-    await supabase.from('sections').update({ pinned: !section.pinned }).eq('id', section.id)
-    onRefresh()
   }
 
   const rename = async (e) => {
@@ -66,16 +59,14 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
     <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}`}>
       <div className="section-header" onClick={toggleCollapse}>
 
+        {/* Drag handle on section header */}
         <span
           className="drag-handle"
           {...attributes}
           {...listeners}
           onClick={e => e.stopPropagation()}
-          title="Drag to reorder section">⠿</span>
-
-        {section.pinned && showPins && (
-          <span className="section-pin" title="Pinned">📌</span>
-        )}
+          title="Drag to reorder">⠿
+        </span>
 
         {renaming ? (
           <form
@@ -95,14 +86,11 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
         {!renaming && (
           <div className="section-actions">
             <button className="icon-btn" title="Rename section"
-              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎</button>
-            {showPins && (
-              <button className="icon-btn"
-                title={section.pinned ? 'Unpin' : 'Pin section to top'}
-                onClick={togglePin}>📌</button>
-            )}
-            <button className="icon-btn" title="Delete section and all its links"
-              onClick={deleteSection} style={{ color: 'var(--danger)' }}>✕</button>
+              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎
+            </button>
+            <button className="icon-btn section-delete-btn" title="Delete section"
+              onClick={deleteSection}>✕
+            </button>
           </div>
         )}
 
@@ -125,37 +113,42 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   )
 }
 
-export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab, showPins }) {
+export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
-
-  // Column count read directly from localStorage — updates when theme changes
-  const [colCount, setColCount] = useState(getColCount)
+  const [colCount,      setColCount]      = useState(getColCount)
+  // Optimistic local ordering — avoids waiting for DB round-trip
+  const [localOrder,    setLocalOrder]    = useState(null)
 
   useEffect(() => {
-    // Listen for the event fired by Settings when sectionsCols slider changes
     const handler = () => setColCount(getColCount())
     window.addEventListener('theme_cols_changed', handler)
     return () => window.removeEventListener('theme_cols_changed', handler)
   }, [])
 
+  // Reset local order when sections prop changes (after onRefresh)
+  useEffect(() => { setLocalOrder(null) }, [sections])
+
   const sensors = useSensors(useSensor(PointerSensor, {
-    activationConstraint: { distance: 5 },
+    activationConstraint: { distance: 6 },
   }))
 
-  const sorted = [...sections].sort((a, b) => {
-    if (showPins) {
-      if (a.pinned && !b.pinned) return -1
-      if (!a.pinned && b.pinned) return 1
-    }
-    return a.position - b.position
-  })
+  // Use optimistic local order if available, otherwise fall back to prop
+  const base = localOrder ?? [...sections].sort((a, b) => a.position - b.position)
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return
-    const oldIndex = sorted.findIndex(s => s.id === active.id)
-    const newIndex = sorted.findIndex(s => s.id === over.id)
-    const reordered = arrayMove(sorted, oldIndex, newIndex)
+
+    const oldIndex = base.findIndex(s => s.id === active.id)
+    const newIndex = base.findIndex(s => s.id === over.id)
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reordered = arrayMove(base, oldIndex, newIndex)
+
+    // Optimistic: update UI immediately
+    setLocalOrder(reordered)
+
+    // Persist to DB
     await Promise.all(
       reordered.map((s, i) =>
         supabase.from('sections').update({ position: i }).eq('id', s.id)
@@ -178,33 +171,35 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
   }
 
   return (
-    <div className="sections-outer">
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sorted.map(s => s.id)} strategy={verticalListSortingStrategy}>
-          {/* columnCount driven by JS state, not CSS variable */}
-          <div className="sections-wrap" style={{ columnCount: colCount }}>
-            {sorted.map(section => (
-              <SectionCard
-                key={section.id}
-                section={section}
-                links={links.filter(l => l.section_id === section.id).sort((a, b) => a.position - b.position)}
-                userId={userId}
-                workspaceId={workspaceId}
-                onRefresh={onRefresh}
-                openInNewTab={openInNewTab}
-                showPins={showPins}
-              />
-            ))}
+    <>
+      {/* ── Sections columns ── */}
+      <div className="sections-outer">
+        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
+          <SortableContext items={base.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            <div className="sections-wrap" style={{ columnCount: colCount }}>
+              {base.map(section => (
+                <SectionCard
+                  key={section.id}
+                  section={section}
+                  links={links.filter(l => l.section_id === section.id)}
+                  userId={userId}
+                  workspaceId={workspaceId}
+                  onRefresh={onRefresh}
+                  openInNewTab={openInNewTab}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+
+        {sections.length === 0 && !addingSection && (
+          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem 0' }}>
+            No sections yet — add one below
           </div>
-        </SortableContext>
-      </DndContext>
+        )}
+      </div>
 
-      {sections.length === 0 && !addingSection && (
-        <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', textAlign: 'center', padding: '1.5rem 0' }}>
-          No sections yet — add one below
-        </div>
-      )}
-
+      {/* ── Add section — outside columns, always at bottom ── */}
       <div className="add-section-row">
         {addingSection ? (
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.5rem' }}>
@@ -212,7 +207,7 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
               onChange={e => setNewName(e.target.value)}
               placeholder="Section name" autoFocus />
             <button className="btn btn-primary" type="submit">Add</button>
-            <button className="btn" type="button" onClick={() => setAddingSection(false)}>✕</button>
+            <button className="btn" type="button" onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
           </form>
         ) : (
           <button className="btn btn-ghost add-section-btn"
@@ -223,6 +218,6 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
           </button>
         )}
       </div>
-    </div>
+    </>
   )
 }

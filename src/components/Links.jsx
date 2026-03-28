@@ -107,7 +107,7 @@ function LinkItem({ link, onDelete, onEdited, openInNewTab }) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0.35 : 1,
     cursor: isDragging ? 'grabbing' : 'default',
   }
 
@@ -122,19 +122,8 @@ function LinkItem({ link, onDelete, onEdited, openInNewTab }) {
           onCancel={() => setEditing(false)}
         />
       )}
-      {/*
-        Apply drag listeners to the whole row.
-        activationConstraint distance:8 means a clean click still fires on the link.
-        Action buttons use onPointerDown stopPropagation so they don't start a drag.
-      */}
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="link-item"
-        {...attributes}
-        {...listeners}
-      >
-        {/* Visual handle only — drag works on whole row */}
+      <div ref={setNodeRef} style={style} className="link-item" {...attributes} {...listeners}>
+
         <span className="drag-handle" title="Drag to reorder">⠿</span>
 
         {favicon && (
@@ -142,7 +131,6 @@ function LinkItem({ link, onDelete, onEdited, openInNewTab }) {
             onError={e => { e.target.style.display = 'none' }} />
         )}
 
-        {/* Stop pointer events on the link so it doesn't compete with drag */}
         <a
           className="link-title"
           href={link.url}
@@ -154,18 +142,20 @@ function LinkItem({ link, onDelete, onEdited, openInNewTab }) {
           {link.title}
         </a>
 
+        {/* Edit — grey pencil */}
         <button
-          className="icon-btn link-delete"
+          className="icon-btn link-action-btn"
           onPointerDown={e => e.stopPropagation()}
           onClick={() => setEditing(true)}
           title="Edit link">✎
         </button>
+
+        {/* Delete — grey cross, NOT red */}
         <button
-          className="icon-btn link-delete"
+          className="icon-btn link-action-btn"
           onPointerDown={e => e.stopPropagation()}
           onClick={() => onDelete(link.id)}
-          title="Delete link"
-          style={{ color: 'var(--danger)' }}>✕
+          title="Delete link">✕
         </button>
       </div>
     </>
@@ -176,7 +166,6 @@ export default function Links({ links, sectionId, workspaceId, userId, onRefresh
   const [adding, setAdding] = useState(false)
 
   const sensors = useSensors(useSensor(PointerSensor, {
-    // distance:8 ensures a clean click on the link still navigates
     activationConstraint: { distance: 8 },
   }))
 
