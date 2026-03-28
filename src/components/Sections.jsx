@@ -141,7 +141,6 @@ function SectionColumn({ col, colIdx, links, userId, workspaceId, onRefresh, ope
     const next = arrayMove(items, from, to)
     setItems(next)
 
-    // Save position within this column only
     await Promise.all(
       next.map((s, i) =>
         supabase.from('sections').update({ position: i, col_index: colIdx }).eq('id', s.id)
@@ -198,6 +197,7 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [colCount,      setColCount]      = useState(getColCount)
+  const [migrated,      setMigrated]      = useState(false)
 
   useEffect(() => {
     const handler = () => setColCount(getColCount())
@@ -205,15 +205,46 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     return () => window.removeEventListener('theme_cols_changed', handler)
   }, [])
 
+  // One-time migration: if all sections have col_index=0, spread them
+  // evenly across columns and save to DB. Never runs again after that.
+  useEffect(() => {
+    if (migrated) return
+    if (sections.length < 2) { setMigrated(true); return }
+
+    const allZero = sections.every(s => (s.col_index ?? 0) === 0)
+    if (!allZero) { setMigrated(true); return }
+
+    const cols   = Math.max(getColCount(), 1)
+    const sorted = [...sections].sort((a, b) => a.position - b.position)
+
+    // Round-robin: 0→col0, 1→col1, 2→col0, 3→col1 ...
+    const updates = sorted.map((s, i) => ({
+      id:        s.id,
+      col_index: i % cols,
+      position:  Math.floor(i / cols),
+    }))
+
+    Promise.all(
+      updates.map(u =>
+        supabase.from('sections')
+          .update({ col_index: u.col_index, position: u.position })
+          .eq('id', u.id)
+      )
+    ).then(() => {
+      setMigrated(true)
+      onRefresh()
+    })
+  }, [sections, migrated])
+
   const sorted = useMemo(() =>
     [...sections].sort((a, b) => a.position - b.position), [sections]
   )
 
-  // Build columns from saved col_index — no forced even distribution
+  // Group by saved col_index — no forced even split after migration
   const columns = useMemo(() => {
     const cols = Array.from({ length: colCount }, () => [])
     sorted.forEach(s => {
-      const ci = (s.col_index ?? 0) % colCount
+      const ci = Math.min(s.col_index ?? 0, colCount - 1)
       cols[ci].push(s)
     })
     return cols
@@ -226,13 +257,13 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     const shortestCol = columns.reduce((min, col, i) =>
       col.length < columns[min].length ? i : min, 0)
     await supabase.from('sections').insert({
-      user_id:    userId,
+      user_id:      userId,
       workspace_id: workspaceId,
-      name:       newName.trim(),
-      position:   columns[shortestCol].length,
-      col_index:  shortestCol,
-      pinned:     false,
-      collapsed:  false,
+      name:         newName.trim(),
+      position:     columns[shortestCol].length,
+      col_index:    shortestCol,
+      pinned:       false,
+      collapsed:    false,
     })
     setNewName('')
     setAddingSection(false)
