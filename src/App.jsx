@@ -1,17 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
-import Auth      from './components/Auth'
-import Clock     from './components/Clock'
-import Weather   from './components/Weather'
+import Auth     from './components/Auth'
+import Clock    from './components/Clock'
+import Weather  from './components/Weather'
 import SearchBar from './components/SearchBar'
-import Notes     from './components/Notes'
-import Sections  from './components/Sections'
-import Links     from './components/Links'
+import Notes    from './components/Notes'
+import Sections from './components/Sections'
 
-/* ── Patterns that support colour + opacity controls ── */
 const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines', 'bg-crosshatch']
 
-/* ── All backgrounds ── */
 const BG_OPTIONS = [
   { value: 'bg-solid',      label: 'Solid' },
   { value: 'bg-noise',      label: 'Noise' },
@@ -91,11 +88,11 @@ function applyTheme(t) {
   r.setProperty('--btn-bg',          t.btnBg)
   r.setProperty('--btn-text',        '#ffffff')
   r.setProperty('--font',            `'${t.font}', monospace`)
-  r.setProperty('--font-size',       t.fontSize  + 'px')
-  r.setProperty('--clock-size',      t.clockSize + 'rem')
-  r.setProperty('--radius',          t.radius    + 'px')
-  r.setProperty('--radius-sm',       t.radiusSm  + 'px')
-  r.setProperty('--link-gap',        t.linkGap   + 'rem')
+  r.setProperty('--font-size',       t.fontSize   + 'px')
+  r.setProperty('--clock-size',      t.clockSize  + 'rem')
+  r.setProperty('--radius',          t.radius     + 'px')
+  r.setProperty('--radius-sm',       t.radiusSm   + 'px')
+  r.setProperty('--link-gap',        t.linkGap    + 'rem')
   r.setProperty('--card-padding',    t.cardPadding + 'rem')
   r.setProperty('--page-scale',      t.pageScale)
   r.setProperty('--handle-opacity',  t.handleOpacity)
@@ -107,35 +104,36 @@ function applyTheme(t) {
 }
 
 export default function App() {
-  const [session,    setSession]    = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [workspaces, setWorkspaces] = useState([])
-  const [activeWs,   setActiveWs]   = useState(null)
-  const [sections,   setSections]   = useState([])
-  const [links,      setLinks]      = useState([])
-  const [notes,      setNotes]      = useState([])
-  const [addingWs,   setAddingWs]   = useState(false)
-  const [newWsName,  setNewWsName]  = useState('')
+  const [session,      setSession]      = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [workspaces,   setWorkspaces]   = useState([])
+  const [activeWs,     setActiveWs]     = useState(null)
+  const [sections,     setSections]     = useState([])
+  const [links,        setLinks]        = useState([])
+  const [notes,        setNotes]        = useState([])
+  const [addingWs,     setAddingWs]     = useState(false)
+  const [newWsName,    setNewWsName]    = useState('')
   const [showSettings, setShowSettings] = useState(false)
-  const [theme,      setTheme]      = useState(loadTheme)
+  const [theme,        setTheme]        = useState(loadTheme)
   const fileRef = useRef(null)
 
-  /* ── Auth ── */
+  /* ── Auth ────────────────────────────────────────────────── */
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session); setLoading(false)
+      setSession(session)
+      setLoading(false)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
-  /* ── Apply + persist theme whenever it changes ── */
+  /* ── Apply + persist theme ───────────────────────────────── */
   useEffect(() => {
     applyTheme(theme)
     localStorage.setItem('current_theme', JSON.stringify(theme))
   }, [theme])
 
-  /* ── Re-apply on tab focus (fixes revert bug) ── */
+  /* ── Re-apply on tab focus (fixes revert bug) ────────────── */
   useEffect(() => {
     const onFocus = () => {
       const saved = loadTheme()
@@ -148,23 +146,28 @@ export default function App() {
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
 
-  /* ── Data fetching ── */
+  /* ── Data ────────────────────────────────────────────────── */
   const fetchWorkspaces = useCallback(async () => {
     if (!session) return
-    const { data } = await supabase.from('workspaces').select('*')
+    const { data } = await supabase
+      .from('workspaces').select('*')
       .eq('user_id', session.user.id).order('created_at')
     if (data) {
       setWorkspaces(data)
-      if (!activeWs && data.length > 0) setActiveWs(data[0].id)
+      setActiveWs(prev => prev ?? data[0]?.id ?? null)
     }
-  }, [session, activeWs])
+  }, [session])
 
   const fetchData = useCallback(async () => {
     if (!session || !activeWs) return
     const [sec, lnk, nt] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
-      supabase.from('links').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
-      supabase.from('notes').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      supabase.from('sections').select('*')
+        .eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
+      supabase.from('links').select('*')
+        .eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
+      supabase.from('notes').select('*')
+        .eq('workspace_id', activeWs).eq('user_id', session.user.id)
+        .order('created_at', { ascending: false }),
     ])
     if (sec.data) setSections(sec.data)
     if (lnk.data) setLinks(lnk.data)
@@ -174,7 +177,7 @@ export default function App() {
   useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
   useEffect(() => { fetchData() },       [fetchData])
 
-  /* ── Workspaces ── */
+  /* ── Workspaces ──────────────────────────────────────────── */
   const addWorkspace = async (e) => {
     e.preventDefault()
     if (!newWsName.trim()) return
@@ -194,22 +197,21 @@ export default function App() {
     await supabase.from('workspaces').delete().eq('id', id)
     const remaining = workspaces.filter(w => w.id !== id)
     setWorkspaces(remaining)
-    setActiveWs(remaining[0]?.id || null)
+    setActiveWs(remaining[0]?.id ?? null)
   }
 
-  /* ── Image upload ── */
+  /* ── Image upload ────────────────────────────────────────── */
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      const dataUrl = ev.target.result
-      setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: dataUrl }))
+      setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: ev.target.result }))
     }
     reader.readAsDataURL(file)
   }
 
-  /* ── Settings save/reset ── */
+  /* ── Settings ────────────────────────────────────────────── */
   const saveSettings = () => {
     localStorage.setItem('current_theme', JSON.stringify(theme))
     applyTheme(theme)
@@ -223,8 +225,11 @@ export default function App() {
   }
 
   const exportSettings = () => {
-    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    // Strip bgImage from export to keep file size small
+    const exportable = { ...theme, bgImage: '' }
+    const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
     a.download = 'theme.json'; a.click()
   }
 
@@ -241,36 +246,33 @@ export default function App() {
     reader.readAsText(file)
   }
 
-  if (loading) return <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>loading…</div>
+  /* ── Early returns ───────────────────────────────────────── */
+  if (loading) return (
+    <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>loading…</div>
+  )
   if (!session) return <Auth onAuth={setSession} />
 
   const isPatternBg = PATTERN_BG.includes(theme.bgStyle)
 
-  /* ── Background style for bg-image ── */
-  const bgImageStyle = theme.bgStyle === 'bg-image' && theme.bgImage
-    ? { backgroundImage: `url(${theme.bgImage})`, opacity: parseFloat(theme.bgImageOpacity ?? 1) }
-    : {}
-
-  const cols = parseInt(theme.sectionsCols) || 2
-  const layoutStyle = cols > 1
-    ? { gridTemplateColumns: `1fr ${cols > 2 ? '220px' : '220px'}` }
-    : { gridTemplateColumns: '1fr' }
-
   return (
     <div className="app">
-      {/* Background layer */}
+
+      {/* ── Background layer ── */}
       <div
         className={`bg-layer ${theme.bgStyle}`}
         style={
           theme.bgStyle === 'bg-image'
-            ? { backgroundImage: theme.bgImage ? `url(${theme.bgImage})` : 'none',
-                backgroundSize: 'cover', backgroundPosition: 'center',
-                opacity: parseFloat(theme.bgImageOpacity ?? 1) }
+            ? {
+                backgroundImage:    theme.bgImage ? `url(${theme.bgImage})` : 'none',
+                backgroundSize:     'cover',
+                backgroundPosition: 'center',
+                opacity: parseFloat(theme.bgImageOpacity ?? 1),
+              }
             : {}
         }
       />
 
-      {/* Topbar */}
+      {/* ── Topbar ── */}
       <div className="topbar">
         <div className="workspace-tabs">
           {workspaces.map(ws => (
@@ -280,15 +282,26 @@ export default function App() {
               onClick={() => setActiveWs(ws.id)}
             >
               {ws.name}
-              <button className="del-ws" onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}>✕</button>
+              <button
+                className="del-ws"
+                onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
+              >✕</button>
             </button>
           ))}
+
           {addingWs ? (
             <form onSubmit={addWorkspace} style={{ display: 'flex', gap: '0.3rem' }}>
-              <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
-                placeholder="Name" autoFocus style={{ width: 100, padding: '0.2rem 0.5rem', fontSize: '0.78em' }} />
-              <button className="btn btn-primary" type="submit" style={{ padding: '0.2rem 0.5rem', fontSize: '0.78em' }}>+</button>
-              <button className="btn" type="button" onClick={() => setAddingWs(false)} style={{ padding: '0.2rem 0.4rem', fontSize: '0.78em' }}>✕</button>
+              <input
+                className="input"
+                value={newWsName}
+                onChange={e => setNewWsName(e.target.value)}
+                placeholder="Name" autoFocus
+                style={{ width: 100, padding: '0.2rem 0.5rem', fontSize: '0.78em' }}
+              />
+              <button className="btn btn-primary" type="submit"
+                style={{ padding: '0.2rem 0.5rem', fontSize: '0.78em' }}>+</button>
+              <button className="btn" type="button" onClick={() => setAddingWs(false)}
+                style={{ padding: '0.2rem 0.4rem', fontSize: '0.78em' }}>✕</button>
             </form>
           ) : (
             <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
@@ -314,7 +327,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Main */}
+      {/* ── Main ── */}
       <div className="main-layout" style={{ gridTemplateColumns: '1fr 220px' }}>
         <div className="main-col">
           <Sections
@@ -336,7 +349,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* Settings panel */}
+      {/* ── Settings panel ── */}
       {showSettings && (
         <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="settings-panel" onClick={e => e.stopPropagation()}>
@@ -346,19 +359,18 @@ export default function App() {
               <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
 
-            {/* ── Colours ── */}
+            {/* Colours */}
             <div className="settings-section">
               <div className="settings-title">Colours</div>
-
               {[
-                ['Background',    'bg',          false],
-                ['Card',          'card',        false],
-                ['Border',        'border',      false],
-                ['Accent',        'accent',      false],
-                ['Text',          'text',        false],
-                ['Text dim',      'textDim',     false],
-                ['Title colour',  'titleColor',  false],
-                ['Button',        'btnBg',       false],
+                ['Background',   'bg'],
+                ['Card',         'card'],
+                ['Border',       'border'],
+                ['Accent',       'accent'],
+                ['Text',         'text'],
+                ['Text dim',     'textDim'],
+                ['Title colour', 'titleColor'],
+                ['Button',       'btnBg'],
               ].map(([label, key]) => (
                 <div className="settings-row" key={key}>
                   <span className="settings-label">{label}</span>
@@ -368,7 +380,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* ── Opacity ── */}
+            {/* Opacity */}
             <div className="settings-section">
               <div className="settings-title">Opacity</div>
               {[
@@ -378,7 +390,9 @@ export default function App() {
                 ['Favicon opacity', 'faviconOpacity'],
               ].map(([label, key]) => (
                 <div className="settings-row" key={key}>
-                  <span className="settings-label">{label} — {parseFloat(theme[key]).toFixed(2)}</span>
+                  <span className="settings-label">
+                    {label} — {parseFloat(theme[key]).toFixed(2)}
+                  </span>
                   <input type="range" min="0" max="1" step="0.01"
                     value={theme[key]} onChange={e => set(key, e.target.value)}
                     style={{ width: 100 }} />
@@ -386,7 +400,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* ── Background ── */}
+            {/* Background */}
             <div className="settings-section">
               <div className="settings-title">Background</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
@@ -400,7 +414,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Pattern colour + opacity — only for dot/grid/lines/crosshatch */}
               {isPatternBg && (
                 <>
                   <div className="settings-row" style={{ marginTop: '0.5rem' }}>
@@ -410,7 +423,9 @@ export default function App() {
                       onChange={e => set('patternColor', e.target.value)} />
                   </div>
                   <div className="settings-row">
-                    <span className="settings-label">Pattern opacity — {parseFloat(theme.patternOpacity).toFixed(2)}</span>
+                    <span className="settings-label">
+                      Pattern opacity — {parseFloat(theme.patternOpacity).toFixed(2)}
+                    </span>
                     <input type="range" min="0" max="1" step="0.01"
                       value={theme.patternOpacity}
                       onChange={e => set('patternOpacity', e.target.value)}
@@ -419,23 +434,27 @@ export default function App() {
                 </>
               )}
 
-              {/* Image upload */}
               {theme.bgStyle === 'bg-image' && (
                 <>
                   <input ref={fileRef} type="file" accept="image/*"
                     style={{ display: 'none' }} onChange={handleImageUpload} />
-                  <button className="btn" style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
+                  <button className="btn"
+                    style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
                     onClick={() => fileRef.current?.click()}>
                     {theme.bgImage ? '↺ change image' : '↑ upload image'}
                   </button>
                   {theme.bgImage && (
                     <>
                       <img src={theme.bgImage} alt="bg preview"
-                        style={{ width: '100%', height: 80, objectFit: 'cover',
+                        style={{
+                          width: '100%', height: 80, objectFit: 'cover',
                           borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
-                          border: '1px solid var(--border)' }} />
+                          border: '1px solid var(--border)',
+                        }} />
                       <div className="settings-row" style={{ marginTop: '0.4rem' }}>
-                        <span className="settings-label">Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}</span>
+                        <span className="settings-label">
+                          Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}
+                        </span>
                         <input type="range" min="0.05" max="1" step="0.01"
                           value={theme.bgImageOpacity}
                           onChange={e => set('bgImageOpacity', e.target.value)}
@@ -447,7 +466,7 @@ export default function App() {
               )}
             </div>
 
-            {/* ── Typography ── */}
+            {/* Typography */}
             <div className="settings-section">
               <div className="settings-title">Typography</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
@@ -474,16 +493,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── Layout ── */}
+            {/* Layout */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
               <div className="settings-row">
                 <span className="settings-label">Section columns</span>
                 <div className="preset-slots">
-                  {[1,2,3,4,5].map(n => (
+                  {[1, 2, 3, 4, 5].map(n => (
                     <button key={n}
                       className={`preset-slot${parseInt(theme.sectionsCols) === n ? ' active' : ''}`}
-                      onClick={() => { set('sectionsCols', String(n)); window.dispatchEvent(new Event('theme_cols_changed')) }}>
+                      onClick={() => {
+                        set('sectionsCols', String(n))
+                        window.dispatchEvent(new Event('theme_cols_changed'))
+                      }}>
                       {n}
                     </button>
                   ))}
@@ -515,7 +537,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── Favicon ── */}
+            {/* Favicons */}
             <div className="settings-section">
               <div className="settings-title">Favicons</div>
               <div className="settings-row">
@@ -537,21 +559,25 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── Import / Export / Reset ── */}
+            {/* Import / Export / Reset */}
             <div className="settings-section">
               <div className="settings-title">Presets</div>
               <div className="import-export">
-                <button className="btn" style={{ fontSize: '0.8em' }} onClick={exportSettings}>↓ export</button>
+                <button className="btn" style={{ fontSize: '0.8em' }}
+                  onClick={exportSettings}>↓ export</button>
                 <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
                   ↑ import
-                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
+                  <input type="file" accept=".json" style={{ display: 'none' }}
+                    onChange={importSettings} />
                 </label>
-                <button className="btn btn-danger" style={{ fontSize: '0.8em' }} onClick={resetSettings}>reset</button>
+                <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
+                  onClick={resetSettings}>reset</button>
               </div>
             </div>
 
             <div className="settings-footer">
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>Save & close</button>
+              <button className="btn btn-primary" style={{ flex: 1 }}
+                onClick={saveSettings}>Save & close</button>
               <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
             </div>
 
