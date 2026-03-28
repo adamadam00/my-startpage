@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext,
@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
   DragOverlay,
+  useDroppable,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -27,7 +28,30 @@ function getColCount() {
   } catch { return 2 }
 }
 
-/* ── SectionCard ──────────────────────────────────────────── */
+// If all sections are col_index=0, distribute round-robin visually
+function buildColumns(sections, colCount) {
+  const cols  = Math.max(colCount, 1)
+  const sorted = [...sections].sort((a, b) => a.position - b.position)
+  const allZero = sorted.length > 1 && sorted.every(s => (s.col_index ?? 0) === 0)
+  const result = Array.from({ length: cols }, () => [])
+  sorted.forEach((s, i) => {
+    const ci = allZero ? i % cols : Math.min(s.col_index ?? 0, cols - 1)
+    result[ci].push(s)
+  })
+  return result
+}
+
+/* ── Droppable column shell (needed for empty-column drops) ── */
+function DroppableColumn({ id, children }) {
+  const { setNodeRef } = useDroppable({ id })
+  return (
+    <div ref={setNodeRef} className="section-col" style={{ minHeight: 60 }}>
+      {children}
+    </div>
+  )
+}
+
+/* ── SectionCard ─────────────────────────────────────────── */
 function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, overlay = false }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming,  setRenaming]  = useState(false)
@@ -115,89 +139,38 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   )
 }
 
-/* ── SectionColumn ────────────────────────────────────────── */
-function SectionColumn({ col, colIdx, links, userId, workspaceId, onRefresh, openInNewTab }) {
-  const [items,    setItems]    = useState(col)
-  const [activeId, setActiveId] = useState(null)
-
-  useEffect(() => { setItems(col) }, [col])
-
-  const activeSection = items.find(s => s.id === activeId) ?? null
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  const handleDragStart = ({ active }) => setActiveId(active.id)
-
-  const handleDragEnd = async ({ active, over }) => {
-    setActiveId(null)
-    if (!over || active.id === over.id) return
-    const from = items.findIndex(s => s.id === active.id)
-    const to   = items.findIndex(s => s.id === over.id)
-    if (from === -1 || to === -1 || from === to) return
-
-    const next = arrayMove(items, from, to)
-    setItems(next)
-
-    await Promise.all(
-      next.map((s, i) =>
-        supabase.from('sections').update({ position: i, col_index: colIdx }).eq('id', s.id)
-      )
-    )
-    onRefresh()
-  }
-
-  const handleDragCancel = () => setActiveId(null)
-
-  return (
-    <div className="section-col">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-        onDragCancel={handleDragCancel}
-      >
-        <SortableContext items={items.map(s => s.id)} strategy={verticalListSortingStrategy}>
-          {items.map(section => (
-            <SectionCard
-              key={section.id}
-              section={section}
-              links={links.filter(l => l.section_id === section.id)}
-              userId={userId}
-              workspaceId={workspaceId}
-              onRefresh={onRefresh}
-              openInNewTab={openInNewTab}
-            />
-          ))}
-        </SortableContext>
-
-        <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
-          {activeSection && (
-            <SectionCard
-              section={activeSection}
-              links={links.filter(l => l.section_id === activeSection.id)}
-              userId={userId}
-              workspaceId={workspaceId}
-              onRefresh={onRefresh}
-              openInNewTab={openInNewTab}
-              overlay
-            />
-          )}
-        </DragOverlay>
-      </DndContext>
-    </div>
-  )
-}
-
-/* ── Root ─────────────────────────────────────────────────── */
+/* ── Root ────────────────────────────────────────────────── */
 export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [colCount,      setColCount]      = useState(getColCount)
-  const [migrated,      setMigrated]      = useState(false)
+  const [colItems,      setColItems]      = useState(() => buildColumns(sections, getColCount()))
+  const [activeId,      setActiveId]      = useState(null)
+  const migrationDone = useRef(false)
+
+  // Resync from DB whenever sections changes and we're not mid-drag
+  useEffect(() => {
+    if (!activeId) setColItems(buildColumns(sections, colCount))
+  }, [sections, colCount])
+
+  // One-time migration: save even distribution to DB if all col_index=0
+  useEffect(() => {
+    if (migrationDone.current || sections.length < 2) return
+    const allZero = sections.every(s => (s.col_index ?? 0) === 0)
+    if (!allZero) { migrationDone.current = true; return }
+    migrationDone.current = true
+
+    const cols   = Math.max(colCount, 1)
+    const sorted = [...sections].sort((a, b) => a.position - b.position)
+    Promise.all(
+      sorted.map((s, i) =>
+        supabase.from('sections').update({
+          col_index: i % cols,
+          position:  Math.floor(i / cols),
+        }).eq('id', s.id)
+      )
+    ).then(() => onRefresh())
+  }, [sections])
 
   useEffect(() => {
     const handler = () => setColCount(getColCount())
@@ -205,62 +178,88 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     return () => window.removeEventListener('theme_cols_changed', handler)
   }, [])
 
-  // One-time migration: if all sections have col_index=0, spread them
-  // evenly across columns and save to DB. Never runs again after that.
-  useEffect(() => {
-    if (migrated) return
-    if (sections.length < 2) { setMigrated(true); return }
-
-    const allZero = sections.every(s => (s.col_index ?? 0) === 0)
-    if (!allZero) { setMigrated(true); return }
-
-    const cols   = Math.max(getColCount(), 1)
-    const sorted = [...sections].sort((a, b) => a.position - b.position)
-
-    // Round-robin: 0→col0, 1→col1, 2→col0, 3→col1 ...
-    const updates = sorted.map((s, i) => ({
-      id:        s.id,
-      col_index: i % cols,
-      position:  Math.floor(i / cols),
-    }))
-
-    Promise.all(
-      updates.map(u =>
-        supabase.from('sections')
-          .update({ col_index: u.col_index, position: u.position })
-          .eq('id', u.id)
-      )
-    ).then(() => {
-      setMigrated(true)
-      onRefresh()
-    })
-  }, [sections, migrated])
-
-  const sorted = useMemo(() =>
-    [...sections].sort((a, b) => a.position - b.position), [sections]
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  // Group by saved col_index — no forced even split after migration
-  const columns = useMemo(() => {
-    const cols = Array.from({ length: colCount }, () => [])
-    sorted.forEach(s => {
-      const ci = Math.min(s.col_index ?? 0, colCount - 1)
-      cols[ci].push(s)
+  const activeSection = activeId
+    ? colItems.flat().find(s => s.id === activeId) ?? null
+    : null
+
+  // Returns the column index that owns this id (section id or 'col-X')
+  const findColIdx = (id, state) => {
+    if (typeof id === 'string' && id.startsWith('col-')) return parseInt(id.slice(4))
+    for (let i = 0; i < state.length; i++) {
+      if (state[i].some(s => s.id === id)) return i
+    }
+    return null
+  }
+
+  const handleDragStart = ({ active }) => setActiveId(active.id)
+
+  // Live-reorder: handles same-column sort AND cross-column move
+  const handleDragOver = ({ active, over }) => {
+    if (!over || active.id === over.id) return
+
+    setColItems(prev => {
+      const fromCol = findColIdx(active.id, prev)
+      const toCol   = findColIdx(over.id, prev)
+      if (fromCol === null || toCol === null) return prev
+
+      const next    = prev.map(col => [...col])
+      const fromIdx = next[fromCol].findIndex(s => s.id === active.id)
+      if (fromIdx === -1) return prev
+
+      if (fromCol === toCol) {
+        // Same column — just reorder
+        const toIdx = next[toCol].findIndex(s => s.id === over.id)
+        if (toIdx === -1) return prev
+        next[fromCol] = arrayMove(next[fromCol], fromIdx, toIdx)
+      } else {
+        // Cross-column — splice out and insert
+        const [moved] = next[fromCol].splice(fromIdx, 1)
+        const isColDrop = typeof over.id === 'string' && over.id.startsWith('col-')
+        if (isColDrop) {
+          next[toCol].push(moved)
+        } else {
+          const toIdx = next[toCol].findIndex(s => s.id === over.id)
+          next[toCol].splice(toIdx === -1 ? next[toCol].length : toIdx, 0, moved)
+        }
+      }
+
+      return next
     })
-    return cols
-  }, [sorted, colCount])
+  }
+
+  // On drop — persist final state to DB
+  const handleDragEnd = async () => {
+    setActiveId(null)
+    await Promise.all(
+      colItems.flatMap((col, ci) =>
+        col.map((s, i) =>
+          supabase.from('sections').update({ col_index: ci, position: i }).eq('id', s.id)
+        )
+      )
+    )
+    onRefresh()
+  }
+
+  const handleDragCancel = () => {
+    setActiveId(null)
+    setColItems(buildColumns(sections, colCount))
+  }
 
   const addSection = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
-    // New sections go into the shortest column
-    const shortestCol = columns.reduce((min, col, i) =>
-      col.length < columns[min].length ? i : min, 0)
+    const shortestCol = colItems.reduce((min, col, i) =>
+      col.length < colItems[min].length ? i : min, 0)
     await supabase.from('sections').insert({
       user_id:      userId,
       workspace_id: workspaceId,
       name:         newName.trim(),
-      position:     columns[shortestCol].length,
+      position:     colItems[shortestCol].length,
       col_index:    shortestCol,
       pinned:       false,
       collapsed:    false,
@@ -273,20 +272,51 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
   return (
     <>
       <div className="sections-scroll">
-        <div className="sections-grid">
-          {columns.map((col, colIdx) => (
-            <SectionColumn
-              key={colIdx}
-              col={col}
-              colIdx={colIdx}
-              links={links}
-              userId={userId}
-              workspaceId={workspaceId}
-              onRefresh={onRefresh}
-              openInNewTab={openInNewTab}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div className="sections-grid">
+            {colItems.map((col, colIdx) => (
+              <DroppableColumn key={colIdx} id={`col-${colIdx}`}>
+                <SortableContext
+                  items={col.map(s => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {col.map(section => (
+                    <SectionCard
+                      key={section.id}
+                      section={section}
+                      links={links.filter(l => l.section_id === section.id)}
+                      userId={userId}
+                      workspaceId={workspaceId}
+                      onRefresh={onRefresh}
+                      openInNewTab={openInNewTab}
+                    />
+                  ))}
+                </SortableContext>
+              </DroppableColumn>
+            ))}
+          </div>
+
+          <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
+            {activeSection && (
+              <SectionCard
+                section={activeSection}
+                links={links.filter(l => l.section_id === activeSection.id)}
+                userId={userId}
+                workspaceId={workspaceId}
+                onRefresh={onRefresh}
+                openInNewTab={openInNewTab}
+                overlay
+              />
+            )}
+          </DragOverlay>
+        </DndContext>
 
         {sections.length === 0 && (
           <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem' }}>
