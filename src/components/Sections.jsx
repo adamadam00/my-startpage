@@ -28,12 +28,11 @@ function getColCount() {
   } catch { return 2 }
 }
 
-// If all sections are col_index=0, distribute round-robin visually
-function buildColumns(sections, colCount) {
-  const cols  = Math.max(colCount, 1)
-  const sorted = [...sections].sort((a, b) => a.position - b.position)
+function buildColumns(sections = [], colCount = 2) {
+  const cols   = Math.max(colCount, 1)
+  const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const allZero = sorted.length > 1 && sorted.every(s => (s.col_index ?? 0) === 0)
-  const result = Array.from({ length: cols }, () => [])
+  const result  = Array.from({ length: cols }, () => [])
   sorted.forEach((s, i) => {
     const ci = allZero ? i % cols : Math.min(s.col_index ?? 0, cols - 1)
     result[ci].push(s)
@@ -41,7 +40,7 @@ function buildColumns(sections, colCount) {
   return result
 }
 
-/* ── Droppable column shell (needed for empty-column drops) ── */
+/* ── Droppable column shell ── */
 function DroppableColumn({ id, children }) {
   const { setNodeRef } = useDroppable({ id })
   return (
@@ -51,11 +50,19 @@ function DroppableColumn({ id, children }) {
   )
 }
 
-/* ── SectionCard ─────────────────────────────────────────── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, overlay = false }) {
+/* ── SectionCard ── */
+function SectionCard({
+  section,
+  links = [],
+  userId,
+  workspaceId,
+  onRefresh,
+  openInNewTab,
+  overlay = false,
+}) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming,  setRenaming]  = useState(false)
-  const [name,      setName]      = useState(section.name)
+  const [name,      setName]      = useState(section.name ?? '')
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id })
@@ -63,6 +70,10 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   const style = overlay
     ? { opacity: 0.92, boxShadow: '0 8px 32px #0008', cursor: 'grabbing' }
     : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1 }
+
+  const sectionLinks = Array.isArray(links)
+    ? links.filter(l => l.section_id === section.id)
+    : []
 
   const toggleCollapse = async () => {
     const next = !collapsed
@@ -127,41 +138,54 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
       </div>
 
       {!collapsed && !overlay && (
-        <Links links={links} sectionId={section.id} workspaceId={workspaceId}
-          userId={userId} onRefresh={onRefresh} openInNewTab={openInNewTab} />
+        <Links
+          links={sectionLinks}
+          sectionId={section.id}
+          workspaceId={workspaceId}
+          userId={userId}
+          onRefresh={onRefresh}
+          openInNewTab={openInNewTab}
+        />
       )}
       {!collapsed && overlay && (
         <div style={{ padding: '0.3rem var(--card-padding)', fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          {links.length} link{links.length !== 1 ? 's' : ''}
+          {sectionLinks.length} link{sectionLinks.length !== 1 ? 's' : ''}
         </div>
       )}
     </div>
   )
 }
 
-/* ── Root ────────────────────────────────────────────────── */
-export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
+/* ── Root ── */
+export default function Sections({
+  sections = [],
+  links    = [],
+  userId,
+  workspaceId,
+  onRefresh,
+  openInNewTab,
+}) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [colCount,      setColCount]      = useState(getColCount)
   const [colItems,      setColItems]      = useState(() => buildColumns(sections, getColCount()))
   const [activeId,      setActiveId]      = useState(null)
   const migrationDone = useRef(false)
+  const safeLinks     = Array.isArray(links) ? links : []
 
-  // Resync from DB whenever sections changes and we're not mid-drag
+  /* Resync columns from DB whenever sections/colCount changes and not mid-drag */
   useEffect(() => {
     if (!activeId) setColItems(buildColumns(sections, colCount))
   }, [sections, colCount])
 
-  // One-time migration: save even distribution to DB if all col_index=0
+  /* One-time migration: spread all-zero col_index evenly */
   useEffect(() => {
-    if (migrationDone.current || sections.length < 2) return
+    if (migrationDone.current || !sections.length || sections.length < 2) return
     const allZero = sections.every(s => (s.col_index ?? 0) === 0)
     if (!allZero) { migrationDone.current = true; return }
     migrationDone.current = true
-
-    const cols   = Math.max(colCount, 1)
-    const sorted = [...sections].sort((a, b) => a.position - b.position)
+    const cols   = Math.max(getColCount(), 1)
+    const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     Promise.all(
       sorted.map((s, i) =>
         supabase.from('sections').update({
@@ -187,7 +211,6 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     ? colItems.flat().find(s => s.id === activeId) ?? null
     : null
 
-  // Returns the column index that owns this id (section id or 'col-X')
   const findColIdx = (id, state) => {
     if (typeof id === 'string' && id.startsWith('col-')) return parseInt(id.slice(4))
     for (let i = 0; i < state.length; i++) {
@@ -198,13 +221,11 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
 
   const handleDragStart = ({ active }) => setActiveId(active.id)
 
-  // Live-reorder: handles same-column sort AND cross-column move
   const handleDragOver = ({ active, over }) => {
     if (!over || active.id === over.id) return
-
     setColItems(prev => {
       const fromCol = findColIdx(active.id, prev)
-      const toCol   = findColIdx(over.id, prev)
+      const toCol   = findColIdx(over.id,   prev)
       if (fromCol === null || toCol === null) return prev
 
       const next    = prev.map(col => [...col])
@@ -212,12 +233,10 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
       if (fromIdx === -1) return prev
 
       if (fromCol === toCol) {
-        // Same column — just reorder
         const toIdx = next[toCol].findIndex(s => s.id === over.id)
         if (toIdx === -1) return prev
         next[fromCol] = arrayMove(next[fromCol], fromIdx, toIdx)
       } else {
-        // Cross-column — splice out and insert
         const [moved] = next[fromCol].splice(fromIdx, 1)
         const isColDrop = typeof over.id === 'string' && over.id.startsWith('col-')
         if (isColDrop) {
@@ -227,12 +246,10 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
           next[toCol].splice(toIdx === -1 ? next[toCol].length : toIdx, 0, moved)
         }
       }
-
       return next
     })
   }
 
-  // On drop — persist final state to DB
   const handleDragEnd = async () => {
     setActiveId(null)
     await Promise.all(
@@ -259,91 +276,4 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
       user_id:      userId,
       workspace_id: workspaceId,
       name:         newName.trim(),
-      position:     colItems[shortestCol].length,
-      col_index:    shortestCol,
-      pinned:       false,
-      collapsed:    false,
-    })
-    setNewName('')
-    setAddingSection(false)
-    onRefresh()
-  }
-
-  return (
-    <>
-      <div className="sections-scroll">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          <div className="sections-grid">
-            {colItems.map((col, colIdx) => (
-              <DroppableColumn key={colIdx} id={`col-${colIdx}`}>
-                <SortableContext
-                  items={col.map(s => s.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {col.map(section => (
-                    <SectionCard
-                      key={section.id}
-                      section={section}
-                      links={links.filter(l => l.section_id === section.id)}
-                      userId={userId}
-                      workspaceId={workspaceId}
-                      onRefresh={onRefresh}
-                      openInNewTab={openInNewTab}
-                    />
-                  ))}
-                </SortableContext>
-              </DroppableColumn>
-            ))}
-          </div>
-
-          <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
-            {activeSection && (
-              <SectionCard
-                section={activeSection}
-                links={links.filter(l => l.section_id === activeSection.id)}
-                userId={userId}
-                workspaceId={workspaceId}
-                onRefresh={onRefresh}
-                openInNewTab={openInNewTab}
-                overlay
-              />
-            )}
-          </DragOverlay>
-        </DndContext>
-
-        {sections.length === 0 && (
-          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem' }}>
-            No sections yet
-          </div>
-        )}
-      </div>
-
-      <div className="add-section-fixed">
-        {addingSection ? (
-          <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
-            <input className="input" value={newName}
-              onChange={e => setNewName(e.target.value)}
-              placeholder="Section name" autoFocus style={{ width: 180 }} />
-            <button className="btn btn-primary" type="submit">Add</button>
-            <button className="btn" type="button"
-              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
-          </form>
-        ) : (
-          <button className="btn btn-ghost"
-            onClick={() => setAddingSection(true)}
-            style={{ fontSize: '0.78em', opacity: 0.5, padding: '0.2rem 0.5rem' }}
-            title="Add a new section">
-            + new section
-          </button>
-        )}
-      </div>
-    </>
-  )
-}
+      posi
