@@ -1,37 +1,43 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
-  DndContext, closestCorners, PointerSensor,
-  useSensor, useSensors,
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
 } from '@dnd-kit/core'
 import {
-  SortableContext, verticalListSortingStrategy,
-  useSortable, arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
-function getColCount() {
-  try {
-    const t = JSON.parse(localStorage.getItem('current_theme') || '{}')
-    const n = parseInt(t.sectionsCols)
-    return (n >= 1 && n <= 5) ? n : 2
-  } catch { return 2 }
-}
-
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab }) {
+/* ─── SectionCard ─────────────────────────────────────── */
+function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, overlay = false }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming,  setRenaming]  = useState(false)
   const [name,      setName]      = useState(section.name)
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: section.id })
+  const {
+    attributes, listeners,
+    setNodeRef, transform, transition,
+    isDragging,
+  } = useSortable({ id: section.id })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.35 : 1,
-  }
+  const style = overlay
+    ? { opacity: 0.9, boxShadow: '0 8px 32px #0008', cursor: 'grabbing' }
+    : {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0 : 1,   // hide original while overlay shows
+      }
 
   const toggleCollapse = async () => {
     const next = !collapsed
@@ -56,15 +62,20 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}`}>
+    <div
+      ref={overlay ? undefined : setNodeRef}
+      style={style}
+      className={`section-card${collapsed ? ' collapsed' : ''}`}
+    >
       <div className="section-header" onClick={toggleCollapse}>
+
+        {/* Drag handle — only zone that starts a drag */}
         <span
           className="drag-handle"
-          {...attributes}
-          {...listeners}
+          {...(overlay ? {} : { ...attributes, ...listeners })}
           onClick={e => e.stopPropagation()}
-          title="Drag to reorder">⠿
-        </span>
+          title="Drag to reorder"
+        >⠿</span>
 
         {renaming ? (
           <form
@@ -72,8 +83,13 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
             onClick={e => e.stopPropagation()}
             style={{ flex: 1, display: 'flex', gap: '0.4rem' }}
           >
-            <input className="input" value={name}
-              onChange={e => setName(e.target.value)} autoFocus style={{ flex: 1 }} />
+            <input
+              className="input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              autoFocus
+              style={{ flex: 1 }}
+            />
             <button className="btn btn-primary" type="submit">Save</button>
             <button className="btn" type="button" onClick={() => setRenaming(false)}>✕</button>
           </form>
@@ -83,12 +99,16 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
         {!renaming && (
           <div className="section-actions">
-            <button className="icon-btn" title="Rename"
-              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎
-            </button>
-            <button className="icon-btn section-delete-btn" title="Delete"
-              onClick={deleteSection}>✕
-            </button>
+            <button
+              className="icon-btn"
+              title="Rename"
+              onClick={e => { e.stopPropagation(); setRenaming(true) }}
+            >✎</button>
+            <button
+              className="icon-btn section-delete-btn"
+              title="Delete section"
+              onClick={deleteSection}
+            >✕</button>
           </div>
         )}
 
@@ -97,7 +117,7 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
         </span>
       </div>
 
-      {!collapsed && (
+      {!collapsed && !overlay && (
         <Links
           links={links}
           sectionId={section.id}
@@ -107,44 +127,62 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
           openInNewTab={openInNewTab}
         />
       )}
+
+      {!collapsed && overlay && (
+        <div style={{ padding: '0.3rem var(--card-padding)', fontSize: '0.75em', color: 'var(--text-muted)' }}>
+          {links.length} link{links.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   )
 }
 
-export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
+/* ─── Sections (root) ─────────────────────────────────── */
+export default function Sections({
+  sections, links, userId, workspaceId, onRefresh, openInNewTab,
+}) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
-  const [colCount,      setColCount]      = useState(getColCount)
-  const [localOrder,    setLocalOrder]    = useState(null)
+  const [order,         setOrder]         = useState(() =>
+    [...sections].sort((a, b) => a.position - b.position)
+  )
+  const [activeSection, setActiveSection] = useState(null)  // for DragOverlay
 
+  // Sync order when sections prop changes (after DB refresh)
   useEffect(() => {
-    const handler = () => setColCount(getColCount())
-    window.addEventListener('theme_cols_changed', handler)
-    return () => window.removeEventListener('theme_cols_changed', handler)
-  }, [])
+    setOrder([...sections].sort((a, b) => a.position - b.position))
+  }, [sections])
 
-  useEffect(() => { setLocalOrder(null) }, [sections])
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
-  const sensors = useSensors(useSensor(PointerSensor, {
-    activationConstraint: { distance: 6 },
-  }))
-
-  const base = localOrder ?? [...sections].sort((a, b) => a.position - b.position)
+  const handleDragStart = ({ active }) => {
+    setActiveSection(order.find(s => s.id === active.id) ?? null)
+  }
 
   const handleDragEnd = async ({ active, over }) => {
+    setActiveSection(null)
     if (!over || active.id === over.id) return
-    const oldIndex = base.findIndex(s => s.id === active.id)
-    const newIndex = base.findIndex(s => s.id === over.id)
+
+    const oldIndex = order.findIndex(s => s.id === active.id)
+    const newIndex = order.findIndex(s => s.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
-    const reordered = arrayMove(base, oldIndex, newIndex)
-    setLocalOrder(reordered)
+
+    // arrayMove = remove from old, INSERT at new — never swaps
+    const next = arrayMove(order, oldIndex, newIndex)
+    setOrder(next)   // optimistic
+
     await Promise.all(
-      reordered.map((s, i) =>
+      next.map((s, i) =>
         supabase.from('sections').update({ position: i }).eq('id', s.id)
       )
     )
     onRefresh()
   }
+
+  const handleDragCancel = () => setActiveSection(null)
 
   const addSection = async (e) => {
     e.preventDefault()
@@ -161,12 +199,17 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
 
   return (
     <>
-      {/* Columns — nothing after this div, button does NOT live here */}
       <div className="sections-scroll">
-        <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-          <SortableContext items={base.map(s => s.id)} strategy={verticalListSortingStrategy}>
-            <div className="sections-wrap" style={{ columnCount: colCount }}>
-              {base.map(section => (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <SortableContext items={order.map(s => s.id)} strategy={verticalListSortingStrategy}>
+            <div className="sections-list">
+              {order.map(section => (
                 <SectionCard
                   key={section.id}
                   section={section}
@@ -179,6 +222,21 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
               ))}
             </div>
           </SortableContext>
+
+          {/* Ghost that follows the cursor while dragging */}
+          <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
+            {activeSection && (
+              <SectionCard
+                section={activeSection}
+                links={links.filter(l => l.section_id === activeSection.id)}
+                userId={userId}
+                workspaceId={workspaceId}
+                onRefresh={onRefresh}
+                openInNewTab={openInNewTab}
+                overlay
+              />
+            )}
+          </DragOverlay>
         </DndContext>
 
         {sections.length === 0 && (
@@ -188,10 +246,7 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
         )}
       </div>
 
-      {/*
-        FIXED to bottom-left of viewport — completely outside document flow,
-        zero effect on column stacking.
-      */}
+      {/* Fixed bottom-left — zero layout impact */}
       <div className="add-section-fixed">
         {addingSection ? (
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
@@ -204,8 +259,11 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
               style={{ width: 180 }}
             />
             <button className="btn btn-primary" type="submit">Add</button>
-            <button className="btn" type="button"
-              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => { setAddingSection(false); setNewName('') }}
+            >✕</button>
           </form>
         ) : (
           <button
