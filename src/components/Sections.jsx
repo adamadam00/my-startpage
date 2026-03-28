@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext,
@@ -25,14 +25,6 @@ function getColCount() {
     const n = parseInt(t.sectionsCols)
     return (n >= 1 && n <= 5) ? n : 2
   } catch { return 2 }
-}
-
-function splitColumns(items, n) {
-  const cols = Math.max(n, 1)
-  const size = Math.ceil(items.length / cols)
-  return Array.from({ length: cols }, (_, i) =>
-    items.slice(i * size, (i + 1) * size)
-  )
 }
 
 /* ── SectionCard ──────────────────────────────────────────── */
@@ -123,12 +115,11 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   )
 }
 
-/* ── SectionColumn — own DndContext, drag stays within column ── */
-function SectionColumn({ col, colIdx, columnsRef, links, userId, workspaceId, onRefresh, openInNewTab }) {
+/* ── SectionColumn ────────────────────────────────────────── */
+function SectionColumn({ col, colIdx, links, userId, workspaceId, onRefresh, openInNewTab }) {
   const [items,    setItems]    = useState(col)
   const [activeId, setActiveId] = useState(null)
 
-  // Keep in sync when parent refreshes
   useEffect(() => { setItems(col) }, [col])
 
   const activeSection = items.find(s => s.id === activeId) ?? null
@@ -147,15 +138,14 @@ function SectionColumn({ col, colIdx, columnsRef, links, userId, workspaceId, on
     const to   = items.findIndex(s => s.id === over.id)
     if (from === -1 || to === -1 || from === to) return
 
-    // arrayMove — inserts at target, never swaps
     const next = arrayMove(items, from, to)
     setItems(next)
 
-    // Flatten all columns to compute global positions
-    const allCols = columnsRef.current.map((c, i) => i === colIdx ? next : c)
-    const flat    = allCols.flat()
+    // Save position within this column only
     await Promise.all(
-      flat.map((s, i) => supabase.from('sections').update({ position: i }).eq('id', s.id))
+      next.map((s, i) =>
+        supabase.from('sections').update({ position: i, col_index: colIdx }).eq('id', s.id)
+      )
     )
     onRefresh()
   }
@@ -204,22 +194,10 @@ function SectionColumn({ col, colIdx, columnsRef, links, userId, workspaceId, on
 }
 
 /* ── Root ─────────────────────────────────────────────────── */
-import { useRef } from 'react'
-
 export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [colCount,      setColCount]      = useState(getColCount)
-
-  const sorted = useMemo(() =>
-    [...sections].sort((a, b) => a.position - b.position), [sections]
-  )
-
-  const columns = useMemo(() => splitColumns(sorted, colCount), [sorted, colCount])
-
-  // Ref so SectionColumn can read latest columns without stale closure
-  const columnsRef = useRef(columns)
-  useEffect(() => { columnsRef.current = columns }, [columns])
 
   useEffect(() => {
     const handler = () => setColCount(getColCount())
@@ -227,13 +205,34 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     return () => window.removeEventListener('theme_cols_changed', handler)
   }, [])
 
+  const sorted = useMemo(() =>
+    [...sections].sort((a, b) => a.position - b.position), [sections]
+  )
+
+  // Build columns from saved col_index — no forced even distribution
+  const columns = useMemo(() => {
+    const cols = Array.from({ length: colCount }, () => [])
+    sorted.forEach(s => {
+      const ci = (s.col_index ?? 0) % colCount
+      cols[ci].push(s)
+    })
+    return cols
+  }, [sorted, colCount])
+
   const addSection = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
+    // New sections go into the shortest column
+    const shortestCol = columns.reduce((min, col, i) =>
+      col.length < columns[min].length ? i : min, 0)
     await supabase.from('sections').insert({
-      user_id: userId, workspace_id: workspaceId,
-      name: newName.trim(), position: sections.length,
-      pinned: false, collapsed: false,
+      user_id:    userId,
+      workspace_id: workspaceId,
+      name:       newName.trim(),
+      position:   columns[shortestCol].length,
+      col_index:  shortestCol,
+      pinned:     false,
+      collapsed:  false,
     })
     setNewName('')
     setAddingSection(false)
@@ -249,7 +248,6 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
               key={colIdx}
               col={col}
               colIdx={colIdx}
-              columnsRef={columnsRef}
               links={links}
               userId={userId}
               workspaceId={workspaceId}
