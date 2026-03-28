@@ -40,7 +40,6 @@ function buildColumns(sections = [], colCount = 2) {
   return result
 }
 
-/* ── Droppable column shell ── */
 function DroppableColumn({ id, children }) {
   const { setNodeRef } = useDroppable({ id })
   return (
@@ -50,7 +49,6 @@ function DroppableColumn({ id, children }) {
   )
 }
 
-/* ── SectionCard ── */
 function SectionCard({
   section,
   links = [],
@@ -156,7 +154,6 @@ function SectionCard({
   )
 }
 
-/* ── Root ── */
 export default function Sections({
   sections = [],
   links    = [],
@@ -173,12 +170,10 @@ export default function Sections({
   const migrationDone = useRef(false)
   const safeLinks     = Array.isArray(links) ? links : []
 
-  /* Resync columns from DB whenever sections/colCount changes and not mid-drag */
   useEffect(() => {
     if (!activeId) setColItems(buildColumns(sections, colCount))
   }, [sections, colCount])
 
-  /* One-time migration: spread all-zero col_index evenly */
   useEffect(() => {
     if (migrationDone.current || !sections.length || sections.length < 2) return
     const allZero = sections.every(s => (s.col_index ?? 0) === 0)
@@ -227,11 +222,9 @@ export default function Sections({
       const fromCol = findColIdx(active.id, prev)
       const toCol   = findColIdx(over.id,   prev)
       if (fromCol === null || toCol === null) return prev
-
       const next    = prev.map(col => [...col])
       const fromIdx = next[fromCol].findIndex(s => s.id === active.id)
       if (fromIdx === -1) return prev
-
       if (fromCol === toCol) {
         const toIdx = next[toCol].findIndex(s => s.id === over.id)
         if (toIdx === -1) return prev
@@ -276,4 +269,98 @@ export default function Sections({
       user_id:      userId,
       workspace_id: workspaceId,
       name:         newName.trim(),
-      posi
+      position:     colItems[shortestCol].length,
+      col_index:    shortestCol,
+      pinned:       false,
+      collapsed:    false,
+    })
+    setNewName('')
+    setAddingSection(false)
+    onRefresh()
+  }
+
+  return (
+    <>
+      <div className="sections-scroll">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
+          onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
+        >
+          <div className="sections-grid">
+            {colItems.map((col, colIdx) => (
+              <DroppableColumn key={colIdx} id={`col-${colIdx}`}>
+                <SortableContext
+                  items={col.map(s => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {col.map(section => (
+                    <SectionCard
+                      key={section.id}
+                      section={section}
+                      links={safeLinks}
+                      userId={userId}
+                      workspaceId={workspaceId}
+                      onRefresh={onRefresh}
+                      openInNewTab={openInNewTab}
+                    />
+                  ))}
+                </SortableContext>
+              </DroppableColumn>
+            ))}
+          </div>
+
+          <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
+            {activeSection && (
+              <SectionCard
+                section={activeSection}
+                links={safeLinks}
+                userId={userId}
+                workspaceId={workspaceId}
+                onRefresh={onRefresh}
+                openInNewTab={openInNewTab}
+                overlay
+              />
+            )}
+          </DragOverlay>
+        </DndContext>
+
+        {sections.length === 0 && (
+          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem' }}>
+            No sections yet
+          </div>
+        )}
+      </div>
+
+      <div className="add-section-fixed">
+        {addingSection ? (
+          <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
+            <input
+              className="input"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="Section name"
+              autoFocus
+              style={{ width: 180 }}
+            />
+            <button className="btn btn-primary" type="submit">Add</button>
+            <button className="btn" type="button"
+              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
+          </form>
+        ) : (
+          <button
+            className="btn btn-ghost"
+            onClick={() => setAddingSection(true)}
+            style={{ fontSize: '0.78em', opacity: 0.5, padding: '0.2rem 0.5rem' }}
+            title="Add a new section"
+          >
+            + new section
+          </button>
+        )}
+      </div>
+    </>
+  )
+}
