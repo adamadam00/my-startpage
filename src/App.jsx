@@ -1,25 +1,25 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
-import Auth         from './components/Auth'
-import Clock        from './components/Clock'
-import Weather      from './components/Weather'
-import SearchBar    from './components/SearchBar'
-import Sections     from './components/Sections'
-import Notes        from './components/Notes'
-import Settings     from './components/Settings'
+import Auth      from './components/Auth'
+import Clock     from './components/Clock'
+import Weather   from './components/Weather'
+import SearchBar from './components/SearchBar'
+import Sections  from './components/Sections'
+import Notes     from './components/Notes'
+import Settings  from './components/Settings'
 
 function applyTheme(cfg) {
   if (!cfg) return
-  // Save currently applied theme so Settings can read it on open
   localStorage.setItem('current_theme', JSON.stringify(cfg))
   const r = document.documentElement.style
-  const s = (k, v) => v !== undefined && v !== null && r.setProperty(k, String(v))
+  const s = (k, v) => (v !== undefined && v !== null) && r.setProperty(k, String(v))
   s('--bg',              cfg.bg)
   s('--bg2',             cfg.bg2)
   s('--bg3',             cfg.bg3)
   s('--card',            cfg.card)
   s('--card-opacity',    cfg.cardOpacity)
   s('--border-opacity',  cfg.borderOpacity ?? 1)
+  s('--handle-opacity',  cfg.handleOpacity ?? 0.15)
   s('--border',          cfg.border)
   s('--border-hover',    cfg.borderHover)
   s('--text',            cfg.text)
@@ -44,30 +44,18 @@ function applyTheme(cfg) {
   if (cfg.pageScale) document.body.style.zoom = cfg.pageScale
 }
 
-// Read a value from the current saved theme
-const savedTheme = () => {
-  try { return JSON.parse(localStorage.getItem('current_theme') ?? '{}') } catch { return {} }
-}
-
 export default function App() {
   const [session,      setSession]      = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [workspaces,   setWorkspaces]   = useState([])
-  const [activeWs,     setActiveWs]     = useState(null)
+  const [activeWs,     setActiveWs]     = useState(
+    () => localStorage.getItem('active_workspace') ?? null
+  )
   const [sections,     setSections]     = useState([])
   const [links,        setLinks]        = useState([])
   const [notes,        setNotes]        = useState([])
   const [userSettings, setUserSettings] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
-  const [addingWs,     setAddingWs]     = useState(false)
-  const [newWsName,    setNewWsName]    = useState('')
-
-  // UI visibility — stored in localStorage so they're per-device
-  const [showClock,   setShowClock]   = useState(() => localStorage.getItem('show_clock')   !== 'false')
-  const [showWeather, setShowWeather] = useState(() => localStorage.getItem('show_weather') !== 'false')
-  const [showSearch,  setShowSearch]  = useState(() => localStorage.getItem('show_search')  !== 'false')
-  const [showNotes,   setShowNotes]   = useState(() => localStorage.getItem('show_notes')   !== 'false')
-  const [showPins,    setShowPins]    = useState(() => localStorage.getItem('show_pins')    !== 'false')
 
   const clockFormat = userSettings?.clock_format    ?? '12h'
   const openNewTab  = userSettings?.open_in_new_tab ?? true
@@ -76,6 +64,12 @@ export default function App() {
   const weatherLon  = userSettings?.weather_lon     ?? 144.9631
   const weatherName = userSettings?.weather_name    ?? 'Melbourne'
   const bgImage     = localStorage.getItem('bg_image')
+
+  const [showClock,   setShowClock]   = useState(() => localStorage.getItem('show_clock')   !== 'false')
+  const [showWeather, setShowWeather] = useState(() => localStorage.getItem('show_weather') !== 'false')
+  const [showSearch,  setShowSearch]  = useState(() => localStorage.getItem('show_search')  !== 'false')
+  const [showNotes,   setShowNotes]   = useState(() => localStorage.getItem('show_notes')   !== 'false')
+  const [showPins,    setShowPins]    = useState(() => localStorage.getItem('show_pins')    !== 'false')
 
   // ── Auth ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -98,7 +92,7 @@ export default function App() {
 
   useEffect(() => { fetchSettings() }, [fetchSettings])
 
-  // ── Load active theme preset ──────────────────────────────────
+  // ── Theme preset ──────────────────────────────────────────────
   useEffect(() => {
     if (!session) return
     const load = async () => {
@@ -118,11 +112,24 @@ export default function App() {
       .eq('user_id', session.user.id).order('created_at')
     if (data) {
       setWorkspaces(data)
-      if (!activeWs && data.length > 0) setActiveWs(data[0].id)
+      // Restore last active workspace from localStorage
+      const saved = localStorage.getItem('active_workspace')
+      const match = data.find(w => w.id === saved)
+      if (match) {
+        setActiveWs(match.id)
+      } else if (data.length > 0) {
+        setActiveWs(data[0].id)
+        localStorage.setItem('active_workspace', data[0].id)
+      }
     }
-  }, [session, activeWs])
+  }, [session])
 
   useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
+
+  // Save active workspace to localStorage whenever it changes
+  useEffect(() => {
+    if (activeWs) localStorage.setItem('active_workspace', activeWs)
+  }, [activeWs])
 
   // ── Data ──────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
@@ -139,20 +146,19 @@ export default function App() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // ── Add workspace ─────────────────────────────────────────────
-  const addWorkspace = async (e) => {
-    e.preventDefault()
-    if (!newWsName.trim() || workspaces.length >= 5) return
+  // ── Workspace CRUD (used by Settings) ─────────────────────────
+  const addWorkspace = async (name) => {
+    if (!name.trim() || workspaces.length >= 5) return
     const { data } = await supabase.from('workspaces').insert({
-      user_id: session.user.id, name: newWsName.trim(),
+      user_id: session.user.id, name: name.trim(),
     }).select().single()
-    setNewWsName('')
-    setAddingWs(false)
     await fetchWorkspaces()
-    if (data) setActiveWs(data.id)
+    if (data) {
+      setActiveWs(data.id)
+      localStorage.setItem('active_workspace', data.id)
+    }
   }
 
-  // ── Delete workspace ──────────────────────────────────────────
   const deleteWorkspace = async (id) => {
     if (!confirm('Delete this workspace and ALL its data? This cannot be undone.')) return
     await Promise.all([
@@ -163,7 +169,15 @@ export default function App() {
     await supabase.from('workspaces').delete().eq('id', id)
     const remaining = workspaces.filter(w => w.id !== id)
     setWorkspaces(remaining)
-    setActiveWs(remaining[0]?.id ?? null)
+    const next = remaining[0]?.id ?? null
+    setActiveWs(next)
+    if (next) localStorage.setItem('active_workspace', next)
+  }
+
+  const renameWorkspace = async (id, name) => {
+    if (!name.trim()) return
+    await supabase.from('workspaces').update({ name: name.trim() }).eq('id', id)
+    await fetchWorkspaces()
   }
 
   // ── Reset links ───────────────────────────────────────────────
@@ -185,7 +199,6 @@ export default function App() {
         supabase.from('theme_presets').select('*').eq('user_id', session.user.id),
         supabase.from('user_settings').select('*').eq('user_id', session.user.id).single(),
       ])
-
     const payload = {
       exported_at: new Date().toISOString(),
       workspaces: workspaces.map(ws => ({
@@ -206,9 +219,7 @@ export default function App() {
       })),
       theme_presets: presets ?? [],
       user_settings: settings ?? {},
-      current_theme: savedTheme(),
     }
-
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
     a.download = `startpage-backup-${new Date().toISOString().slice(0, 10)}.json`
@@ -226,7 +237,6 @@ export default function App() {
     fetchSettings()
   }
 
-  // ── Background ────────────────────────────────────────────────
   const getBgClass = () => bgImage ? 'bg-layer bg-image' : `bg-layer bg-${bgPreset}`
   const getBgStyle = () => bgImage ? { backgroundImage: `url(${bgImage})` } : {}
 
@@ -247,52 +257,21 @@ export default function App() {
         {/* ── Topbar ── */}
         <header className="topbar">
 
-          {/* Workspace tabs */}
+          {/* Workspace switcher tabs only — no add/delete here */}
           <div className="workspace-tabs">
             {workspaces.map(ws => (
               <button
                 key={ws.id}
                 className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
                 onClick={() => setActiveWs(ws.id)}
-                title={`Switch to workspace: ${ws.name}`}
+                title={`Switch to: ${ws.name}`}
               >
                 {ws.name}
-                {workspaces.length > 1 && (
-                  <button
-                    className="del-ws"
-                    onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-                    title={`Delete workspace: ${ws.name}`}
-                  >✕</button>
-                )}
               </button>
             ))}
-
-            {workspaces.length < 5 && (
-              addingWs ? (
-                <form onSubmit={addWorkspace} style={{ display: 'flex', gap: '0.4rem' }}>
-                  <input
-                    className="input"
-                    value={newWsName}
-                    onChange={e => setNewWsName(e.target.value)}
-                    placeholder="Workspace name"
-                    autoFocus
-                    style={{ width: '130px' }}
-                  />
-                  <button className="btn btn-primary" type="submit">Add</button>
-                  <button className="btn" type="button" onClick={() => setAddingWs(false)}>✕</button>
-                </form>
-              ) : (
-                <button
-                  className="btn-ghost icon-btn"
-                  onClick={() => setAddingWs(true)}
-                  title="Add new workspace (max 5)"
-                  style={{ fontSize: '0.78em' }}
-                >+ workspace</button>
-              )
-            )}
           </div>
 
-          {/* Topbar widgets */}
+          {/* Widgets */}
           <div className="topbar-widgets">
             {showClock && (
               <>
@@ -302,7 +281,7 @@ export default function App() {
             )}
             {showWeather && (
               <>
-                <Weather lat={weatherLat} lon={weatherLon} locationName={weatherName} compact />
+                <Weather lat={weatherLat} lon={weatherLon} locationName={weatherName} />
                 <div className="topbar-divider" />
               </>
             )}
@@ -313,11 +292,11 @@ export default function App() {
 
           {/* Actions */}
           <div className="topbar-actions">
-            <button className="btn" onClick={() => setShowSettings(true)} title="Open settings panel">
+            <button className="btn" onClick={() => setShowSettings(true)} title="Open settings">
               ⚙ <span>Settings</span>
             </button>
             <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}
-              title="Sign out of your account" style={{ fontSize: '0.78em' }}>
+              title="Sign out" style={{ fontSize: '0.78em' }}>
               sign out
             </button>
           </div>
@@ -340,7 +319,7 @@ export default function App() {
               />
             ) : (
               <div style={{ color: 'var(--text-muted)', fontSize: '0.85em', textAlign: 'center', padding: '2rem' }}>
-                Create a workspace above to get started
+                Add a workspace in Settings to get started
               </div>
             )}
           </div>
@@ -363,11 +342,15 @@ export default function App() {
           session={session}
           userSettings={userSettings}
           onSettingsChange={handleSettingsChange}
-          onClose={() => setShowSettings(false)}
+          onClose={() => { setShowSettings(false); fetchData() }}
           onResetLinks={resetLinks}
           onExportAll={exportEverything}
           activeWs={activeWs}
           workspaces={workspaces}
+          onAddWorkspace={addWorkspace}
+          onDeleteWorkspace={deleteWorkspace}
+          onRenameWorkspace={renameWorkspace}
+          onSwitchWorkspace={(id) => { setActiveWs(id); localStorage.setItem('active_workspace', id) }}
           uiVisibility={{ showClock, showWeather, showSearch, showNotes, showPins }}
         />
       )}
