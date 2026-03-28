@@ -27,7 +27,6 @@ function getColCount() {
   } catch { return 2 }
 }
 
-// Sequential column split — fills col0 top-to-bottom, then col1, etc.
 function splitColumns(items, n) {
   const cols = Math.max(n, 1)
   const size = Math.ceil(items.length / cols)
@@ -36,6 +35,7 @@ function splitColumns(items, n) {
   )
 }
 
+/* ── SectionCard ──────────────────────────────────────────── */
 function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, overlay = false }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming,  setRenaming]  = useState(false)
@@ -46,11 +46,7 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
   const style = overlay
     ? { opacity: 0.92, boxShadow: '0 8px 32px #0008', cursor: 'grabbing' }
-    : {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        opacity: isDragging ? 0 : 1,
-      }
+    : { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1 }
 
   const toggleCollapse = async () => {
     const next = !collapsed
@@ -89,11 +85,8 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
         >⠿</span>
 
         {renaming ? (
-          <form
-            onSubmit={rename}
-            onClick={e => e.stopPropagation()}
-            style={{ flex: 1, display: 'flex', gap: '0.4rem' }}
-          >
+          <form onSubmit={rename} onClick={e => e.stopPropagation()}
+            style={{ flex: 1, display: 'flex', gap: '0.4rem' }}>
             <input className="input" value={name}
               onChange={e => setName(e.target.value)} autoFocus style={{ flex: 1 }} />
             <button className="btn btn-primary" type="submit">Save</button>
@@ -118,16 +111,9 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
       </div>
 
       {!collapsed && !overlay && (
-        <Links
-          links={links}
-          sectionId={section.id}
-          workspaceId={workspaceId}
-          userId={userId}
-          onRefresh={onRefresh}
-          openInNewTab={openInNewTab}
-        />
+        <Links links={links} sectionId={section.id} workspaceId={workspaceId}
+          userId={userId} onRefresh={onRefresh} openInNewTab={openInNewTab} />
       )}
-
       {!collapsed && overlay && (
         <div style={{ padding: '0.3rem var(--card-padding)', fontSize: '0.75em', color: 'var(--text-muted)' }}>
           {links.length} link{links.length !== 1 ? 's' : ''}
@@ -137,63 +123,109 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   )
 }
 
-export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
-  const [addingSection, setAddingSection] = useState(false)
-  const [newName,       setNewName]       = useState('')
-  const [colCount,      setColCount]      = useState(getColCount)
-  const [order,         setOrder]         = useState(() =>
-    [...sections].sort((a, b) => a.position - b.position)
-  )
-  const [activeSection, setActiveSection] = useState(null)
-  const savedOrder = useMemo(() =>
-    [...sections].sort((a, b) => a.position - b.position), [sections]
-  )
+/* ── SectionColumn — own DndContext, drag stays within column ── */
+function SectionColumn({ col, colIdx, columnsRef, links, userId, workspaceId, onRefresh, openInNewTab }) {
+  const [items,    setItems]    = useState(col)
+  const [activeId, setActiveId] = useState(null)
 
-  useEffect(() => { setOrder(savedOrder) }, [sections])
+  // Keep in sync when parent refreshes
+  useEffect(() => { setItems(col) }, [col])
 
-  useEffect(() => {
-    const handler = () => setColCount(getColCount())
-    window.addEventListener('theme_cols_changed', handler)
-    return () => window.removeEventListener('theme_cols_changed', handler)
-  }, [])
-
-  // Split flat order into columns — top-to-bottom within each column
-  const columns = useMemo(() => splitColumns(order, colCount), [order, colCount])
+  const activeSection = items.find(s => s.id === activeId) ?? null
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  const handleDragStart = ({ active }) => {
-    setActiveSection(order.find(s => s.id === active.id) ?? null)
-  }
+  const handleDragStart = ({ active }) => setActiveId(active.id)
 
-  // Live-reorder as you drag — works within and across columns
-  const handleDragOver = ({ active, over }) => {
+  const handleDragEnd = async ({ active, over }) => {
+    setActiveId(null)
     if (!over || active.id === over.id) return
-    setOrder(prev => {
-      const from = prev.findIndex(s => s.id === active.id)
-      const to   = prev.findIndex(s => s.id === over.id)
-      if (from === -1 || to === -1 || from === to) return prev
-      return arrayMove(prev, from, to)
-    })
-  }
+    const from = items.findIndex(s => s.id === active.id)
+    const to   = items.findIndex(s => s.id === over.id)
+    if (from === -1 || to === -1 || from === to) return
 
-  const handleDragEnd = async () => {
-    setActiveSection(null)
+    // arrayMove — inserts at target, never swaps
+    const next = arrayMove(items, from, to)
+    setItems(next)
+
+    // Flatten all columns to compute global positions
+    const allCols = columnsRef.current.map((c, i) => i === colIdx ? next : c)
+    const flat    = allCols.flat()
     await Promise.all(
-      order.map((s, i) =>
-        supabase.from('sections').update({ position: i }).eq('id', s.id)
-      )
+      flat.map((s, i) => supabase.from('sections').update({ position: i }).eq('id', s.id))
     )
     onRefresh()
   }
 
-  const handleDragCancel = () => {
-    setActiveSection(null)
-    setOrder(savedOrder)
-  }
+  const handleDragCancel = () => setActiveId(null)
+
+  return (
+    <div className="section-col">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <SortableContext items={items.map(s => s.id)} strategy={verticalListSortingStrategy}>
+          {items.map(section => (
+            <SectionCard
+              key={section.id}
+              section={section}
+              links={links.filter(l => l.section_id === section.id)}
+              userId={userId}
+              workspaceId={workspaceId}
+              onRefresh={onRefresh}
+              openInNewTab={openInNewTab}
+            />
+          ))}
+        </SortableContext>
+
+        <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
+          {activeSection && (
+            <SectionCard
+              section={activeSection}
+              links={links.filter(l => l.section_id === activeSection.id)}
+              userId={userId}
+              workspaceId={workspaceId}
+              onRefresh={onRefresh}
+              openInNewTab={openInNewTab}
+              overlay
+            />
+          )}
+        </DragOverlay>
+      </DndContext>
+    </div>
+  )
+}
+
+/* ── Root ─────────────────────────────────────────────────── */
+import { useRef } from 'react'
+
+export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
+  const [addingSection, setAddingSection] = useState(false)
+  const [newName,       setNewName]       = useState('')
+  const [colCount,      setColCount]      = useState(getColCount)
+
+  const sorted = useMemo(() =>
+    [...sections].sort((a, b) => a.position - b.position), [sections]
+  )
+
+  const columns = useMemo(() => splitColumns(sorted, colCount), [sorted, colCount])
+
+  // Ref so SectionColumn can read latest columns without stale closure
+  const columnsRef = useRef(columns)
+  useEffect(() => { columnsRef.current = columns }, [columns])
+
+  useEffect(() => {
+    const handler = () => setColCount(getColCount())
+    window.addEventListener('theme_cols_changed', handler)
+    return () => window.removeEventListener('theme_cols_changed', handler)
+  }, [])
 
   const addSection = async (e) => {
     e.preventDefault()
@@ -211,52 +243,21 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
   return (
     <>
       <div className="sections-scroll">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
-          onDragEnd={handleDragEnd}
-          onDragCancel={handleDragCancel}
-        >
-          {/* Flex row of column divs — fills top-to-bottom within each column */}
-          <div className="sections-grid">
-            {columns.map((col, colIdx) => (
-              <div key={colIdx} className="section-col">
-                <SortableContext
-                  items={col.map(s => s.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {col.map(section => (
-                    <SectionCard
-                      key={section.id}
-                      section={section}
-                      links={links.filter(l => l.section_id === section.id)}
-                      userId={userId}
-                      workspaceId={workspaceId}
-                      onRefresh={onRefresh}
-                      openInNewTab={openInNewTab}
-                    />
-                  ))}
-                </SortableContext>
-              </div>
-            ))}
-          </div>
-
-          <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
-            {activeSection && (
-              <SectionCard
-                section={activeSection}
-                links={links.filter(l => l.section_id === activeSection.id)}
-                userId={userId}
-                workspaceId={workspaceId}
-                onRefresh={onRefresh}
-                openInNewTab={openInNewTab}
-                overlay
-              />
-            )}
-          </DragOverlay>
-        </DndContext>
+        <div className="sections-grid">
+          {columns.map((col, colIdx) => (
+            <SectionColumn
+              key={colIdx}
+              col={col}
+              colIdx={colIdx}
+              columnsRef={columnsRef}
+              links={links}
+              userId={userId}
+              workspaceId={workspaceId}
+              onRefresh={onRefresh}
+              openInNewTab={openInNewTab}
+            />
+          ))}
+        </div>
 
         {sections.length === 0 && (
           <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem' }}>
@@ -268,25 +269,18 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
       <div className="add-section-fixed">
         {addingSection ? (
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
-            <input
-              className="input"
-              value={newName}
+            <input className="input" value={newName}
               onChange={e => setNewName(e.target.value)}
-              placeholder="Section name"
-              autoFocus
-              style={{ width: 180 }}
-            />
+              placeholder="Section name" autoFocus style={{ width: 180 }} />
             <button className="btn btn-primary" type="submit">Add</button>
             <button className="btn" type="button"
               onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
           </form>
         ) : (
-          <button
-            className="btn btn-ghost"
+          <button className="btn btn-ghost"
             onClick={() => setAddingSection(true)}
             style={{ fontSize: '0.78em', opacity: 0.5, padding: '0.2rem 0.5rem' }}
-            title="Add a new section"
-          >
+            title="Add a new section">
             + new section
           </button>
         )}
