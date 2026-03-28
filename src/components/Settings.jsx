@@ -30,7 +30,7 @@ const DEFAULT_THEME = {
   accent:           '#6c8fff',
   danger:           '#ff6b6b',
   success:          '#6bffb8',
-  btnBg:            '#6c8fff',
+  btnBg:            '#2d4fd4',
   btnText:          '#ffffff',
   font:             "'DM Mono', monospace",
   fontSize:         14,
@@ -129,9 +129,12 @@ export default function Settings({
     load()
   }, [session])
 
-  // Live-apply theme to CSS vars and localStorage
+  // Live-apply all theme vars + notify Sections of column changes
   useEffect(() => {
     localStorage.setItem('current_theme', JSON.stringify(theme))
+    // Tell Sections.jsx to re-read column count
+    window.dispatchEvent(new Event('theme_cols_changed'))
+
     const r = document.documentElement.style
     r.setProperty('--bg',               theme.bg)
     r.setProperty('--bg2',              theme.bg2)
@@ -254,7 +257,6 @@ export default function Settings({
   return (
     <div className="settings-panel">
 
-      {/* Sticky header */}
       <div className="settings-header">
         <span style={{ fontWeight: 500 }}>Settings</span>
         <span style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>Changes apply live</span>
@@ -294,7 +296,6 @@ export default function Settings({
             </div>
           ))}
         </div>
-
         {workspaces.length < 5 && (
           addingWs ? (
             <form onSubmit={handleAddWs} style={{ display: 'flex', gap: '0.5rem' }}>
@@ -306,8 +307,8 @@ export default function Settings({
             </form>
           ) : (
             <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              title="Add a new workspace (max 5)"
-              style={{ fontSize: '0.82em', alignSelf: 'flex-start' }}>
+              style={{ fontSize: '0.82em', alignSelf: 'flex-start' }}
+              title="Add workspace (max 5)">
               + add workspace
             </button>
           )
@@ -376,14 +377,14 @@ export default function Settings({
             style={{ flex: 1 }} />
         </Row>
         <Row label={`Border opacity: ${Math.round(theme.borderOpacity * 100)}%`}
-          tip="0% = no borders visible">
+          tip="0% = no visible borders">
           <input type="range" min="0" max="1" step="0.05"
             value={theme.borderOpacity}
             onChange={e => set('borderOpacity', parseFloat(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
         <Row label={`Drag handle opacity: ${Math.round((theme.handleOpacity ?? 0.15) * 100)}%`}
-          tip="Visibility of ⠿ drag handles — they always brighten on hover">
+          tip="Visibility of ⠿ drag handles — always brighter on hover">
           <input type="range" min="0" max="1" step="0.05"
             value={theme.handleOpacity ?? 0.15}
             onChange={e => set('handleOpacity', parseFloat(e.target.value))}
@@ -423,7 +424,7 @@ export default function Settings({
             style={{ flex: 1 }} />
         </Row>
         <Row label={`Section columns: ${theme.sectionsCols}`}
-          tip="Number of section columns">
+          tip="Number of section columns — applied instantly">
           <input type="range" min="1" max="5" step="1"
             value={theme.sectionsCols}
             onChange={e => set('sectionsCols', parseInt(e.target.value))}
@@ -488,9 +489,7 @@ export default function Settings({
           </button>
           {bgImage && (
             <button className="btn btn-danger" onClick={clearBgImage}
-              title="Remove background image">
-              Remove image
-            </button>
+              title="Remove background image">Remove image</button>
           )}
           <input ref={fileRef} type="file" accept="image/*"
             style={{ display: 'none' }} onChange={handleBgImage} />
@@ -519,7 +518,7 @@ export default function Settings({
             onChange={v => { setShowSearch(v); onSettingsChange({ showSearch: v }) }}
             title="Toggle search bar" />
         </Row>
-        <Row label="Notes panel" tip="Hide to use the space for more link columns">
+        <Row label="Notes panel" tip="Hide to use space for more link columns">
           <Toggle checked={showNotes}
             onChange={v => { setShowNotes(v); onSettingsChange({ showNotes: v }) }}
             title="Toggle notes panel" />
@@ -533,7 +532,7 @@ export default function Settings({
 
       {/* ── Clock & Search ── */}
       <SettingsSection title="Clock & Search">
-        <Row label="Clock format" tip="12-hour or 24-hour time display">
+        <Row label="Clock format" tip="12-hour or 24-hour time">
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             {['12h','24h'].map(f => (
               <button key={f}
@@ -545,11 +544,11 @@ export default function Settings({
             ))}
           </div>
         </Row>
-        <Row label="Open links in new tab" tip="Open clicked links in a new browser tab vs same tab">
+        <Row label="Open links in new tab" tip="Open clicked links in a new browser tab">
           <Toggle checked={openNewTab} onChange={setOpenNewTab}
-            title="Toggle new tab behaviour for links" />
+            title="Toggle new tab for links" />
         </Row>
-        <Row label="Search engine URL" tip="Base URL for the search bar — must end with ?q= or &q=">
+        <Row label="Search engine URL" tip="Base URL — must end with ?q= or &q=">
           <input
             className="input"
             style={{ flex: 1, fontSize: '0.78em' }}
@@ -559,8 +558,7 @@ export default function Settings({
               localStorage.setItem('search_url', e.target.value)
               window.dispatchEvent(new Event('search_url_changed'))
             }}
-            title="Change to use any search engine"
-          />
+            title="Change to use any search engine" />
         </Row>
       </SettingsSection>
 
@@ -578,7 +576,7 @@ export default function Settings({
             title="Longitude coordinate" />
         </div>
         <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          Find coordinates at{' '}
+          Find at{' '}
           <a href="https://latlong.net" target="_blank" rel="noreferrer"
             style={{ color: 'var(--accent)' }}>latlong.net</a>
         </div>

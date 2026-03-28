@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext, closestCenter, PointerSensor,
@@ -10,6 +10,15 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
+
+// Read column count directly from saved theme — bypasses CSS variable flakiness
+function getColCount() {
+  try {
+    const t = JSON.parse(localStorage.getItem('current_theme') || '{}')
+    const n = parseInt(t.sectionsCols)
+    return (n >= 1 && n <= 5) ? n : 2
+  } catch { return 2 }
+}
 
 function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, showPins }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
@@ -56,12 +65,13 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   return (
     <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}`}>
       <div className="section-header" onClick={toggleCollapse}>
+
         <span
           className="drag-handle"
-          {...attributes} {...listeners}
+          {...attributes}
+          {...listeners}
           onClick={e => e.stopPropagation()}
-          title="Drag to reorder section"
-        >⠿</span>
+          title="Drag to reorder section">⠿</span>
 
         {section.pinned && showPins && (
           <span className="section-pin" title="Pinned">📌</span>
@@ -73,13 +83,8 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
             onClick={e => e.stopPropagation()}
             style={{ flex: 1, display: 'flex', gap: '0.4rem' }}
           >
-            <input
-              className="input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              autoFocus
-              style={{ flex: 1 }}
-            />
+            <input className="input" value={name}
+              onChange={e => setName(e.target.value)} autoFocus style={{ flex: 1 }} />
             <button className="btn btn-primary" type="submit">Save</button>
             <button className="btn" type="button" onClick={() => setRenaming(false)}>✕</button>
           </form>
@@ -88,29 +93,20 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
         )}
 
         {!renaming && (
-          <span className="section-actions" style={{ display: 'flex', gap: '0.2rem', opacity: 0 }}>
-            <button
-              className="icon-btn"
-              title="Rename section"
-              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎
-            </button>
+          <div className="section-actions">
+            <button className="icon-btn" title="Rename section"
+              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎</button>
             {showPins && (
-              <button
-                className="icon-btn"
-                title={section.pinned ? 'Unpin section' : 'Pin section to top'}
-                onClick={togglePin}>📌
-              </button>
+              <button className="icon-btn"
+                title={section.pinned ? 'Unpin' : 'Pin section to top'}
+                onClick={togglePin}>📌</button>
             )}
-            <button
-              className="icon-btn"
-              title="Delete section and all its links"
-              onClick={deleteSection}
-              style={{ color: 'var(--danger)' }}>✕
-            </button>
-          </span>
+            <button className="icon-btn" title="Delete section and all its links"
+              onClick={deleteSection} style={{ color: 'var(--danger)' }}>✕</button>
+          </div>
         )}
 
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.25rem' }}>
+        <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
           {collapsed ? '▶' : '▼'}
         </span>
       </div>
@@ -132,6 +128,16 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab, showPins }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
+
+  // Column count read directly from localStorage — updates when theme changes
+  const [colCount, setColCount] = useState(getColCount)
+
+  useEffect(() => {
+    // Listen for the event fired by Settings when sectionsCols slider changes
+    const handler = () => setColCount(getColCount())
+    window.addEventListener('theme_cols_changed', handler)
+    return () => window.removeEventListener('theme_cols_changed', handler)
+  }, [])
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 5 },
@@ -162,12 +168,9 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     e.preventDefault()
     if (!newName.trim()) return
     await supabase.from('sections').insert({
-      user_id:      userId,
-      workspace_id: workspaceId,
-      name:         newName.trim(),
-      position:     sections.length,
-      pinned:       false,
-      collapsed:    false,
+      user_id: userId, workspace_id: workspaceId,
+      name: newName.trim(), position: sections.length,
+      pinned: false, collapsed: false,
     })
     setNewName('')
     setAddingSection(false)
@@ -178,7 +181,8 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     <div className="sections-outer">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sorted.map(s => s.id)} strategy={verticalListSortingStrategy}>
-          <div className="sections-wrap">
+          {/* columnCount driven by JS state, not CSS variable */}
+          <div className="sections-wrap" style={{ columnCount: colCount }}>
             {sorted.map(section => (
               <SectionCard
                 key={section.id}
@@ -203,24 +207,18 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
 
       <div className="add-section-row">
         {addingSection ? (
-          <form onSubmit={addSection} style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-            <input
-              className="input"
-              value={newName}
+          <form onSubmit={addSection} style={{ display: 'flex', gap: '0.5rem' }}>
+            <input className="input" value={newName}
               onChange={e => setNewName(e.target.value)}
-              placeholder="Section name"
-              autoFocus
-            />
+              placeholder="Section name" autoFocus />
             <button className="btn btn-primary" type="submit">Add</button>
             <button className="btn" type="button" onClick={() => setAddingSection(false)}>✕</button>
           </form>
         ) : (
-          <button
-            className="btn btn-ghost add-section-btn"
+          <button className="btn btn-ghost add-section-btn"
             onClick={() => setAddingSection(true)}
             title="Add a new section"
-            style={{ fontSize: '0.85em' }}
-          >
+            style={{ fontSize: '0.85em' }}>
             + new section
           </button>
         )}
