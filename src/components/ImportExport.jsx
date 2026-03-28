@@ -68,9 +68,13 @@ export default function ImportExport({ session, workspaceId, onRefresh }) {
           await importCSV(text)
         } else {
           const json = JSON.parse(text)
-          // Detect aFineStart format vs our own
-          if (json.groups) {
+          // aFineStart v3 format: array of arrays [[{name, bookmarks:[]}]]
+          if (Array.isArray(json) && Array.isArray(json[0])) {
+            await importAFineStartV2(json.flat())
+          // aFineStart older format: {groups:[]}
+          } else if (json.groups) {
             await importAFineStart(json)
+          // Our own format: {sections:[]}
           } else if (json.sections) {
             await importOurJSON(json)
           } else {
@@ -127,7 +131,7 @@ export default function ImportExport({ session, workspaceId, onRefresh }) {
     onRefresh()
   }
 
-  // Import aFineStart JSON format (groups → sections)
+  // Import aFineStart older format: {groups:[]}
   const importAFineStart = async (json) => {
     setImporting(true)
     setStatus('Importing from aFineStart…')
@@ -160,7 +164,43 @@ export default function ImportExport({ session, workspaceId, onRefresh }) {
       }
     }
     setImporting(false)
-    setStatus(`✓ Imported ${groups.length} groups from aFineStart`)
+    setStatus(`✓ Imported ${groups.length} sections from aFineStart`)
+    onRefresh()
+  }
+
+  // Import aFineStart v3 format: [[{name, bookmarks:[{name, url}]}]]
+  const importAFineStartV2 = async (groups) => {
+    setImporting(true)
+    setStatus('Importing from aFineStart…')
+    let pos = 0
+    for (const g of groups) {
+      const { data: sec } = await supabase.from('sections').insert({
+        user_id:      session.user.id,
+        workspace_id: workspaceId,
+        name:         g.name ?? 'Imported',
+        position:     pos++,
+        pinned:       false,
+        collapsed:    false,
+      }).select().single()
+      if (sec) {
+        const items = g.bookmarks ?? g.links ?? g.items ?? []
+        let lpos = 0
+        for (const l of items) {
+          let href = l.url ?? l.href ?? ''
+          if (href && !href.startsWith('http')) href = 'https://' + href
+          await supabase.from('links').insert({
+            user_id:      session.user.id,
+            workspace_id: workspaceId,
+            section_id:   sec.id,
+            title:        l.name ?? l.title ?? href,
+            url:          href,
+            position:     lpos++,
+          })
+        }
+      }
+    }
+    setImporting(false)
+    setStatus(`✓ Imported ${groups.length} sections from aFineStart`)
     onRefresh()
   }
 
@@ -168,7 +208,7 @@ export default function ImportExport({ session, workspaceId, onRefresh }) {
   const importCSV = async (text) => {
     setImporting(true)
     setStatus('Importing CSV…')
-    const lines = text.trim().split('\n').slice(1) // skip header row
+    const lines = text.trim().split('\n').slice(1)
     const sectionMap = {}
     let pos = 0
 
@@ -220,13 +260,11 @@ export default function ImportExport({ session, workspaceId, onRefresh }) {
         Import / Export
       </div>
 
-      {/* Export buttons */}
       <div className="import-export">
         <button className="btn" onClick={exportJSON}>⬇ Export JSON</button>
         <button className="btn" onClick={exportCSV}>⬇ Export CSV</button>
       </div>
 
-      {/* Import button */}
       <div className="import-export">
         <button className="btn btn-primary" onClick={() => fileRef.current.click()} disabled={importing}>
           {importing ? 'Importing…' : '⬆ Import file'}
@@ -244,7 +282,6 @@ export default function ImportExport({ session, workspaceId, onRefresh }) {
         Accepts: aFineStart JSON, our JSON export, or CSV (Section, Title, URL)
       </div>
 
-      {/* Status message */}
       {status && (
         <div style={{
           fontSize: '0.8em',
