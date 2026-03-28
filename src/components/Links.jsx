@@ -1,12 +1,19 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import {
-  DndContext, closestCenter, PointerSensor,
-  useSensor, useSensors,
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core'
 import {
-  SortableContext, verticalListSortingStrategy,
-  useSortable, arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -17,215 +24,216 @@ function getFavicon(url) {
   } catch { return null }
 }
 
-function EditModal({ link, onSave, onCancel }) {
-  const [title, setTitle] = useState(link.title)
-  const [url,   setUrl]   = useState(link.url)
-
-  const save = async (e) => {
-    e.preventDefault()
-    if (!title.trim() || !url.trim()) return
-    let href = url.trim()
-    if (!href.startsWith('http')) href = 'https://' + href
-    await supabase.from('links').update({ title: title.trim(), url: href }).eq('id', link.id)
-    onSave()
-  }
-
-  return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-box" onClick={e => e.stopPropagation()}>
-        <div className="modal-title">Edit Link</div>
-        <form onSubmit={save} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <div>
-            <label className="modal-label">Title</label>
-            <input className="input" value={title} onChange={e => setTitle(e.target.value)} autoFocus />
-          </div>
-          <div>
-            <label className="modal-label">URL</label>
-            <input className="input" value={url} onChange={e => setUrl(e.target.value)} />
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <button className="btn" type="button" onClick={onCancel}>Cancel</button>
-            <button className="btn btn-primary" type="submit">Save</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-function AddModal({ sectionId, workspaceId, userId, onSave, onCancel }) {
-  const [title,   setTitle]   = useState('')
-  const [url,     setUrl]     = useState('')
-  const [loading, setLoading] = useState(false)
-
-  const add = async (e) => {
-    e.preventDefault()
-    if (!title.trim() || !url.trim()) return
-    setLoading(true)
-    let href = url.trim()
-    if (!href.startsWith('http')) href = 'https://' + href
-    await supabase.from('links').insert({
-      user_id: userId, workspace_id: workspaceId,
-      section_id: sectionId, title: title.trim(),
-      url: href, position: 9999,
-    })
-    setLoading(false)
-    onSave()
-  }
-
-  return (
-    <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal-box" onClick={e => e.stopPropagation()}>
-        <div className="modal-title">Add Link</div>
-        <form onSubmit={add} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-          <div>
-            <label className="modal-label">Title</label>
-            <input className="input" value={title} onChange={e => setTitle(e.target.value)} placeholder="Google" autoFocus />
-          </div>
-          <div>
-            <label className="modal-label">URL</label>
-            <input className="input" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://google.com" />
-          </div>
-          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-            <button className="btn" type="button" onClick={onCancel}>Cancel</button>
-            <button className="btn btn-primary" type="submit" disabled={loading}>
-              {loading ? '…' : 'Add'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-function LinkItem({ link, onDelete, onEdited, openInNewTab }) {
-  const [editing, setEditing] = useState(false)
-
+function LinkItem({ link, onEdit, onDelete, openInNewTab }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: link.id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.35 : 1,
-    cursor: isDragging ? 'grabbing' : 'default',
+    opacity: isDragging ? 0.4 : 1,
   }
 
   const favicon = getFavicon(link.url)
 
+  const handleClick = () => {
+    if (openInNewTab) {
+      window.open(link.url, '_blank', 'noopener,noreferrer')
+    } else {
+      window.location.href = link.url
+    }
+  }
+
   return (
-    <>
-      {editing && (
-        <EditModal
-          link={link}
-          onSave={() => { setEditing(false); onEdited() }}
-          onCancel={() => setEditing(false)}
+    <div ref={setNodeRef} style={style} className="link-item">
+      <span
+        className="drag-handle"
+        {...attributes}
+        {...listeners}
+        onClick={e => e.stopPropagation()}
+      >⠿</span>
+
+      {favicon && (
+        <img
+          src={favicon}
+          alt=""
+          className="link-favicon"
+          onError={e => { e.target.style.display = 'none' }}
         />
       )}
-      <div ref={setNodeRef} style={style} className="link-item" {...attributes} {...listeners}>
 
-        <span className="drag-handle" title="Drag to reorder">⠿</span>
+      <span className="link-title" onClick={handleClick} title={link.url}>
+        {link.title}
+      </span>
 
-        {favicon && (
-          <img className="link-favicon" src={favicon} alt=""
-            onError={e => { e.target.style.display = 'none' }} />
-        )}
-
-        <a
-          className="link-title"
-          href={link.url}
-          target={openInNewTab ? '_blank' : '_self'}
-          rel="noreferrer"
-          title={link.url}
-          onPointerDown={e => e.stopPropagation()}
-        >
-          {link.title}
-        </a>
-
-        {/* Edit — grey pencil */}
-        <button
-          className="icon-btn link-action-btn"
-          onPointerDown={e => e.stopPropagation()}
-          onClick={() => setEditing(true)}
-          title="Edit link">✎
-        </button>
-
-        {/* Delete — grey cross, NOT red */}
-        <button
-          className="icon-btn link-action-btn"
-          onPointerDown={e => e.stopPropagation()}
-          onClick={() => onDelete(link.id)}
-          title="Delete link">✕
-        </button>
-      </div>
-    </>
+      <button
+        className="icon-btn link-action-btn"
+        onClick={e => { e.stopPropagation(); onEdit(link) }}
+        title="Edit"
+      >✎</button>
+      <button
+        className="icon-btn link-action-btn"
+        onClick={e => { e.stopPropagation(); onDelete(link.id) }}
+        title="Delete"
+      >✕</button>
+    </div>
   )
 }
 
-export default function Links({ links, sectionId, workspaceId, userId, onRefresh, openInNewTab }) {
-  const [adding, setAdding] = useState(false)
+export default function Links({
+  links       = [],
+  sectionId,
+  workspaceId,
+  userId,
+  onRefresh,
+  openInNewTab = true,
+}) {
+  const safeLinks = Array.isArray(links) ? links : []
 
-  const sensors = useSensors(useSensor(PointerSensor, {
-    activationConstraint: { distance: 8 },
-  }))
+  const [adding,   setAdding]   = useState(false)
+  const [editing,  setEditing]  = useState(null)   // link object
+  const [title,    setTitle]    = useState('')
+  const [url,      setUrl]      = useState('')
 
-  const sorted = [...links].sort((a, b) => a.position - b.position)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
 
-  const handleDragEnd = async ({ active, over }) => {
-    if (!over || active.id === over.id) return
-    const oldIndex = sorted.findIndex(l => l.id === active.id)
-    const newIndex = sorted.findIndex(l => l.id === over.id)
-    const reordered = arrayMove(sorted, oldIndex, newIndex)
-    await Promise.all(
-      reordered.map((l, i) =>
-        supabase.from('links').update({ position: i }).eq('id', l.id)
-      )
-    )
+  /* ── Add ── */
+  const handleAdd = async (e) => {
+    e.preventDefault()
+    if (!title.trim() || !url.trim()) return
+    let href = url.trim()
+    if (!href.startsWith('http')) href = 'https://' + href
+    await supabase.from('links').insert({
+      user_id:      userId,
+      workspace_id: workspaceId,
+      section_id:   sectionId,
+      title:        title.trim(),
+      url:          href,
+      position:     safeLinks.length,
+    })
+    setTitle(''); setUrl(''); setAdding(false)
     onRefresh()
   }
 
-  const deleteLink = async (id) => {
-    if (!confirm('Delete this link?')) return
+  /* ── Edit ── */
+  const startEdit = (link) => {
+    setEditing(link)
+    setTitle(link.title)
+    setUrl(link.url)
+  }
+
+  const handleEdit = async (e) => {
+    e.preventDefault()
+    if (!title.trim() || !url.trim()) return
+    let href = url.trim()
+    if (!href.startsWith('http')) href = 'https://' + href
+    await supabase.from('links').update({ title: title.trim(), url: href }).eq('id', editing.id)
+    setEditing(null); setTitle(''); setUrl('')
+    onRefresh()
+  }
+
+  /* ── Delete ── */
+  const handleDelete = async (id) => {
     await supabase.from('links').delete().eq('id', id)
     onRefresh()
   }
 
-  return (
-    <>
-      {adding && (
-        <AddModal
-          sectionId={sectionId}
-          workspaceId={workspaceId}
-          userId={userId}
-          onSave={() => { setAdding(false); onRefresh() }}
-          onCancel={() => setAdding(false)}
-        />
-      )}
+  /* ── Drag reorder ── */
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return
+    const from = safeLinks.findIndex(l => l.id === active.id)
+    const to   = safeLinks.findIndex(l => l.id === over.id)
+    if (from === -1 || to === -1) return
+    const next = arrayMove(safeLinks, from, to)
+    await Promise.all(
+      next.map((l, i) => supabase.from('links').update({ position: i }).eq('id', l.id))
+    )
+    onRefresh()
+  }
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sorted.map(l => l.id)} strategy={verticalListSortingStrategy}>
+  const cancelForm = () => {
+    setAdding(false); setEditing(null)
+    setTitle(''); setUrl('')
+  }
+
+  return (
+    <div>
+      {/* ── Link list ── */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={safeLinks.map(l => l.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <div className="links-list">
-            {sorted.length === 0 && (
-              <div style={{ fontSize: '0.78em', color: 'var(--text-muted)' }}>no links yet</div>
-            )}
-            {sorted.map(link => (
-              <LinkItem
-                key={link.id}
-                link={link}
-                onDelete={deleteLink}
-                onEdited={onRefresh}
-                openInNewTab={openInNewTab}
-              />
+            {safeLinks.map(link => (
+              editing?.id === link.id ? (
+                /* Inline edit form */
+                <form key={link.id} onSubmit={handleEdit}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem',
+                    padding: '0.2rem 0.3rem' }}>
+                  <input className="input" value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    placeholder="Title" autoFocus style={{ fontSize: '0.82em' }} />
+                  <input className="input" value={url}
+                    onChange={e => setUrl(e.target.value)}
+                    placeholder="URL" style={{ fontSize: '0.82em' }} />
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    <button className="btn btn-primary" type="submit"
+                      style={{ fontSize: '0.75em', flex: 1 }}>Save</button>
+                    <button className="btn" type="button"
+                      style={{ fontSize: '0.75em' }} onClick={cancelForm}>✕</button>
+                  </div>
+                </form>
+              ) : (
+                <LinkItem
+                  key={link.id}
+                  link={link}
+                  onEdit={startEdit}
+                  onDelete={handleDelete}
+                  openInNewTab={openInNewTab}
+                />
+              )
             ))}
-            <button
-              className="add-link-btn btn-ghost icon-btn"
-              onClick={() => setAdding(true)}
-              title="Add a link to this section">
-              + add link
-            </button>
           </div>
         </SortableContext>
       </DndContext>
-    </>
+
+      {/* ── Add form ── */}
+      {adding ? (
+        <form onSubmit={handleAdd}
+          style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem',
+            padding: '0.3rem var(--card-padding)' }}>
+          <input className="input" value={title}
+            onChange={e => setTitle(e.target.value)}
+            placeholder="Title" autoFocus style={{ fontSize: '0.82em' }} />
+          <input className="input" value={url}
+            onChange={e => setUrl(e.target.value)}
+            placeholder="https://..." style={{ fontSize: '0.82em' }} />
+          <div style={{ display: 'flex', gap: '0.3rem' }}>
+            <button className="btn btn-primary" type="submit"
+              style={{ fontSize: '0.75em', flex: 1 }}>Add</button>
+            <button className="btn" type="button"
+              style={{ fontSize: '0.75em' }} onClick={cancelForm}>✕</button>
+          </div>
+        </form>
+      ) : (
+        <button
+          className="icon-btn add-link-btn"
+          onClick={() => setAdding(true)}
+          style={{ width: '100%', padding: '0.25rem var(--card-padding)',
+            justifyContent: 'flex-start', color: 'var(--text-muted)',
+            fontSize: '0.75em' }}
+        >
+          + add link
+        </button>
+      )}
+    </div>
   )
 }
