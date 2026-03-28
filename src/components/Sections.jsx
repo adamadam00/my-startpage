@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext,
@@ -12,31 +12,35 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
+  rectSortingStrategy,
   useSortable,
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
-/* ─── SectionCard ─────────────────────────────────────── */
+function getColCount() {
+  try {
+    const t = JSON.parse(localStorage.getItem('current_theme') || '{}')
+    const n = parseInt(t.sectionsCols)
+    return (n >= 1 && n <= 5) ? n : 2
+  } catch { return 2 }
+}
+
 function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, overlay = false }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming,  setRenaming]  = useState(false)
   const [name,      setName]      = useState(section.name)
 
-  const {
-    attributes, listeners,
-    setNodeRef, transform, transition,
-    isDragging,
-  } = useSortable({ id: section.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: section.id })
 
   const style = overlay
-    ? { opacity: 0.9, boxShadow: '0 8px 32px #0008', cursor: 'grabbing' }
+    ? { opacity: 0.92, boxShadow: '0 8px 32px #0008', cursor: 'grabbing' }
     : {
         transform: CSS.Transform.toString(transform),
         transition,
-        opacity: isDragging ? 0 : 1,   // hide original while overlay shows
+        opacity: isDragging ? 0 : 1,
       }
 
   const toggleCollapse = async () => {
@@ -68,8 +72,6 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
       className={`section-card${collapsed ? ' collapsed' : ''}`}
     >
       <div className="section-header" onClick={toggleCollapse}>
-
-        {/* Drag handle — only zone that starts a drag */}
         <span
           className="drag-handle"
           {...(overlay ? {} : { ...attributes, ...listeners })}
@@ -83,13 +85,8 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
             onClick={e => e.stopPropagation()}
             style={{ flex: 1, display: 'flex', gap: '0.4rem' }}
           >
-            <input
-              className="input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              autoFocus
-              style={{ flex: 1 }}
-            />
+            <input className="input" value={name}
+              onChange={e => setName(e.target.value)} autoFocus style={{ flex: 1 }} />
             <button className="btn btn-primary" type="submit">Save</button>
             <button className="btn" type="button" onClick={() => setRenaming(false)}>✕</button>
           </form>
@@ -99,16 +96,10 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
         {!renaming && (
           <div className="section-actions">
-            <button
-              className="icon-btn"
-              title="Rename"
-              onClick={e => { e.stopPropagation(); setRenaming(true) }}
-            >✎</button>
-            <button
-              className="icon-btn section-delete-btn"
-              title="Delete section"
-              onClick={deleteSection}
-            >✕</button>
+            <button className="icon-btn" title="Rename"
+              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎</button>
+            <button className="icon-btn section-delete-btn" title="Delete"
+              onClick={deleteSection}>✕</button>
           </div>
         )}
 
@@ -137,21 +128,24 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   )
 }
 
-/* ─── Sections (root) ─────────────────────────────────── */
-export default function Sections({
-  sections, links, userId, workspaceId, onRefresh, openInNewTab,
-}) {
+export default function Sections({ sections, links, userId, workspaceId, onRefresh, openInNewTab }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
+  const [colCount,      setColCount]      = useState(getColCount)
   const [order,         setOrder]         = useState(() =>
     [...sections].sort((a, b) => a.position - b.position)
   )
-  const [activeSection, setActiveSection] = useState(null)  // for DragOverlay
+  const [activeSection, setActiveSection] = useState(null)
 
-  // Sync order when sections prop changes (after DB refresh)
   useEffect(() => {
     setOrder([...sections].sort((a, b) => a.position - b.position))
   }, [sections])
+
+  useEffect(() => {
+    const handler = () => setColCount(getColCount())
+    window.addEventListener('theme_cols_changed', handler)
+    return () => window.removeEventListener('theme_cols_changed', handler)
+  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -165,15 +159,11 @@ export default function Sections({
   const handleDragEnd = async ({ active, over }) => {
     setActiveSection(null)
     if (!over || active.id === over.id) return
-
     const oldIndex = order.findIndex(s => s.id === active.id)
     const newIndex = order.findIndex(s => s.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
-
-    // arrayMove = remove from old, INSERT at new — never swaps
     const next = arrayMove(order, oldIndex, newIndex)
-    setOrder(next)   // optimistic
-
+    setOrder(next)
     await Promise.all(
       next.map((s, i) =>
         supabase.from('sections').update({ position: i }).eq('id', s.id)
@@ -207,8 +197,12 @@ export default function Sections({
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <SortableContext items={order.map(s => s.id)} strategy={verticalListSortingStrategy}>
-            <div className="sections-list">
+          <SortableContext items={order.map(s => s.id)} strategy={rectSortingStrategy}>
+            {/* CSS Grid — colCount columns, items fill row by row */}
+            <div
+              className="sections-grid"
+              style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}
+            >
               {order.map(section => (
                 <SectionCard
                   key={section.id}
@@ -223,7 +217,6 @@ export default function Sections({
             </div>
           </SortableContext>
 
-          {/* Ghost that follows the cursor while dragging */}
           <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
             {activeSection && (
               <SectionCard
@@ -246,7 +239,6 @@ export default function Sections({
         )}
       </div>
 
-      {/* Fixed bottom-left — zero layout impact */}
       <div className="add-section-fixed">
         {addingSection ? (
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
@@ -259,11 +251,8 @@ export default function Sections({
               style={{ width: 180 }}
             />
             <button className="btn btn-primary" type="submit">Add</button>
-            <button
-              className="btn"
-              type="button"
-              onClick={() => { setAddingSection(false); setNewName('') }}
-            >✕</button>
+            <button className="btn" type="button"
+              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
           </form>
         ) : (
           <button

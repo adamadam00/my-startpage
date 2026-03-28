@@ -177,7 +177,7 @@ a { color: inherit; text-decoration: none; }
 
 .workspace-tab:hover .del-ws { opacity: 1; }
 
-/* ── Topbar widgets — baseline-aligned clock + weather ────────── */
+/* ── Topbar widgets — baseline-aligned clock + weather ─────── */
 .topbar-widgets {
   display: flex;
   align-items: baseline;
@@ -333,20 +333,21 @@ a { color: inherit; text-decoration: none; }
   overflow-x: hidden;
 }
 
-.sections-wrap { column-gap: 0; }
+/* CSS Grid — column count injected via inline style from JS */
+.sections-grid {
+  display: grid;
+  align-items: start;
+  gap: 0;
+}
 
 .section-card {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
-  display: inline-block;
   width: 100%;
-  margin: 0 0 -1px 0;
   background: color-mix(in srgb, var(--card) calc(var(--card-opacity) * 100%), transparent);
   border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   border-radius: 0;
   overflow: hidden;
   backdrop-filter: blur(8px);
-  vertical-align: top;
+  margin: 0 -1px -1px 0;
 }
 
 .section-header {
@@ -381,7 +382,7 @@ a { color: inherit; text-decoration: none; }
 .section-actions { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; }
 .section-card:hover .section-actions { opacity: 1; }
 
-/* Section delete — grey until hover */
+/* Section delete — grey, turns danger on hover */
 .section-delete-btn { color: var(--text-muted) !important; }
 .section-delete-btn:hover { color: var(--danger) !important; background: transparent !important; }
 
@@ -719,7 +720,7 @@ a { color: inherit; text-decoration: none; }
 
   .main-col, .side-col { overflow: visible; height: auto; }
   .side-col { order: -1; }
-  .sections-wrap { column-count: 1 !important; }
+  .sections-grid { grid-template-columns: 1fr !important; }
 
   .topbar { padding: 0.45rem 0.75rem; gap: 0.5rem; flex-wrap: wrap; }
   .topbar-widgets { display: none; }
