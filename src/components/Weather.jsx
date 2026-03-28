@@ -1,58 +1,62 @@
 import { useState, useEffect } from 'react'
 
-const WMO = {
-  0:  ['Clear', '☀️'],
-  1:  ['Mainly clear', '🌤️'],
-  2:  ['Partly cloudy', '⛅'],
-  3:  ['Overcast', '☁️'],
-  45: ['Foggy', '🌫️'],
-  48: ['Icy fog', '🌫️'],
-  51: ['Light drizzle', '🌦️'],
-  53: ['Drizzle', '🌦️'],
-  55: ['Heavy drizzle', '🌧️'],
-  61: ['Light rain', '🌧️'],
-  63: ['Rain', '🌧️'],
-  65: ['Heavy rain', '🌧️'],
-  71: ['Light snow', '🌨️'],
-  73: ['Snow', '❄️'],
-  75: ['Heavy snow', '❄️'],
-  80: ['Showers', '🌦️'],
-  81: ['Rain showers', '🌧️'],
-  82: ['Violent showers', '⛈️'],
-  95: ['Thunderstorm', '⛈️'],
-  99: ['Thunderstorm', '⛈️'],
-}
-
-export default function Weather({ lat = -37.8136, lon = 144.9631, locationName = 'Melbourne' }) {
+export default function Weather({ lat = -37.8136, lon = 144.9631, locationName = 'Melbourne', compact = false }) {
   const [weather, setWeather] = useState(null)
-  const [error, setError]   = useState(false)
+  const [error,   setError]   = useState(false)
 
   useEffect(() => {
-    setError(false)
-    setWeather(null)
-    fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-      `&current=temperature_2m,weathercode,windspeed_10m&temperature_unit=celsius`
-    )
-      .then(r => r.json())
-      .then(d => setWeather(d.current))
-      .catch(() => setError(true))
+    const fetch_ = async () => {
+      try {
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relativehumidity_2m&timezone=auto`
+        )
+        const data = await res.json()
+        const cw = data.current_weather
+        const humidity = data.hourly?.relativehumidity_2m?.[0] ?? null
+        setWeather({
+          temp:      Math.round(cw.temperature),
+          code:      cw.weathercode,
+          humidity,
+        })
+      } catch {
+        setError(true)
+      }
+    }
+    fetch_()
   }, [lat, lon])
 
-  if (error)   return <div className="weather-wrap">weather unavailable</div>
-  if (!weather) return <div className="weather-wrap">loading weather…</div>
+  const icon = (code) => {
+    if (code === 0)               return '☀️'
+    if (code <= 2)                return '🌤'
+    if (code <= 3)                return '☁️'
+    if (code <= 48)               return '🌫'
+    if (code <= 67)               return '🌧'
+    if (code <= 77)               return '🌨'
+    if (code <= 82)               return '🌦'
+    if (code <= 99)               return '⛈'
+    return '🌡'
+  }
 
-  const [desc, icon] = WMO[weather.weathercode] ?? ['Unknown', '🌡️']
+  if (error) return (
+    <div className="weather-wrap" title="Weather unavailable">
+      <span style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>weather unavailable</span>
+    </div>
+  )
+
+  if (!weather) return (
+    <div className="weather-wrap">
+      <span style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>loading…</span>
+    </div>
+  )
 
   return (
-    <div className="weather-wrap">
-      <span>{icon}</span>
-      <span className="weather-temp">{Math.round(weather.temperature_2m)}°C</span>
-      <span>{desc}</span>
-      <span style={{ opacity: 0.5 }}>·</span>
+    <div className="weather-wrap" title={`Weather in ${locationName}`}>
+      <span>{icon(weather.code)}</span>
+      <span className="weather-temp">{weather.temp}°C</span>
       <span>{locationName}</span>
-      <span style={{ opacity: 0.5 }}>·</span>
-      <span>{Math.round(weather.windspeed_10m)} km/h</span>
+      {weather.humidity !== null && (
+        <span title="Humidity">{weather.humidity}% humidity</span>
+      )}
     </div>
   )
 }
