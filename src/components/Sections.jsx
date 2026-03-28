@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext,
@@ -12,7 +12,7 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  rectSortingStrategy,
+  verticalListSortingStrategy,
   useSortable,
   arrayMove,
 } from '@dnd-kit/sortable'
@@ -25,6 +25,15 @@ function getColCount() {
     const n = parseInt(t.sectionsCols)
     return (n >= 1 && n <= 5) ? n : 2
   } catch { return 2 }
+}
+
+// Sequential column split — fills col0 top-to-bottom, then col1, etc.
+function splitColumns(items, n) {
+  const cols = Math.max(n, 1)
+  const size = Math.ceil(items.length / cols)
+  return Array.from({ length: cols }, (_, i) =>
+    items.slice(i * size, (i + 1) * size)
+  )
 }
 
 function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, overlay = false }) {
@@ -136,16 +145,20 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     [...sections].sort((a, b) => a.position - b.position)
   )
   const [activeSection, setActiveSection] = useState(null)
+  const savedOrder = useMemo(() =>
+    [...sections].sort((a, b) => a.position - b.position), [sections]
+  )
 
-  useEffect(() => {
-    setOrder([...sections].sort((a, b) => a.position - b.position))
-  }, [sections])
+  useEffect(() => { setOrder(savedOrder) }, [sections])
 
   useEffect(() => {
     const handler = () => setColCount(getColCount())
     window.addEventListener('theme_cols_changed', handler)
     return () => window.removeEventListener('theme_cols_changed', handler)
   }, [])
+
+  // Split flat order into columns — top-to-bottom within each column
+  const columns = useMemo(() => splitColumns(order, colCount), [order, colCount])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -156,23 +169,31 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     setActiveSection(order.find(s => s.id === active.id) ?? null)
   }
 
-  const handleDragEnd = async ({ active, over }) => {
-    setActiveSection(null)
+  // Live-reorder as you drag — works within and across columns
+  const handleDragOver = ({ active, over }) => {
     if (!over || active.id === over.id) return
-    const oldIndex = order.findIndex(s => s.id === active.id)
-    const newIndex = order.findIndex(s => s.id === over.id)
-    if (oldIndex === -1 || newIndex === -1) return
-    const next = arrayMove(order, oldIndex, newIndex)
-    setOrder(next)
+    setOrder(prev => {
+      const from = prev.findIndex(s => s.id === active.id)
+      const to   = prev.findIndex(s => s.id === over.id)
+      if (from === -1 || to === -1 || from === to) return prev
+      return arrayMove(prev, from, to)
+    })
+  }
+
+  const handleDragEnd = async () => {
+    setActiveSection(null)
     await Promise.all(
-      next.map((s, i) =>
+      order.map((s, i) =>
         supabase.from('sections').update({ position: i }).eq('id', s.id)
       )
     )
     onRefresh()
   }
 
-  const handleDragCancel = () => setActiveSection(null)
+  const handleDragCancel = () => {
+    setActiveSection(null)
+    setOrder(savedOrder)
+  }
 
   const addSection = async (e) => {
     e.preventDefault()
@@ -194,28 +215,33 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
           sensors={sensors}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
           onDragCancel={handleDragCancel}
         >
-          <SortableContext items={order.map(s => s.id)} strategy={rectSortingStrategy}>
-            {/* CSS Grid — colCount columns, items fill row by row */}
-            <div
-              className="sections-grid"
-              style={{ gridTemplateColumns: `repeat(${colCount}, 1fr)` }}
-            >
-              {order.map(section => (
-                <SectionCard
-                  key={section.id}
-                  section={section}
-                  links={links.filter(l => l.section_id === section.id)}
-                  userId={userId}
-                  workspaceId={workspaceId}
-                  onRefresh={onRefresh}
-                  openInNewTab={openInNewTab}
-                />
-              ))}
-            </div>
-          </SortableContext>
+          {/* Flex row of column divs — fills top-to-bottom within each column */}
+          <div className="sections-grid">
+            {columns.map((col, colIdx) => (
+              <div key={colIdx} className="section-col">
+                <SortableContext
+                  items={col.map(s => s.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  {col.map(section => (
+                    <SectionCard
+                      key={section.id}
+                      section={section}
+                      links={links.filter(l => l.section_id === section.id)}
+                      userId={userId}
+                      workspaceId={workspaceId}
+                      onRefresh={onRefresh}
+                      openInNewTab={openInNewTab}
+                    />
+                  ))}
+                </SortableContext>
+              </div>
+            ))}
+          </div>
 
           <DragOverlay dropAnimation={{ duration: 150, easing: 'ease' }}>
             {activeSection && (
