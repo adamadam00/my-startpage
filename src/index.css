@@ -36,11 +36,7 @@
 }
 
 /* ── Reset ──────────────────────────────────────────────────── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html { height: 100%; overflow: hidden; }
 
@@ -181,7 +177,7 @@ a { color: inherit; text-decoration: none; }
 
 .workspace-tab:hover .del-ws { opacity: 1; }
 
-/* ── Topbar widgets — baseline aligns clock with weather ──────── */
+/* ── Topbar widgets — baseline-aligned clock + weather ────────── */
 .topbar-widgets {
   display: flex;
   align-items: baseline;
@@ -244,12 +240,10 @@ a { color: inherit; text-decoration: none; }
   overflow: hidden;
 }
 
-/* Main col is a flex column so sections-col can fill remaining height */
 .main-col {
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-right: 2px;
 }
 
@@ -331,24 +325,14 @@ a { color: inherit; text-decoration: none; }
 
 .engine-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
-/* ── Sections column layout ─────────────────────────────────── */
-.sections-col {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* Scrollable area containing the CSS columns */
+/* ── Sections ───────────────────────────────────────────────── */
 .sections-scroll {
-  flex: 1;
-  min-height: 0;
+  width: 100%;
+  height: 100%;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
-/* CSS columns — no gap so borders tile flush */
 .sections-wrap { column-gap: 0; }
 
 .section-card {
@@ -401,22 +385,16 @@ a { color: inherit; text-decoration: none; }
 .section-delete-btn { color: var(--text-muted) !important; }
 .section-delete-btn:hover { color: var(--danger) !important; background: transparent !important; }
 
-/* ── Add section bar — pinned bottom-left, never inside columns ── */
-.add-section-bar {
-  flex-shrink: 0;
-  padding: 0.45rem 0.25rem;
+/* ── Add section — fixed bottom-left, zero layout impact ─────── */
+.add-section-fixed {
+  position: fixed;
+  bottom: 0.6rem;
+  left: 0.7rem;
+  z-index: 50;
   display: flex;
   align-items: center;
-  border-top: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+  gap: 0.4rem;
 }
-
-.add-section-btn {
-  font-size: 0.82em;
-  opacity: 0.55;
-  transition: opacity 0.15s;
-}
-
-.add-section-btn:hover { opacity: 1; }
 
 /* ── Links ──────────────────────────────────────────────────── */
 .links-list {
@@ -749,6 +727,8 @@ a { color: inherit; text-decoration: none; }
 
   .settings-panel { width: 100vw; }
   .settings-footer { width: 100vw; }
+
+  .add-section-fixed { bottom: 0.4rem; left: 0.4rem; }
 }
 
 @media (max-width: 480px) {

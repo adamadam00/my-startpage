@@ -58,8 +58,6 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   return (
     <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}`}>
       <div className="section-header" onClick={toggleCollapse}>
-
-        {/* Drag handle on section header */}
         <span
           className="drag-handle"
           {...attributes}
@@ -85,10 +83,10 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
         {!renaming && (
           <div className="section-actions">
-            <button className="icon-btn" title="Rename section"
+            <button className="icon-btn" title="Rename"
               onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎
             </button>
-            <button className="icon-btn section-delete-btn" title="Delete section"
+            <button className="icon-btn section-delete-btn" title="Delete"
               onClick={deleteSection}>✕
             </button>
           </div>
@@ -117,7 +115,6 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [colCount,      setColCount]      = useState(getColCount)
-  // Optimistic local ordering — avoids waiting for DB round-trip
   const [localOrder,    setLocalOrder]    = useState(null)
 
   useEffect(() => {
@@ -126,29 +123,21 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
     return () => window.removeEventListener('theme_cols_changed', handler)
   }, [])
 
-  // Reset local order when sections prop changes (after onRefresh)
   useEffect(() => { setLocalOrder(null) }, [sections])
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 6 },
   }))
 
-  // Use optimistic local order if available, otherwise fall back to prop
   const base = localOrder ?? [...sections].sort((a, b) => a.position - b.position)
 
   const handleDragEnd = async ({ active, over }) => {
     if (!over || active.id === over.id) return
-
     const oldIndex = base.findIndex(s => s.id === active.id)
     const newIndex = base.findIndex(s => s.id === over.id)
     if (oldIndex === -1 || newIndex === -1) return
-
     const reordered = arrayMove(base, oldIndex, newIndex)
-
-    // Optimistic: update UI immediately
     setLocalOrder(reordered)
-
-    // Persist to DB
     await Promise.all(
       reordered.map((s, i) =>
         supabase.from('sections').update({ position: i }).eq('id', s.id)
@@ -172,8 +161,8 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
 
   return (
     <>
-      {/* ── Sections columns ── */}
-      <div className="sections-outer">
+      {/* Columns — nothing after this div, button does NOT live here */}
+      <div className="sections-scroll">
         <DndContext sensors={sensors} collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
           <SortableContext items={base.map(s => s.id)} strategy={verticalListSortingStrategy}>
             <div className="sections-wrap" style={{ columnCount: colCount }}>
@@ -192,28 +181,39 @@ export default function Sections({ sections, links, userId, workspaceId, onRefre
           </SortableContext>
         </DndContext>
 
-        {sections.length === 0 && !addingSection && (
-          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem 0' }}>
-            No sections yet — add one below
+        {sections.length === 0 && (
+          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem' }}>
+            No sections yet
           </div>
         )}
       </div>
 
-      {/* ── Add section — outside columns, always at bottom ── */}
-      <div className="add-section-row">
+      {/*
+        FIXED to bottom-left of viewport — completely outside document flow,
+        zero effect on column stacking.
+      */}
+      <div className="add-section-fixed">
         {addingSection ? (
-          <form onSubmit={addSection} style={{ display: 'flex', gap: '0.5rem' }}>
-            <input className="input" value={newName}
+          <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
+            <input
+              className="input"
+              value={newName}
               onChange={e => setNewName(e.target.value)}
-              placeholder="Section name" autoFocus />
+              placeholder="Section name"
+              autoFocus
+              style={{ width: 180 }}
+            />
             <button className="btn btn-primary" type="submit">Add</button>
-            <button className="btn" type="button" onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
+            <button className="btn" type="button"
+              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
           </form>
         ) : (
-          <button className="btn btn-ghost add-section-btn"
+          <button
+            className="btn btn-ghost"
             onClick={() => setAddingSection(true)}
+            style={{ fontSize: '0.78em', opacity: 0.5, padding: '0.2rem 0.5rem' }}
             title="Add a new section"
-            style={{ fontSize: '0.85em' }}>
+          >
             + new section
           </button>
         )}
