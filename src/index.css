@@ -177,7 +177,7 @@ a { color: inherit; text-decoration: none; }
 
 .workspace-tab:hover .del-ws { opacity: 1; }
 
-/* ── Topbar widgets — baseline-aligned clock + weather ─────── */
+/* ── Topbar widgets ─────────────────────────────────────────── */
 .topbar-widgets {
   display: flex;
   align-items: baseline;
@@ -333,21 +333,30 @@ a { color: inherit; text-decoration: none; }
   overflow-x: hidden;
 }
 
-/* CSS Grid — column count injected via inline style from JS */
+/*
+  Grid owns the top + left outer border.
+  Each card owns its own right + bottom border.
+  Result: perfectly flush tiles, single-pixel borders everywhere, zero gaps.
+*/
 .sections-grid {
   display: grid;
   align-items: start;
   gap: 0;
+  border-top:  1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  border-left: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
 }
 
 .section-card {
   width: 100%;
   background: color-mix(in srgb, var(--card) calc(var(--card-opacity) * 100%), transparent);
-  border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  border-top:    none;
+  border-left:   none;
+  border-right:  1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   border-radius: 0;
   overflow: hidden;
   backdrop-filter: blur(8px);
-  margin: 0 -1px -1px 0;
+  margin: 0;
 }
 
 .section-header {
@@ -382,11 +391,10 @@ a { color: inherit; text-decoration: none; }
 .section-actions { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; }
 .section-card:hover .section-actions { opacity: 1; }
 
-/* Section delete — grey, turns danger on hover */
 .section-delete-btn { color: var(--text-muted) !important; }
 .section-delete-btn:hover { color: var(--danger) !important; background: transparent !important; }
 
-/* ── Add section — fixed bottom-left, zero layout impact ─────── */
+/* ── Add section — fixed bottom-left ────────────────────────── */
 .add-section-fixed {
   position: fixed;
   bottom: 0.6rem;
@@ -441,7 +449,6 @@ a { color: inherit; text-decoration: none; }
 
 .link-title:hover { color: var(--accent); }
 
-/* Link action buttons — grey, never red */
 .link-action-btn {
   opacity: 0;
   transition: opacity 0.15s;
@@ -691,7 +698,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 .auth-title { font-size: 1.1em; font-weight: 500; }
-
 .auth-switch { font-size: 0.8em; color: var(--text-dim); text-align: center; }
 
 .auth-switch button {
