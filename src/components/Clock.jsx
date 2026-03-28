@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 
-const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
+const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
-export default function Clock({ format = '12h' }) {
+export default function Clock({ format = '12h', compact = false }) {
   const [now, setNow] = useState(new Date())
 
   useEffect(() => {
@@ -13,7 +13,6 @@ export default function Clock({ format = '12h' }) {
 
   const h24 = now.getHours()
   const min = String(now.getMinutes()).padStart(2, '0')
-  const sec = String(now.getSeconds()).padStart(2, '0')
 
   let timeStr
   if (format === '24h') {
@@ -24,7 +23,16 @@ export default function Clock({ format = '12h' }) {
     timeStr = `${h12}:${min} ${ampm}`
   }
 
-  const dateStr = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()} ${now.getFullYear()}`
+  const dateStr = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`
+
+  if (compact) {
+    return (
+      <div className="clock-compact" title="Current time">
+        <span className="clock-compact-time">{timeStr}</span>
+        <span className="clock-compact-date">{dateStr}</span>
+      </div>
+    )
+  }
 
   return (
     <div className="clock-wrap">
