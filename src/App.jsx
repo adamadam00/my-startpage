@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
-import Auth     from './components/Auth'
-import Clock    from './components/Clock'
-import Weather  from './components/Weather'
+import Auth      from './components/Auth'
+import Clock     from './components/Clock'
+import Weather   from './components/Weather'
 import SearchBar from './components/SearchBar'
-import Notes    from './components/Notes'
-import Sections from './components/Sections'
+import Notes     from './components/Notes'
+import Sections  from './components/Sections'
 
 const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines', 'bg-crosshatch']
 
@@ -66,7 +66,9 @@ function loadTheme() {
   try {
     const saved = JSON.parse(localStorage.getItem('current_theme') || '{}')
     return { ...DEFAULT_THEME, ...saved }
-  } catch { return { ...DEFAULT_THEME } }
+  } catch {
+    return { ...DEFAULT_THEME }
+  }
 }
 
 function applyTheme(t) {
@@ -88,11 +90,11 @@ function applyTheme(t) {
   r.setProperty('--btn-bg',          t.btnBg)
   r.setProperty('--btn-text',        '#ffffff')
   r.setProperty('--font',            `'${t.font}', monospace`)
-  r.setProperty('--font-size',       t.fontSize   + 'px')
-  r.setProperty('--clock-size',      t.clockSize  + 'rem')
-  r.setProperty('--radius',          t.radius     + 'px')
-  r.setProperty('--radius-sm',       t.radiusSm   + 'px')
-  r.setProperty('--link-gap',        t.linkGap    + 'rem')
+  r.setProperty('--font-size',       t.fontSize    + 'px')
+  r.setProperty('--clock-size',      t.clockSize   + 'rem')
+  r.setProperty('--radius',          t.radius      + 'px')
+  r.setProperty('--radius-sm',       t.radiusSm    + 'px')
+  r.setProperty('--link-gap',        t.linkGap     + 'rem')
   r.setProperty('--card-padding',    t.cardPadding + 'rem')
   r.setProperty('--page-scale',      t.pageScale)
   r.setProperty('--handle-opacity',  t.handleOpacity)
@@ -117,7 +119,7 @@ export default function App() {
   const [theme,        setTheme]        = useState(loadTheme)
   const fileRef = useRef(null)
 
-  /* ── Auth ────────────────────────────────────────────────── */
+  /* ── Auth ── */
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -127,13 +129,13 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  /* ── Apply + persist theme ───────────────────────────────── */
+  /* ── Apply + persist theme on every change ── */
   useEffect(() => {
     applyTheme(theme)
     localStorage.setItem('current_theme', JSON.stringify(theme))
   }, [theme])
 
-  /* ── Re-apply on tab focus (fixes revert bug) ────────────── */
+  /* ── Re-apply on tab focus — fixes revert bug ── */
   useEffect(() => {
     const onFocus = () => {
       const saved = loadTheme()
@@ -146,7 +148,7 @@ export default function App() {
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
 
-  /* ── Data ────────────────────────────────────────────────── */
+  /* ── Data fetching ── */
   const fetchWorkspaces = useCallback(async () => {
     if (!session) return
     const { data } = await supabase
@@ -162,11 +164,16 @@ export default function App() {
     if (!session || !activeWs) return
     const [sec, lnk, nt] = await Promise.all([
       supabase.from('sections').select('*')
-        .eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
+        .eq('workspace_id', activeWs)
+        .eq('user_id', session.user.id)
+        .order('position'),
       supabase.from('links').select('*')
-        .eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
+        .eq('workspace_id', activeWs)
+        .eq('user_id', session.user.id)
+        .order('position'),
       supabase.from('notes').select('*')
-        .eq('workspace_id', activeWs).eq('user_id', session.user.id)
+        .eq('workspace_id', activeWs)
+        .eq('user_id', session.user.id)
         .order('created_at', { ascending: false }),
     ])
     if (sec.data) setSections(sec.data)
@@ -177,7 +184,7 @@ export default function App() {
   useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
   useEffect(() => { fetchData() },       [fetchData])
 
-  /* ── Workspaces ──────────────────────────────────────────── */
+  /* ── Workspaces ── */
   const addWorkspace = async (e) => {
     e.preventDefault()
     if (!newWsName.trim()) return
@@ -200,7 +207,7 @@ export default function App() {
     setActiveWs(remaining[0]?.id ?? null)
   }
 
-  /* ── Image upload ────────────────────────────────────────── */
+  /* ── Image upload ── */
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -211,7 +218,7 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  /* ── Settings ────────────────────────────────────────────── */
+  /* ── Settings ── */
   const saveSettings = () => {
     localStorage.setItem('current_theme', JSON.stringify(theme))
     applyTheme(theme)
@@ -225,7 +232,6 @@ export default function App() {
   }
 
   const exportSettings = () => {
-    // Strip bgImage from export to keep file size small
     const exportable = { ...theme, bgImage: '' }
     const blob = new Blob([JSON.stringify(exportable, null, 2)], { type: 'application/json' })
     const a = document.createElement('a')
@@ -246,7 +252,7 @@ export default function App() {
     reader.readAsText(file)
   }
 
-  /* ── Early returns ───────────────────────────────────────── */
+  /* ── Early returns ── */
   if (loading) return (
     <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>loading…</div>
   )
@@ -257,7 +263,7 @@ export default function App() {
   return (
     <div className="app">
 
-      {/* ── Background layer ── */}
+      {/* ── Background ── */}
       <div
         className={`bg-layer ${theme.bgStyle}`}
         style={
@@ -327,12 +333,12 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Main ── */}
+      {/* ── Main layout ── */}
       <div className="main-layout" style={{ gridTemplateColumns: '1fr 220px' }}>
         <div className="main-col">
           <Sections
-            sections={sections}
-            links={links}
+            sections={sections ?? []}
+            links={links ?? []}
             userId={session.user.id}
             workspaceId={activeWs}
             onRefresh={fetchData}
@@ -341,7 +347,7 @@ export default function App() {
         </div>
         <div className="side-col">
           <Notes
-            notes={notes}
+            notes={notes ?? []}
             userId={session.user.id}
             workspaceId={activeWs}
             onRefresh={fetchData}
