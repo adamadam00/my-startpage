@@ -1,137 +1,164 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import Auth      from './components/Auth'
 import Clock     from './components/Clock'
 import Weather   from './components/Weather'
 import SearchBar from './components/SearchBar'
-import Sections  from './components/Sections'
 import Notes     from './components/Notes'
-import Settings  from './components/Settings'
+import Sections  from './components/Sections'
+import Links     from './components/Links'
 
-function applyTheme(cfg) {
-  if (!cfg) return
-  localStorage.setItem('current_theme', JSON.stringify(cfg))
+/* ── Patterns that support colour + opacity controls ── */
+const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines', 'bg-crosshatch']
+
+/* ── All backgrounds ── */
+const BG_OPTIONS = [
+  { value: 'bg-solid',      label: 'Solid' },
+  { value: 'bg-noise',      label: 'Noise' },
+  { value: 'bg-dots',       label: 'Dots' },
+  { value: 'bg-grid',       label: 'Grid' },
+  { value: 'bg-mesh',       label: 'Mesh' },
+  { value: 'bg-aurora',     label: 'Aurora' },
+  { value: 'bg-stars',      label: 'Stars' },
+  { value: 'bg-nebula',     label: 'Nebula' },
+  { value: 'bg-circuit',    label: 'Circuit' },
+  { value: 'bg-hex',        label: 'Hex' },
+  { value: 'bg-lines',      label: 'Lines' },
+  { value: 'bg-crosshatch', label: 'Crosshatch' },
+  { value: 'bg-carbon',     label: 'Carbon' },
+  { value: 'bg-topo',       label: 'Topo' },
+  { value: 'bg-image',      label: 'Image' },
+]
+
+const FONTS = [
+  'DM Mono', 'JetBrains Mono', 'IBM Plex Sans',
+  'Inter', 'Outfit', 'Space Grotesk', 'Figtree', 'Geist',
+]
+
+const DEFAULT_THEME = {
+  bg:             '#0c0c0f',
+  card:           '#13131a',
+  cardOpacity:    '1',
+  border:         '#2a2a3a',
+  borderOpacity:  '1',
+  accent:         '#6c8fff',
+  text:           '#e8e8f0',
+  textDim:        '#7878a0',
+  titleColor:     '#7878a0',
+  btnBg:          '#1e3a8a',
+  bgStyle:        'bg-dots',
+  patternColor:   '#2a2a3a',
+  patternOpacity: '1',
+  font:           'DM Mono',
+  fontSize:       '14',
+  clockSize:      '1',
+  radius:         '10',
+  radiusSm:       '6',
+  linkGap:        '0.5',
+  cardPadding:    '1',
+  sectionsCols:   '2',
+  pageScale:      '1',
+  handleOpacity:  '0.15',
+  faviconOpacity: '1',
+  faviconFilter:  'none',
+  bgImage:        '',
+  bgImageOpacity: '1',
+}
+
+function loadTheme() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('current_theme') || '{}')
+    return { ...DEFAULT_THEME, ...saved }
+  } catch { return { ...DEFAULT_THEME } }
+}
+
+function applyTheme(t) {
   const r = document.documentElement.style
-  const s = (k, v) => (v !== undefined && v !== null) && r.setProperty(k, String(v))
-  s('--bg',              cfg.bg)
-  s('--bg2',             cfg.bg2)
-  s('--bg3',             cfg.bg3)
-  s('--card',            cfg.card)
-  s('--card-opacity',    cfg.cardOpacity)
-  s('--border-opacity',  cfg.borderOpacity ?? 1)
-  s('--handle-opacity',  cfg.handleOpacity ?? 0.15)
-  s('--border',          cfg.border)
-  s('--border-hover',    cfg.borderHover)
-  s('--text',            cfg.text)
-  s('--text-dim',        cfg.textDim)
-  s('--accent',          cfg.accent)
-  s('--accent-dim',      cfg.accent ? cfg.accent + '33' : null)
-  s('--accent-glow',     cfg.accent ? cfg.accent + '22' : null)
-  s('--danger',          cfg.danger)
-  s('--success',         cfg.success)
-  s('--btn-bg',          cfg.btnBg)
-  s('--btn-text',        cfg.btnText)
-  s('--font',            cfg.font)
-  s('--font-size',       cfg.fontSize    ? cfg.fontSize    + 'px'  : null)
-  s('--clock-size',      cfg.clockSize   ? cfg.clockSize   + 'rem' : null)
-  s('--radius',          cfg.radius      ? cfg.radius      + 'px'  : null)
-  s('--radius-sm',       cfg.radius      ? Math.max(2, cfg.radius - 4) + 'px' : null)
-  s('--link-gap',        cfg.linkGap     ? cfg.linkGap     + 'rem' : null)
-  s('--card-padding',    cfg.cardPadding ? cfg.cardPadding + 'rem' : null)
-  s('--sections-cols',   cfg.sectionsCols)
-  s('--favicon-opacity', cfg.faviconOpacity ?? 1)
-  s('--favicon-filter',  cfg.faviconGreyscale ? 'grayscale(1)' : 'none')
-  if (cfg.pageScale) document.body.style.zoom = cfg.pageScale
+  r.setProperty('--bg',              t.bg)
+  r.setProperty('--bg2',             t.bg)
+  r.setProperty('--bg3',             t.card)
+  r.setProperty('--card',            t.card)
+  r.setProperty('--card-opacity',    t.cardOpacity)
+  r.setProperty('--border',          t.border)
+  r.setProperty('--border-opacity',  t.borderOpacity)
+  r.setProperty('--accent',          t.accent)
+  r.setProperty('--accent-dim',      t.accent + '22')
+  r.setProperty('--accent-glow',     t.accent + '33')
+  r.setProperty('--text',            t.text)
+  r.setProperty('--text-dim',        t.textDim)
+  r.setProperty('--text-muted',      t.textDim + '88')
+  r.setProperty('--title-color',     t.titleColor)
+  r.setProperty('--btn-bg',          t.btnBg)
+  r.setProperty('--btn-text',        '#ffffff')
+  r.setProperty('--font',            `'${t.font}', monospace`)
+  r.setProperty('--font-size',       t.fontSize  + 'px')
+  r.setProperty('--clock-size',      t.clockSize + 'rem')
+  r.setProperty('--radius',          t.radius    + 'px')
+  r.setProperty('--radius-sm',       t.radiusSm  + 'px')
+  r.setProperty('--link-gap',        t.linkGap   + 'rem')
+  r.setProperty('--card-padding',    t.cardPadding + 'rem')
+  r.setProperty('--page-scale',      t.pageScale)
+  r.setProperty('--handle-opacity',  t.handleOpacity)
+  r.setProperty('--favicon-opacity', t.faviconOpacity)
+  r.setProperty('--favicon-filter',  t.faviconFilter)
+  r.setProperty('--pattern-color',   t.patternColor)
+  r.setProperty('--pattern-opacity', t.patternOpacity)
+  window.dispatchEvent(new Event('theme_cols_changed'))
 }
 
 export default function App() {
-  const [session,      setSession]      = useState(null)
-  const [loading,      setLoading]      = useState(true)
-  const [workspaces,   setWorkspaces]   = useState([])
-  const [activeWs,     setActiveWs]     = useState(
-    () => localStorage.getItem('active_workspace') ?? null
-  )
-  const [sections,     setSections]     = useState([])
-  const [links,        setLinks]        = useState([])
-  const [notes,        setNotes]        = useState([])
-  const [userSettings, setUserSettings] = useState(null)
+  const [session,    setSession]    = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [workspaces, setWorkspaces] = useState([])
+  const [activeWs,   setActiveWs]   = useState(null)
+  const [sections,   setSections]   = useState([])
+  const [links,      setLinks]      = useState([])
+  const [notes,      setNotes]      = useState([])
+  const [addingWs,   setAddingWs]   = useState(false)
+  const [newWsName,  setNewWsName]  = useState('')
   const [showSettings, setShowSettings] = useState(false)
+  const [theme,      setTheme]      = useState(loadTheme)
+  const fileRef = useRef(null)
 
-  const clockFormat = userSettings?.clock_format    ?? '12h'
-  const openNewTab  = userSettings?.open_in_new_tab ?? true
-  const bgPreset    = userSettings?.bg_preset       ?? 'noise'
-  const weatherLat  = userSettings?.weather_lat     ?? -37.8136
-  const weatherLon  = userSettings?.weather_lon     ?? 144.9631
-  const weatherName = userSettings?.weather_name    ?? 'Melbourne'
-  const bgImage     = localStorage.getItem('bg_image')
-
-  const [showClock,   setShowClock]   = useState(() => localStorage.getItem('show_clock')   !== 'false')
-  const [showWeather, setShowWeather] = useState(() => localStorage.getItem('show_weather') !== 'false')
-  const [showSearch,  setShowSearch]  = useState(() => localStorage.getItem('show_search')  !== 'false')
-  const [showNotes,   setShowNotes]   = useState(() => localStorage.getItem('show_notes')   !== 'false')
-  const [showPins,    setShowPins]    = useState(() => localStorage.getItem('show_pins')    !== 'false')
-
-  // ── Auth ─────────────────────────────────────────────────────
+  /* ── Auth ── */
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
+      setSession(session); setLoading(false)
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Settings ──────────────────────────────────────────────────
-  const fetchSettings = useCallback(async () => {
-    if (!session) return
-    const { data } = await supabase
-      .from('user_settings').select('*')
-      .eq('user_id', session.user.id).single()
-    if (data) setUserSettings(data)
-  }, [session])
-
-  useEffect(() => { fetchSettings() }, [fetchSettings])
-
-  // ── Theme preset ──────────────────────────────────────────────
+  /* ── Apply + persist theme whenever it changes ── */
   useEffect(() => {
-    if (!session) return
-    const load = async () => {
-      const { data } = await supabase
-        .from('theme_presets').select('*')
-        .eq('user_id', session.user.id).order('slot').limit(1)
-      if (data?.[0]?.config) applyTheme(data[0].config)
-    }
-    load()
-  }, [session])
+    applyTheme(theme)
+    localStorage.setItem('current_theme', JSON.stringify(theme))
+  }, [theme])
 
-  // ── Workspaces ────────────────────────────────────────────────
+  /* ── Re-apply on tab focus (fixes revert bug) ── */
+  useEffect(() => {
+    const onFocus = () => {
+      const saved = loadTheme()
+      setTheme(saved)
+      applyTheme(saved)
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [])
+
+  const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
+
+  /* ── Data fetching ── */
   const fetchWorkspaces = useCallback(async () => {
     if (!session) return
-    const { data } = await supabase
-      .from('workspaces').select('*')
+    const { data } = await supabase.from('workspaces').select('*')
       .eq('user_id', session.user.id).order('created_at')
     if (data) {
       setWorkspaces(data)
-      // Restore last active workspace from localStorage
-      const saved = localStorage.getItem('active_workspace')
-      const match = data.find(w => w.id === saved)
-      if (match) {
-        setActiveWs(match.id)
-      } else if (data.length > 0) {
-        setActiveWs(data[0].id)
-        localStorage.setItem('active_workspace', data[0].id)
-      }
+      if (!activeWs && data.length > 0) setActiveWs(data[0].id)
     }
-  }, [session])
+  }, [session, activeWs])
 
-  useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
-
-  // Save active workspace to localStorage whenever it changes
-  useEffect(() => {
-    if (activeWs) localStorage.setItem('active_workspace', activeWs)
-  }, [activeWs])
-
-  // ── Data ──────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     if (!session || !activeWs) return
     const [sec, lnk, nt] = await Promise.all([
@@ -144,216 +171,393 @@ export default function App() {
     if (nt.data)  setNotes(nt.data)
   }, [session, activeWs])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
+  useEffect(() => { fetchData() },       [fetchData])
 
-  // ── Workspace CRUD (used by Settings) ─────────────────────────
-  const addWorkspace = async (name) => {
-    if (!name.trim() || workspaces.length >= 5) return
+  /* ── Workspaces ── */
+  const addWorkspace = async (e) => {
+    e.preventDefault()
+    if (!newWsName.trim()) return
     const { data } = await supabase.from('workspaces').insert({
-      user_id: session.user.id, name: name.trim(),
+      user_id: session.user.id, name: newWsName.trim(),
     }).select().single()
+    setNewWsName(''); setAddingWs(false)
     await fetchWorkspaces()
-    if (data) {
-      setActiveWs(data.id)
-      localStorage.setItem('active_workspace', data.id)
-    }
+    if (data) setActiveWs(data.id)
   }
 
   const deleteWorkspace = async (id) => {
-    if (!confirm('Delete this workspace and ALL its data? This cannot be undone.')) return
-    await Promise.all([
-      supabase.from('links').delete().eq('workspace_id', id),
-      supabase.from('sections').delete().eq('workspace_id', id),
-      supabase.from('notes').delete().eq('workspace_id', id),
-    ])
+    if (!confirm('Delete this workspace and all its data?')) return
+    await supabase.from('links').delete().eq('workspace_id', id)
+    await supabase.from('sections').delete().eq('workspace_id', id)
+    await supabase.from('notes').delete().eq('workspace_id', id)
     await supabase.from('workspaces').delete().eq('id', id)
     const remaining = workspaces.filter(w => w.id !== id)
     setWorkspaces(remaining)
-    const next = remaining[0]?.id ?? null
-    setActiveWs(next)
-    if (next) localStorage.setItem('active_workspace', next)
+    setActiveWs(remaining[0]?.id || null)
   }
 
-  const renameWorkspace = async (id, name) => {
-    if (!name.trim()) return
-    await supabase.from('workspaces').update({ name: name.trim() }).eq('id', id)
-    await fetchWorkspaces()
-  }
-
-  // ── Reset links ───────────────────────────────────────────────
-  const resetLinks = async () => {
-    if (!activeWs) return
-    if (!confirm('⚠ DELETE all sections and links in this workspace?\n\nNotes will be kept. This cannot be undone.')) return
-    await supabase.from('links').delete().eq('workspace_id', activeWs)
-    await supabase.from('sections').delete().eq('workspace_id', activeWs)
-    fetchData()
-  }
-
-  // ── Export everything ─────────────────────────────────────────
-  const exportEverything = async () => {
-    const [{ data: allSections }, { data: allLinks }, { data: allNotes }, { data: presets }, { data: settings }] =
-      await Promise.all([
-        supabase.from('sections').select('*').eq('user_id', session.user.id),
-        supabase.from('links').select('*').eq('user_id', session.user.id),
-        supabase.from('notes').select('*').eq('user_id', session.user.id),
-        supabase.from('theme_presets').select('*').eq('user_id', session.user.id),
-        supabase.from('user_settings').select('*').eq('user_id', session.user.id).single(),
-      ])
-    const payload = {
-      exported_at: new Date().toISOString(),
-      workspaces: workspaces.map(ws => ({
-        name: ws.name,
-        sections: (allSections ?? [])
-          .filter(s => s.workspace_id === ws.id)
-          .sort((a, b) => a.position - b.position)
-          .map(s => ({
-            name: s.name, pinned: s.pinned, collapsed: s.collapsed,
-            links: (allLinks ?? [])
-              .filter(l => l.section_id === s.id)
-              .sort((a, b) => a.position - b.position)
-              .map(l => ({ title: l.title, url: l.url })),
-          })),
-        notes: (allNotes ?? [])
-          .filter(n => n.workspace_id === ws.id)
-          .map(n => ({ content: n.content, reminder_at: n.reminder_at })),
-      })),
-      theme_presets: presets ?? [],
-      user_settings: settings ?? {},
+  /* ── Image upload ── */
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      const dataUrl = ev.target.result
+      setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: dataUrl }))
     }
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
-    a.download = `startpage-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
+    reader.readAsDataURL(file)
   }
 
-  // ── Settings changes ──────────────────────────────────────────
-  const handleSettingsChange = (changes) => {
-    if (changes.showClock   !== undefined) { setShowClock(changes.showClock);     localStorage.setItem('show_clock',   changes.showClock) }
-    if (changes.showWeather !== undefined) { setShowWeather(changes.showWeather); localStorage.setItem('show_weather', changes.showWeather) }
-    if (changes.showSearch  !== undefined) { setShowSearch(changes.showSearch);   localStorage.setItem('show_search',  changes.showSearch) }
-    if (changes.showNotes   !== undefined) { setShowNotes(changes.showNotes);     localStorage.setItem('show_notes',   changes.showNotes) }
-    if (changes.showPins    !== undefined) { setShowPins(changes.showPins);       localStorage.setItem('show_pins',    changes.showPins) }
-    setUserSettings(prev => ({ ...prev, ...changes }))
-    fetchSettings()
+  /* ── Settings save/reset ── */
+  const saveSettings = () => {
+    localStorage.setItem('current_theme', JSON.stringify(theme))
+    applyTheme(theme)
+    setShowSettings(false)
   }
 
-  const getBgClass = () => bgImage ? 'bg-layer bg-image' : `bg-layer bg-${bgPreset}`
-  const getBgStyle = () => bgImage ? { backgroundImage: `url(${bgImage})` } : {}
+  const resetSettings = () => {
+    setTheme({ ...DEFAULT_THEME })
+    localStorage.setItem('current_theme', JSON.stringify(DEFAULT_THEME))
+    applyTheme(DEFAULT_THEME)
+  }
 
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-      loading…
-    </div>
-  )
+  const exportSettings = () => {
+    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    a.download = 'theme.json'; a.click()
+  }
 
-  if (!session) return <Auth />
+  const importSettings = (e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const t = { ...DEFAULT_THEME, ...JSON.parse(ev.target.result) }
+        setTheme(t); applyTheme(t)
+        localStorage.setItem('current_theme', JSON.stringify(t))
+      } catch { alert('Invalid theme file') }
+    }
+    reader.readAsText(file)
+  }
+
+  if (loading) return <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>loading…</div>
+  if (!session) return <Auth onAuth={setSession} />
+
+  const isPatternBg = PATTERN_BG.includes(theme.bgStyle)
+
+  /* ── Background style for bg-image ── */
+  const bgImageStyle = theme.bgStyle === 'bg-image' && theme.bgImage
+    ? { backgroundImage: `url(${theme.bgImage})`, opacity: parseFloat(theme.bgImageOpacity ?? 1) }
+    : {}
+
+  const cols = parseInt(theme.sectionsCols) || 2
+  const layoutStyle = cols > 1
+    ? { gridTemplateColumns: `1fr ${cols > 2 ? '220px' : '220px'}` }
+    : { gridTemplateColumns: '1fr' }
 
   return (
-    <>
-      <div className={getBgClass()} style={getBgStyle()} />
+    <div className="app">
+      {/* Background layer */}
+      <div
+        className={`bg-layer ${theme.bgStyle}`}
+        style={
+          theme.bgStyle === 'bg-image'
+            ? { backgroundImage: theme.bgImage ? `url(${theme.bgImage})` : 'none',
+                backgroundSize: 'cover', backgroundPosition: 'center',
+                opacity: parseFloat(theme.bgImageOpacity ?? 1) }
+            : {}
+        }
+      />
 
-      <div className="app">
-
-        {/* ── Topbar ── */}
-        <header className="topbar">
-
-          {/* Workspace switcher tabs only — no add/delete here */}
-          <div className="workspace-tabs">
-            {workspaces.map(ws => (
-              <button
-                key={ws.id}
-                className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-                onClick={() => setActiveWs(ws.id)}
-                title={`Switch to: ${ws.name}`}
-              >
-                {ws.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Widgets */}
-          <div className="topbar-widgets">
-            {showClock && (
-              <>
-                <Clock format={clockFormat} compact />
-                <div className="topbar-divider" />
-              </>
-            )}
-            {showWeather && (
-              <>
-                <Weather lat={weatherLat} lon={weatherLon} locationName={weatherName} />
-                <div className="topbar-divider" />
-              </>
-            )}
-            {showSearch && (
-              <SearchBar openInNewTab={openNewTab} compact />
-            )}
-          </div>
-
-          {/* Actions */}
-          <div className="topbar-actions">
-            <button className="btn" onClick={() => setShowSettings(true)} title="Open settings">
-              ⚙ <span>Settings</span>
+      {/* Topbar */}
+      <div className="topbar">
+        <div className="workspace-tabs">
+          {workspaces.map(ws => (
+            <button
+              key={ws.id}
+              className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
+              onClick={() => setActiveWs(ws.id)}
+            >
+              {ws.name}
+              <button className="del-ws" onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}>✕</button>
             </button>
-            <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}
-              title="Sign out" style={{ fontSize: '0.78em' }}>
-              sign out
-            </button>
-          </div>
-        </header>
-
-        {/* ── Main layout ── */}
-        <main className="main-layout" style={{
-          gridTemplateColumns: showNotes ? '1fr 250px' : '1fr'
-        }}>
-          <div className="main-col">
-            {activeWs ? (
-              <Sections
-                sections={sections}
-                links={links}
-                userId={session.user.id}
-                workspaceId={activeWs}
-                onRefresh={fetchData}
-                openInNewTab={openNewTab}
-                showPins={showPins}
-              />
-            ) : (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85em', textAlign: 'center', padding: '2rem' }}>
-                Add a workspace in Settings to get started
-              </div>
-            )}
-          </div>
-
-          {showNotes && activeWs && (
-            <div className="side-col">
-              <Notes
-                items={notes}
-                workspaceId={activeWs}
-                userId={session.user.id}
-                onRefresh={fetchData}
-              />
-            </div>
+          ))}
+          {addingWs ? (
+            <form onSubmit={addWorkspace} style={{ display: 'flex', gap: '0.3rem' }}>
+              <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
+                placeholder="Name" autoFocus style={{ width: 100, padding: '0.2rem 0.5rem', fontSize: '0.78em' }} />
+              <button className="btn btn-primary" type="submit" style={{ padding: '0.2rem 0.5rem', fontSize: '0.78em' }}>+</button>
+              <button className="btn" type="button" onClick={() => setAddingWs(false)} style={{ padding: '0.2rem 0.4rem', fontSize: '0.78em' }}>✕</button>
+            </form>
+          ) : (
+            <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
+              style={{ fontSize: '0.72em', padding: '0.2rem 0.5rem' }}>+ workspace</button>
           )}
-        </main>
+        </div>
+
+        <div className="topbar-widgets">
+          <div className="clock-compact">
+            <Clock />
+          </div>
+          <div className="topbar-divider" />
+          <Weather />
+          <div className="topbar-divider" />
+          <SearchBar />
+        </div>
+
+        <div className="topbar-actions">
+          <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}
+            style={{ fontSize: '0.78em' }}>⚙ settings</button>
+          <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}
+            style={{ fontSize: '0.78em' }}>sign out</button>
+        </div>
       </div>
 
+      {/* Main */}
+      <div className="main-layout" style={{ gridTemplateColumns: '1fr 220px' }}>
+        <div className="main-col">
+          <Sections
+            sections={sections}
+            links={links}
+            userId={session.user.id}
+            workspaceId={activeWs}
+            onRefresh={fetchData}
+            openInNewTab={true}
+          />
+        </div>
+        <div className="side-col">
+          <Notes
+            notes={notes}
+            userId={session.user.id}
+            workspaceId={activeWs}
+            onRefresh={fetchData}
+          />
+        </div>
+      </div>
+
+      {/* Settings panel */}
       {showSettings && (
-        <Settings
-          session={session}
-          userSettings={userSettings}
-          onSettingsChange={handleSettingsChange}
-          onClose={() => { setShowSettings(false); fetchData() }}
-          onResetLinks={resetLinks}
-          onExportAll={exportEverything}
-          activeWs={activeWs}
-          workspaces={workspaces}
-          onAddWorkspace={addWorkspace}
-          onDeleteWorkspace={deleteWorkspace}
-          onRenameWorkspace={renameWorkspace}
-          onSwitchWorkspace={(id) => { setActiveWs(id); localStorage.setItem('active_workspace', id) }}
-          uiVisibility={{ showClock, showWeather, showSearch, showNotes, showPins }}
-        />
+        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
+          <div className="settings-panel" onClick={e => e.stopPropagation()}>
+
+            <div className="settings-header">
+              <span style={{ fontWeight: 500 }}>Settings</span>
+              <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
+            </div>
+
+            {/* ── Colours ── */}
+            <div className="settings-section">
+              <div className="settings-title">Colours</div>
+
+              {[
+                ['Background',    'bg',          false],
+                ['Card',          'card',        false],
+                ['Border',        'border',      false],
+                ['Accent',        'accent',      false],
+                ['Text',          'text',        false],
+                ['Text dim',      'textDim',     false],
+                ['Title colour',  'titleColor',  false],
+                ['Button',        'btnBg',       false],
+              ].map(([label, key]) => (
+                <div className="settings-row" key={key}>
+                  <span className="settings-label">{label}</span>
+                  <input type="color" className="color-input"
+                    value={theme[key]} onChange={e => set(key, e.target.value)} />
+                </div>
+              ))}
+            </div>
+
+            {/* ── Opacity ── */}
+            <div className="settings-section">
+              <div className="settings-title">Opacity</div>
+              {[
+                ['Card opacity',    'cardOpacity'],
+                ['Border opacity',  'borderOpacity'],
+                ['Handle opacity',  'handleOpacity'],
+                ['Favicon opacity', 'faviconOpacity'],
+              ].map(([label, key]) => (
+                <div className="settings-row" key={key}>
+                  <span className="settings-label">{label} — {parseFloat(theme[key]).toFixed(2)}</span>
+                  <input type="range" min="0" max="1" step="0.01"
+                    value={theme[key]} onChange={e => set(key, e.target.value)}
+                    style={{ width: 100 }} />
+                </div>
+              ))}
+            </div>
+
+            {/* ── Background ── */}
+            <div className="settings-section">
+              <div className="settings-title">Background</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                {BG_OPTIONS.map(opt => (
+                  <button key={opt.value}
+                    className={`preset-slot${theme.bgStyle === opt.value ? ' active' : ''}`}
+                    style={{ flex: 'none', padding: '0.25rem 0.55rem' }}
+                    onClick={() => set('bgStyle', opt.value)}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Pattern colour + opacity — only for dot/grid/lines/crosshatch */}
+              {isPatternBg && (
+                <>
+                  <div className="settings-row" style={{ marginTop: '0.5rem' }}>
+                    <span className="settings-label">Pattern colour</span>
+                    <input type="color" className="color-input"
+                      value={theme.patternColor}
+                      onChange={e => set('patternColor', e.target.value)} />
+                  </div>
+                  <div className="settings-row">
+                    <span className="settings-label">Pattern opacity — {parseFloat(theme.patternOpacity).toFixed(2)}</span>
+                    <input type="range" min="0" max="1" step="0.01"
+                      value={theme.patternOpacity}
+                      onChange={e => set('patternOpacity', e.target.value)}
+                      style={{ width: 100 }} />
+                  </div>
+                </>
+              )}
+
+              {/* Image upload */}
+              {theme.bgStyle === 'bg-image' && (
+                <>
+                  <input ref={fileRef} type="file" accept="image/*"
+                    style={{ display: 'none' }} onChange={handleImageUpload} />
+                  <button className="btn" style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
+                    onClick={() => fileRef.current?.click()}>
+                    {theme.bgImage ? '↺ change image' : '↑ upload image'}
+                  </button>
+                  {theme.bgImage && (
+                    <>
+                      <img src={theme.bgImage} alt="bg preview"
+                        style={{ width: '100%', height: 80, objectFit: 'cover',
+                          borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
+                          border: '1px solid var(--border)' }} />
+                      <div className="settings-row" style={{ marginTop: '0.4rem' }}>
+                        <span className="settings-label">Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}</span>
+                        <input type="range" min="0.05" max="1" step="0.01"
+                          value={theme.bgImageOpacity}
+                          onChange={e => set('bgImageOpacity', e.target.value)}
+                          style={{ width: 100 }} />
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* ── Typography ── */}
+            <div className="settings-section">
+              <div className="settings-title">Typography</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                {FONTS.map(f => (
+                  <button key={f}
+                    className={`preset-slot${theme.font === f ? ' active' : ''}`}
+                    style={{ flex: 'none', fontFamily: f }}
+                    onClick={() => set('font', f)}>
+                    {f}
+                  </button>
+                ))}
+              </div>
+              <div className="settings-row" style={{ marginTop: '0.5rem' }}>
+                <span className="settings-label">Font size — {theme.fontSize}px</span>
+                <input type="range" min="11" max="18" step="1"
+                  value={theme.fontSize} onChange={e => set('fontSize', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Clock size — {theme.clockSize}rem</span>
+                <input type="range" min="0.7" max="2" step="0.05"
+                  value={theme.clockSize} onChange={e => set('clockSize', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+            </div>
+
+            {/* ── Layout ── */}
+            <div className="settings-section">
+              <div className="settings-title">Layout</div>
+              <div className="settings-row">
+                <span className="settings-label">Section columns</span>
+                <div className="preset-slots">
+                  {[1,2,3,4,5].map(n => (
+                    <button key={n}
+                      className={`preset-slot${parseInt(theme.sectionsCols) === n ? ' active' : ''}`}
+                      onClick={() => { set('sectionsCols', String(n)); window.dispatchEvent(new Event('theme_cols_changed')) }}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Border radius — {theme.radius}px</span>
+                <input type="range" min="0" max="20" step="1"
+                  value={theme.radius} onChange={e => set('radius', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Card padding — {theme.cardPadding}rem</span>
+                <input type="range" min="0.25" max="2" step="0.05"
+                  value={theme.cardPadding} onChange={e => set('cardPadding', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Link gap — {theme.linkGap}rem</span>
+                <input type="range" min="0" max="1.5" step="0.05"
+                  value={theme.linkGap} onChange={e => set('linkGap', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Page scale — {theme.pageScale}</span>
+                <input type="range" min="0.5" max="1.5" step="0.05"
+                  value={theme.pageScale} onChange={e => set('pageScale', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+            </div>
+
+            {/* ── Favicon ── */}
+            <div className="settings-section">
+              <div className="settings-title">Favicons</div>
+              <div className="settings-row">
+                <span className="settings-label">Style</span>
+                <div className="preset-slots">
+                  {[
+                    { label: 'Normal', value: 'none' },
+                    { label: 'Dim',    value: 'opacity(0.5)' },
+                    { label: 'Mono',   value: 'grayscale(1)' },
+                    { label: 'None',   value: 'opacity(0)' },
+                  ].map(opt => (
+                    <button key={opt.value}
+                      className={`preset-slot${theme.faviconFilter === opt.value ? ' active' : ''}`}
+                      onClick={() => set('faviconFilter', opt.value)}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* ── Import / Export / Reset ── */}
+            <div className="settings-section">
+              <div className="settings-title">Presets</div>
+              <div className="import-export">
+                <button className="btn" style={{ fontSize: '0.8em' }} onClick={exportSettings}>↓ export</button>
+                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
+                  ↑ import
+                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
+                </label>
+                <button className="btn btn-danger" style={{ fontSize: '0.8em' }} onClick={resetSettings}>reset</button>
+              </div>
+            </div>
+
+            <div className="settings-footer">
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>Save & close</button>
+              <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
+            </div>
+
+          </div>
+        </div>
       )}
-    </>
+    </div>
   )
 }
