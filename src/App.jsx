@@ -99,7 +99,7 @@ function applyTheme(t) {
   r.setProperty('--title-color',       t.titleColor)
   r.setProperty('--btn-bg',            t.btnBg)
   r.setProperty('--btn-text',          '#ffffff')
-  r.setProperty('--notes-bg',          t.notesBg   ?? t.card)
+  r.setProperty('--notes-bg',          t.notesBg      ?? t.card)
   r.setProperty('--notes-input-bg',    t.notesInputBg ?? t.bg)
   r.setProperty('--font',              `'${t.font}', monospace`)
   r.setProperty('--font-size',         t.workspaceFontSize + 'px')
@@ -235,6 +235,18 @@ export default function App() {
     reader.readAsText(file)
   }
 
+  const refreshCache = async () => {
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration()
+      if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING')
+      const keys = await caches.keys()
+      await Promise.all(keys.map(k => caches.delete(k)))
+      await reg?.unregister()
+      await navigator.serviceWorker?.register('/sw.js')
+    } catch {}
+    window.location.reload()
+  }
+
   if (loading) return <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>Loading…</div>
   if (!session) return <Auth onAuth={setSession} />
 
@@ -349,12 +361,10 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Settings panel — NO darkening overlay, just a shadow edge ── */}
+      {/* ── Settings — no darkening overlay ── */}
       {showSettings && (
         <>
-          {/* Subtle right-edge shadow only — pointer-events: none so main app stays interactive */}
           <div className="settings-veil" />
-
           <div className="settings-panel">
 
             <div className="settings-header">
@@ -370,16 +380,16 @@ export default function App() {
             <div className="settings-section">
               <div className="settings-title">Colours</div>
               {[
-                ['Background',    'bg',          'Main page background colour'],
-                ['Card',          'card',         'Section card background colour'],
-                ['Border',        'border',       'Border colour for cards, inputs and dividers'],
-                ['Accent',        'accent',       'Highlight colour for active tabs, focus rings and buttons'],
-                ['Text',          'text',         'Primary text colour'],
-                ['Text dim',      'textDim',      'Secondary and label text colour'],
-                ['Section title', 'titleColor',   'Colour of section header labels'],
-                ['Button',        'btnBg',        'Primary action button background colour'],
-                ['Notes panel',   'notesBg',      'Background colour of the notes sidebar panel'],
-                ['Notes input',   'notesInputBg', 'Background colour of note text areas and edit fields'],
+                ['Background',    'bg',           'Main page background colour'],
+                ['Card',          'card',          'Section card background colour'],
+                ['Border',        'border',        'Border colour for cards, inputs and dividers'],
+                ['Accent',        'accent',        'Highlight colour for active tabs, focus rings and buttons'],
+                ['Text',          'text',          'Primary text colour'],
+                ['Text dim',      'textDim',       'Secondary and label text colour'],
+                ['Section title', 'titleColor',    'Colour of section header labels'],
+                ['Button',        'btnBg',         'Primary action button background colour'],
+                ['Notes panel',   'notesBg',       'Background colour of the notes sidebar panel'],
+                ['Notes input',   'notesInputBg',  'Background colour of note text areas and edit fields'],
               ].map(([label, key, tip]) => (
                 <div className="settings-row" key={key} title={tip}>
                   <span className="settings-label">{label}</span>
@@ -444,7 +454,8 @@ export default function App() {
 
               {theme.bgStyle === 'bg-gradient' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <div className="settings-row" title="Linear sweeps across the page, radial radiates from the centre">
+                  <div className="settings-row"
+                    title="Linear sweeps across the page, radial radiates from the centre">
                     <span className="settings-label">Type</span>
                     <div className="preset-slots">
                       {['linear', 'radial'].map(gt => (
@@ -457,7 +468,8 @@ export default function App() {
                     </div>
                   </div>
                   {theme.gradientType === 'linear' && (
-                    <div className="settings-row" title="Direction of the linear gradient in degrees (0 = bottom to top, 90 = left to right)">
+                    <div className="settings-row"
+                      title="Direction of the linear gradient in degrees (0 = bottom to top, 90 = left to right)">
                       <span className="settings-label">Angle — {theme.gradientAngle}°</span>
                       <input type="range" min="0" max="360" step="5"
                         value={theme.gradientAngle} onChange={e => set('gradientAngle', e.target.value)}
@@ -498,7 +510,7 @@ export default function App() {
                     style={{ display: 'none' }} onChange={handleImageUpload} />
                   <button className="btn"
                     style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
-                    title="Load a local image file — it is stored in browser localStorage (max 2 MB)"
+                    title="Load a local image file — stored in browser localStorage (max 2 MB)"
                     onClick={() => fileRef.current?.click()}>
                     {theme.bgImage ? '↺ Change image' : '↑ Upload image (max 2 MB, cached locally)'}
                   </button>
@@ -541,8 +553,8 @@ export default function App() {
                 ))}
               </div>
               {[
-                ['Workspace font size', 'workspaceFontSize', 11, 18, 1,    'px',  'Font size for section names, link titles and note text'],
-                ['Topbar font size',    'topbarFontSize',    10, 16, 1,    'px',  'Font size for workspace tabs, buttons and topbar elements'],
+                ['Workspace font size', 'workspaceFontSize', 11,   18,  1,    'px',  'Font size for section names, link titles and note text'],
+                ['Topbar font size',    'topbarFontSize',    10,   16,  1,    'px',  'Font size for workspace tabs, buttons and topbar elements'],
                 ['Clock & weather',     'clockWidgetScale',  0.75, 2.5, 0.05, 'rem', 'Size of the clock time and weather temperature in the topbar'],
               ].map(([label, key, min, max, step, unit, tip]) => (
                 <div className="settings-row" key={key} title={tip}>
@@ -572,8 +584,8 @@ export default function App() {
               </div>
               {[
                 ['Section gap (vertical)',   'sectionGap',    0,   24,   1,    'px',  'Vertical gap between section cards within a column'],
-                ['Section gap (horizontal)', 'sectionGapH',   0,   24,   1,    'px',  'Horizontal gap between columns — increase this when using rounded section radius'],
-                ['Section card radius',      'sectionRadius', 0,   20,   1,    'px',  'Corner radius of section cards — use with horizontal gap > 0 for a card-style look'],
+                ['Section gap (horizontal)', 'sectionGapH',   0,   24,   1,    'px',  'Horizontal gap between columns — increase when using rounded section radius'],
+                ['Section card radius',      'sectionRadius', 0,   20,   1,    'px',  'Corner radius of section cards — use with gap > 0 for a card-style look'],
                 ['Notes panel width',        'notesWidth',    140, 420,  10,   'px',  'Width of the notes sidebar'],
                 ['Notes font size',          'notesFontSize', 11,  18,   1,    'px',  'Font size for note content text'],
                 ['Link gap',                 'linkGap',       0,   1.5,  0.05, 'rem', 'Vertical spacing between links within a section'],
@@ -592,9 +604,7 @@ export default function App() {
             {/* ── Search ── */}
             <div className="settings-section">
               <div className="settings-title">Search</div>
-              <span className="settings-label" style={{ marginBottom: '0.15rem' }}>
-                Search URL
-              </span>
+              <span className="settings-label" style={{ marginBottom: '0.15rem' }}>Search URL</span>
               <input className="input" value={theme.searchUrl}
                 onChange={e => set('searchUrl', e.target.value)}
                 placeholder="https://google.com/search?q="
@@ -652,6 +662,18 @@ export default function App() {
                 <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
                   title="Reset all settings back to the default theme"
                   onClick={resetSettings}>Reset</button>
+              </div>
+
+              <button
+                className="btn"
+                style={{ fontSize: '0.8em', width: '100%', marginTop: '0.25rem' }}
+                title="Clears the service worker cache and reloads all assets fresh from the server — use this after a new deploy"
+                onClick={refreshCache}>
+                ↺ Refresh cached assets
+              </button>
+              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
+                Assets are served from browser cache for instant new-tab loads.
+                Use after a deploy to pull fresh files.
               </div>
             </div>
 
