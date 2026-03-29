@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
-  DndContext, closestCenter,
+  DndContext, closestCenter, DragOverlay,
   PointerSensor, KeyboardSensor, useSensor, useSensors,
 } from '@dnd-kit/core'
 import {
@@ -24,7 +24,6 @@ function parseAFineStart(raw) {
        .filter(b => b.url)
 
   const groups = []
-
   if (Array.isArray(data) && data.every(i => Array.isArray(i))) {
     data.forEach(col => col.forEach(g => {
       if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) })
@@ -62,7 +61,7 @@ function parseAFineStart(raw) {
 }
 
 /* ─────────────────────────────────────────
-   Build columns from server data
+   Build columns array-of-arrays from flat sections
 ───────────────────────────────────────── */
 function buildColumns(sections = [], colCount = 2) {
   const cols   = Math.max(colCount, 1)
@@ -80,9 +79,16 @@ function buildColumns(sections = [], colCount = 2) {
 }
 
 /* ─────────────────────────────────────────
-   Section card
+   Find which column contains a given section id
 ───────────────────────────────────────── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab }) {
+function findColIndex(cols, id) {
+  return cols.findIndex(col => col.some(s => s.id === id))
+}
+
+/* ─────────────────────────────────────────
+   Section card — sortable wrapper
+───────────────────────────────────────── */
+function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, ghost }) {
   const [collapsed,  setCollapsed]  = useState(section.collapsed ?? false)
   const [renaming,   setRenaming]   = useState(false)
   const [name,       setName]       = useState(section.name ?? '')
@@ -94,7 +100,7 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity:   isDragging ? 0.35 : 1,
+    opacity:   isDragging || ghost ? 0.3 : 1,
     position:  'relative',
     zIndex:    isDragging ? 20 : 'auto',
   }
@@ -158,7 +164,7 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
         </span>
       </div>
 
-      {!collapsed && (
+      {!collapsed && !ghost && (
         <Links
           links={sectionLinks}
           sectionId={section.id}
@@ -175,80 +181,8 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 }
 
 /* ─────────────────────────────────────────
-   Independent column — owns its own state.
-   NEVER calls onRefresh on drag — optimistic
-   local update only, then silent DB persist.
-───────────────────────────────────────── */
-function SectionColumn({ initialItems, colIndex, links, userId, workspaceId, onRefresh, openInNewTab }) {
-  // Local state — this is the source of truth for order during a session
-  const [items, setItems] = useState(initialItems)
-
-  // Only sync from parent when sections are added or deleted (length changes
-  // or IDs change) — never let a post-drag refresh reorder us
-  const itemIds     = initialItems.map(s => s.id).join(',')
-  const prevIdsRef  = useState(() => itemIds)[0]
-
-  useEffect(() => {
-    // Rebuild local state only when the set of IDs actually changes
-    setItems(
-      [...initialItems].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-    )
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemIds])
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  const handleDragEnd = async ({ active, over }) => {
-    if (!over || active.id === over.id) return
-
-    const from = items.findIndex(s => s.id === active.id)
-    const to   = items.findIndex(s => s.id === over.id)
-    if (from === -1 || to === -1) return
-
-    // 1. Update local state immediately — UI snaps into place
-    const next = arrayMove(items, from, to)
-    setItems(next)
-
-    // 2. Persist to DB silently — do NOT call onRefresh()
-    //    onRefresh would re-fetch and re-sort, fighting our local state
-    await Promise.all(
-      next.map((s, i) =>
-        supabase.from('sections')
-          .update({ position: i, col_index: colIndex })
-          .eq('id', s.id)
-      )
-    )
-  }
-
-  return (
-    <div className="section-col">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}>
-        <SortableContext items={items.map(s => s.id)} strategy={verticalListSortingStrategy}>
-          {items.map(section => (
-            <SectionCard
-              key={section.id}
-              section={section}
-              links={links}
-              userId={userId}
-              workspaceId={workspaceId}
-              onRefresh={onRefresh}
-              openInNewTab={openInNewTab}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
-    </div>
-  )
-}
-
-/* ─────────────────────────────────────────
    Main Sections component
+   ONE DndContext — columns share drag state
 ───────────────────────────────────────── */
 export default function Sections({
   sections      = [],
@@ -261,6 +195,10 @@ export default function Sections({
   triggerAdd    = 0,
   triggerImport = 0,
 }) {
+  const [cols,          setCols]          = useState(() => buildColumns(sections, colCount))
+  const [activeSection, setActiveSection] = useState(null)
+  const [dragging,      setDragging]      = useState(false)
+
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [showImport,    setShowImport]    = useState(false)
@@ -271,25 +209,133 @@ export default function Sections({
 
   const safeLinks = Array.isArray(links) ? links : []
 
+  // Keep a ref so drag handlers always see latest cols without stale closure
+  const colsRef = useRef(cols)
+  useEffect(() => { colsRef.current = cols }, [cols])
+
+  // Sync from parent only when not dragging (add/delete/page-load)
+  useEffect(() => {
+    if (!dragging) {
+      setCols(buildColumns(sections, colCount))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, colCount])
+
   useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
   useEffect(() => {
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  /* ── Drag start ── */
+  const handleDragStart = ({ active }) => {
+    setDragging(true)
+    const current = colsRef.current
+    const ci = findColIndex(current, active.id)
+    if (ci !== -1) {
+      const section = current[ci].find(s => s.id === active.id)
+      setActiveSection(section ?? null)
+    }
+  }
+
+  /* ── Drag over — handles cross-column moves in real time ── */
+  const handleDragOver = ({ active, over }) => {
+    if (!over || active.id === over.id) return
+
+    const current    = colsRef.current
+    const activeCol  = findColIndex(current, active.id)
+    const overCol    = findColIndex(current, over.id)
+
+    if (activeCol === -1 || overCol === -1) return
+    if (activeCol === overCol) return   // same-column handled in dragEnd
+
+    setCols(prev => {
+      const next       = prev.map(col => [...col])
+      const activeItem = next[activeCol].find(s => s.id === active.id)
+      if (!activeItem) return prev
+
+      // Remove from source column
+      next[activeCol] = next[activeCol].filter(s => s.id !== active.id)
+
+      // Insert into target column at the hovered position
+      const overIndex = next[overCol].findIndex(s => s.id === over.id)
+      if (overIndex === -1) {
+        next[overCol].push(activeItem)
+      } else {
+        next[overCol].splice(overIndex, 0, activeItem)
+      }
+      return next
+    })
+  }
+
+  /* ── Drag end — finalize order + persist ── */
+  const handleDragEnd = async ({ active, over }) => {
+    setDragging(false)
+    setActiveSection(null)
+
+    if (!over) {
+      // Dropped nowhere — reset from server data
+      setCols(buildColumns(sections, colCount))
+      return
+    }
+
+    const current   = colsRef.current
+    const activeCol = findColIndex(current, active.id)
+    const overCol   = findColIndex(current, over.id)
+
+    if (activeCol === -1) return
+
+    let finalCols = current.map(col => [...col])
+
+    // Same-column reorder
+    if (activeCol === overCol) {
+      const from = finalCols[activeCol].findIndex(s => s.id === active.id)
+      const to   = finalCols[activeCol].findIndex(s => s.id === over.id)
+      if (from !== -1 && to !== -1 && from !== to) {
+        finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
+        setCols(finalCols)
+      }
+    }
+    // Cross-column already handled by onDragOver — finalCols is already correct
+
+    // Persist every section's new position + col_index
+    const updates = []
+    finalCols.forEach((col, ci) => {
+      col.forEach((s, i) => {
+        updates.push(
+          supabase.from('sections')
+            .update({ position: i, col_index: ci })
+            .eq('id', s.id)
+        )
+      })
+    })
+    await Promise.all(updates)
+
+    // Refresh AFTER we've set final local state — not before
+    onRefresh()
+  }
+
+  /* ── Add section ── */
   const addSection = async e => {
     e.preventDefault()
     if (!newName.trim()) return
-    const cols     = buildColumns(sections, colCount)
-    const shortest = cols.reduce((best, col, i) => col.length < cols[best].length ? i : best, 0)
+    const current  = buildColumns(sections, colCount)
+    const shortest = current.reduce((best, col, i) =>
+      col.length < current[best].length ? i : best, 0)
     await supabase.from('sections').insert({
       user_id: userId, workspace_id: workspaceId,
       name: newName.trim(),
-      position:  cols[shortest].length,
+      position:  current[shortest].length,
       col_index: shortest,
     })
     setNewName(''); setAddingSection(false); onRefresh()
   }
 
+  /* ── Import ── */
   const runImport = async () => {
     setImportError(''); setImportLoading(true)
     try {
@@ -297,13 +343,14 @@ export default function Sections({
       if (!groups.length) throw new Error('No groups found.')
 
       for (const g of groups) {
-        const cols = buildColumns(sections, colCount)
-        const ci   = cols.reduce((best, col, i) => col.length < cols[best].length ? i : best, 0)
+        const current = buildColumns(sections, colCount)
+        const ci      = current.reduce((best, col, i) =>
+          col.length < current[best].length ? i : best, 0)
         const { data: sec, error: secErr } = await supabase
           .from('sections')
           .insert({
             user_id: userId, workspace_id: workspaceId,
-            name: g.name, position: cols[ci].length, col_index: ci,
+            name: g.name, position: current[ci].length, col_index: ci,
           })
           .select().single()
         if (secErr) throw new Error(secErr.message)
@@ -324,25 +371,57 @@ export default function Sections({
     }
   }
 
-  const colItemsList = buildColumns(sections, colCount)
-
+  /* ── Render ── */
   return (
     <div style={{ width: '100%' }}>
 
-      <div className="sections-grid">
-        {colItemsList.map((col, ci) => (
-          <SectionColumn
-            key={ci}
-            initialItems={col}
-            colIndex={ci}
-            links={safeLinks}
-            userId={userId}
-            workspaceId={workspaceId}
-            onRefresh={onRefresh}
-            openInNewTab={openInNewTab}
-          />
-        ))}
-      </div>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}>
+
+        <div className="sections-grid">
+          {cols.map((col, ci) => (
+            <div key={ci} className="section-col">
+              <SortableContext
+                items={col.map(s => s.id)}
+                strategy={verticalListSortingStrategy}>
+                {col.map(section => (
+                  <SectionCard
+                    key={section.id}
+                    section={section}
+                    links={safeLinks}
+                    userId={userId}
+                    workspaceId={workspaceId}
+                    onRefresh={onRefresh}
+                    openInNewTab={openInNewTab}
+                    ghost={activeSection?.id === section.id}
+                  />
+                ))}
+              </SortableContext>
+            </div>
+          ))}
+        </div>
+
+        {/* Floating drag preview */}
+        <DragOverlay>
+          {activeSection && (
+            <div className="section-card" style={{
+              opacity: 0.92, boxShadow: '0 8px 32px #0008',
+              cursor: 'grabbing', pointerEvents: 'none',
+            }}>
+              <div className="section-header" style={{ cursor: 'grabbing' }}>
+                <span className="drag-handle" style={{ opacity: 0.5 }}>⠿</span>
+                <span className="section-name">{activeSection.name}</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>▼</span>
+              </div>
+            </div>
+          )}
+        </DragOverlay>
+
+      </DndContext>
 
       {addingSection && (
         <div className="add-section-fixed">
@@ -359,19 +438,15 @@ export default function Sections({
       {showImport && (
         <div className="modal-overlay" onClick={() => setShowImport(false)}>
           <div className="modal-box" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
-
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 500, fontSize: '0.95em' }}>Import from A Fine Start</span>
               <button className="icon-btn" onClick={() => setShowImport(false)}>✕</button>
             </div>
-
             <div style={{ fontSize: '0.8em', color: 'var(--text-dim)', lineHeight: 1.55 }}>
               In A Fine Start go to <strong>Settings → Export bookmarks</strong>, copy
               the entire code block, then paste it below.
             </div>
-
-            <textarea
-              value={importText}
+            <textarea value={importText}
               onChange={e => { setImportText(e.target.value); setImportError('') }}
               placeholder="Paste A Fine Start export code here…"
               style={{
@@ -382,7 +457,6 @@ export default function Sections({
                 fontSize: '0.78em', fontFamily: 'var(--font)', outline: 'none', lineHeight: 1.5,
               }}
             />
-
             {importError && (
               <div style={{
                 fontSize: '0.78em', color: 'var(--danger)', lineHeight: 1.6,
@@ -391,7 +465,6 @@ export default function Sections({
                 borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.65rem', whiteSpace: 'pre-wrap',
               }}>{importError}</div>
             )}
-
             {importDone && (
               <div style={{
                 fontSize: '0.82em', color: 'var(--success)',
@@ -400,7 +473,6 @@ export default function Sections({
                 borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.65rem',
               }}>✓ Import successful!</div>
             )}
-
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button className="btn btn-primary" style={{ flex: 1 }}
                 disabled={!importText.trim() || importLoading} onClick={runImport}>
