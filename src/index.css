@@ -361,15 +361,8 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
 }
 
-.topbar-build {
-  font-size: 0.7em;
-  color: var(--text-muted);
-  white-space: nowrap;
-  padding: 0 0.2rem;
-}
-
 /* ─────────────────────────────────────────
-   Main layout
+   Main layout — main-col is the scroll container
 ───────────────────────────────────────── */
 .main-layout {
   display: grid;
@@ -377,11 +370,21 @@ a { color: inherit; text-decoration: none; }
   padding: 0.75rem;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
-.main-col { min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 2px; }
-.side-col  { min-height: 0; overflow-y: auto; padding-right: 2px; }
+.main-col {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 2px;
+}
+
+.side-col {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 2px;
+}
 
 /* ─────────────────────────────────────────
    Cards
@@ -451,33 +454,30 @@ a { color: inherit; text-decoration: none; }
 .input::placeholder { color: var(--text-muted); }
 
 /* ─────────────────────────────────────────
-   Sections
+   Sections — columns grow freely
 ───────────────────────────────────────── */
-.sections-scroll { width: 100%; height: 100%; overflow-y: auto; overflow-x: hidden; }
-
 .sections-grid {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: flex-start;   /* columns size to their own content */
   gap: var(--section-gap-h, 0px);
   padding: var(--section-gap-h, 0px);
-  padding-bottom: 0;
+  padding-bottom: 3rem;      /* space above the add-section form */
+  width: 100%;
 }
 
 .section-col {
   flex: 1;
   min-width: 0;
-  min-height: 60px;
   display: flex;
   flex-direction: column;
   gap: var(--section-gap, 0px);
+  /* No height constraint — unlimited cards */
 }
 
 /*
-  Uses outline instead of border so adjacent cards at gap=0 share a
-  single 1px line without doubling. border-radius applies to outline
-  in all modern browsers. At sectionRadius=0 + gap=0 this is a
-  classic flush tile grid. At radius>0 set both gaps > 0 to show corners.
+  Uses outline not border so adjacent cards at gap=0 share a single
+  1px line. border-radius works on outline in all modern browsers.
 */
 .section-card {
   width: 100%;
@@ -532,8 +532,25 @@ a { color: inherit; text-decoration: none; }
 .section-delete-btn       { color: var(--text-muted) !important; }
 .section-delete-btn:hover { color: var(--danger) !important; background: transparent !important; }
 
+/* ── Drag handle — full header height, wide hit area ── */
+.drag-handle {
+  color: var(--text);
+  opacity: var(--handle-opacity);
+  cursor: grab;
+  padding: 0 0.6rem;
+  margin: -0.38rem 0;
+  align-self: stretch;
+  font-size: 1em;
+  transition: opacity 0.15s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+.drag-handle:hover  { opacity: 0.75; }
+.drag-handle:active { cursor: grabbing; opacity: 1; }
+
 /* ─────────────────────────────────────────
-   Add section / Import bar
+   Add section form (inline float)
 ───────────────────────────────────────── */
 .add-section-fixed {
   position: fixed;
@@ -543,14 +560,6 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   align-items: center;
   gap: 0.5rem;
-}
-
-.add-section-btn {
-  padding: 0.42rem 1.1rem;
-  font-size: 0.84em;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.4);
 }
 
 /* ─────────────────────────────────────────
@@ -600,7 +609,6 @@ a { color: inherit; text-decoration: none; }
 
 .link-title:hover { color: var(--accent); }
 
-/* Overlay edit/delete — hidden, revealed on row hover */
 .link-actions-overlay {
   position: absolute;
   right: 0;
@@ -634,23 +642,6 @@ a { color: inherit; text-decoration: none; }
 
 .link-act:hover     { background: #2a2a3e; color: var(--text); }
 .link-act-del:hover { color: var(--danger); }
-
-/* ── Drag handle ── */
-.drag-handle {
-  color: var(--text);
-  opacity: var(--handle-opacity);
-  cursor: grab;
-  padding: 0 0.3rem;
-  font-size: 0.8em;
-  flex-shrink: 0;
-  transition: opacity 0.15s;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  align-self: stretch;
-}
-.drag-handle:hover  { opacity: 0.75; }
-.drag-handle:active { cursor: grabbing; opacity: 1; }
 
 /* ─────────────────────────────────────────
    Notes
@@ -712,9 +703,6 @@ a { color: inherit; text-decoration: none; }
 /* ─────────────────────────────────────────
    Settings — no darkening overlay
 ───────────────────────────────────────── */
-
-/* Subtle right-to-left shadow veil — pointer-events: none so the
-   main workspace stays fully interactive while settings is open   */
 .settings-veil {
   position: fixed;
   inset: 0;
@@ -903,7 +891,7 @@ a { color: inherit; text-decoration: none; }
   .main-col, .side-col { overflow: visible; height: auto; }
   .side-col { order: -1; }
 
-  .sections-grid  { flex-direction: column; padding: 0; }
+  .sections-grid  { flex-direction: column; padding: 0; padding-bottom: 3rem; }
   .section-col    { width: 100%; flex: none; }
 
   .topbar {
