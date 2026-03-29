@@ -11,6 +11,9 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
+/* ─────────────────────────────────────────
+   A Fine Start import parser
+───────────────────────────────────────── */
 function parseAFineStart(raw) {
   let data
   try { data = JSON.parse(raw) }
@@ -79,6 +82,9 @@ function parseAFineStart(raw) {
   )
 }
 
+/* ─────────────────────────────────────────
+   Column builder
+───────────────────────────────────────── */
 function buildColumns(sections = [], colCount = 2) {
   const cols    = Math.max(colCount, 1)
   const sorted  = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -91,6 +97,9 @@ function buildColumns(sections = [], colCount = 2) {
   return result
 }
 
+/* ─────────────────────────────────────────
+   Section card
+───────────────────────────────────────── */
 function SectionCard({ section, links = [], userId, workspaceId, onRefresh, openInNewTab }) {
   const [collapsed,  setCollapsed]  = useState(section.collapsed ?? false)
   const [renaming,   setRenaming]   = useState(false)
@@ -176,6 +185,9 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
   )
 }
 
+/* ─────────────────────────────────────────
+   Main Sections component
+───────────────────────────────────────── */
 export default function Sections({
   sections     = [],
   links        = [],
@@ -199,8 +211,10 @@ export default function Sections({
 
   const safeLinks = Array.isArray(links) ? links : []
 
-  useEffect(() => { if (triggerAdd    > 0) setAddingSection(true)                                   }, [triggerAdd])
-  useEffect(() => { if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) } }, [triggerImport])
+  useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
+  useEffect(() => {
+    if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
+  }, [triggerImport])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -210,11 +224,21 @@ export default function Sections({
   const handleDragEnd = async ({ active, over }) => {
     setActiveId(null)
     if (!over || active.id === over.id) return
+
     const flat = buildColumns(sections, colCount).flat()
     const from = flat.findIndex(s => s.id === active.id)
     const to   = flat.findIndex(s => s.id === over.id)
     if (from === -1 || to === -1) return
-    const next = arrayMove(flat, from, to)
+
+    /*
+      Always insert AFTER the target card so dragging feels like
+      "dropping onto a pile below" rather than swapping.
+      - Dragging DOWN (from < to): arrayMove already lands after target — use `to` as-is
+      - Dragging UP   (from > to): default would land BEFORE target — use `to + 1` instead
+    */
+    const insertAt = from > to ? to + 1 : to
+    const next = arrayMove(flat, from, insertAt)
+
     await Promise.all(next.map((s, i) =>
       supabase.from('sections').update({ position: i, col_index: i % colCount }).eq('id', s.id)
     ))
@@ -274,7 +298,9 @@ export default function Sections({
 
       {/* ── Sections grid ── */}
       <div className="sections-grid">
-        <DndContext sensors={sensors} collisionDetection={closestCenter}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
           onDragStart={({ active }) => setActiveId(active.id)}
           onDragEnd={handleDragEnd}>
           {colItemsList.map((col, ci) => (
@@ -301,14 +327,21 @@ export default function Sections({
       {addingSection && (
         <div className="add-section-fixed">
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
-            <input className="input" value={newName} onChange={e => setNewName(e.target.value)}
-              placeholder="Section name" autoFocus
-              style={{ width: 150, fontSize: '0.82em' }} />
-            <button className="btn btn-primary" type="submit"
-              style={{ fontSize: '0.82em' }}>Add</button>
-            <button className="btn" type="button"
-              style={{ fontSize: '0.82em' }}
-              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
+            <input
+              className="input"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="Section name"
+              autoFocus
+              style={{ width: 150, fontSize: '0.82em' }}
+            />
+            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>
+              Add
+            </button>
+            <button className="btn" type="button" style={{ fontSize: '0.82em' }}
+              onClick={() => { setAddingSection(false); setNewName('') }}>
+              ✕
+            </button>
           </form>
         </div>
       )}
@@ -343,20 +376,24 @@ export default function Sections({
             />
 
             {importError && (
-              <div style={{ fontSize: '0.78em', color: 'var(--danger)', lineHeight: 1.6,
+              <div style={{
+                fontSize: '0.78em', color: 'var(--danger)', lineHeight: 1.6,
                 background: 'color-mix(in srgb, var(--danger) 10%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)',
                 borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.65rem',
-                whiteSpace: 'pre-wrap' }}>
+                whiteSpace: 'pre-wrap',
+              }}>
                 {importError}
               </div>
             )}
 
             {importDone && (
-              <div style={{ fontSize: '0.82em', color: 'var(--success)',
+              <div style={{
+                fontSize: '0.82em', color: 'var(--success)',
                 background: 'color-mix(in srgb, var(--success) 10%, transparent)',
                 border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)',
-                borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.65rem' }}>
+                borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.65rem',
+              }}>
                 ✓ Import successful!
               </div>
             )}
