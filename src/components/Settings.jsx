@@ -15,7 +15,6 @@ const FONTS = [
 
 const BG_PRESETS = ['noise', 'dots', 'grid', 'mesh', 'aurora', 'solid']
 
-// btnBg is now dark navy — also applied as migration below
 const DEFAULT_THEME = {
   bg:               '#0c0c0f',
   bg2:              '#13131a',
@@ -43,9 +42,9 @@ const DEFAULT_THEME = {
   pageScale:        1,
   faviconOpacity:   1,
   faviconGreyscale: false,
+  mainGapTop:       12,   // ← NEW: px gap between topbar and cards
 }
 
-// Values that were old defaults and need forced migration
 const MIGRATE = { btnBg: ['#6c8fff', '#2d4fd4'] }
 
 function Toggle({ checked, onChange, title }) {
@@ -87,7 +86,6 @@ export default function Settings({
       const saved = localStorage.getItem('current_theme')
       if (saved) {
         const parsed = JSON.parse(saved)
-        // Migrate old bad button colours to dark navy
         for (const [key, oldVals] of Object.entries(MIGRATE)) {
           if (oldVals.includes(parsed[key])) parsed[key] = DEFAULT_THEME[key]
         }
@@ -173,6 +171,7 @@ export default function Settings({
     r.setProperty('--sections-cols',    theme.sectionsCols)
     r.setProperty('--favicon-opacity',  theme.faviconOpacity)
     r.setProperty('--favicon-filter',   theme.faviconGreyscale ? 'grayscale(1)' : 'none')
+    r.setProperty('--main-gap-top',     (theme.mainGapTop ?? 12) + 'px')  // ← NEW
     document.body.style.zoom = theme.pageScale
   }, [theme])
 
@@ -441,6 +440,13 @@ export default function Settings({
           <input type="range" min="0" max="24" step="1"
             value={theme.radius}
             onChange={e => set('radius', parseInt(e.target.value))}
+            style={{ flex: 1 }} />
+        </Row>
+        {/* ── NEW: topbar gap slider ── */}
+        <Row label={`Topbar gap: ${theme.mainGapTop ?? 12}px`}>
+          <input type="range" min="0" max="60" step="2"
+            value={theme.mainGapTop ?? 12}
+            onChange={e => set('mainGapTop', parseInt(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
       </SettingsSection>

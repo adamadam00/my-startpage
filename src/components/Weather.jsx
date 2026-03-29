@@ -1,16 +1,45 @@
 import { useState, useEffect } from 'react'
 
 const WX = {
-  0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',
-  51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',
-  71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'⛈',95:'⛈',
+  0:  { icon: '☀️', label: 'Clear'        },
+  1:  { icon: '🌤', label: 'Mostly clear' },
+  2:  { icon: '⛅', label: 'Partly cloudy'},
+  3:  { icon: '☁️', label: 'Overcast'     },
+  45: { icon: '🌫', label: 'Foggy'        },
+  48: { icon: '🌫', label: 'Icy fog'      },
+  51: { icon: '🌦', label: 'Light drizzle'},
+  53: { icon: '🌦', label: 'Drizzle'      },
+  55: { icon: '🌧', label: 'Heavy drizzle'},
+  61: { icon: '🌧', label: 'Light rain'   },
+  63: { icon: '🌧', label: 'Raining'      },
+  65: { icon: '🌧', label: 'Heavy rain'   },
+  71: { icon: '🌨', label: 'Light snow'   },
+  73: { icon: '🌨', label: 'Snowing'      },
+  75: { icon: '🌨', label: 'Heavy snow'   },
+  80: { icon: '🌦', label: 'Showers'      },
+  81: { icon: '🌧', label: 'Rain showers' },
+  82: { icon: '⛈', label: 'Violent rain' },
+  95: { icon: '⛈', label: 'Thunderstorm' },
 }
 
-const REFRESH_MS = 15 * 60 * 1000   // 15 minutes
+const WIND_LABELS = [
+  [1,  'Calm'],
+  [5,  'Light breeze'],
+  [15, 'Breezy'],
+  [30, 'Windy'],
+  [50, 'Very windy'],
+  [Infinity, 'Gale'],
+]
+
+function windLabel(kmh) {
+  return WIND_LABELS.find(([max]) => kmh < max)?.[1] ?? 'Gale'
+}
+
+const REFRESH_MS = 15 * 60 * 1000
 
 export default function Weather() {
-  const [wx,   setWx]   = useState(null)
-  const [stale, setStale] = useState(false)   // dims display if last fetch failed
+  const [wx,    setWx]    = useState(null)
+  const [stale, setStale] = useState(false)
 
   const fetchWx = () => {
     if (!navigator.geolocation) return
@@ -26,10 +55,10 @@ export default function Weather() {
           setWx(d.current_weather)
           setStale(false)
         } catch {
-          setStale(true)   // keep showing last reading, just dim it
+          setStale(true)
         }
       },
-      () => {}             // user denied geolocation — stay hidden
+      () => {}
     )
   }
 
@@ -41,11 +70,23 @@ export default function Weather() {
 
   if (!wx) return null
 
+  const entry       = WX[wx.weathercode]
+  const icon        = entry?.icon  ?? '🌡'
+  // Prefer the sky condition label, but if it's clear/cloudy and wind
+  // is notable, show the wind label instead — feels more useful
+  const skyLabel    = entry?.label ?? 'Unknown'
+  const wLabel      = windLabel(wx.windspeed)
+  const isNeutralSky = [0, 1, 2, 3].includes(wx.weathercode)
+  const descriptor  = (isNeutralSky && wx.windspeed >= 15) ? wLabel : skyLabel
+
   return (
-    <div className="weather-wrap" style={{ opacity: stale ? 0.45 : 1 }}
-      title={stale ? 'Weather data may be outdated' : 'Updates every 15 minutes'}>
-      <span className="weather-icon">{WX[wx.weathercode] ?? '🌡'}</span>
+    <div
+      className="weather-wrap"
+      style={{ opacity: stale ? 0.45 : 1 }}
+      title={stale ? 'Weather data may be outdated' : 'Updates every 15 min'}>
+      <span className="weather-icon">{icon}</span>
       <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-desc">{descriptor}</span>
     </div>
   )
 }

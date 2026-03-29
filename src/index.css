@@ -40,6 +40,7 @@
   --favicon-filter:    none;
   --pattern-color:     #2a2a3a;
   --pattern-opacity:   1;
+  --main-gap-top:      12px;   /* gap between topbar and cards — slider controlled */
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -362,19 +363,19 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ─────────────────────────────────────────
-   Main layout — main-col is the scroll container
+   Main layout
 ───────────────────────────────────────── */
 .main-layout {
   display: grid;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: var(--main-gap-top) 0.75rem 0.75rem 0.75rem;
   flex: 1;
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .main-col {
-  height: 100%;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 2px;
@@ -454,15 +455,15 @@ a { color: inherit; text-decoration: none; }
 .input::placeholder { color: var(--text-muted); }
 
 /* ─────────────────────────────────────────
-   Sections — columns grow freely
+   Sections grid
 ───────────────────────────────────────── */
 .sections-grid {
   display: flex;
   flex-direction: row;
-  align-items: flex-start;   /* columns size to their own content */
+  align-items: flex-start;
   gap: var(--section-gap-h, 0px);
   padding: var(--section-gap-h, 0px);
-  padding-bottom: 3rem;      /* space above the add-section form */
+  padding-bottom: 3rem;
   width: 100%;
 }
 
@@ -472,13 +473,8 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: var(--section-gap, 0px);
-  /* No height constraint — unlimited cards */
 }
 
-/*
-  Uses outline not border so adjacent cards at gap=0 share a single
-  1px line. border-radius works on outline in all modern browsers.
-*/
 .section-card {
   width: 100%;
   background: color-mix(in srgb, var(--card) calc(var(--card-opacity) * 100%), transparent);
@@ -532,7 +528,6 @@ a { color: inherit; text-decoration: none; }
 .section-delete-btn       { color: var(--text-muted) !important; }
 .section-delete-btn:hover { color: var(--danger) !important; background: transparent !important; }
 
-/* ── Drag handle — full header height, wide hit area ── */
 .drag-handle {
   color: var(--text);
   opacity: var(--handle-opacity);
@@ -550,7 +545,7 @@ a { color: inherit; text-decoration: none; }
 .drag-handle:active { cursor: grabbing; opacity: 1; }
 
 /* ─────────────────────────────────────────
-   Add section form (inline float)
+   Add section
 ───────────────────────────────────────── */
 .add-section-fixed {
   position: fixed;
@@ -701,7 +696,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* ─────────────────────────────────────────
-   Settings — no darkening overlay
+   Settings panel
 ───────────────────────────────────────── */
 .settings-veil {
   position: fixed;
@@ -815,6 +810,35 @@ a { color: inherit; text-decoration: none; }
 }
 .preset-slot:hover  { border-color: var(--accent); color: var(--accent); }
 .preset-slot.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+/* ── Slider ── */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  outline: none;
+  cursor: pointer;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.2); }
+input[type='range']::-moz-range-thumb {
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+}
 
 /* ─────────────────────────────────────────
    Toggle
