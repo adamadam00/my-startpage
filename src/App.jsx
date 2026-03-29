@@ -58,6 +58,7 @@ const DEFAULT_THEME = {
   clockWidgetScale: '1',
   radius:           '10',
   radiusSm:         '6',
+  sectionRadius:    '0',
   linkGap:          '0.5',
   sectionsCols:     '2',
   sectionGap:       '0',
@@ -104,6 +105,7 @@ function applyTheme(t) {
   r.setProperty('--clock-widget-size', t.clockWidgetScale  + 'rem')
   r.setProperty('--radius',            t.radius            + 'px')
   r.setProperty('--radius-sm',         t.radiusSm          + 'px')
+  r.setProperty('--section-radius',    (t.sectionRadius ?? '0') + 'px')
   r.setProperty('--link-gap',          t.linkGap           + 'rem')
   r.setProperty('--section-gap',       t.sectionGap        + 'px')
   r.setProperty('--section-gap-h',     t.sectionGapH       + 'px')
@@ -314,8 +316,8 @@ export default function App() {
           <SearchBar searchUrl={theme.searchUrl} />
         </div>
 
+        {/* ── build date removed from here ── */}
         <div className="topbar-actions">
-          <span className="topbar-build">build {BUILD}</span>
           <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
           <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
         </div>
@@ -349,12 +351,13 @@ export default function App() {
         <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="settings-panel" onClick={e => e.stopPropagation()}>
 
+            {/* Header now includes build date */}
             <div className="settings-header">
-              <span style={{ fontWeight: 500 }}>Settings</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>build {BUILD}</span>
-                <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+                <span style={{ fontWeight: 500 }}>Settings</span>
+                <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>build {BUILD}</span>
               </div>
+              <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
 
             {/* Colours */}
@@ -553,22 +556,23 @@ export default function App() {
                 </div>
               </div>
               {[
-                ['Section gap (vertical)',   'sectionGap',   0, 24,  1,    'px'],
-                ['Section gap (horizontal)', 'sectionGapH',  0, 24,  1,    'px'],
-                ['Notes panel width',        'notesWidth',   140, 420, 10, 'px'],
-                ['Notes font size',          'notesFontSize', 11, 18,  1,  'px'],
-                ['Link gap',                 'linkGap',       0, 1.5, 0.05,'rem'],
+                ['Section gap (vertical)',   'sectionGap',    0,   24,  1,    'px'],
+                ['Section gap (horizontal)', 'sectionGapH',   0,   24,  1,    'px'],
+                ['Section card radius',      'sectionRadius', 0,   20,  1,    'px'],
+                ['Notes panel width',        'notesWidth',    140, 420, 10,   'px'],
+                ['Notes font size',          'notesFontSize', 11,  18,  1,    'px'],
+                ['Link gap',                 'linkGap',       0,   1.5, 0.05, 'rem'],
                 ['Page scale',               'pageScale',     0.5, 1.3, 0.05, ''],
               ].map(([label, key, min, max, step, unit]) => (
                 <div className="settings-row" key={key}>
                   <span className="settings-label">{label} — {theme[key]}{unit}</span>
                   <input type="range" min={min} max={max} step={step}
-                    value={theme[key]} onChange={e => set(key, e.target.value)}
+                    value={theme[key] ?? 0} onChange={e => set(key, e.target.value)}
                     style={{ width: 100 }} />
                 </div>
               ))}
               <div className="settings-row">
-                <span className="settings-label">Radius — {theme.radius}px</span>
+                <span className="settings-label">Radius (buttons & inputs) — {theme.radius}px</span>
                 <input type="range" min="0" max="20" step="1"
                   value={theme.radius} onChange={e => set('radius', e.target.value)}
                   style={{ width: 100 }} />
