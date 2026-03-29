@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext, closestCenter, PointerSensor,
-  KeyboardSensor, useSensor, useSensors,
+  KeyboardSensor, useSensor, useSensors, DragOverlay,
 } from '@dnd-kit/core'
 import {
   SortableContext, sortableKeyboardCoordinates,
@@ -20,23 +20,18 @@ function parseAFineStart(raw) {
   catch { throw new Error('Not valid JSON — paste the export code exactly as copied from A Fine Start Settings.') }
 
   const extractBookmarks = (bms = []) =>
-    bms
-      .map(b => ({ title: b.name || b.title || 'Link', url: b.url || b.href || '' }))
-      .filter(b => b.url)
+    bms.map(b => ({ title: b.name || b.title || 'Link', url: b.url || b.href || '' }))
+       .filter(b => b.url)
 
   const groups = []
 
-  // Format A (actual AFS): [[{name, bookmarks}], [{name, bookmarks}], ...]
-  if (Array.isArray(data) && data.every(item => Array.isArray(item))) {
-    data.forEach(col =>
-      col.forEach(g => {
-        if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) })
-      })
-    )
+  if (Array.isArray(data) && data.every(i => Array.isArray(i))) {
+    data.forEach(col => col.forEach(g => {
+      if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) })
+    }))
     if (groups.length) return groups
   }
 
-  // Format B: flat array [{name, bookmarks}, ...]
   if (Array.isArray(data) && data[0]?.name) {
     data.forEach(g => {
       if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links) })
@@ -44,22 +39,17 @@ function parseAFineStart(raw) {
     if (groups.length) return groups
   }
 
-  // Format C: keyed object { columns/groups/data: [...] }
   const root = data.columns || data.groups || data.data || null
   if (Array.isArray(root)) {
     root.forEach(item => {
-      if (Array.isArray(item)) {
-        item.forEach(g => {
-          if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) })
-        })
-      } else if (item?.name) {
-        groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links) })
-      }
+      if (Array.isArray(item)) item.forEach(g => {
+        if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) })
+      })
+      else if (item?.name) groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links) })
     })
     if (groups.length) return groups
   }
 
-  // Deep fallback: recursively find anything with name + bookmarks
   const walk = (node) => {
     if (!node || typeof node !== 'object') return
     const bms = node.bookmarks || node.links || node.items
@@ -70,31 +60,54 @@ function parseAFineStart(raw) {
     ;(Array.isArray(node) ? node : Object.values(node)).forEach(walk)
   }
   walk(data)
-
   if (groups.length) return groups
 
   throw new Error(
-    `Could not find any groups. Detected structure: ${
+    `Could not find any groups. Detected: ${
       Array.isArray(data)
-        ? `array[${data.length}], first item: ${JSON.stringify(data[0])?.slice(0, 120)}`
-        : `object with keys: ${Object.keys(data).join(', ')}`
+        ? `array[${data.length}], first: ${JSON.stringify(data[0])?.slice(0, 120)}`
+        : `keys: ${Object.keys(data).join(', ')}`
     }`
   )
 }
 
 /* ─────────────────────────────────────────
-   Column builder
+   Build independent column arrays
+   Each section keeps its col_index.
+   Within each col, order by position.
 ───────────────────────────────────────── */
 function buildColumns(sections = [], colCount = 2) {
-  const cols    = Math.max(colCount, 1)
-  const sorted  = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+  const cols = Math.max(colCount, 1)
+  const result = Array.from({ length: cols }, () => [])
+
+  const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+
+  // If everything has col_index 0 (fresh data), distribute round-robin
   const allZero = sorted.length > 1 && sorted.every(s => (s.col_index ?? 0) === 0)
-  const result  = Array.from({ length: cols }, () => [])
+
   sorted.forEach((s, i) => {
-    const ci = allZero ? i % cols : Math.min(s.col_index ?? 0, cols - 1)
+    const ci = allZero
+      ? i % cols
+      : Math.min(Math.max(s.col_index ?? 0, 0), cols - 1)
     result[ci].push(s)
   })
+
   return result
+}
+
+/* ─────────────────────────────────────────
+   Persist a single column's order
+   Only touches sections in that column — other columns untouched.
+───────────────────────────────────────── */
+async function persistColumn(colItems, colIndex) {
+  await Promise.all(
+    colItems.map((s, i) =>
+      supabase
+        .from('sections')
+        .update({ position: i, col_index: colIndex })
+        .eq('id', s.id)
+    )
+  )
 }
 
 /* ─────────────────────────────────────────
@@ -106,21 +119,24 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
   const [name,       setName]       = useState(section.name ?? '')
   const [addingLink, setAddingLink] = useState(false)
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: section.id })
+  const {
+    attributes, listeners, setNodeRef,
+    transform, transition, isDragging,
+  } = useSortable({ id: section.id })
 
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform:  CSS.Transform.toString(transform),
     transition,
-    opacity:  isDragging ? 0.4 : 1,
-    zIndex:   isDragging ? 10  : 'auto',
-    position: 'relative',
+    opacity:    isDragging ? 0.35 : 1,
+    position:   'relative',
+    zIndex:     isDragging ? 20 : 'auto',
   }
 
-  const sectionLinks = Array.isArray(links) ? links.filter(l => l.section_id === section.id) : []
+  const sectionLinks = links.filter(l => l.section_id === section.id)
 
   const toggleCollapse = async () => {
-    const next = !collapsed; setCollapsed(next)
+    const next = !collapsed
+    setCollapsed(next)
     await supabase.from('sections').update({ collapsed: next }).eq('id', section.id)
   }
 
@@ -128,7 +144,8 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
     e.preventDefault()
     if (!name.trim()) return
     await supabase.from('sections').update({ name: name.trim() }).eq('id', section.id)
-    setRenaming(false); onRefresh()
+    setRenaming(false)
+    onRefresh()
   }
 
   const deleteSection = async (e) => {
@@ -156,8 +173,13 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
         {renaming ? (
           <form onSubmit={rename} onClick={e => e.stopPropagation()}
             style={{ flex: 1, display: 'flex', gap: '0.35rem' }}>
-            <input className="input" value={name} onChange={e => setName(e.target.value)}
-              autoFocus style={{ flex: 1, fontSize: '0.82em' }} />
+            <input
+              className="input"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              autoFocus
+              style={{ flex: 1, fontSize: '0.82em' }}
+            />
             <button className="btn btn-primary" type="submit" style={{ fontSize: '0.75em' }}>Save</button>
             <button className="btn" type="button" style={{ fontSize: '0.75em' }}
               onClick={() => setRenaming(false)}>Cancel</button>
@@ -199,11 +221,59 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
 }
 
 /* ─────────────────────────────────────────
+   One draggable column — fully independent
+───────────────────────────────────────── */
+function SectionColumn({ colItems, colIndex, links, userId, workspaceId, onRefresh, openInNewTab }) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return
+
+    const from = colItems.findIndex(s => s.id === active.id)
+    const to   = colItems.findIndex(s => s.id === over.id)
+    if (from === -1 || to === -1) return
+
+    // Reorder only within this column — other columns are never touched
+    const next = arrayMove(colItems, from, to)
+    await persistColumn(next, colIndex)
+    onRefresh()
+  }
+
+  return (
+    <div className="section-col">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}>
+        <SortableContext
+          items={colItems.map(s => s.id)}
+          strategy={verticalListSortingStrategy}>
+          {colItems.map(section => (
+            <SectionCard
+              key={section.id}
+              section={section}
+              links={links}
+              userId={userId}
+              workspaceId={workspaceId}
+              onRefresh={onRefresh}
+              openInNewTab={openInNewTab}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────
    Main Sections component
 ───────────────────────────────────────── */
 export default function Sections({
-  sections     = [],
-  links        = [],
+  sections      = [],
+  links         = [],
   userId,
   workspaceId,
   onRefresh,
@@ -214,7 +284,6 @@ export default function Sections({
 }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
-  const [activeId,      setActiveId]      = useState(null)
 
   const [showImport,    setShowImport]    = useState(false)
   const [importText,    setImportText]    = useState('')
@@ -224,74 +293,79 @@ export default function Sections({
 
   const safeLinks = Array.isArray(links) ? links : []
 
-  useEffect(() => { if (triggerAdd > 0) setAddingSection(true) }, [triggerAdd])
+  useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
   useEffect(() => {
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  )
-
-  const handleDragEnd = async ({ active, over }) => {
-    setActiveId(null)
-    if (!over || active.id === over.id) return
-
-    const flat = buildColumns(sections, colCount).flat()
-    const from = flat.findIndex(s => s.id === active.id)
-    const to   = flat.findIndex(s => s.id === over.id)
-    if (from === -1 || to === -1) return
-
-    // Let dnd-kit's collision detection handle insert-before vs insert-after
-    // naturally — pointer position top-half = before, bottom-half = after.
-    const next = arrayMove(flat, from, to)
-
-    await Promise.all(next.map((s, i) =>
-      supabase.from('sections').update({ position: i, col_index: i % colCount }).eq('id', s.id)
-    ))
-    onRefresh()
-  }
-
   const addSection = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
-    const pos = sections.length
+    // New section goes into the shortest column
+    const cols     = buildColumns(sections, colCount)
+    const shortest = cols.reduce((best, col, i) => col.length < cols[best].length ? i : best, 0)
+    const pos      = cols[shortest].length
+
     await supabase.from('sections').insert({
-      user_id: userId, workspace_id: workspaceId,
-      name: newName.trim(), position: pos,
-      col_index: pos % colCount,
+      user_id:      userId,
+      workspace_id: workspaceId,
+      name:         newName.trim(),
+      position:     pos,
+      col_index:    shortest,
     })
-    setNewName(''); setAddingSection(false); onRefresh()
+    setNewName('')
+    setAddingSection(false)
+    onRefresh()
   }
 
   const runImport = async () => {
-    setImportError(''); setImportLoading(true)
+    setImportError('')
+    setImportLoading(true)
     try {
       const groups = parseAFineStart(importText.trim())
       if (!groups.length) throw new Error('No groups found in the export.')
 
-      const startPos = sections.length
       for (let gi = 0; gi < groups.length; gi++) {
-        const g = groups[gi]
-        const { data: sec, error: secErr } = await supabase.from('sections').insert({
-          user_id: userId, workspace_id: workspaceId,
-          name: g.name, position: startPos + gi,
-          col_index: (startPos + gi) % colCount,
-        }).select().single()
+        const g    = groups[gi]
+        const cols = buildColumns(sections, colCount)
+        const ci   = cols.reduce((best, col, i) => col.length < cols[best].length ? i : best, 0)
+        const pos  = cols[ci].length
+
+        const { data: sec, error: secErr } = await supabase
+          .from('sections')
+          .insert({
+            user_id:      userId,
+            workspace_id: workspaceId,
+            name:         g.name,
+            position:     pos,
+            col_index:    ci,
+          })
+          .select()
+          .single()
+
         if (secErr) throw new Error(secErr.message)
+
         if (g.links.length) {
           await supabase.from('links').insert(
             g.links.map((lnk, li) => ({
-              user_id: userId, workspace_id: workspaceId,
-              section_id: sec.id, title: lnk.title,
-              url: lnk.url, position: li,
+              user_id:      userId,
+              workspace_id: workspaceId,
+              section_id:   sec.id,
+              title:        lnk.title,
+              url:          lnk.url,
+              position:     li,
             }))
           )
         }
       }
-      setImportDone(true); onRefresh()
-      setTimeout(() => { setShowImport(false); setImportText(''); setImportDone(false) }, 1800)
+
+      setImportDone(true)
+      onRefresh()
+      setTimeout(() => {
+        setShowImport(false)
+        setImportText('')
+        setImportDone(false)
+      }, 1800)
     } catch (err) {
       setImportError(err.message)
     } finally {
@@ -304,33 +378,20 @@ export default function Sections({
   return (
     <div style={{ width: '100%' }}>
 
-      {/* ── Sections grid ── */}
+      {/* ── Sections grid — each column is its own DndContext ── */}
       <div className="sections-grid">
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={({ active }) => setActiveId(active.id)}
-          onDragEnd={handleDragEnd}>
-          {colItemsList.map((col, ci) => (
-            <div key={ci} className="section-col">
-              <SortableContext
-                items={col.map(s => s.id)}
-                strategy={verticalListSortingStrategy}>
-                {col.map(section => (
-                  <SectionCard
-                    key={section.id}
-                    section={section}
-                    links={safeLinks}
-                    userId={userId}
-                    workspaceId={workspaceId}
-                    onRefresh={onRefresh}
-                    openInNewTab={openInNewTab}
-                  />
-                ))}
-              </SortableContext>
-            </div>
-          ))}
-        </DndContext>
+        {colItemsList.map((col, ci) => (
+          <SectionColumn
+            key={ci}
+            colItems={col}
+            colIndex={ci}
+            links={safeLinks}
+            userId={userId}
+            workspaceId={workspaceId}
+            onRefresh={onRefresh}
+            openInNewTab={openInNewTab}
+          />
+        ))}
       </div>
 
       {/* ── Inline add-section form ── */}
@@ -368,8 +429,8 @@ export default function Sections({
 
             <div style={{ fontSize: '0.8em', color: 'var(--text-dim)', lineHeight: 1.55 }}>
               In A Fine Start go to <strong>Settings → Export bookmarks</strong>, copy
-              the entire code block shown, then paste it below. Your existing sections
-              will not be removed — imported groups are added alongside them.
+              the entire code block, then paste it below. Existing sections are kept —
+              imported groups are added alongside them.
             </div>
 
             <textarea
