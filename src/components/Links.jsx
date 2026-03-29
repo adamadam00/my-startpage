@@ -24,6 +24,10 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab }) {
     transition, opacity: isDragging ? 0.4 : 1,
   }
 
+  const open = () => openInNewTab
+    ? window.open(link.url, '_blank', 'noopener,noreferrer')
+    : (window.location.href = link.url)
+
   return (
     <div ref={setNodeRef} style={style} className="link-item">
       <span className="drag-handle" {...attributes} {...listeners}
@@ -34,24 +38,21 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab }) {
           onError={e => { e.target.style.display = 'none' }} />
       )}
 
-      <span className="link-title" title={link.url}
-        onClick={() => openInNewTab
-          ? window.open(link.url, '_blank', 'noopener,noreferrer')
-          : (window.location.href = link.url)}>
+      <span className="link-title" onClick={open} title={link.url}>
         {link.title}
       </span>
 
-      {/* Overlay actions — float over link text on hover */}
-      <div className="link-actions">
-        <button className="link-action-solid" onClick={e => { e.stopPropagation(); onEdit(link) }} title="Edit">✎</button>
-        <button className="link-action-solid link-action-del" onClick={e => { e.stopPropagation(); onDelete(link.id) }} title="Delete">✕</button>
+      {/* Absolute overlay on right — visible on hover only */}
+      <div className="link-actions-overlay">
+        <button className="link-act" onClick={e => { e.stopPropagation(); onEdit(link) }} title="Edit">✎</button>
+        <button className="link-act link-act-del" onClick={e => { e.stopPropagation(); onDelete(link.id) }} title="Delete">✕</button>
       </div>
     </div>
   )
 }
 
 export default function Links({
-  links        = [],
+  links         = [],
   sectionId,
   workspaceId,
   userId,
@@ -66,9 +67,7 @@ export default function Links({
   const [title,   setTitle]   = useState('')
   const [url,     setUrl]     = useState('')
 
-  useEffect(() => {
-    if (externalAdding) setAdding(true)
-  }, [externalAdding])
+  useEffect(() => { if (externalAdding) setAdding(true) }, [externalAdding])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -121,13 +120,9 @@ export default function Links({
     onRefresh()
   }
 
-  const startEdit = (link) => {
-    setEditing(link); setTitle(link.title); setUrl(link.url)
-  }
-
   const formStyle = {
     display: 'flex', flexDirection: 'column', gap: '0.3rem',
-    padding: '0.3rem var(--card-padding)',
+    padding: '0.3rem var(--card-padding) 0.4rem',
   }
 
   return (
@@ -148,7 +143,7 @@ export default function Links({
                   </div>
                 </form>
               ) : (
-                <LinkItem key={link.id} link={link} onEdit={startEdit}
+                <LinkItem key={link.id} link={link} onEdit={l => { setEditing(l); setTitle(l.title); setUrl(l.url) }}
                   onDelete={handleDelete} openInNewTab={openInNewTab} />
               )
             )}
