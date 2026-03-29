@@ -36,7 +36,7 @@ function parseAFineStart(raw) {
     if (groups.length) return groups
   }
 
-  // Format B: flat array of groups [{name, bookmarks}, ...]
+  // Format B: flat array [{name, bookmarks}, ...]
   if (Array.isArray(data) && data[0]?.name) {
     data.forEach(g => {
       if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links) })
@@ -109,7 +109,16 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id })
 
-  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1 }
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    // Keep card visible while dragging — 0 would make it invisible
+    opacity:   isDragging ? 0.4 : 1,
+    // Lift card slightly while dragging
+    zIndex:    isDragging ? 10  : 'auto',
+    position:  'relative',
+  }
+
   const sectionLinks = Array.isArray(links) ? links.filter(l => l.section_id === section.id) : []
 
   const toggleCollapse = async () => {
@@ -137,8 +146,17 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
       className={`section-card${collapsed ? ' collapsed' : ''}`}>
 
       <div className="section-header" onClick={toggleCollapse}>
-        <span className="drag-handle" {...attributes} {...listeners}
-          onClick={e => e.stopPropagation()}>⠿</span>
+
+        {/* ── Drag handle — tall hit area ── */}
+        <span
+          className="drag-handle"
+          {...attributes}
+          {...listeners}
+          onClick={e => e.stopPropagation()}
+          title="Drag to reorder"
+        >
+          ⠿
+        </span>
 
         {renaming ? (
           <form onSubmit={rename} onClick={e => e.stopPropagation()}
@@ -217,7 +235,7 @@ export default function Sections({
   }, [triggerImport])
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
@@ -230,14 +248,9 @@ export default function Sections({
     const to   = flat.findIndex(s => s.id === over.id)
     if (from === -1 || to === -1) return
 
-    /*
-      Always insert AFTER the target card so dragging feels like
-      "dropping onto a pile below" rather than swapping.
-      - Dragging DOWN (from < to): arrayMove already lands after target — use `to` as-is
-      - Dragging UP   (from > to): default would land BEFORE target — use `to + 1` instead
-    */
+    // Always insert AFTER the target — drop below the card you hovered
     const insertAt = from > to ? to + 1 : to
-    const next = arrayMove(flat, from, insertAt)
+    const next     = arrayMove(flat, from, insertAt)
 
     await Promise.all(next.map((s, i) =>
       supabase.from('sections').update({ position: i, col_index: i % colCount }).eq('id', s.id)
@@ -294,9 +307,9 @@ export default function Sections({
   const colItemsList = buildColumns(sections, colCount)
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+    <div style={{ width: '100%' }}>
 
-      {/* ── Sections grid ── */}
+      {/* ── Sections grid — grows freely, parent main-col handles scroll ── */}
       <div className="sections-grid">
         <DndContext
           sensors={sensors}
