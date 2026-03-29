@@ -7,7 +7,7 @@ import SearchBar from './components/SearchBar'
 import Notes     from './components/Notes'
 import Sections  from './components/Sections'
 
-const BUILD      = '29 Mar 2026'
+const BUILD      = '30 Mar 2026'
 const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines', 'bg-crosshatch']
 
 const BG_OPTIONS = [
@@ -56,6 +56,7 @@ const DEFAULT_THEME = {
   font:             'DM Mono',
   workspaceFontSize:'14',
   topbarFontSize:   '12',
+  settingsFontSize: '13',   // ← NEW
   clockWidgetScale: '1',
   radius:           '10',
   radiusSm:         '6',
@@ -64,6 +65,8 @@ const DEFAULT_THEME = {
   sectionsCols:     '2',
   sectionGap:       '0',
   sectionGapH:      '0',
+  mainGapTop:       '12',   // ← gap between topbar and cards
+  cardPadding:      '0.75', // ← NEW: internal card padding
   pageScale:        '1',
   handleOpacity:    '0.15',
   faviconOpacity:   '1',
@@ -102,15 +105,18 @@ function applyTheme(t) {
   r.setProperty('--notes-bg',          t.notesBg      ?? t.card)
   r.setProperty('--notes-input-bg',    t.notesInputBg ?? t.bg)
   r.setProperty('--font',              `'${t.font}', monospace`)
-  r.setProperty('--font-size',         t.workspaceFontSize + 'px')
-  r.setProperty('--topbar-font-size',  t.topbarFontSize    + 'px')
-  r.setProperty('--clock-widget-size', t.clockWidgetScale  + 'rem')
-  r.setProperty('--radius',            t.radius            + 'px')
-  r.setProperty('--radius-sm',         t.radiusSm          + 'px')
+  r.setProperty('--font-size',         t.workspaceFontSize  + 'px')
+  r.setProperty('--topbar-font-size',  t.topbarFontSize     + 'px')
+  r.setProperty('--settings-font-size',( t.settingsFontSize ?? '13') + 'px')  // ← NEW
+  r.setProperty('--clock-widget-size', t.clockWidgetScale   + 'rem')
+  r.setProperty('--radius',            t.radius             + 'px')
+  r.setProperty('--radius-sm',         t.radiusSm           + 'px')
   r.setProperty('--section-radius',    (t.sectionRadius ?? '0') + 'px')
-  r.setProperty('--link-gap',          t.linkGap           + 'rem')
-  r.setProperty('--section-gap',       t.sectionGap        + 'px')
-  r.setProperty('--section-gap-h',     t.sectionGapH       + 'px')
+  r.setProperty('--link-gap',          t.linkGap            + 'rem')
+  r.setProperty('--section-gap',       t.sectionGap         + 'px')
+  r.setProperty('--section-gap-h',     t.sectionGapH        + 'px')
+  r.setProperty('--main-gap-top',      (t.mainGapTop  ?? '12')   + 'px')   // ← topbar→cards gap
+  r.setProperty('--card-padding',      (t.cardPadding ?? '0.75') + 'rem')  // ← NEW
   r.setProperty('--page-scale',        t.pageScale)
   r.setProperty('--handle-opacity',    t.handleOpacity)
   r.setProperty('--favicon-opacity',   t.faviconOpacity)
@@ -122,20 +128,21 @@ function applyTheme(t) {
 }
 
 export default function App() {
-  const [session,               setSession]               = useState(null)
-  const [loading,               setLoading]               = useState(true)
-  const [workspaces,            setWorkspaces]            = useState([])
-  const [activeWs,              setActiveWs]              = useState(null)
-  const [sections,              setSections]              = useState([])
-  const [links,                 setLinks]                 = useState([])
-  const [notes,                 setNotes]                 = useState([])
-  const [addingWs,              setAddingWs]              = useState(false)
-  const [newWsName,             setNewWsName]             = useState('')
-  const [showSettings,          setShowSettings]          = useState(false)
-  const [theme,                 setTheme]                 = useState(loadTheme)
-  const [addSectionTrigger,     setAddSectionTrigger]     = useState(0)
-  const [importSectionTrigger,  setImportSectionTrigger]  = useState(0)
+  const [session,              setSession]              = useState(null)
+  const [loading,              setLoading]              = useState(true)
+  const [workspaces,           setWorkspaces]           = useState([])
+  const [activeWs,             setActiveWs]             = useState(null)
+  const [sections,             setSections]             = useState([])
+  const [links,                setLinks]                = useState([])
+  const [notes,                setNotes]                = useState([])
+  const [addingWs,             setAddingWs]             = useState(false)
+  const [newWsName,            setNewWsName]            = useState('')
+  const [showSettings,         setShowSettings]         = useState(false)
+  const [theme,                setTheme]                = useState(loadTheme)
+  const [addSectionTrigger,    setAddSectionTrigger]    = useState(0)
+  const [importSectionTrigger, setImportSectionTrigger] = useState(0)
   const fileRef = useRef(null)
+  const wsCache = useRef({})
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -162,23 +169,65 @@ export default function App() {
     if (!session) return
     const { data } = await supabase.from('workspaces').select('*')
       .eq('user_id', session.user.id).order('created_at')
-    if (data) { setWorkspaces(data); setActiveWs(prev => prev ?? data[0]?.id ?? null) }
+    if (data) {
+      setWorkspaces(data)
+      setActiveWs(prev => {
+        const stored = localStorage.getItem('active_ws')
+        if (stored && data.find(w => w.id === stored)) return stored
+        return prev ?? data[0]?.id ?? null
+      })
+    }
   }, [session])
 
-  const fetchData = useCallback(async () => {
-    if (!session || !activeWs) return
+  const fetchData = useCallback(async (wsId, silent = false) => {
+    const id = wsId ?? activeWs
+    if (!session || !id) return
+
+    if (!silent) {
+      const hit = wsCache.current[id]
+      if (hit) {
+        setSections(hit.sections)
+        setLinks(hit.links)
+        setNotes(hit.notes)
+        fetchData(id, true)
+        return
+      }
+    }
+
     const [sec, lnk, nt] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
-      supabase.from('links').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
-      supabase.from('notes').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      supabase.from('sections').select('*').eq('workspace_id', id).eq('user_id', session.user.id).order('position'),
+      supabase.from('links').select('*').eq('workspace_id', id).eq('user_id', session.user.id).order('position'),
+      supabase.from('notes').select('*').eq('workspace_id', id).eq('user_id', session.user.id).order('created_at', { ascending: false }),
     ])
-    if (sec.data) setSections(sec.data)
-    if (lnk.data) setLinks(lnk.data)
-    if (nt.data)  setNotes(nt.data)
+
+    const fresh = {
+      sections: sec.data ?? [],
+      links:    lnk.data ?? [],
+      notes:    nt.data  ?? [],
+    }
+    wsCache.current[id] = fresh
+
+    if (id === activeWs || !activeWs) {
+      setSections(fresh.sections)
+      setLinks(fresh.links)
+      setNotes(fresh.notes)
+    }
   }, [session, activeWs])
 
+  const switchWorkspace = useCallback((id) => {
+    localStorage.setItem('active_ws', id)
+    delete wsCache.current[id]
+    setActiveWs(id)
+  }, [])
+
+  const handleRefresh = useCallback(() => {
+    if (!activeWs) return
+    delete wsCache.current[activeWs]
+    fetchData(activeWs)
+  }, [activeWs, fetchData])
+
   useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
-  useEffect(() => { fetchData() },       [fetchData])
+  useEffect(() => { if (activeWs) fetchData(activeWs) }, [activeWs, session])
 
   const addWorkspace = async (e) => {
     e.preventDefault()
@@ -187,17 +236,19 @@ export default function App() {
       .insert({ user_id: session.user.id, name: newWsName.trim() }).select().single()
     setNewWsName(''); setAddingWs(false)
     await fetchWorkspaces()
-    if (data) setActiveWs(data.id)
+    if (data) switchWorkspace(data.id)
   }
 
   const deleteWorkspace = async (id) => {
     if (!confirm('Delete this workspace and all its data?')) return
+    delete wsCache.current[id]
     await supabase.from('links').delete().eq('workspace_id', id)
     await supabase.from('sections').delete().eq('workspace_id', id)
     await supabase.from('notes').delete().eq('workspace_id', id)
     await supabase.from('workspaces').delete().eq('id', id)
     const remaining = workspaces.filter(w => w.id !== id)
-    setWorkspaces(remaining); setActiveWs(remaining[0]?.id ?? null)
+    setWorkspaces(remaining)
+    switchWorkspace(remaining[0]?.id ?? null)
   }
 
   const handleImageUpload = (e) => {
@@ -303,7 +354,7 @@ export default function App() {
           {workspaces.map(ws => (
             <button key={ws.id}
               className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-              onClick={() => setActiveWs(ws.id)}>
+              onClick={() => switchWorkspace(ws.id)}>
               {ws.name}
               <button className="del-ws"
                 onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}>✕</button>
@@ -354,7 +405,7 @@ export default function App() {
             links={links ?? []}
             userId={session.user.id}
             workspaceId={activeWs}
-            onRefresh={fetchData}
+            onRefresh={handleRefresh}
             openInNewTab={openInNewTab}
             colCount={colCount}
             triggerAdd={addSectionTrigger}
@@ -366,12 +417,12 @@ export default function App() {
             notes={notes ?? []}
             userId={session.user.id}
             workspaceId={activeWs}
-            onRefresh={fetchData}
+            onRefresh={handleRefresh}
           />
         </div>
       </div>
 
-      {/* ── Settings — no darkening overlay ── */}
+      {/* ── Settings panel ── */}
       {showSettings && (
         <>
           <div className="settings-veil" />
@@ -430,8 +481,7 @@ export default function App() {
             {/* ── Background ── */}
             <div className="settings-section">
               <div className="settings-title">Background</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}
-                title="Choose a background style for the page">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                 {BG_OPTIONS.map(opt => (
                   <button key={opt.value}
                     className={`preset-slot${theme.bgStyle === opt.value ? ' active' : ''}`}
@@ -444,14 +494,12 @@ export default function App() {
 
               {isPatternBg && (
                 <>
-                  <div className="settings-row" style={{ marginTop: '0.5rem' }}
-                    title="Colour of the repeating pattern dots, lines or grid">
+                  <div className="settings-row" style={{ marginTop: '0.5rem' }}>
                     <span className="settings-label">Pattern colour</span>
                     <input type="color" className="color-input"
                       value={theme.patternColor} onChange={e => set('patternColor', e.target.value)} />
                   </div>
-                  <div className="settings-row"
-                    title="Opacity of the pattern — lower values make it more subtle">
+                  <div className="settings-row">
                     <span className="settings-label">
                       Pattern opacity — {parseFloat(theme.patternOpacity).toFixed(2)}
                     </span>
@@ -464,8 +512,7 @@ export default function App() {
 
               {theme.bgStyle === 'bg-gradient' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <div className="settings-row"
-                    title="Linear sweeps across the page, radial radiates from the centre">
+                  <div className="settings-row">
                     <span className="settings-label">Type</span>
                     <div className="preset-slots">
                       {['linear', 'radial'].map(gt => (
@@ -478,8 +525,7 @@ export default function App() {
                     </div>
                   </div>
                   {theme.gradientType === 'linear' && (
-                    <div className="settings-row"
-                      title="Direction of the linear gradient in degrees (0 = bottom to top, 90 = left to right)">
+                    <div className="settings-row">
                       <span className="settings-label">Angle — {theme.gradientAngle}°</span>
                       <input type="range" min="0" max="360" step="5"
                         value={theme.gradientAngle} onChange={e => set('gradientAngle', e.target.value)}
@@ -487,19 +533,15 @@ export default function App() {
                     </div>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <span className="settings-label"
-                      title="Add up to 6 colour stops — the gradient blends between them in order">
-                      Colour stops ({gradColors.length}/6)
-                    </span>
+                    <span className="settings-label">Colour stops ({gradColors.length}/6)</span>
                     {gradColors.map((c, i) => (
-                      <div key={i} className="settings-row" title={`Colour at stop position ${i + 1}`}>
+                      <div key={i} className="settings-row">
                         <span className="settings-label">Stop {i + 1}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <input type="color" className="color-input" value={c}
                             onChange={e => updateGradColor(i, e.target.value)} />
                           {gradColors.length > 2 && (
                             <button className="icon-btn" style={{ fontSize: '0.7em' }}
-                              title="Remove this colour stop"
                               onClick={() => removeGradStop(i)}>✕</button>
                           )}
                         </div>
@@ -507,7 +549,6 @@ export default function App() {
                     ))}
                     {gradColors.length < 6 && (
                       <button className="btn" style={{ fontSize: '0.75em', alignSelf: 'flex-start' }}
-                        title="Add another colour stop to the gradient"
                         onClick={addGradStop}>+ Add stop</button>
                     )}
                   </div>
@@ -520,7 +561,6 @@ export default function App() {
                     style={{ display: 'none' }} onChange={handleImageUpload} />
                   <button className="btn"
                     style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
-                    title="Load a local image file — stored in browser localStorage (max 2 MB)"
                     onClick={() => fileRef.current?.click()}>
                     {theme.bgImage ? '↺ Change image' : '↑ Upload image (max 2 MB, cached locally)'}
                   </button>
@@ -530,8 +570,7 @@ export default function App() {
                         style={{ width: '100%', height: 80, objectFit: 'cover',
                           borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
                           border: '1px solid var(--border)' }} />
-                      <div className="settings-row" style={{ marginTop: '0.4rem' }}
-                        title="How opaque the background image is — lower values let the base colour show through">
+                      <div className="settings-row" style={{ marginTop: '0.4rem' }}>
                         <span className="settings-label">
                           Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}
                         </span>
@@ -541,7 +580,6 @@ export default function App() {
                       </div>
                       <button className="btn btn-danger"
                         style={{ marginTop: '0.35rem', fontSize: '0.75em', width: '100%' }}
-                        title="Remove the background image and revert to solid colour"
                         onClick={() => set('bgImage', '')}>Remove image</button>
                     </>
                   )}
@@ -552,8 +590,7 @@ export default function App() {
             {/* ── Typography ── */}
             <div className="settings-section">
               <div className="settings-title">Typography</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}
-                title="Select the font used throughout the interface">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}>
                 {FONTS.map(f => (
                   <button key={f}
                     className={`preset-slot${theme.font === f ? ' active' : ''}`}
@@ -563,9 +600,10 @@ export default function App() {
                 ))}
               </div>
               {[
-                ['Workspace font size', 'workspaceFontSize', 11,   18,  1,    'px',  'Font size for section names, link titles and note text'],
-                ['Topbar font size',    'topbarFontSize',    10,   16,  1,    'px',  'Font size for workspace tabs, buttons and topbar elements'],
-                ['Clock & weather',     'clockWidgetScale',  0.75, 2.5, 0.05, 'rem', 'Size of the clock time and weather temperature in the topbar'],
+                ['Workspace font',   'workspaceFontSize', 11,   18,  1,    'px',  'Font size for section names, link titles and note text'],
+                ['Topbar font',      'topbarFontSize',    10,   16,  1,    'px',  'Font size for workspace tabs, buttons and topbar elements'],
+                ['Settings font',    'settingsFontSize',  10,   18,  1,    'px',  'Font size inside the settings panel'],
+                ['Clock & weather',  'clockWidgetScale',  0.75, 2.5, 0.05, 'rem', 'Size of the clock and weather in the topbar'],
               ].map(([label, key, min, max, step, unit, tip]) => (
                 <div className="settings-row" key={key} title={tip}>
                   <span className="settings-label">{label} — {theme[key]}{unit}</span>
@@ -579,8 +617,7 @@ export default function App() {
             {/* ── Layout ── */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
-              <div className="settings-row"
-                title="Number of columns to divide sections across">
+              <div className="settings-row" title="Number of columns to divide sections across">
                 <span className="settings-label">Section columns</span>
                 <div className="preset-slots">
                   {[1, 2, 3, 4, 5].map(n => (
@@ -593,14 +630,16 @@ export default function App() {
                 </div>
               </div>
               {[
-                ['Section gap (vertical)',   'sectionGap',    0,   24,   1,    'px',  'Vertical gap between section cards within a column'],
-                ['Section gap (horizontal)', 'sectionGapH',   0,   24,   1,    'px',  'Horizontal gap between columns — increase when using rounded section radius'],
-                ['Section card radius',      'sectionRadius', 0,   20,   1,    'px',  'Corner radius of section cards — use with gap > 0 for a card-style look'],
-                ['Notes panel width',        'notesWidth',    140, 420,  10,   'px',  'Width of the notes sidebar'],
-                ['Notes font size',          'notesFontSize', 11,  18,   1,    'px',  'Font size for note content text'],
-                ['Link gap',                 'linkGap',       0,   1.5,  0.05, 'rem', 'Vertical spacing between links within a section'],
-                ['Page scale',               'pageScale',     0.5, 1.3,  0.05, '',    'Zoom the entire interface — useful for high density or large screens'],
-                ['Radius (UI elements)',     'radius',        0,   20,   1,    'px',  'Border radius for buttons, inputs, modals and note cards'],
+                ['Topbar → cards gap',       'mainGapTop',    0,    60,   2,    'px',  'Space between the topbar and the card grid — increase if cards feel too high'],
+                ['Card padding',             'cardPadding',   0.1,  2.5,  0.05, 'rem', 'Internal padding inside each section card and notes panel'],
+                ['Section gap (vertical)',   'sectionGap',    0,    24,   1,    'px',  'Vertical gap between section cards'],
+                ['Section gap (horizontal)', 'sectionGapH',   0,    24,   1,    'px',  'Horizontal gap between columns'],
+                ['Section card radius',      'sectionRadius', 0,    20,   1,    'px',  'Corner radius of section cards'],
+                ['Notes panel width',        'notesWidth',    140,  420,  10,   'px',  'Width of the notes sidebar'],
+                ['Notes font size',          'notesFontSize', 11,   18,   1,    'px',  'Font size for note content'],
+                ['Link gap',                 'linkGap',       0,    1.5,  0.05, 'rem', 'Vertical spacing between links within a section'],
+                ['Page scale',               'pageScale',     0.5,  1.3,  0.05, '',    'Zoom the entire interface'],
+                ['Radius (UI elements)',     'radius',        0,    20,   1,    'px',  'Border radius for buttons, inputs and modals'],
               ].map(([label, key, min, max, step, unit, tip]) => (
                 <div className="settings-row" key={key} title={tip}>
                   <span className="settings-label">{label} — {theme[key] ?? 0}{unit}</span>
@@ -618,7 +657,6 @@ export default function App() {
               <input className="input" value={theme.searchUrl}
                 onChange={e => set('searchUrl', e.target.value)}
                 placeholder="https://google.com/search?q="
-                title="The base URL for the search bar — your query is appended to the end"
                 style={{ fontSize: '0.8em' }} />
               <div style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>
                 Query is appended to the end of this URL.
@@ -628,8 +666,7 @@ export default function App() {
             {/* ── Links ── */}
             <div className="settings-section">
               <div className="settings-title">Links</div>
-              <div className="settings-row"
-                title="When enabled, clicking a link opens it in a new browser tab">
+              <div className="settings-row">
                 <span className="settings-label">Open links in new tab</span>
                 <label className="toggle">
                   <input type="checkbox" checked={theme.openInNewTab !== 'false'}
@@ -637,17 +674,16 @@ export default function App() {
                   <span className="toggle-slider" />
                 </label>
               </div>
-              <div className="settings-row"
-                title="Controls how website favicons appear next to link titles">
+              <div className="settings-row">
                 <span className="settings-label">Favicon style</span>
                 <div className="preset-slots">
                   {[
-                    { label: 'Normal', value: 'none',         tip: 'Show favicons at full colour' },
-                    { label: 'Dim',    value: 'opacity(0.5)', tip: 'Show favicons at half opacity' },
-                    { label: 'Mono',   value: 'grayscale(1)', tip: 'Show favicons in greyscale' },
-                    { label: 'Hide',   value: 'opacity(0)',   tip: 'Hide favicons entirely' },
+                    { label: 'Normal', value: 'none'         },
+                    { label: 'Dim',    value: 'opacity(0.5)' },
+                    { label: 'Mono',   value: 'grayscale(1)' },
+                    { label: 'Hide',   value: 'opacity(0)'   },
                   ].map(opt => (
-                    <button key={opt.value} title={opt.tip}
+                    <button key={opt.value}
                       className={`preset-slot${theme.faviconFilter === opt.value ? ' active' : ''}`}
                       onClick={() => set('faviconFilter', opt.value)}>
                       {opt.label}
@@ -660,32 +696,24 @@ export default function App() {
             {/* ── Presets ── */}
             <div className="settings-section">
               <div className="settings-title">Presets</div>
-
               <div className="import-export">
                 <button className="btn" style={{ fontSize: '0.8em' }}
-                  title="Download current theme settings as a JSON file"
                   onClick={exportSettings}>↓ Export theme</button>
-                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}
-                  title="Load a previously exported theme JSON file">
+                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
                   ↑ Import theme
                   <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
                 </label>
                 <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
-                  title="Reset all settings back to the default theme"
                   onClick={resetSettings}>Reset</button>
               </div>
-
               <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
-                title="Import sections and links from an A Fine Start bookmark export"
                 onClick={() => {
                   setShowSettings(false)
                   setTimeout(() => setImportSectionTrigger(n => n + 1), 150)
                 }}>
                 ↑ Import A Fine Start links
               </button>
-
               <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
-                title="Clears the service worker cache and reloads all assets fresh from the server — use this after a new deploy"
                 onClick={refreshCache}>
                 ↺ Refresh cached assets
               </button>
@@ -697,10 +725,8 @@ export default function App() {
 
             <div className="settings-footer">
               <button className="btn btn-primary" style={{ flex: 1 }}
-                title="Save all changes and close the settings panel"
                 onClick={saveSettings}>Save & close</button>
               <button className="btn"
-                title="Close without saving"
                 onClick={() => setShowSettings(false)}>Cancel</button>
             </div>
 
