@@ -112,11 +112,9 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    // Keep card visible while dragging — 0 would make it invisible
-    opacity:   isDragging ? 0.4 : 1,
-    // Lift card slightly while dragging
-    zIndex:    isDragging ? 10  : 'auto',
-    position:  'relative',
+    opacity:  isDragging ? 0.4 : 1,
+    zIndex:   isDragging ? 10  : 'auto',
+    position: 'relative',
   }
 
   const sectionLinks = Array.isArray(links) ? links.filter(l => l.section_id === section.id) : []
@@ -146,15 +144,12 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
       className={`section-card${collapsed ? ' collapsed' : ''}`}>
 
       <div className="section-header" onClick={toggleCollapse}>
-
-        {/* ── Drag handle — tall hit area ── */}
         <span
           className="drag-handle"
           {...attributes}
           {...listeners}
           onClick={e => e.stopPropagation()}
-          title="Drag to reorder"
-        >
+          title="Drag to reorder">
           ⠿
         </span>
 
@@ -229,7 +224,7 @@ export default function Sections({
 
   const safeLinks = Array.isArray(links) ? links : []
 
-  useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
+  useEffect(() => { if (triggerAdd > 0) setAddingSection(true) }, [triggerAdd])
   useEffect(() => {
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
@@ -248,9 +243,9 @@ export default function Sections({
     const to   = flat.findIndex(s => s.id === over.id)
     if (from === -1 || to === -1) return
 
-    // Always insert AFTER the target — drop below the card you hovered
-    const insertAt = from > to ? to + 1 : to
-    const next     = arrayMove(flat, from, insertAt)
+    // Let dnd-kit's collision detection handle insert-before vs insert-after
+    // naturally — pointer position top-half = before, bottom-half = after.
+    const next = arrayMove(flat, from, to)
 
     await Promise.all(next.map((s, i) =>
       supabase.from('sections').update({ position: i, col_index: i % colCount }).eq('id', s.id)
@@ -309,7 +304,7 @@ export default function Sections({
   return (
     <div style={{ width: '100%' }}>
 
-      {/* ── Sections grid — grows freely, parent main-col handles scroll ── */}
+      {/* ── Sections grid ── */}
       <div className="sections-grid">
         <DndContext
           sensors={sensors}
@@ -318,7 +313,9 @@ export default function Sections({
           onDragEnd={handleDragEnd}>
           {colItemsList.map((col, ci) => (
             <div key={ci} className="section-col">
-              <SortableContext items={col.map(s => s.id)} strategy={verticalListSortingStrategy}>
+              <SortableContext
+                items={col.map(s => s.id)}
+                strategy={verticalListSortingStrategy}>
                 {col.map(section => (
                   <SectionCard
                     key={section.id}
