@@ -35,48 +35,48 @@ const FONTS = [
 ]
 
 const DEFAULT_THEME = {
-  bg:               '#0c0c0f',
-  card:             '#13131a',
-  cardOpacity:      '1',
-  border:           '#2a2a3a',
-  borderOpacity:    '1',
-  accent:           '#6c8fff',
-  text:             '#e8e8f0',
-  textDim:          '#7878a0',
-  titleColor:       '#7878a0',
-  btnBg:            '#1e3a8a',
-  notesBg:          '#13131a',
-  notesInputBg:     '#0c0c0f',
-  bgStyle:          'bg-dots',
-  patternColor:     '#2a2a3a',
-  patternOpacity:   '1',
-  gradientType:     'linear',
-  gradientAngle:    '135',
-  gradientColors:   '["#6c8fff","#9c6fff","#0c0c0f"]',
-  font:             'DM Mono',
-  workspaceFontSize:'14',
-  topbarFontSize:   '12',
-  settingsFontSize: '13',   // ← NEW
-  clockWidgetScale: '1',
-  radius:           '10',
-  radiusSm:         '6',
-  sectionRadius:    '0',
-  linkGap:          '0.5',
-  sectionsCols:     '2',
-  sectionGap:       '0',
-  sectionGapH:      '0',
-  mainGapTop:       '12',   // ← gap between topbar and cards
-  cardPadding:      '0.75', // ← NEW: internal card padding
-  pageScale:        '1',
-  handleOpacity:    '0.15',
-  faviconOpacity:   '1',
-  faviconFilter:    'none',
-  bgImage:          '',
-  bgImageOpacity:   '1',
-  openInNewTab:     'true',
-  notesFontSize:    '13',
-  notesWidth:       '240',
-  searchUrl:        'https://google.com/search?q=',
+  bg:                '#0c0c0f',
+  card:              '#13131a',
+  cardOpacity:       '1',
+  border:            '#2a2a3a',
+  borderOpacity:     '1',
+  accent:            '#6c8fff',
+  text:              '#e8e8f0',
+  textDim:           '#7878a0',
+  titleColor:        '#7878a0',
+  btnBg:             '#1e3a8a',
+  notesBg:           '#13131a',
+  notesInputBg:      '#0c0c0f',
+  bgStyle:           'bg-dots',
+  patternColor:      '#2a2a3a',
+  patternOpacity:    '1',
+  gradientType:      'linear',
+  gradientAngle:     '135',
+  gradientColors:    '["#6c8fff","#9c6fff","#0c0c0f"]',
+  font:              'DM Mono',
+  workspaceFontSize: '14',
+  topbarFontSize:    '12',
+  settingsFontSize:  '13',
+  clockWidgetScale:  '1',
+  radius:            '10',
+  radiusSm:          '6',
+  sectionRadius:     '0',
+  linkGap:           '0.5',
+  sectionsCols:      '2',
+  sectionGap:        '0',
+  sectionGapH:       '0',
+  mainGapTop:        '12',
+  cardPadding:       '0.75',
+  pageScale:         '1',
+  handleOpacity:     '0.15',
+  faviconOpacity:    '1',
+  faviconFilter:     'none',
+  bgImage:           '',
+  bgImageOpacity:    '1',
+  openInNewTab:      'true',
+  notesFontSize:     '13',
+  notesWidth:        '240',
+  searchUrl:         'https://google.com/search?q=',
 }
 
 function loadTheme() {
@@ -86,46 +86,49 @@ function loadTheme() {
 
 function applyTheme(t) {
   const r = document.documentElement.style
-  r.setProperty('--bg',                t.bg)
-  r.setProperty('--bg2',               t.bg)
-  r.setProperty('--bg3',               t.card)
-  r.setProperty('--card',              t.card)
-  r.setProperty('--card-opacity',      t.cardOpacity)
-  r.setProperty('--border',            t.border)
-  r.setProperty('--border-opacity',    t.borderOpacity)
-  r.setProperty('--accent',            t.accent)
-  r.setProperty('--accent-dim',        t.accent + '22')
-  r.setProperty('--accent-glow',       t.accent + '33')
-  r.setProperty('--text',              t.text)
-  r.setProperty('--text-dim',          t.textDim)
-  r.setProperty('--text-muted',        t.textDim + '88')
-  r.setProperty('--title-color',       t.titleColor)
-  r.setProperty('--btn-bg',            t.btnBg)
-  r.setProperty('--btn-text',          '#ffffff')
-  r.setProperty('--notes-bg',          t.notesBg      ?? t.card)
-  r.setProperty('--notes-input-bg',    t.notesInputBg ?? t.bg)
-  r.setProperty('--font',              `'${t.font}', monospace`)
-  r.setProperty('--font-size',         t.workspaceFontSize  + 'px')
-  r.setProperty('--topbar-font-size',  t.topbarFontSize     + 'px')
-  r.setProperty('--settings-font-size',( t.settingsFontSize ?? '13') + 'px')  // ← NEW
-  r.setProperty('--clock-widget-size', t.clockWidgetScale   + 'rem')
-  r.setProperty('--radius',            t.radius             + 'px')
-  r.setProperty('--radius-sm',         t.radiusSm           + 'px')
-  r.setProperty('--section-radius',    (t.sectionRadius ?? '0') + 'px')
-  r.setProperty('--link-gap',          t.linkGap            + 'rem')
-  r.setProperty('--section-gap',       t.sectionGap         + 'px')
-  r.setProperty('--section-gap-h',     t.sectionGapH        + 'px')
-  r.setProperty('--main-gap-top',      (t.mainGapTop  ?? '60')   + 'px')   // ← topbar→cards gap
-  r.setProperty('--card-padding',      (t.cardPadding ?? '0.75') + 'rem')  // ← NEW
-  r.setProperty('--page-scale',        t.pageScale)
-  r.setProperty('--handle-opacity',    t.handleOpacity)
-  r.setProperty('--favicon-opacity',   t.faviconOpacity)
-  r.setProperty('--favicon-filter',    t.faviconFilter)
-  r.setProperty('--pattern-color',     t.patternColor)
-  r.setProperty('--pattern-opacity',   t.patternOpacity)
-  r.setProperty('--notes-font-size',   t.notesFontSize + 'px')
-  r.setProperty('--notes-width',       t.notesWidth    + 'px')
+  r.setProperty('--bg',                 t.bg)
+  r.setProperty('--bg2',                t.bg)
+  r.setProperty('--bg3',                t.card)
+  r.setProperty('--card',               t.card)
+  r.setProperty('--card-opacity',       t.cardOpacity)
+  r.setProperty('--border',             t.border)
+  r.setProperty('--border-opacity',     t.borderOpacity)
+  r.setProperty('--accent',             t.accent)
+  r.setProperty('--accent-dim',         t.accent + '22')
+  r.setProperty('--accent-glow',        t.accent + '33')
+  r.setProperty('--text',               t.text)
+  r.setProperty('--text-dim',           t.textDim)
+  r.setProperty('--text-muted',         t.textDim + '88')
+  r.setProperty('--title-color',        t.titleColor)
+  r.setProperty('--btn-bg',             t.btnBg)
+  r.setProperty('--btn-text',           '#ffffff')
+  r.setProperty('--notes-bg',           t.notesBg      ?? t.card)
+  r.setProperty('--notes-input-bg',     t.notesInputBg ?? t.bg)
+  r.setProperty('--font',               `'${t.font}', monospace`)
+  r.setProperty('--font-size',          t.workspaceFontSize  + 'px')
+  r.setProperty('--topbar-font-size',   t.topbarFontSize     + 'px')
+  r.setProperty('--settings-font-size', (t.settingsFontSize ?? '13') + 'px')
+  r.setProperty('--clock-widget-size',  t.clockWidgetScale   + 'rem')
+  r.setProperty('--radius',             t.radius             + 'px')
+  r.setProperty('--radius-sm',          t.radiusSm           + 'px')
+  r.setProperty('--section-radius',     (t.sectionRadius ?? '0')   + 'px')
+  r.setProperty('--link-gap',           t.linkGap            + 'rem')
+  r.setProperty('--section-gap',        t.sectionGap         + 'px')
+  r.setProperty('--section-gap-h',      t.sectionGapH        + 'px')
+  r.setProperty('--main-gap-top',       (t.mainGapTop  ?? '12')   + 'px')
+  r.setProperty('--card-padding',       (t.cardPadding ?? '0.75') + 'rem')
+  r.setProperty('--page-scale',         t.pageScale)
+  r.setProperty('--handle-opacity',     t.handleOpacity)
+  r.setProperty('--favicon-opacity',    t.faviconOpacity)
+  r.setProperty('--favicon-filter',     t.faviconFilter)
+  r.setProperty('--pattern-color',      t.patternColor)
+  r.setProperty('--pattern-opacity',    t.patternOpacity)
+  r.setProperty('--notes-font-size',    t.notesFontSize + 'px')
+  r.setProperty('--notes-width',        t.notesWidth    + 'px')
 }
+
+// localStorage cache key per workspace
+const lcKey = (id) => `ws_data_${id}`
 
 export default function App() {
   const [session,              setSession]              = useState(null)
@@ -141,8 +144,11 @@ export default function App() {
   const [theme,                setTheme]                = useState(loadTheme)
   const [addSectionTrigger,    setAddSectionTrigger]    = useState(0)
   const [importSectionTrigger, setImportSectionTrigger] = useState(0)
-  const fileRef = useRef(null)
-  const wsCache = useRef({})
+  const fileRef      = useRef(null)
+  const wsCache      = useRef({})   // in-memory cache: { [wsId]: { sections, links, notes } }
+  const sessionRef   = useRef(null) // stable ref so fetchData never needs session in deps
+
+  useEffect(() => { sessionRef.current = session }, [session])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -166,9 +172,10 @@ export default function App() {
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
 
   const fetchWorkspaces = useCallback(async () => {
-    if (!session) return
+    const s = sessionRef.current
+    if (!s) return
     const { data } = await supabase.from('workspaces').select('*')
-      .eq('user_id', session.user.id).order('created_at')
+      .eq('user_id', s.user.id).order('created_at')
     if (data) {
       setWorkspaces(data)
       setActiveWs(prev => {
@@ -177,27 +184,39 @@ export default function App() {
         return prev ?? data[0]?.id ?? null
       })
     }
-  }, [session])
+  }, [])
 
+  // Stable identity — reads session via ref, never recreated
   const fetchData = useCallback(async (wsId, silent = false) => {
-    const id = wsId ?? activeWs
-    if (!session || !id) return
+    const s = sessionRef.current
+    if (!s || !wsId) return
 
     if (!silent) {
-      const hit = wsCache.current[id]
+      // 1. Try in-memory cache
+      let hit = wsCache.current[wsId]
+
+      // 2. Fall back to localStorage (survives new-tab opens in Firefox)
+      if (!hit) {
+        try {
+          const raw = localStorage.getItem(lcKey(wsId))
+          if (raw) hit = JSON.parse(raw)
+        } catch {}
+      }
+
       if (hit) {
+        wsCache.current[wsId] = hit
         setSections(hit.sections)
         setLinks(hit.links)
         setNotes(hit.notes)
-        fetchData(id, true)
+        fetchData(wsId, true)   // silent background refresh
         return
       }
     }
 
     const [sec, lnk, nt] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', id).eq('user_id', session.user.id).order('position'),
-      supabase.from('links').select('*').eq('workspace_id', id).eq('user_id', session.user.id).order('position'),
-      supabase.from('notes').select('*').eq('workspace_id', id).eq('user_id', session.user.id).order('created_at', { ascending: false }),
+      supabase.from('sections').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
+      supabase.from('links').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
+      supabase.from('notes').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('created_at', { ascending: false }),
     ])
 
     const fresh = {
@@ -205,35 +224,39 @@ export default function App() {
       links:    lnk.data ?? [],
       notes:    nt.data  ?? [],
     }
-    wsCache.current[id] = fresh
 
-    if (id === activeWs || !activeWs) {
-      setSections(fresh.sections)
-      setLinks(fresh.links)
-      setNotes(fresh.notes)
-    }
-  }, [session, activeWs])
+    // Write to both caches
+    wsCache.current[wsId] = fresh
+    try { localStorage.setItem(lcKey(wsId), JSON.stringify(fresh)) } catch {}
+
+    setSections(fresh.sections)
+    setLinks(fresh.links)
+    setNotes(fresh.notes)
+  }, [])  // empty deps — stable identity, uses sessionRef
 
   const switchWorkspace = useCallback((id) => {
     localStorage.setItem('active_ws', id)
     delete wsCache.current[id]
+    try { localStorage.removeItem(lcKey(id)) } catch {}
     setActiveWs(id)
   }, [])
 
   const handleRefresh = useCallback(() => {
     if (!activeWs) return
     delete wsCache.current[activeWs]
+    try { localStorage.removeItem(lcKey(activeWs)) } catch {}
     fetchData(activeWs)
   }, [activeWs, fetchData])
 
-  useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
-  useEffect(() => { if (activeWs) fetchData(activeWs) }, [activeWs, session])
+  useEffect(() => { fetchWorkspaces() }, [session])
+  useEffect(() => { if (activeWs) fetchData(activeWs) }, [activeWs])
 
   const addWorkspace = async (e) => {
     e.preventDefault()
     if (!newWsName.trim()) return
+    const s = sessionRef.current
     const { data } = await supabase.from('workspaces')
-      .insert({ user_id: session.user.id, name: newWsName.trim() }).select().single()
+      .insert({ user_id: s.user.id, name: newWsName.trim() }).select().single()
     setNewWsName(''); setAddingWs(false)
     await fetchWorkspaces()
     if (data) switchWorkspace(data.id)
@@ -242,6 +265,7 @@ export default function App() {
   const deleteWorkspace = async (id) => {
     if (!confirm('Delete this workspace and all its data?')) return
     delete wsCache.current[id]
+    try { localStorage.removeItem(lcKey(id)) } catch {}
     await supabase.from('links').delete().eq('workspace_id', id)
     await supabase.from('sections').delete().eq('workspace_id', id)
     await supabase.from('notes').delete().eq('workspace_id', id)
@@ -289,6 +313,12 @@ export default function App() {
   }
 
   const refreshCache = async () => {
+    // Clear localStorage workspace caches
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('ws_data_'))
+      .forEach(k => localStorage.removeItem(k))
+    wsCache.current = {}
+    // Clear SW cache if available
     try {
       const reg = await navigator.serviceWorker?.getRegistration()
       if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING')
@@ -385,14 +415,13 @@ export default function App() {
 
         <div className="topbar-actions">
           <button className="btn btn-primary"
-            title="Add a new section"
             style={{ padding: '0.3rem 0.85rem' }}
             onClick={() => setAddSectionTrigger(n => n + 1)}>
             + Section
           </button>
-          <button className="btn btn-ghost" title="Open settings"
+          <button className="btn btn-ghost"
             onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
-          <button className="btn btn-ghost" title="Sign out"
+          <button className="btn btn-ghost"
             onClick={() => supabase.auth.signOut()}>Sign out</button>
         </div>
       </div>
@@ -433,26 +462,25 @@ export default function App() {
                 <span style={{ fontWeight: 500 }}>Settings</span>
                 <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>build {BUILD}</span>
               </div>
-              <button className="icon-btn" title="Close settings"
-                onClick={() => setShowSettings(false)}>✕</button>
+              <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
 
             {/* ── Colours ── */}
             <div className="settings-section">
               <div className="settings-title">Colours</div>
               {[
-                ['Background',    'bg',           'Main page background colour'],
-                ['Card',          'card',          'Section card background colour'],
-                ['Border',        'border',        'Border colour for cards, inputs and dividers'],
-                ['Accent',        'accent',        'Highlight colour for active tabs, focus rings and buttons'],
-                ['Text',          'text',          'Primary text colour'],
-                ['Text dim',      'textDim',       'Secondary and label text colour'],
-                ['Section title', 'titleColor',    'Colour of section header labels'],
-                ['Button',        'btnBg',         'Primary action button background colour'],
-                ['Notes panel',   'notesBg',       'Background colour of the notes sidebar panel'],
-                ['Notes input',   'notesInputBg',  'Background colour of note text areas and edit fields'],
-              ].map(([label, key, tip]) => (
-                <div className="settings-row" key={key} title={tip}>
+                ['Background',    'bg'],
+                ['Card',          'card'],
+                ['Border',        'border'],
+                ['Accent',        'accent'],
+                ['Text',          'text'],
+                ['Text dim',      'textDim'],
+                ['Section title', 'titleColor'],
+                ['Button',        'btnBg'],
+                ['Notes panel',   'notesBg'],
+                ['Notes input',   'notesInputBg'],
+              ].map(([label, key]) => (
+                <div className="settings-row" key={key}>
                   <span className="settings-label">{label}</span>
                   <input type="color" className="color-input"
                     value={theme[key] ?? '#13131a'} onChange={e => set(key, e.target.value)} />
@@ -464,12 +492,12 @@ export default function App() {
             <div className="settings-section">
               <div className="settings-title">Opacity</div>
               {[
-                ['Card opacity',    'cardOpacity',    'Transparency of card backgrounds — lower lets the wallpaper show through'],
-                ['Border opacity',  'borderOpacity',  'Transparency of all borders'],
-                ['Handle opacity',  'handleOpacity',  'Visibility of drag handles on sections and links'],
-                ['Favicon opacity', 'faviconOpacity', 'Visibility of website favicons next to links'],
-              ].map(([label, key, tip]) => (
-                <div className="settings-row" key={key} title={tip}>
+                ['Card opacity',    'cardOpacity'],
+                ['Border opacity',  'borderOpacity'],
+                ['Handle opacity',  'handleOpacity'],
+                ['Favicon opacity', 'faviconOpacity'],
+              ].map(([label, key]) => (
+                <div className="settings-row" key={key}>
                   <span className="settings-label">{label} — {parseFloat(theme[key]).toFixed(2)}</span>
                   <input type="range" min="0" max="1" step="0.01"
                     value={theme[key]} onChange={e => set(key, e.target.value)}
@@ -600,12 +628,12 @@ export default function App() {
                 ))}
               </div>
               {[
-                ['Workspace font',   'workspaceFontSize', 11,   18,  1,    'px',  'Font size for section names, link titles and note text'],
-                ['Topbar font',      'topbarFontSize',    10,   16,  1,    'px',  'Font size for workspace tabs, buttons and topbar elements'],
-                ['Settings font',    'settingsFontSize',  10,   18,  1,    'px',  'Font size inside the settings panel'],
-                ['Clock & weather',  'clockWidgetScale',  0.75, 2.5, 0.05, 'rem', 'Size of the clock and weather in the topbar'],
-              ].map(([label, key, min, max, step, unit, tip]) => (
-                <div className="settings-row" key={key} title={tip}>
+                ['Workspace font',  'workspaceFontSize', 11,   18,  1,    'px'],
+                ['Topbar font',     'topbarFontSize',    10,   16,  1,    'px'],
+                ['Settings font',   'settingsFontSize',  10,   18,  1,    'px'],
+                ['Clock & weather', 'clockWidgetScale',  0.75, 2.5, 0.05, 'rem'],
+              ].map(([label, key, min, max, step, unit]) => (
+                <div className="settings-row" key={key}>
                   <span className="settings-label">{label} — {theme[key]}{unit}</span>
                   <input type="range" min={min} max={max} step={step}
                     value={theme[key]} onChange={e => set(key, e.target.value)}
@@ -617,7 +645,7 @@ export default function App() {
             {/* ── Layout ── */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
-              <div className="settings-row" title="Number of columns to divide sections across">
+              <div className="settings-row">
                 <span className="settings-label">Section columns</span>
                 <div className="preset-slots">
                   {[1, 2, 3, 4, 5].map(n => (
@@ -630,18 +658,18 @@ export default function App() {
                 </div>
               </div>
               {[
-                ['Topbar → cards gap',       'mainGapTop',    0,    60,   2,    'px',  'Space between the topbar and the card grid — increase if cards feel too high'],
-                ['Card padding',             'cardPadding',   0.1,  2.5,  0.05, 'rem', 'Internal padding inside each section card and notes panel'],
-                ['Section gap (vertical)',   'sectionGap',    0,    24,   1,    'px',  'Vertical gap between section cards'],
-                ['Section gap (horizontal)', 'sectionGapH',   0,    24,   1,    'px',  'Horizontal gap between columns'],
-                ['Section card radius',      'sectionRadius', 0,    20,   1,    'px',  'Corner radius of section cards'],
-                ['Notes panel width',        'notesWidth',    140,  420,  10,   'px',  'Width of the notes sidebar'],
-                ['Notes font size',          'notesFontSize', 11,   18,   1,    'px',  'Font size for note content'],
-                ['Link gap',                 'linkGap',       0,    1.5,  0.05, 'rem', 'Vertical spacing between links within a section'],
-                ['Page scale',               'pageScale',     0.5,  1.3,  0.05, '',    'Zoom the entire interface'],
-                ['Radius (UI elements)',     'radius',        0,    20,   1,    'px',  'Border radius for buttons, inputs and modals'],
-              ].map(([label, key, min, max, step, unit, tip]) => (
-                <div className="settings-row" key={key} title={tip}>
+                ['Topbar → cards gap',       'mainGapTop',    0,   180,  2,    'px'],
+                ['Card padding',             'cardPadding',   0.1, 2.5,  0.05, 'rem'],
+                ['Section gap (vertical)',   'sectionGap',    0,   24,   1,    'px'],
+                ['Section gap (horizontal)', 'sectionGapH',   0,   24,   1,    'px'],
+                ['Section card radius',      'sectionRadius', 0,   20,   1,    'px'],
+                ['Notes panel width',        'notesWidth',    140, 420,  10,   'px'],
+                ['Notes font size',          'notesFontSize', 11,  18,   1,    'px'],
+                ['Link gap',                 'linkGap',       0,   1.5,  0.05, 'rem'],
+                ['Page scale',               'pageScale',     0.5, 1.3,  0.05, ''],
+                ['Radius (UI elements)',     'radius',        0,   20,   1,    'px'],
+              ].map(([label, key, min, max, step, unit]) => (
+                <div className="settings-row" key={key}>
                   <span className="settings-label">{label} — {theme[key] ?? 0}{unit}</span>
                   <input type="range" min={min} max={max} step={step}
                     value={theme[key] ?? 0} onChange={e => set(key, e.target.value)}
@@ -718,8 +746,7 @@ export default function App() {
                 ↺ Refresh cached assets
               </button>
               <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
-                Assets are served from browser cache for instant new-tab loads.
-                Use after a deploy to pull fresh files.
+                Also clears workspace data cache — forces a fresh Supabase fetch on next load.
               </div>
             </div>
 
