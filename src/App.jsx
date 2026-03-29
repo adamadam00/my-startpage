@@ -33,33 +33,38 @@ const FONTS = [
 ]
 
 const DEFAULT_THEME = {
-  bg:             '#0c0c0f',
-  card:           '#13131a',
-  cardOpacity:    '1',
-  border:         '#2a2a3a',
-  borderOpacity:  '1',
-  accent:         '#6c8fff',
-  text:           '#e8e8f0',
-  textDim:        '#7878a0',
-  titleColor:     '#7878a0',
-  btnBg:          '#1e3a8a',
-  bgStyle:        'bg-dots',
-  patternColor:   '#2a2a3a',
-  patternOpacity: '1',
-  font:           'DM Mono',
-  fontSize:       '14',
-  clockSize:      '1',
-  radius:         '10',
-  radiusSm:       '6',
-  linkGap:        '0.5',
-  cardPadding:    '1',
-  sectionsCols:   '2',
-  pageScale:      '1',
-  handleOpacity:  '0.15',
-  faviconOpacity: '1',
-  faviconFilter:  'none',
-  bgImage:        '',
-  bgImageOpacity: '1',
+  bg:               '#0c0c0f',
+  card:             '#13131a',
+  cardOpacity:      '1',
+  border:           '#2a2a3a',
+  borderOpacity:    '1',
+  accent:           '#6c8fff',
+  text:             '#e8e8f0',
+  textDim:          '#7878a0',
+  titleColor:       '#7878a0',
+  btnBg:            '#1e3a8a',
+  bgStyle:          'bg-dots',
+  patternColor:     '#2a2a3a',
+  patternOpacity:   '1',
+  font:             'DM Mono',
+  workspaceFontSize:'14',
+  topbarFontSize:   '12',
+  clockWidgetScale: '1',
+  radius:           '10',
+  radiusSm:         '6',
+  linkGap:          '0.5',
+  cardPadding:      '1',
+  sectionsCols:     '2',
+  sectionGap:       '0',
+  pageScale:        '1',
+  handleOpacity:    '0.15',
+  faviconOpacity:   '1',
+  faviconFilter:    'none',
+  bgImage:          '',
+  bgImageOpacity:   '1',
+  openInNewTab:     'true',
+  notesFontSize:    '13',
+  notesWidth:       '240',
 }
 
 function loadTheme() {
@@ -73,36 +78,39 @@ function loadTheme() {
 
 function applyTheme(t) {
   const r = document.documentElement.style
-  r.setProperty('--bg',              t.bg)
-  r.setProperty('--bg2',             t.bg)
-  r.setProperty('--bg3',             t.card)
-  r.setProperty('--card',            t.card)
-  r.setProperty('--card-opacity',    t.cardOpacity)
-  r.setProperty('--border',          t.border)
-  r.setProperty('--border-opacity',  t.borderOpacity)
-  r.setProperty('--accent',          t.accent)
-  r.setProperty('--accent-dim',      t.accent + '22')
-  r.setProperty('--accent-glow',     t.accent + '33')
-  r.setProperty('--text',            t.text)
-  r.setProperty('--text-dim',        t.textDim)
-  r.setProperty('--text-muted',      t.textDim + '88')
-  r.setProperty('--title-color',     t.titleColor)
-  r.setProperty('--btn-bg',          t.btnBg)
-  r.setProperty('--btn-text',        '#ffffff')
-  r.setProperty('--font',            `'${t.font}', monospace`)
-  r.setProperty('--font-size',       t.fontSize    + 'px')
-  r.setProperty('--clock-size',      t.clockSize   + 'rem')
-  r.setProperty('--radius',          t.radius      + 'px')
-  r.setProperty('--radius-sm',       t.radiusSm    + 'px')
-  r.setProperty('--link-gap',        t.linkGap     + 'rem')
-  r.setProperty('--card-padding',    t.cardPadding + 'rem')
-  r.setProperty('--page-scale',      t.pageScale)
-  r.setProperty('--handle-opacity',  t.handleOpacity)
-  r.setProperty('--favicon-opacity', t.faviconOpacity)
-  r.setProperty('--favicon-filter',  t.faviconFilter)
-  r.setProperty('--pattern-color',   t.patternColor)
-  r.setProperty('--pattern-opacity', t.patternOpacity)
-  window.dispatchEvent(new Event('theme_cols_changed'))
+  r.setProperty('--bg',                t.bg)
+  r.setProperty('--bg2',               t.bg)
+  r.setProperty('--bg3',               t.card)
+  r.setProperty('--card',              t.card)
+  r.setProperty('--card-opacity',      t.cardOpacity)
+  r.setProperty('--border',            t.border)
+  r.setProperty('--border-opacity',    t.borderOpacity)
+  r.setProperty('--accent',            t.accent)
+  r.setProperty('--accent-dim',        t.accent + '22')
+  r.setProperty('--accent-glow',       t.accent + '33')
+  r.setProperty('--text',              t.text)
+  r.setProperty('--text-dim',          t.textDim)
+  r.setProperty('--text-muted',        t.textDim + '88')
+  r.setProperty('--title-color',       t.titleColor)
+  r.setProperty('--btn-bg',            t.btnBg)
+  r.setProperty('--btn-text',          '#ffffff')
+  r.setProperty('--font',              `'${t.font}', monospace`)
+  r.setProperty('--font-size',         t.workspaceFontSize + 'px')
+  r.setProperty('--topbar-font-size',  t.topbarFontSize    + 'px')
+  r.setProperty('--clock-widget-size', t.clockWidgetScale  + 'rem')
+  r.setProperty('--radius',            t.radius            + 'px')
+  r.setProperty('--radius-sm',         t.radiusSm          + 'px')
+  r.setProperty('--link-gap',          t.linkGap           + 'rem')
+  r.setProperty('--card-padding',      t.cardPadding       + 'rem')
+  r.setProperty('--section-gap',       t.sectionGap        + 'px')
+  r.setProperty('--page-scale',        t.pageScale)
+  r.setProperty('--handle-opacity',    t.handleOpacity)
+  r.setProperty('--favicon-opacity',   t.faviconOpacity)
+  r.setProperty('--favicon-filter',    t.faviconFilter)
+  r.setProperty('--pattern-color',     t.patternColor)
+  r.setProperty('--pattern-opacity',   t.patternOpacity)
+  r.setProperty('--notes-font-size',   t.notesFontSize + 'px')
+  r.setProperty('--notes-width',       t.notesWidth    + 'px')
 }
 
 export default function App() {
@@ -129,13 +137,13 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  /* ── Apply + persist theme on every change ── */
+  /* ── Apply + persist ── */
   useEffect(() => {
     applyTheme(theme)
     localStorage.setItem('current_theme', JSON.stringify(theme))
   }, [theme])
 
-  /* ── Re-apply on tab focus — fixes revert bug ── */
+  /* ── Re-apply on tab focus ── */
   useEffect(() => {
     const onFocus = () => {
       const saved = loadTheme()
@@ -148,7 +156,7 @@ export default function App() {
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
 
-  /* ── Data fetching ── */
+  /* ── Data ── */
   const fetchWorkspaces = useCallback(async () => {
     if (!session) return
     const { data } = await supabase
@@ -164,16 +172,11 @@ export default function App() {
     if (!session || !activeWs) return
     const [sec, lnk, nt] = await Promise.all([
       supabase.from('sections').select('*')
-        .eq('workspace_id', activeWs)
-        .eq('user_id', session.user.id)
-        .order('position'),
+        .eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
       supabase.from('links').select('*')
-        .eq('workspace_id', activeWs)
-        .eq('user_id', session.user.id)
-        .order('position'),
+        .eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
       supabase.from('notes').select('*')
-        .eq('workspace_id', activeWs)
-        .eq('user_id', session.user.id)
+        .eq('workspace_id', activeWs).eq('user_id', session.user.id)
         .order('created_at', { ascending: false }),
     ])
     if (sec.data) setSections(sec.data)
@@ -252,18 +255,20 @@ export default function App() {
     reader.readAsText(file)
   }
 
-  /* ── Early returns ── */
   if (loading) return (
-    <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>loading…</div>
+    <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>Loading…</div>
   )
   if (!session) return <Auth onAuth={setSession} />
 
-  const isPatternBg = PATTERN_BG.includes(theme.bgStyle)
+  const isPatternBg   = PATTERN_BG.includes(theme.bgStyle)
+  const colCount      = parseInt(theme.sectionsCols) || 2
+  const notesWidth    = parseInt(theme.notesWidth)   || 240
+  const openInNewTab  = theme.openInNewTab !== 'false'
 
   return (
     <div className="app">
 
-      {/* ── Background ── */}
+      {/* Background */}
       <div
         className={`bg-layer ${theme.bgStyle}`}
         style={
@@ -278,7 +283,7 @@ export default function App() {
         }
       />
 
-      {/* ── Topbar ── */}
+      {/* Topbar */}
       <div className="topbar">
         <div className="workspace-tabs">
           {workspaces.map(ws => (
@@ -288,37 +293,32 @@ export default function App() {
               onClick={() => setActiveWs(ws.id)}
             >
               {ws.name}
-              <button
-                className="del-ws"
-                onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-              >✕</button>
+              <button className="del-ws"
+                onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}>✕</button>
             </button>
           ))}
 
           {addingWs ? (
             <form onSubmit={addWorkspace} style={{ display: 'flex', gap: '0.3rem' }}>
-              <input
-                className="input"
-                value={newWsName}
+              <input className="input" value={newWsName}
                 onChange={e => setNewWsName(e.target.value)}
                 placeholder="Name" autoFocus
-                style={{ width: 100, padding: '0.2rem 0.5rem', fontSize: '0.78em' }}
-              />
+                style={{ width: 100, padding: '0.2rem 0.5rem', fontSize: 'var(--topbar-font-size)' }} />
               <button className="btn btn-primary" type="submit"
-                style={{ padding: '0.2rem 0.5rem', fontSize: '0.78em' }}>+</button>
+                style={{ padding: '0.2rem 0.5rem', fontSize: 'var(--topbar-font-size)' }}>+</button>
               <button className="btn" type="button" onClick={() => setAddingWs(false)}
-                style={{ padding: '0.2rem 0.4rem', fontSize: '0.78em' }}>✕</button>
+                style={{ padding: '0.2rem 0.4rem', fontSize: 'var(--topbar-font-size)' }}>✕</button>
             </form>
           ) : (
             <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              style={{ fontSize: '0.72em', padding: '0.2rem 0.5rem' }}>+ workspace</button>
+              style={{ fontSize: 'var(--topbar-font-size)', padding: '0.2rem 0.5rem' }}>
+              + Workspace
+            </button>
           )}
         </div>
 
         <div className="topbar-widgets">
-          <div className="clock-compact">
-            <Clock />
-          </div>
+          <div className="clock-compact"><Clock /></div>
           <div className="topbar-divider" />
           <Weather />
           <div className="topbar-divider" />
@@ -327,14 +327,15 @@ export default function App() {
 
         <div className="topbar-actions">
           <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}
-            style={{ fontSize: '0.78em' }}>⚙ settings</button>
+            style={{ fontSize: 'var(--topbar-font-size)' }}>⚙ Settings</button>
           <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}
-            style={{ fontSize: '0.78em' }}>sign out</button>
+            style={{ fontSize: 'var(--topbar-font-size)' }}>Sign out</button>
         </div>
       </div>
 
-      {/* ── Main layout ── */}
-      <div className="main-layout" style={{ gridTemplateColumns: '1fr 220px' }}>
+      {/* Main layout */}
+      <div className="main-layout"
+        style={{ gridTemplateColumns: `1fr ${notesWidth}px` }}>
         <div className="main-col">
           <Sections
             sections={sections ?? []}
@@ -342,7 +343,8 @@ export default function App() {
             userId={session.user.id}
             workspaceId={activeWs}
             onRefresh={fetchData}
-            openInNewTab={true}
+            openInNewTab={openInNewTab}
+            colCount={colCount}
           />
         </div>
         <div className="side-col">
@@ -355,7 +357,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Settings panel ── */}
+      {/* Settings panel */}
       {showSettings && (
         <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="settings-panel" onClick={e => e.stopPropagation()}>
@@ -369,14 +371,14 @@ export default function App() {
             <div className="settings-section">
               <div className="settings-title">Colours</div>
               {[
-                ['Background',   'bg'],
-                ['Card',         'card'],
-                ['Border',       'border'],
-                ['Accent',       'accent'],
-                ['Text',         'text'],
-                ['Text dim',     'textDim'],
-                ['Title colour', 'titleColor'],
-                ['Button',       'btnBg'],
+                ['Background',    'bg'],
+                ['Card',          'card'],
+                ['Border',        'border'],
+                ['Accent',        'accent'],
+                ['Text',          'text'],
+                ['Text dim',      'textDim'],
+                ['Section title', 'titleColor'],
+                ['Button',        'btnBg'],
               ].map(([label, key]) => (
                 <div className="settings-row" key={key}>
                   <span className="settings-label">{label}</span>
@@ -447,16 +449,14 @@ export default function App() {
                   <button className="btn"
                     style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
                     onClick={() => fileRef.current?.click()}>
-                    {theme.bgImage ? '↺ change image' : '↑ upload image'}
+                    {theme.bgImage ? '↺ Change image' : '↑ Upload image'}
                   </button>
                   {theme.bgImage && (
                     <>
-                      <img src={theme.bgImage} alt="bg preview"
-                        style={{
-                          width: '100%', height: 80, objectFit: 'cover',
+                      <img src={theme.bgImage} alt="Background preview"
+                        style={{ width: '100%', height: 80, objectFit: 'cover',
                           borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
-                          border: '1px solid var(--border)',
-                        }} />
+                          border: '1px solid var(--border)' }} />
                       <div className="settings-row" style={{ marginTop: '0.4rem' }}>
                         <span className="settings-label">
                           Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}
@@ -475,7 +475,7 @@ export default function App() {
             {/* Typography */}
             <div className="settings-section">
               <div className="settings-title">Typography</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}>
                 {FONTS.map(f => (
                   <button key={f}
                     className={`preset-slot${theme.font === f ? ' active' : ''}`}
@@ -485,16 +485,27 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <div className="settings-row" style={{ marginTop: '0.5rem' }}>
-                <span className="settings-label">Font size — {theme.fontSize}px</span>
+              <div className="settings-row">
+                <span className="settings-label">Workspace font size — {theme.workspaceFontSize}px</span>
                 <input type="range" min="11" max="18" step="1"
-                  value={theme.fontSize} onChange={e => set('fontSize', e.target.value)}
+                  value={theme.workspaceFontSize}
+                  onChange={e => set('workspaceFontSize', e.target.value)}
                   style={{ width: 100 }} />
               </div>
               <div className="settings-row">
-                <span className="settings-label">Clock size — {theme.clockSize}rem</span>
-                <input type="range" min="0.7" max="2" step="0.05"
-                  value={theme.clockSize} onChange={e => set('clockSize', e.target.value)}
+                <span className="settings-label">Topbar font size — {theme.topbarFontSize}px</span>
+                <input type="range" min="10" max="16" step="1"
+                  value={theme.topbarFontSize}
+                  onChange={e => set('topbarFontSize', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+              <div className="settings-row">
+                <span className="settings-label" title="Controls the clock time and weather temperature size">
+                  Clock & weather scale — {theme.clockWidgetScale}rem
+                </span>
+                <input type="range" min="0.8" max="2.5" step="0.05"
+                  value={theme.clockWidgetScale}
+                  onChange={e => set('clockWidgetScale', e.target.value)}
                   style={{ width: 100 }} />
               </div>
             </div>
@@ -502,6 +513,7 @@ export default function App() {
             {/* Layout */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
+
               <div className="settings-row">
                 <span className="settings-label">Section columns</span>
                 <div className="preset-slots">
@@ -509,45 +521,83 @@ export default function App() {
                     <button key={n}
                       className={`preset-slot${parseInt(theme.sectionsCols) === n ? ' active' : ''}`}
                       onClick={() => {
+                        // Save to localStorage first so Sections.jsx reads correct value
+                        const next = { ...theme, sectionsCols: String(n) }
+                        localStorage.setItem('current_theme', JSON.stringify(next))
                         set('sectionsCols', String(n))
-                        window.dispatchEvent(new Event('theme_cols_changed'))
                       }}>
                       {n}
                     </button>
                   ))}
                 </div>
               </div>
+
               <div className="settings-row">
-                <span className="settings-label">Border radius — {theme.radius}px</span>
+                <span className="settings-label"
+                  title="Gap between section cards. 0 = flush tiled borders.">
+                  Section card gap — {theme.sectionGap}px
+                </span>
+                <input type="range" min="0" max="16" step="1"
+                  value={theme.sectionGap}
+                  onChange={e => set('sectionGap', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+
+              <div className="settings-row">
+                <span className="settings-label"
+                  title="Applies to note cards, buttons, inputs and modals. Section tiles are always flush (0).">
+                  Cards & buttons radius — {theme.radius}px
+                </span>
                 <input type="range" min="0" max="20" step="1"
                   value={theme.radius} onChange={e => set('radius', e.target.value)}
                   style={{ width: 100 }} />
               </div>
+
               <div className="settings-row">
-                <span className="settings-label">Card padding — {theme.cardPadding}rem</span>
-                <input type="range" min="0.25" max="2" step="0.05"
-                  value={theme.cardPadding} onChange={e => set('cardPadding', e.target.value)}
+                <span className="settings-label">Notes panel width — {theme.notesWidth}px</span>
+                <input type="range" min="160" max="400" step="10"
+                  value={theme.notesWidth}
+                  onChange={e => set('notesWidth', e.target.value)}
                   style={{ width: 100 }} />
               </div>
+
+              <div className="settings-row">
+                <span className="settings-label">Notes font size — {theme.notesFontSize}px</span>
+                <input type="range" min="11" max="18" step="1"
+                  value={theme.notesFontSize}
+                  onChange={e => set('notesFontSize', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+
               <div className="settings-row">
                 <span className="settings-label">Link gap — {theme.linkGap}rem</span>
                 <input type="range" min="0" max="1.5" step="0.05"
                   value={theme.linkGap} onChange={e => set('linkGap', e.target.value)}
                   style={{ width: 100 }} />
               </div>
+
               <div className="settings-row">
                 <span className="settings-label">Page scale — {theme.pageScale}</span>
-                <input type="range" min="0.5" max="1.5" step="0.05"
+                <input type="range" min="0.5" max="1.3" step="0.05"
                   value={theme.pageScale} onChange={e => set('pageScale', e.target.value)}
                   style={{ width: 100 }} />
               </div>
             </div>
 
-            {/* Favicons */}
+            {/* Links & favicons */}
             <div className="settings-section">
-              <div className="settings-title">Favicons</div>
+              <div className="settings-title">Links</div>
               <div className="settings-row">
-                <span className="settings-label">Style</span>
+                <span className="settings-label">Open links in new tab</span>
+                <label className="toggle">
+                  <input type="checkbox"
+                    checked={theme.openInNewTab !== 'false'}
+                    onChange={e => set('openInNewTab', e.target.checked ? 'true' : 'false')} />
+                  <span className="toggle-slider" />
+                </label>
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Favicon style</span>
                 <div className="preset-slots">
                   {[
                     { label: 'Normal', value: 'none' },
@@ -565,19 +615,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* Import / Export / Reset */}
+            {/* Presets */}
             <div className="settings-section">
               <div className="settings-title">Presets</div>
               <div className="import-export">
                 <button className="btn" style={{ fontSize: '0.8em' }}
-                  onClick={exportSettings}>↓ export</button>
+                  onClick={exportSettings}>↓ Export</button>
                 <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
-                  ↑ import
+                  ↑ Import
                   <input type="file" accept=".json" style={{ display: 'none' }}
                     onChange={importSettings} />
                 </label>
                 <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
-                  onClick={resetSettings}>reset</button>
+                  onClick={resetSettings}>Reset</button>
               </div>
             </div>
 

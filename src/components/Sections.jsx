@@ -20,14 +20,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
-function getColCount() {
-  try {
-    const t = JSON.parse(localStorage.getItem('current_theme') || '{}')
-    const n = parseInt(t.sectionsCols)
-    return (n >= 1 && n <= 5) ? n : 2
-  } catch { return 2 }
-}
-
 function buildColumns(sections = [], colCount = 2) {
   const cols   = Math.max(colCount, 1)
   const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
@@ -115,7 +107,8 @@ function SectionCard({
             <input className="input" value={name}
               onChange={e => setName(e.target.value)} autoFocus style={{ flex: 1 }} />
             <button className="btn btn-primary" type="submit">Save</button>
-            <button className="btn" type="button" onClick={() => setRenaming(false)}>✕</button>
+            <button className="btn" type="button"
+              onClick={() => setRenaming(false)}>Cancel</button>
           </form>
         ) : (
           <span className="section-name">{section.name}</span>
@@ -130,7 +123,10 @@ function SectionCard({
           </div>
         )}
 
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
+        <span style={{
+          color: 'var(--text-muted)', fontSize: '0.7em',
+          marginLeft: '0.15rem', flexShrink: 0,
+        }}>
           {collapsed ? '▶' : '▼'}
         </span>
       </div>
@@ -146,7 +142,10 @@ function SectionCard({
         />
       )}
       {!collapsed && overlay && (
-        <div style={{ padding: '0.3rem var(--card-padding)', fontSize: '0.75em', color: 'var(--text-muted)' }}>
+        <div style={{
+          padding: '0.3rem var(--card-padding)',
+          fontSize: '0.75em', color: 'var(--text-muted)',
+        }}>
           {sectionLinks.length} link{sectionLinks.length !== 1 ? 's' : ''}
         </div>
       )}
@@ -155,31 +154,33 @@ function SectionCard({
 }
 
 export default function Sections({
-  sections = [],
-  links    = [],
+  sections    = [],
+  links       = [],
   userId,
   workspaceId,
   onRefresh,
-  openInNewTab,
+  openInNewTab = true,
+  colCount     = 2,
 }) {
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
-  const [colCount,      setColCount]      = useState(getColCount)
-  const [colItems,      setColItems]      = useState(() => buildColumns(sections, getColCount()))
+  const [colItems,      setColItems]      = useState(() => buildColumns(sections, colCount))
   const [activeId,      setActiveId]      = useState(null)
   const migrationDone = useRef(false)
   const safeLinks     = Array.isArray(links) ? links : []
 
+  /* Rebuild columns when sections or colCount changes, but not mid-drag */
   useEffect(() => {
     if (!activeId) setColItems(buildColumns(sections, colCount))
   }, [sections, colCount])
 
+  /* One-time migration: spread all-zero col_index evenly across columns */
   useEffect(() => {
-    if (migrationDone.current || !sections.length || sections.length < 2) return
+    if (migrationDone.current || sections.length < 2) return
     const allZero = sections.every(s => (s.col_index ?? 0) === 0)
     if (!allZero) { migrationDone.current = true; return }
     migrationDone.current = true
-    const cols   = Math.max(getColCount(), 1)
+    const cols   = Math.max(colCount, 1)
     const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     Promise.all(
       sorted.map((s, i) =>
@@ -190,12 +191,6 @@ export default function Sections({
       )
     ).then(() => onRefresh())
   }, [sections])
-
-  useEffect(() => {
-    const handler = () => setColCount(getColCount())
-    window.addEventListener('theme_cols_changed', handler)
-    return () => window.removeEventListener('theme_cols_changed', handler)
-  }, [])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -329,7 +324,9 @@ export default function Sections({
         </DndContext>
 
         {sections.length === 0 && (
-          <div style={{ fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem' }}>
+          <div style={{
+            fontSize: '0.85em', color: 'var(--text-muted)', padding: '1rem',
+          }}>
             No sections yet
           </div>
         )}
@@ -348,16 +345,15 @@ export default function Sections({
             />
             <button className="btn btn-primary" type="submit">Add</button>
             <button className="btn" type="button"
-              onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
+              onClick={() => { setAddingSection(false); setNewName('') }}>Cancel</button>
           </form>
         ) : (
           <button
             className="btn btn-ghost"
             onClick={() => setAddingSection(true)}
             style={{ fontSize: '0.78em', opacity: 0.5, padding: '0.2rem 0.5rem' }}
-            title="Add a new section"
           >
-            + new section
+            + New section
           </button>
         )}
       </div>
