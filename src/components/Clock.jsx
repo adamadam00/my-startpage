@@ -1,43 +1,17 @@
 import { useState, useEffect } from 'react'
 
-const DAYS   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-
-export default function Clock({ format = '12h', compact = false }) {
+export default function Clock() {
   const [now, setNow] = useState(new Date())
-
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(t)
   }, [])
-
-  const h24 = now.getHours()
-  const min = String(now.getMinutes()).padStart(2, '0')
-
-  let timeStr
-  if (format === '24h') {
-    timeStr = `${String(h24).padStart(2, '0')}:${min}`
-  } else {
-    const h12 = h24 % 12 || 12
-    const ampm = h24 < 12 ? 'am' : 'pm'
-    timeStr = `${h12}:${min} ${ampm}`
-  }
-
-  const dateStr = `${DAYS[now.getDay()]}, ${MONTHS[now.getMonth()]} ${now.getDate()}`
-
-  if (compact) {
-    return (
-      <div className="clock-compact" title="Current time">
-        <span className="clock-compact-time">{timeStr}</span>
-        <span className="clock-compact-date">{dateStr}</span>
-      </div>
-    )
-  }
-
+  const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   return (
-    <div className="clock-wrap">
-      <div className="clock-time">{timeStr}</div>
-      <div className="clock-date">{dateStr}</div>
+    <div className="clock-compact">
+      <span className="clock-compact-time">{time}</span>
+      <span className="clock-compact-date">{date}</span>
     </div>
   )
 }
