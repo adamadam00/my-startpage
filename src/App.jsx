@@ -46,6 +46,7 @@ const DEFAULT_THEME = {
   titleColor:       '#7878a0',
   btnBg:            '#1e3a8a',
   notesBg:          '#13131a',
+  notesInputBg:     '#0c0c0f',
   bgStyle:          'bg-dots',
   patternColor:     '#2a2a3a',
   patternOpacity:   '1',
@@ -98,7 +99,8 @@ function applyTheme(t) {
   r.setProperty('--title-color',       t.titleColor)
   r.setProperty('--btn-bg',            t.btnBg)
   r.setProperty('--btn-text',          '#ffffff')
-  r.setProperty('--notes-bg',          t.notesBg ?? t.card)
+  r.setProperty('--notes-bg',          t.notesBg   ?? t.card)
+  r.setProperty('--notes-input-bg',    t.notesInputBg ?? t.bg)
   r.setProperty('--font',              `'${t.font}', monospace`)
   r.setProperty('--font-size',         t.workspaceFontSize + 'px')
   r.setProperty('--topbar-font-size',  t.topbarFontSize    + 'px')
@@ -303,8 +305,8 @@ export default function App() {
               <button className="btn" type="button" onClick={() => setAddingWs(false)}>✕</button>
             </form>
           ) : (
-            <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              style={{ padding: '0.25rem 0.7rem' }}>+</button>
+            <button className="btn btn-ghost" title="Add workspace"
+              onClick={() => setAddingWs(true)} style={{ padding: '0.25rem 0.7rem' }}>+</button>
           )}
         </div>
 
@@ -316,10 +318,11 @@ export default function App() {
           <SearchBar searchUrl={theme.searchUrl} />
         </div>
 
-        {/* ── build date removed from here ── */}
         <div className="topbar-actions">
-          <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
-          <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <button className="btn btn-ghost" title="Open settings"
+            onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
+          <button className="btn btn-ghost" title="Sign out"
+            onClick={() => supabase.auth.signOut()}>Sign out</button>
         </div>
       </div>
 
@@ -346,35 +349,39 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Settings panel ── */}
+      {/* ── Settings panel — NO darkening overlay, just a shadow edge ── */}
       {showSettings && (
-        <div className="modal-overlay" onClick={() => setShowSettings(false)}>
-          <div className="settings-panel" onClick={e => e.stopPropagation()}>
+        <>
+          {/* Subtle right-edge shadow only — pointer-events: none so main app stays interactive */}
+          <div className="settings-veil" />
 
-            {/* Header now includes build date */}
+          <div className="settings-panel">
+
             <div className="settings-header">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
                 <span style={{ fontWeight: 500 }}>Settings</span>
                 <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>build {BUILD}</span>
               </div>
-              <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
+              <button className="icon-btn" title="Close settings"
+                onClick={() => setShowSettings(false)}>✕</button>
             </div>
 
-            {/* Colours */}
+            {/* ── Colours ── */}
             <div className="settings-section">
               <div className="settings-title">Colours</div>
               {[
-                ['Background',    'bg'],
-                ['Card',          'card'],
-                ['Border',        'border'],
-                ['Accent',        'accent'],
-                ['Text',          'text'],
-                ['Text dim',      'textDim'],
-                ['Section title', 'titleColor'],
-                ['Button',        'btnBg'],
-                ['Notes panel',   'notesBg'],
-              ].map(([label, key]) => (
-                <div className="settings-row" key={key}>
+                ['Background',    'bg',          'Main page background colour'],
+                ['Card',          'card',         'Section card background colour'],
+                ['Border',        'border',       'Border colour for cards, inputs and dividers'],
+                ['Accent',        'accent',       'Highlight colour for active tabs, focus rings and buttons'],
+                ['Text',          'text',         'Primary text colour'],
+                ['Text dim',      'textDim',      'Secondary and label text colour'],
+                ['Section title', 'titleColor',   'Colour of section header labels'],
+                ['Button',        'btnBg',        'Primary action button background colour'],
+                ['Notes panel',   'notesBg',      'Background colour of the notes sidebar panel'],
+                ['Notes input',   'notesInputBg', 'Background colour of note text areas and edit fields'],
+              ].map(([label, key, tip]) => (
+                <div className="settings-row" key={key} title={tip}>
                   <span className="settings-label">{label}</span>
                   <input type="color" className="color-input"
                     value={theme[key] ?? '#13131a'} onChange={e => set(key, e.target.value)} />
@@ -382,16 +389,16 @@ export default function App() {
               ))}
             </div>
 
-            {/* Opacity */}
+            {/* ── Opacity ── */}
             <div className="settings-section">
               <div className="settings-title">Opacity</div>
               {[
-                ['Card opacity',    'cardOpacity'],
-                ['Border opacity',  'borderOpacity'],
-                ['Handle opacity',  'handleOpacity'],
-                ['Favicon opacity', 'faviconOpacity'],
-              ].map(([label, key]) => (
-                <div className="settings-row" key={key}>
+                ['Card opacity',    'cardOpacity',    'Transparency of card backgrounds — lower lets the wallpaper show through'],
+                ['Border opacity',  'borderOpacity',  'Transparency of all borders'],
+                ['Handle opacity',  'handleOpacity',  'Visibility of drag handles on sections and links'],
+                ['Favicon opacity', 'faviconOpacity', 'Visibility of website favicons next to links'],
+              ].map(([label, key, tip]) => (
+                <div className="settings-row" key={key} title={tip}>
                   <span className="settings-label">{label} — {parseFloat(theme[key]).toFixed(2)}</span>
                   <input type="range" min="0" max="1" step="0.01"
                     value={theme[key]} onChange={e => set(key, e.target.value)}
@@ -400,10 +407,11 @@ export default function App() {
               ))}
             </div>
 
-            {/* Background */}
+            {/* ── Background ── */}
             <div className="settings-section">
               <div className="settings-title">Background</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}
+                title="Choose a background style for the page">
                 {BG_OPTIONS.map(opt => (
                   <button key={opt.value}
                     className={`preset-slot${theme.bgStyle === opt.value ? ' active' : ''}`}
@@ -416,12 +424,14 @@ export default function App() {
 
               {isPatternBg && (
                 <>
-                  <div className="settings-row" style={{ marginTop: '0.5rem' }}>
+                  <div className="settings-row" style={{ marginTop: '0.5rem' }}
+                    title="Colour of the repeating pattern dots, lines or grid">
                     <span className="settings-label">Pattern colour</span>
                     <input type="color" className="color-input"
                       value={theme.patternColor} onChange={e => set('patternColor', e.target.value)} />
                   </div>
-                  <div className="settings-row">
+                  <div className="settings-row"
+                    title="Opacity of the pattern — lower values make it more subtle">
                     <span className="settings-label">
                       Pattern opacity — {parseFloat(theme.patternOpacity).toFixed(2)}
                     </span>
@@ -434,7 +444,7 @@ export default function App() {
 
               {theme.bgStyle === 'bg-gradient' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <div className="settings-row">
+                  <div className="settings-row" title="Linear sweeps across the page, radial radiates from the centre">
                     <span className="settings-label">Type</span>
                     <div className="preset-slots">
                       {['linear', 'radial'].map(gt => (
@@ -447,7 +457,7 @@ export default function App() {
                     </div>
                   </div>
                   {theme.gradientType === 'linear' && (
-                    <div className="settings-row">
+                    <div className="settings-row" title="Direction of the linear gradient in degrees (0 = bottom to top, 90 = left to right)">
                       <span className="settings-label">Angle — {theme.gradientAngle}°</span>
                       <input type="range" min="0" max="360" step="5"
                         value={theme.gradientAngle} onChange={e => set('gradientAngle', e.target.value)}
@@ -455,15 +465,19 @@ export default function App() {
                     </div>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <span className="settings-label">Colour stops ({gradColors.length}/6)</span>
+                    <span className="settings-label"
+                      title="Add up to 6 colour stops — the gradient blends between them in order">
+                      Colour stops ({gradColors.length}/6)
+                    </span>
                     {gradColors.map((c, i) => (
-                      <div key={i} className="settings-row">
+                      <div key={i} className="settings-row" title={`Colour at stop position ${i + 1}`}>
                         <span className="settings-label">Stop {i + 1}</span>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <input type="color" className="color-input" value={c}
                             onChange={e => updateGradColor(i, e.target.value)} />
                           {gradColors.length > 2 && (
                             <button className="icon-btn" style={{ fontSize: '0.7em' }}
+                              title="Remove this colour stop"
                               onClick={() => removeGradStop(i)}>✕</button>
                           )}
                         </div>
@@ -471,6 +485,7 @@ export default function App() {
                     ))}
                     {gradColors.length < 6 && (
                       <button className="btn" style={{ fontSize: '0.75em', alignSelf: 'flex-start' }}
+                        title="Add another colour stop to the gradient"
                         onClick={addGradStop}>+ Add stop</button>
                     )}
                   </div>
@@ -483,6 +498,7 @@ export default function App() {
                     style={{ display: 'none' }} onChange={handleImageUpload} />
                   <button className="btn"
                     style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
+                    title="Load a local image file — it is stored in browser localStorage (max 2 MB)"
                     onClick={() => fileRef.current?.click()}>
                     {theme.bgImage ? '↺ Change image' : '↑ Upload image (max 2 MB, cached locally)'}
                   </button>
@@ -492,7 +508,8 @@ export default function App() {
                         style={{ width: '100%', height: 80, objectFit: 'cover',
                           borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
                           border: '1px solid var(--border)' }} />
-                      <div className="settings-row" style={{ marginTop: '0.4rem' }}>
+                      <div className="settings-row" style={{ marginTop: '0.4rem' }}
+                        title="How opaque the background image is — lower values let the base colour show through">
                         <span className="settings-label">
                           Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}
                         </span>
@@ -502,6 +519,7 @@ export default function App() {
                       </div>
                       <button className="btn btn-danger"
                         style={{ marginTop: '0.35rem', fontSize: '0.75em', width: '100%' }}
+                        title="Remove the background image and revert to solid colour"
                         onClick={() => set('bgImage', '')}>Remove image</button>
                     </>
                   )}
@@ -509,10 +527,11 @@ export default function App() {
               )}
             </div>
 
-            {/* Typography */}
+            {/* ── Typography ── */}
             <div className="settings-section">
               <div className="settings-title">Typography</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}
+                title="Select the font used throughout the interface">
                 {FONTS.map(f => (
                   <button key={f}
                     className={`preset-slot${theme.font === f ? ' active' : ''}`}
@@ -522,28 +541,24 @@ export default function App() {
                 ))}
               </div>
               {[
-                ['Workspace font size', 'workspaceFontSize', 11, 18, 1, 'px'],
-                ['Topbar font size',    'topbarFontSize',    10, 16, 1, 'px'],
-              ].map(([label, key, min, max, step, unit]) => (
-                <div className="settings-row" key={key}>
+                ['Workspace font size', 'workspaceFontSize', 11, 18, 1,    'px',  'Font size for section names, link titles and note text'],
+                ['Topbar font size',    'topbarFontSize',    10, 16, 1,    'px',  'Font size for workspace tabs, buttons and topbar elements'],
+                ['Clock & weather',     'clockWidgetScale',  0.75, 2.5, 0.05, 'rem', 'Size of the clock time and weather temperature in the topbar'],
+              ].map(([label, key, min, max, step, unit, tip]) => (
+                <div className="settings-row" key={key} title={tip}>
                   <span className="settings-label">{label} — {theme[key]}{unit}</span>
                   <input type="range" min={min} max={max} step={step}
                     value={theme[key]} onChange={e => set(key, e.target.value)}
                     style={{ width: 100 }} />
                 </div>
               ))}
-              <div className="settings-row">
-                <span className="settings-label">Clock & weather scale — {theme.clockWidgetScale}rem</span>
-                <input type="range" min="0.75" max="2.5" step="0.05"
-                  value={theme.clockWidgetScale} onChange={e => set('clockWidgetScale', e.target.value)}
-                  style={{ width: 100 }} />
-              </div>
             </div>
 
-            {/* Layout */}
+            {/* ── Layout ── */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
-              <div className="settings-row">
+              <div className="settings-row"
+                title="Number of columns to divide sections across">
                 <span className="settings-label">Section columns</span>
                 <div className="preset-slots">
                   {[1, 2, 3, 4, 5].map(n => (
@@ -556,46 +571,45 @@ export default function App() {
                 </div>
               </div>
               {[
-                ['Section gap (vertical)',   'sectionGap',    0,   24,  1,    'px'],
-                ['Section gap (horizontal)', 'sectionGapH',   0,   24,  1,    'px'],
-                ['Section card radius',      'sectionRadius', 0,   20,  1,    'px'],
-                ['Notes panel width',        'notesWidth',    140, 420, 10,   'px'],
-                ['Notes font size',          'notesFontSize', 11,  18,  1,    'px'],
-                ['Link gap',                 'linkGap',       0,   1.5, 0.05, 'rem'],
-                ['Page scale',               'pageScale',     0.5, 1.3, 0.05, ''],
-              ].map(([label, key, min, max, step, unit]) => (
-                <div className="settings-row" key={key}>
-                  <span className="settings-label">{label} — {theme[key]}{unit}</span>
+                ['Section gap (vertical)',   'sectionGap',    0,   24,   1,    'px',  'Vertical gap between section cards within a column'],
+                ['Section gap (horizontal)', 'sectionGapH',   0,   24,   1,    'px',  'Horizontal gap between columns — increase this when using rounded section radius'],
+                ['Section card radius',      'sectionRadius', 0,   20,   1,    'px',  'Corner radius of section cards — use with horizontal gap > 0 for a card-style look'],
+                ['Notes panel width',        'notesWidth',    140, 420,  10,   'px',  'Width of the notes sidebar'],
+                ['Notes font size',          'notesFontSize', 11,  18,   1,    'px',  'Font size for note content text'],
+                ['Link gap',                 'linkGap',       0,   1.5,  0.05, 'rem', 'Vertical spacing between links within a section'],
+                ['Page scale',               'pageScale',     0.5, 1.3,  0.05, '',    'Zoom the entire interface — useful for high density or large screens'],
+                ['Radius (UI elements)',     'radius',        0,   20,   1,    'px',  'Border radius for buttons, inputs, modals and note cards'],
+              ].map(([label, key, min, max, step, unit, tip]) => (
+                <div className="settings-row" key={key} title={tip}>
+                  <span className="settings-label">{label} — {theme[key] ?? 0}{unit}</span>
                   <input type="range" min={min} max={max} step={step}
                     value={theme[key] ?? 0} onChange={e => set(key, e.target.value)}
                     style={{ width: 100 }} />
                 </div>
               ))}
-              <div className="settings-row">
-                <span className="settings-label">Radius (buttons & inputs) — {theme.radius}px</span>
-                <input type="range" min="0" max="20" step="1"
-                  value={theme.radius} onChange={e => set('radius', e.target.value)}
-                  style={{ width: 100 }} />
-              </div>
             </div>
 
-            {/* Search */}
+            {/* ── Search ── */}
             <div className="settings-section">
               <div className="settings-title">Search</div>
-              <span className="settings-label" style={{ marginBottom: '0.15rem' }}>Search URL</span>
+              <span className="settings-label" style={{ marginBottom: '0.15rem' }}>
+                Search URL
+              </span>
               <input className="input" value={theme.searchUrl}
                 onChange={e => set('searchUrl', e.target.value)}
                 placeholder="https://google.com/search?q="
+                title="The base URL for the search bar — your query is appended to the end"
                 style={{ fontSize: '0.8em' }} />
               <div style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>
                 Query is appended to the end of this URL.
               </div>
             </div>
 
-            {/* Links */}
+            {/* ── Links ── */}
             <div className="settings-section">
               <div className="settings-title">Links</div>
-              <div className="settings-row">
+              <div className="settings-row"
+                title="When enabled, clicking a link opens it in a new browser tab">
                 <span className="settings-label">Open links in new tab</span>
                 <label className="toggle">
                   <input type="checkbox" checked={theme.openInNewTab !== 'false'}
@@ -603,16 +617,17 @@ export default function App() {
                   <span className="toggle-slider" />
                 </label>
               </div>
-              <div className="settings-row">
+              <div className="settings-row"
+                title="Controls how website favicons appear next to link titles">
                 <span className="settings-label">Favicon style</span>
                 <div className="preset-slots">
                   {[
-                    { label: 'Normal', value: 'none' },
-                    { label: 'Dim',    value: 'opacity(0.5)' },
-                    { label: 'Mono',   value: 'grayscale(1)' },
-                    { label: 'Hide',   value: 'opacity(0)' },
+                    { label: 'Normal', value: 'none',         tip: 'Show favicons at full colour' },
+                    { label: 'Dim',    value: 'opacity(0.5)', tip: 'Show favicons at half opacity' },
+                    { label: 'Mono',   value: 'grayscale(1)', tip: 'Show favicons in greyscale' },
+                    { label: 'Hide',   value: 'opacity(0)',   tip: 'Hide favicons entirely' },
                   ].map(opt => (
-                    <button key={opt.value}
+                    <button key={opt.value} title={opt.tip}
                       className={`preset-slot${theme.faviconFilter === opt.value ? ' active' : ''}`}
                       onClick={() => set('faviconFilter', opt.value)}>
                       {opt.label}
@@ -622,26 +637,35 @@ export default function App() {
               </div>
             </div>
 
-            {/* Presets */}
+            {/* ── Presets ── */}
             <div className="settings-section">
               <div className="settings-title">Presets</div>
               <div className="import-export">
-                <button className="btn" style={{ fontSize: '0.8em' }} onClick={exportSettings}>↓ Export</button>
-                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
+                <button className="btn" style={{ fontSize: '0.8em' }}
+                  title="Download current theme settings as a JSON file"
+                  onClick={exportSettings}>↓ Export</button>
+                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}
+                  title="Load a previously exported theme JSON file">
                   ↑ Import
                   <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
                 </label>
-                <button className="btn btn-danger" style={{ fontSize: '0.8em' }} onClick={resetSettings}>Reset</button>
+                <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
+                  title="Reset all settings back to the default theme"
+                  onClick={resetSettings}>Reset</button>
               </div>
             </div>
 
             <div className="settings-footer">
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>Save & close</button>
-              <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
+              <button className="btn btn-primary" style={{ flex: 1 }}
+                title="Save all changes and close the settings panel"
+                onClick={saveSettings}>Save & close</button>
+              <button className="btn"
+                title="Close without saving"
+                onClick={() => setShowSettings(false)}>Cancel</button>
             </div>
 
           </div>
-        </div>
+        </>
       )}
     </div>
   )

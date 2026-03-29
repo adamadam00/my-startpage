@@ -14,9 +14,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
     if (!text.trim()) return
     setErr('')
     const { error } = await supabase.from('notes').insert({
-      user_id:      userId,
-      workspace_id: workspaceId,
-      content:      text.trim(),
+      user_id: userId, workspace_id: workspaceId, content: text.trim(),
     })
     if (error) { setErr(error.message); return }
     setText(''); setAdding(false); onRefresh()
@@ -29,33 +27,42 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
   }
 
   const remove = async (id) => {
-    await supabase.from('notes').delete().eq('id', id)
-    onRefresh()
+    await supabase.from('notes').delete().eq('id', id); onRefresh()
   }
 
+  /* Uses --notes-input-bg for the textarea background */
   const taStyle = {
-    width: '100%', background: 'var(--bg)',
+    width: '100%',
+    background: 'var(--notes-input-bg)',
     border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)',
-    borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.6rem',
-    color: 'var(--text)', fontSize: 'var(--notes-font-size)',
-    outline: 'none', resize: 'vertical', lineHeight: 1.55,
+    borderRadius: 'var(--radius-sm)',
+    padding: '0.4rem 0.6rem',
+    color: 'var(--text)',
+    fontSize: 'var(--notes-font-size)',
+    outline: 'none',
+    resize: 'vertical',
+    lineHeight: 1.55,
     fontFamily: 'var(--font)',
   }
 
   return (
-    <div className="card" style={{ fontSize: 'var(--notes-font-size)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <div className="card notes-card"
+      style={{ fontSize: 'var(--notes-font-size)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
 
       <div className="notes-header" onClick={() => setOpen(o => !o)}>
-        <span style={{ fontSize: '0.74em', fontWeight: 500, color: 'var(--title-color)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-          Notes
-        </span>
+        <span style={{
+          fontSize: '0.74em', fontWeight: 500, color: 'var(--title-color)',
+          textTransform: 'uppercase', letterSpacing: '0.06em',
+        }}>Notes</span>
         <span style={{ color: 'var(--text-muted)', fontSize: '0.7em' }}>{open ? '▼' : '▶'}</span>
       </div>
 
       {open && (
         <>
           {safeNotes.length === 0 && !adding && (
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.82em', padding: '0 0.2rem' }}>No notes yet</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.82em', padding: '0 0.2rem' }}>
+              No notes yet
+            </p>
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -104,8 +111,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
               </div>
             </div>
           ) : (
-            <button className="btn btn-ghost"
-              onClick={() => setAdding(true)}
+            <button className="btn btn-ghost" onClick={() => setAdding(true)}
               style={{ fontSize: '0.78em', padding: '0.25rem 0.2rem', textAlign: 'left', color: 'var(--text-muted)' }}>
               + Add note
             </button>
