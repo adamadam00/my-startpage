@@ -115,7 +115,7 @@ function applyTheme(t) {
   r.setProperty('--link-gap',          t.linkGap            + 'rem')
   r.setProperty('--section-gap',       t.sectionGap         + 'px')
   r.setProperty('--section-gap-h',     t.sectionGapH        + 'px')
-  r.setProperty('--main-gap-top',      (t.mainGapTop  ?? '12')   + 'px')   // ← topbar→cards gap
+  r.setProperty('--main-gap-top',      (t.mainGapTop  ?? '40')   + 'px')   // ← topbar→cards gap
   r.setProperty('--card-padding',      (t.cardPadding ?? '0.75') + 'rem')  // ← NEW
   r.setProperty('--page-scale',        t.pageScale)
   r.setProperty('--handle-opacity',    t.handleOpacity)
