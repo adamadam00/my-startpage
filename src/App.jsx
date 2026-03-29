@@ -321,7 +321,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Main ── */}
+      {/* ── Main layout ── */}
       <div className="main-layout" style={{ gridTemplateColumns: `1fr ${notesWidth}px` }}>
         <div className="main-col">
           <Sections
@@ -344,7 +344,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Settings ── */}
+      {/* ── Settings panel ── */}
       {showSettings && (
         <div className="modal-overlay" onClick={() => setShowSettings(false)}>
           <div className="settings-panel" onClick={e => e.stopPropagation()}>
@@ -434,11 +434,11 @@ export default function App() {
                   <div className="settings-row">
                     <span className="settings-label">Type</span>
                     <div className="preset-slots">
-                      {['linear','radial'].map(t => (
-                        <button key={t}
-                          className={`preset-slot${theme.gradientType === t ? ' active' : ''}`}
-                          onClick={() => set('gradientType', t)}>
-                          {t.charAt(0).toUpperCase() + t.slice(1)}
+                      {['linear', 'radial'].map(gt => (
+                        <button key={gt}
+                          className={`preset-slot${theme.gradientType === gt ? ' active' : ''}`}
+                          onClick={() => set('gradientType', gt)}>
+                          {gt.charAt(0).toUpperCase() + gt.slice(1)}
                         </button>
                       ))}
                     </div>
@@ -530,9 +530,7 @@ export default function App() {
                 </div>
               ))}
               <div className="settings-row">
-                <span className="settings-label" title="Controls the clock time and weather temperature size">
-                  Clock & weather scale — {theme.clockWidgetScale}rem
-                </span>
+                <span className="settings-label">Clock & weather scale — {theme.clockWidgetScale}rem</span>
                 <input type="range" min="0.75" max="2.5" step="0.05"
                   value={theme.clockWidgetScale} onChange={e => set('clockWidgetScale', e.target.value)}
                   style={{ width: 100 }} />
@@ -555,12 +553,12 @@ export default function App() {
                 </div>
               </div>
               {[
-                ['Section gap (vertical)',   'sectionGap',   0, 24, 1, 'px'],
-                ['Section gap (horizontal)', 'sectionGapH',  0, 24, 1, 'px'],
+                ['Section gap (vertical)',   'sectionGap',   0, 24,  1,    'px'],
+                ['Section gap (horizontal)', 'sectionGapH',  0, 24,  1,    'px'],
                 ['Notes panel width',        'notesWidth',   140, 420, 10, 'px'],
-                ['Notes font size',          'notesFontSize',11, 18,  1,  'px'],
-                ['Link gap',                 'linkGap',      0,  1.5, 0.05, 'rem'],
-                ['Page scale',               'pageScale',    0.5, 1.3, 0.05, ''],
+                ['Notes font size',          'notesFontSize', 11, 18,  1,  'px'],
+                ['Link gap',                 'linkGap',       0, 1.5, 0.05,'rem'],
+                ['Page scale',               'pageScale',     0.5, 1.3, 0.05, ''],
               ].map(([label, key, min, max, step, unit]) => (
                 <div className="settings-row" key={key}>
                   <span className="settings-label">{label} — {theme[key]}{unit}</span>
@@ -570,9 +568,7 @@ export default function App() {
                 </div>
               ))}
               <div className="settings-row">
-                <span className="settings-label" title="Applies to notes, modals, inputs and buttons">
-                  Radius (cards & buttons) — {theme.radius}px
-                </span>
+                <span className="settings-label">Radius — {theme.radius}px</span>
                 <input type="range" min="0" max="20" step="1"
                   value={theme.radius} onChange={e => set('radius', e.target.value)}
                   style={{ width: 100 }} />
@@ -582,14 +578,12 @@ export default function App() {
             {/* Search */}
             <div className="settings-section">
               <div className="settings-title">Search</div>
-              <div className="settings-row">
-                <span className="settings-label">Search URL</span>
-              </div>
+              <span className="settings-label" style={{ marginBottom: '0.15rem' }}>Search URL</span>
               <input className="input" value={theme.searchUrl}
                 onChange={e => set('searchUrl', e.target.value)}
                 placeholder="https://google.com/search?q="
                 style={{ fontSize: '0.8em' }} />
-              <div style={{ fontSize: '0.72em', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>
                 Query is appended to the end of this URL.
               </div>
             </div>
@@ -647,5 +641,4 @@ export default function App() {
       )}
     </div>
   )
-}
 }
