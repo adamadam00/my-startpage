@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext, closestCenter, PointerSensor,
@@ -11,13 +11,12 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
-/* ── Parse aFineStart export JSON into flat { name, links[] } groups ── */
 function parseAFineStart(raw) {
   let data
-  try { data = JSON.parse(raw) } catch { throw new Error('Not valid JSON — paste the export code exactly as copied from A Fine Start Settings.') }
+  try { data = JSON.parse(raw) }
+  catch { throw new Error('Not valid JSON — paste the export code exactly as copied from A Fine Start Settings.') }
 
   const groups = []
-
   const extractBookmarks = (bms) =>
     (bms || []).map(b => ({ title: b.name || b.title || 'Link', url: b.url || '' }))
       .filter(b => b.url)
@@ -26,35 +25,26 @@ function parseAFineStart(raw) {
   if (Array.isArray(data.columns)) {
     data.columns.forEach(col => {
       const arr = Array.isArray(col) ? col : (col.groups || [])
-      arr.forEach(g => {
-        if (g.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) })
-      })
+      arr.forEach(g => { if (g.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks) }) })
     })
     if (groups.length) return groups
   }
-
   // Format B: { groups: [ {name, bookmarks}, ... ] }
   if (Array.isArray(data.groups)) {
-    data.groups.forEach(g => {
-      if (g.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links) })
-    })
+    data.groups.forEach(g => { if (g.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links) }) })
     if (groups.length) return groups
   }
-
-  // Format C: top-level array of groups
+  // Format C: top-level array
   if (Array.isArray(data)) {
-    data.forEach(g => {
-      if (g.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links) })
-    })
+    data.forEach(g => { if (g.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links) }) })
     if (groups.length) return groups
   }
-
   throw new Error('Could not recognise this export format. Make sure you copied the full code from A Fine Start → Settings → Export bookmarks.')
 }
 
 function buildColumns(sections = [], colCount = 2) {
-  const cols   = Math.max(colCount, 1)
-  const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+  const cols    = Math.max(colCount, 1)
+  const sorted  = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const allZero = sorted.length > 1 && sorted.every(s => (s.col_index ?? 0) === 0)
   const result  = Array.from({ length: cols }, () => [])
   sorted.forEach((s, i) => {
@@ -73,11 +63,7 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: section.id })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition, opacity: isDragging ? 0 : 1,
-  }
-
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0 : 1 }
   const sectionLinks = Array.isArray(links) ? links.filter(l => l.section_id === section.id) : []
 
   const toggleCollapse = async () => {
@@ -103,7 +89,6 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
   return (
     <div ref={setNodeRef} style={style}
       className={`section-card${collapsed ? ' collapsed' : ''}`}>
-
       <div className="section-header" onClick={toggleCollapse}>
         <span className="drag-handle" {...attributes} {...listeners}
           onClick={e => e.stopPropagation()}>⠿</span>
@@ -154,28 +139,31 @@ function SectionCard({ section, links = [], userId, workspaceId, onRefresh, open
 }
 
 export default function Sections({
-  sections    = [],
-  links       = [],
+  sections     = [],
+  links        = [],
   userId,
   workspaceId,
   onRefresh,
-  openInNewTab = true,
-  colCount     = 2,
+  openInNewTab  = true,
+  colCount      = 2,
+  triggerAdd    = 0,   // increment from parent to open add form
+  triggerImport = 0,   // increment from parent to open import modal
 }) {
-  const [addingSection,  setAddingSection]  = useState(false)
-  const [newName,        setNewName]        = useState('')
-  const [colItems,       setColItems]       = useState(() => buildColumns(sections, colCount))
-  const [activeId,       setActiveId]       = useState(null)
-  const [showImport,     setShowImport]     = useState(false)
-  const [importText,     setImportText]     = useState('')
-  const [importError,    setImportError]    = useState('')
-  const [importLoading,  setImportLoading]  = useState(false)
-  const [importDone,     setImportDone]     = useState(false)
+  const [addingSection, setAddingSection] = useState(false)
+  const [newName,       setNewName]       = useState('')
+  const [activeId,      setActiveId]      = useState(null)
+
+  const [showImport,    setShowImport]    = useState(false)
+  const [importText,    setImportText]    = useState('')
+  const [importError,   setImportError]   = useState('')
+  const [importLoading, setImportLoading] = useState(false)
+  const [importDone,    setImportDone]    = useState(false)
+
   const safeLinks = Array.isArray(links) ? links : []
 
-  useEffect(() => {
-    if (!activeId) setColItems(buildColumns(sections, colCount))
-  }, [sections, colCount])
+  // React to topbar triggers
+  useEffect(() => { if (triggerAdd > 0)    setAddingSection(true) }, [triggerAdd])
+  useEffect(() => { if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) } }, [triggerImport])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -185,11 +173,11 @@ export default function Sections({
   const handleDragEnd = async ({ active, over }) => {
     setActiveId(null)
     if (!over || active.id === over.id) return
-    const flatSections = colItems.flat()
-    const from = flatSections.findIndex(s => s.id === active.id)
-    const to   = flatSections.findIndex(s => s.id === over.id)
+    const flat = buildColumns(sections, colCount).flat()
+    const from = flat.findIndex(s => s.id === active.id)
+    const to   = flat.findIndex(s => s.id === over.id)
     if (from === -1 || to === -1) return
-    const next = arrayMove(flatSections, from, to)
+    const next = arrayMove(flat, from, to)
     await Promise.all(next.map((s, i) =>
       supabase.from('sections').update({ position: i, col_index: i % colCount }).eq('id', s.id)
     ))
@@ -222,25 +210,18 @@ export default function Sections({
           name: g.name, position: startPos + gi,
           col_index: (startPos + gi) % colCount,
         }).select().single()
-
         if (secErr) throw new Error(secErr.message)
-
         if (g.links.length) {
           await supabase.from('links').insert(
             g.links.map((lnk, li) => ({
               user_id: userId, workspace_id: workspaceId,
-              section_id: sec.id, title: lnk.title,
-              url: lnk.url, position: li,
+              section_id: sec.id, title: lnk.title, url: lnk.url, position: li,
             }))
           )
         }
       }
-
-      setImportDone(true)
-      onRefresh()
-      setTimeout(() => {
-        setShowImport(false); setImportText(''); setImportDone(false)
-      }, 1800)
+      setImportDone(true); onRefresh()
+      setTimeout(() => { setShowImport(false); setImportText(''); setImportDone(false) }, 1800)
     } catch (err) {
       setImportError(err.message)
     } finally {
@@ -254,7 +235,7 @@ export default function Sections({
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
 
       {/* ── Sections grid ── */}
-      <div className="sections-grid" style={{ flex: 1, minHeight: 0 }}>
+      <div className="sections-grid">
         <DndContext sensors={sensors} collisionDetection={closestCenter}
           onDragStart={({ active }) => setActiveId(active.id)}
           onDragEnd={handleDragEnd}>
@@ -262,15 +243,9 @@ export default function Sections({
             <div key={ci} className="section-col">
               <SortableContext items={col.map(s => s.id)} strategy={verticalListSortingStrategy}>
                 {col.map(section => (
-                  <SectionCard
-                    key={section.id}
-                    section={section}
-                    links={safeLinks}
-                    userId={userId}
-                    workspaceId={workspaceId}
-                    onRefresh={onRefresh}
-                    openInNewTab={openInNewTab}
-                  />
+                  <SectionCard key={section.id} section={section} links={safeLinks}
+                    userId={userId} workspaceId={workspaceId}
+                    onRefresh={onRefresh} openInNewTab={openInNewTab} />
                 ))}
               </SortableContext>
             </div>
@@ -278,32 +253,21 @@ export default function Sections({
         </DndContext>
       </div>
 
-      {/* ── Bottom bar: Add section + Import ── */}
-      <div className="add-section-fixed">
-        {addingSection ? (
+      {/* ── Inline add-section form — floats above content when open ── */}
+      {addingSection && (
+        <div className="add-section-fixed">
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
             <input className="input" value={newName} onChange={e => setNewName(e.target.value)}
               placeholder="Section name" autoFocus
-              style={{ width: 140, fontSize: '0.82em' }} />
-            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>Add</button>
-            <button className="btn" type="button" style={{ fontSize: '0.82em' }}
+              style={{ width: 150, fontSize: '0.82em' }} />
+            <button className="btn btn-primary" type="submit"
+              style={{ fontSize: '0.82em' }}>Add</button>
+            <button className="btn" type="button"
+              style={{ fontSize: '0.82em' }}
               onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
           </form>
-        ) : (
-          <>
-            <button className="btn btn-primary add-section-btn"
-              title="Add a new section"
-              onClick={() => setAddingSection(true)}>
-              + Section
-            </button>
-            <button className="btn add-section-btn"
-              title="Import sections and links from an A Fine Start export"
-              onClick={() => { setShowImport(true); setImportError(''); setImportDone(false) }}>
-              ↑ Import
-            </button>
-          </>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Import modal ── */}
       {showImport && (
@@ -317,14 +281,14 @@ export default function Sections({
 
             <div style={{ fontSize: '0.8em', color: 'var(--text-dim)', lineHeight: 1.55 }}>
               In A Fine Start go to <strong>Settings → Export bookmarks</strong>,
-              copy the code shown, then paste it below.
+              copy the entire code block shown, then paste it below.
               Your existing sections will not be removed — imported groups are added alongside them.
             </div>
 
             <textarea
               value={importText}
               onChange={e => { setImportText(e.target.value); setImportError('') }}
-              placeholder={'Paste A Fine Start export code here…'}
+              placeholder="Paste A Fine Start export code here…"
               style={{
                 width: '100%', minHeight: 140, resize: 'vertical',
                 background: 'var(--bg3)', color: 'var(--text)',
@@ -339,11 +303,8 @@ export default function Sections({
                 {importError}
               </div>
             )}
-
             {importDone && (
-              <div style={{ fontSize: '0.82em', color: 'var(--success)' }}>
-                ✓ Import successful!
-              </div>
+              <div style={{ fontSize: '0.82em', color: 'var(--success)' }}>✓ Import successful!</div>
             )}
 
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -354,7 +315,6 @@ export default function Sections({
               </button>
               <button className="btn" onClick={() => setShowImport(false)}>Cancel</button>
             </div>
-
           </div>
         </div>
       )}

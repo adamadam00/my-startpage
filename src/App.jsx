@@ -122,17 +122,19 @@ function applyTheme(t) {
 }
 
 export default function App() {
-  const [session,      setSession]      = useState(null)
-  const [loading,      setLoading]      = useState(true)
-  const [workspaces,   setWorkspaces]   = useState([])
-  const [activeWs,     setActiveWs]     = useState(null)
-  const [sections,     setSections]     = useState([])
-  const [links,        setLinks]        = useState([])
-  const [notes,        setNotes]        = useState([])
-  const [addingWs,     setAddingWs]     = useState(false)
-  const [newWsName,    setNewWsName]    = useState('')
-  const [showSettings, setShowSettings] = useState(false)
-  const [theme,        setTheme]        = useState(loadTheme)
+  const [session,               setSession]               = useState(null)
+  const [loading,               setLoading]               = useState(true)
+  const [workspaces,            setWorkspaces]            = useState([])
+  const [activeWs,              setActiveWs]              = useState(null)
+  const [sections,              setSections]              = useState([])
+  const [links,                 setLinks]                 = useState([])
+  const [notes,                 setNotes]                 = useState([])
+  const [addingWs,              setAddingWs]              = useState(false)
+  const [newWsName,             setNewWsName]             = useState('')
+  const [showSettings,          setShowSettings]          = useState(false)
+  const [theme,                 setTheme]                 = useState(loadTheme)
+  const [addSectionTrigger,     setAddSectionTrigger]     = useState(0)
+  const [importSectionTrigger,  setImportSectionTrigger]  = useState(0)
   const fileRef = useRef(null)
 
   useEffect(() => {
@@ -331,6 +333,12 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
+          <button className="btn btn-primary"
+            title="Add a new section"
+            style={{ padding: '0.3rem 0.85rem' }}
+            onClick={() => setAddSectionTrigger(n => n + 1)}>
+            + Section
+          </button>
           <button className="btn btn-ghost" title="Open settings"
             onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
           <button className="btn btn-ghost" title="Sign out"
@@ -349,6 +357,8 @@ export default function App() {
             onRefresh={fetchData}
             openInNewTab={openInNewTab}
             colCount={colCount}
+            triggerAdd={addSectionTrigger}
+            triggerImport={importSectionTrigger}
           />
         </div>
         <div className="side-col">
@@ -650,13 +660,14 @@ export default function App() {
             {/* ── Presets ── */}
             <div className="settings-section">
               <div className="settings-title">Presets</div>
+
               <div className="import-export">
                 <button className="btn" style={{ fontSize: '0.8em' }}
                   title="Download current theme settings as a JSON file"
-                  onClick={exportSettings}>↓ Export</button>
+                  onClick={exportSettings}>↓ Export theme</button>
                 <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}
                   title="Load a previously exported theme JSON file">
-                  ↑ Import
+                  ↑ Import theme
                   <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
                 </label>
                 <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
@@ -664,9 +675,16 @@ export default function App() {
                   onClick={resetSettings}>Reset</button>
               </div>
 
-              <button
-                className="btn"
-                style={{ fontSize: '0.8em', width: '100%', marginTop: '0.25rem' }}
+              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
+                title="Import sections and links from an A Fine Start bookmark export"
+                onClick={() => {
+                  setShowSettings(false)
+                  setTimeout(() => setImportSectionTrigger(n => n + 1), 150)
+                }}>
+                ↑ Import A Fine Start links
+              </button>
+
+              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
                 title="Clears the service worker cache and reloads all assets fresh from the server — use this after a new deploy"
                 onClick={refreshCache}>
                 ↺ Refresh cached assets
