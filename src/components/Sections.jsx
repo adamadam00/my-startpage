@@ -88,22 +88,33 @@ function findColIndex(cols, id) {
 /* ─────────────────────────────────────────
    Section card — sortable wrapper
 ───────────────────────────────────────── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, ghost }) {
+function SectionCard({
+  section, links, userId, workspaceId, onRefresh,
+  openInNewTab, ghost, locked,
+  forceCollapsed,   // undefined = no override, true/false = forced
+}) {
   const [collapsed,  setCollapsed]  = useState(section.collapsed ?? false)
   const [renaming,   setRenaming]   = useState(false)
   const [name,       setName]       = useState(section.name ?? '')
   const [addingLink, setAddingLink] = useState(false)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: section.id })
+    useSortable({ id: section.id, disabled: locked })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity:   isDragging || ghost ? 0.3 : 1,
-    position:  'relative',
-    zIndex:    isDragging ? 20 : 'auto',
+    opacity:  isDragging || ghost ? 0.3 : 1,
+    position: 'relative',
+    zIndex:   isDragging ? 20 : 'auto',
   }
+
+  // Respond to collapse-all / expand-all triggers from parent
+  useEffect(() => {
+    if (forceCollapsed === undefined) return
+    setCollapsed(forceCollapsed)
+    supabase.from('sections').update({ collapsed: forceCollapsed }).eq('id', section.id)
+  }, [forceCollapsed])
 
   const sectionLinks = links.filter(l => l.section_id === section.id)
 
@@ -132,8 +143,15 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
       className={`section-card${collapsed ? ' collapsed' : ''}`}>
 
       <div className="section-header" onClick={toggleCollapse}>
-        <span className="drag-handle" {...attributes} {...listeners}
-          onClick={e => e.stopPropagation()} title="Drag to reorder">⠿</span>
+
+        {/* Drag handle — hidden when locked */}
+        {!locked ? (
+          <span className="drag-handle" {...attributes} {...listeners}
+            onClick={e => e.stopPropagation()} title="Drag to reorder">⠿</span>
+        ) : (
+          // Reserve the same space so section-name stays centred
+          <span style={{ width: '1.6rem', flexShrink: 0 }} />
+        )}
 
         {renaming ? (
           <form onSubmit={rename} onClick={e => e.stopPropagation()}
@@ -182,18 +200,20 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
 /* ─────────────────────────────────────────
    Main Sections component
-   ONE DndContext — columns share drag state
 ───────────────────────────────────────── */
 export default function Sections({
-  sections      = [],
-  links         = [],
+  sections         = [],
+  links            = [],
   userId,
   workspaceId,
   onRefresh,
-  openInNewTab  = true,
-  colCount      = 2,
-  triggerAdd    = 0,
-  triggerImport = 0,
+  openInNewTab     = true,
+  colCount         = 2,
+  triggerAdd       = 0,
+  triggerImport    = 0,
+  triggerCollapseAll = 0,   // ← NEW
+  triggerExpandAll   = 0,   // ← NEW
+  locked           = false, // ← NEW
 }) {
   const [cols,          setCols]          = useState(() => buildColumns(sections, colCount))
   const [activeSection, setActiveSection] = useState(null)
@@ -207,24 +227,38 @@ export default function Sections({
   const [importLoading, setImportLoading] = useState(false)
   const [importDone,    setImportDone]    = useState(false)
 
+  // forceCollapsed: undefined = no override, true = collapse all, false = expand all
+  const [forceCollapsed, setForceCollapsed] = useState(undefined)
+
   const safeLinks = Array.isArray(links) ? links : []
 
-  // Keep a ref so drag handlers always see latest cols without stale closure
   const colsRef = useRef(cols)
   useEffect(() => { colsRef.current = cols }, [cols])
 
-  // Sync from parent only when not dragging (add/delete/page-load)
+  // Sync from parent only when not dragging
   useEffect(() => {
-    if (!dragging) {
-      setCols(buildColumns(sections, colCount))
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!dragging) setCols(buildColumns(sections, colCount))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, colCount])
 
   useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
   useEffect(() => {
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
+
+  // Collapse all — set forceCollapsed to true, then clear override after cards receive it
+  useEffect(() => {
+    if (!triggerCollapseAll) return
+    setForceCollapsed(true)
+    setTimeout(() => setForceCollapsed(undefined), 100)
+  }, [triggerCollapseAll])
+
+  // Expand all
+  useEffect(() => {
+    if (!triggerExpandAll) return
+    setForceCollapsed(false)
+    setTimeout(() => setForceCollapsed(undefined), 100)
+  }, [triggerExpandAll])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -233,6 +267,7 @@ export default function Sections({
 
   /* ── Drag start ── */
   const handleDragStart = ({ active }) => {
+    if (locked) return
     setDragging(true)
     const current = colsRef.current
     const ci = findColIndex(current, active.id)
@@ -242,45 +277,36 @@ export default function Sections({
     }
   }
 
-  /* ── Drag over — handles cross-column moves in real time ── */
+  /* ── Drag over ── */
   const handleDragOver = ({ active, over }) => {
-    if (!over || active.id === over.id) return
+    if (locked || !over || active.id === over.id) return
 
-    const current    = colsRef.current
-    const activeCol  = findColIndex(current, active.id)
-    const overCol    = findColIndex(current, over.id)
+    const current   = colsRef.current
+    const activeCol = findColIndex(current, active.id)
+    const overCol   = findColIndex(current, over.id)
 
-    if (activeCol === -1 || overCol === -1) return
-    if (activeCol === overCol) return   // same-column handled in dragEnd
+    if (activeCol === -1 || overCol === -1 || activeCol === overCol) return
 
     setCols(prev => {
       const next       = prev.map(col => [...col])
       const activeItem = next[activeCol].find(s => s.id === active.id)
       if (!activeItem) return prev
-
-      // Remove from source column
       next[activeCol] = next[activeCol].filter(s => s.id !== active.id)
-
-      // Insert into target column at the hovered position
-      const overIndex = next[overCol].findIndex(s => s.id === over.id)
-      if (overIndex === -1) {
-        next[overCol].push(activeItem)
-      } else {
-        next[overCol].splice(overIndex, 0, activeItem)
-      }
+      const overIndex  = next[overCol].findIndex(s => s.id === over.id)
+      if (overIndex === -1) next[overCol].push(activeItem)
+      else next[overCol].splice(overIndex, 0, activeItem)
       return next
     })
   }
 
-  /* ── Drag end — finalize order + persist ── */
+  /* ── Drag end ── */
   const handleDragEnd = async ({ active, over }) => {
+    if (locked) return
     setDragging(false)
     setActiveSection(null)
 
     if (!over) {
-      // Dropped nowhere — reset from server data
-      setCols(buildColumns(sections, colCount))
-      return
+      setCols(buildColumns(sections, colCount)); return
     }
 
     const current   = colsRef.current
@@ -291,7 +317,6 @@ export default function Sections({
 
     let finalCols = current.map(col => [...col])
 
-    // Same-column reorder
     if (activeCol === overCol) {
       const from = finalCols[activeCol].findIndex(s => s.id === active.id)
       const to   = finalCols[activeCol].findIndex(s => s.id === over.id)
@@ -300,22 +325,16 @@ export default function Sections({
         setCols(finalCols)
       }
     }
-    // Cross-column already handled by onDragOver — finalCols is already correct
 
-    // Persist every section's new position + col_index
     const updates = []
     finalCols.forEach((col, ci) => {
       col.forEach((s, i) => {
         updates.push(
-          supabase.from('sections')
-            .update({ position: i, col_index: ci })
-            .eq('id', s.id)
+          supabase.from('sections').update({ position: i, col_index: ci }).eq('id', s.id)
         )
       })
     })
     await Promise.all(updates)
-
-    // Refresh AFTER we've set final local state — not before
     onRefresh()
   }
 
@@ -398,6 +417,8 @@ export default function Sections({
                     onRefresh={onRefresh}
                     openInNewTab={openInNewTab}
                     ghost={activeSection?.id === section.id}
+                    locked={locked}
+                    forceCollapsed={forceCollapsed}
                   />
                 ))}
               </SortableContext>
@@ -405,7 +426,6 @@ export default function Sections({
           ))}
         </div>
 
-        {/* Floating drag preview */}
         <DragOverlay>
           {activeSection && (
             <div className="section-card" style={{
