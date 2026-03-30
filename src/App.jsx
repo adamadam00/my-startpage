@@ -127,7 +127,6 @@ function applyTheme(t) {
   r.setProperty('--notes-width',        t.notesWidth    + 'px')
 }
 
-// localStorage cache key per workspace
 const lcKey = (id) => `ws_data_${id}`
 
 export default function App() {
@@ -142,14 +141,16 @@ export default function App() {
   const [newWsName,            setNewWsName]            = useState('')
   const [showSettings,         setShowSettings]         = useState(false)
   const [theme,                setTheme]                = useState(loadTheme)
+  const [themeSyncing,         setThemeSyncing]         = useState(false)  // shows sync indicator
   const [addSectionTrigger,    setAddSectionTrigger]    = useState(0)
   const [importSectionTrigger, setImportSectionTrigger] = useState(0)
-  const fileRef      = useRef(null)
-  const wsCache      = useRef({})   // in-memory cache: { [wsId]: { sections, links, notes } }
-  const sessionRef   = useRef(null) // stable ref so fetchData never needs session in deps
+  const fileRef    = useRef(null)
+  const wsCache    = useRef({})
+  const sessionRef = useRef(null)
 
   useEffect(() => { sessionRef.current = session }, [session])
 
+  // ── Auth ──
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session); setLoading(false)
@@ -158,19 +159,47 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ── Apply theme to DOM whenever it changes ──
   useEffect(() => {
     applyTheme(theme)
     localStorage.setItem('current_theme', JSON.stringify(theme))
   }, [theme])
 
+  // ── Re-apply theme on window focus (catches changes from other tabs) ──
   useEffect(() => {
     const onFocus = () => { const s = loadTheme(); setTheme(s); applyTheme(s) }
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [])
 
+  // ── Fetch theme from Supabase on login — applies over localStorage ──
+  const fetchTheme = useCallback(async (userId) => {
+    try {
+      const { data } = await supabase
+        .from('user_settings')
+        .select('theme')
+        .eq('user_id', userId)
+        .single()
+
+      if (data?.theme && Object.keys(data.theme).length > 0) {
+        const merged = { ...DEFAULT_THEME, ...data.theme }
+        setTheme(merged)
+        applyTheme(merged)
+        localStorage.setItem('current_theme', JSON.stringify(merged))
+      }
+    } catch {
+      // Table may not exist yet or no row — silently fall back to localStorage
+    }
+  }, [])
+
+  // Fetch remote theme whenever session changes (login / new browser)
+  useEffect(() => {
+    if (session?.user?.id) fetchTheme(session.user.id)
+  }, [session?.user?.id])
+
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
 
+  // ── Workspaces ──
   const fetchWorkspaces = useCallback(async () => {
     const s = sessionRef.current
     if (!s) return
@@ -186,29 +215,25 @@ export default function App() {
     }
   }, [])
 
-  // Stable identity — reads session via ref, never recreated
+  // ── Data fetch — localStorage cache → instant render, Supabase refresh in bg ──
   const fetchData = useCallback(async (wsId, silent = false) => {
     const s = sessionRef.current
     if (!s || !wsId) return
 
     if (!silent) {
-      // 1. Try in-memory cache
       let hit = wsCache.current[wsId]
-
-      // 2. Fall back to localStorage (survives new-tab opens in Firefox)
       if (!hit) {
         try {
           const raw = localStorage.getItem(lcKey(wsId))
           if (raw) hit = JSON.parse(raw)
         } catch {}
       }
-
       if (hit) {
         wsCache.current[wsId] = hit
         setSections(hit.sections)
         setLinks(hit.links)
         setNotes(hit.notes)
-        fetchData(wsId, true)   // silent background refresh
+        fetchData(wsId, true)
         return
       }
     }
@@ -224,15 +249,13 @@ export default function App() {
       links:    lnk.data ?? [],
       notes:    nt.data  ?? [],
     }
-
-    // Write to both caches
     wsCache.current[wsId] = fresh
     try { localStorage.setItem(lcKey(wsId), JSON.stringify(fresh)) } catch {}
 
     setSections(fresh.sections)
     setLinks(fresh.links)
     setNotes(fresh.notes)
-  }, [])  // empty deps — stable identity, uses sessionRef
+  }, [])
 
   const switchWorkspace = useCallback((id) => {
     localStorage.setItem('active_ws', id)
@@ -251,6 +274,7 @@ export default function App() {
   useEffect(() => { fetchWorkspaces() }, [session])
   useEffect(() => { if (activeWs) fetchData(activeWs) }, [activeWs])
 
+  // ── Workspace CRUD ──
   const addWorkspace = async (e) => {
     e.preventDefault()
     if (!newWsName.trim()) return
@@ -275,31 +299,52 @@ export default function App() {
     switchWorkspace(remaining[0]?.id ?? null)
   }
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0]; if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Please use an image under 2 MB for local caching.'); return
+  // ── Settings ──
+  const saveSettings = async () => {
+    // 1. Write to localStorage immediately
+    localStorage.setItem('current_theme', JSON.stringify(theme))
+    applyTheme(theme)
+    setShowSettings(false)
+
+    // 2. Upsert to Supabase in background — syncs to all other browsers
+    const s = sessionRef.current
+    if (!s) return
+    setThemeSyncing(true)
+    try {
+      // Strip bgImage from Supabase (too large — stays local only)
+      const themeForCloud = { ...theme, bgImage: '' }
+      await supabase.from('user_settings').upsert(
+        { user_id: s.user.id, theme: themeForCloud },
+        { onConflict: 'user_id' }
+      )
+    } catch {
+      // Silently ignore — localStorage is the source of truth for this session
+    } finally {
+      setThemeSyncing(false)
     }
-    const reader = new FileReader()
-    reader.onload = (ev) =>
-      setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: ev.target.result }))
-    reader.readAsDataURL(file)
   }
 
-  const saveSettings = () => {
-    localStorage.setItem('current_theme', JSON.stringify(theme))
-    applyTheme(theme); setShowSettings(false)
-  }
-  const resetSettings = () => {
+  const resetSettings = async () => {
     setTheme({ ...DEFAULT_THEME })
     localStorage.setItem('current_theme', JSON.stringify(DEFAULT_THEME))
     applyTheme(DEFAULT_THEME)
+    // Also reset in Supabase
+    const s = sessionRef.current
+    if (!s) return
+    try {
+      await supabase.from('user_settings').upsert(
+        { user_id: s.user.id, theme: DEFAULT_THEME },
+        { onConflict: 'user_id' }
+      )
+    } catch {}
   }
+
   const exportSettings = () => {
     const blob = new Blob([JSON.stringify({ ...theme, bgImage: '' }, null, 2)], { type: 'application/json' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = 'theme.json'; a.click()
   }
+
   const importSettings = (e) => {
     const file = e.target.files?.[0]; if (!file) return
     const reader = new FileReader()
@@ -312,13 +357,22 @@ export default function App() {
     reader.readAsText(file)
   }
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0]; if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Please use an image under 2 MB for local caching.'); return
+    }
+    const reader = new FileReader()
+    reader.onload = (ev) =>
+      setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: ev.target.result }))
+    reader.readAsDataURL(file)
+  }
+
   const refreshCache = async () => {
-    // Clear localStorage workspace caches
     Object.keys(localStorage)
       .filter(k => k.startsWith('ws_data_'))
       .forEach(k => localStorage.removeItem(k))
     wsCache.current = {}
-    // Clear SW cache if available
     try {
       const reg = await navigator.serviceWorker?.getRegistration()
       if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING')
@@ -460,7 +514,10 @@ export default function App() {
             <div className="settings-header">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
                 <span style={{ fontWeight: 500 }}>Settings</span>
-                <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>build {BUILD}</span>
+                <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>
+                  build {BUILD}
+                  {themeSyncing && <span style={{ marginLeft: '0.5rem', color: 'var(--accent)' }}>↑ syncing…</span>}
+                </span>
               </div>
               <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
@@ -611,6 +668,9 @@ export default function App() {
                         onClick={() => set('bgImage', '')}>Remove image</button>
                     </>
                   )}
+                  <div style={{ fontSize: '0.7em', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    Background image is stored locally only — not synced to other browsers.
+                  </div>
                 </>
               )}
             </div>
@@ -746,15 +806,16 @@ export default function App() {
                 ↺ Refresh cached assets
               </button>
               <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
-                Also clears workspace data cache — forces a fresh Supabase fetch on next load.
+                Theme syncs automatically across browsers on Save. Background images are local only.
               </div>
             </div>
 
             <div className="settings-footer">
               <button className="btn btn-primary" style={{ flex: 1 }}
-                onClick={saveSettings}>Save & close</button>
-              <button className="btn"
-                onClick={() => setShowSettings(false)}>Cancel</button>
+                onClick={saveSettings}>
+                {themeSyncing ? '↑ Saving…' : 'Save & close'}
+              </button>
+              <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
             </div>
 
           </div>
