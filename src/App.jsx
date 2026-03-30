@@ -7,7 +7,7 @@ import SearchBar from './components/SearchBar'
 import Notes     from './components/Notes'
 import Sections  from './components/Sections'
 
-const BUILD      = '30 Mar 2026'
+const BUILD      = '31 Mar 2026'
 const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines', 'bg-crosshatch']
 
 const BG_OPTIONS = [
@@ -18,8 +18,8 @@ const BG_OPTIONS = [
   { value: 'bg-gradient',   label: 'Gradient' },
   { value: 'bg-mesh',       label: 'Blobs' },
   { value: 'bg-aurora',     label: 'Aurora' },
-  { value: 'bg-starfield',  label: '✦ Starfield' },  // ← NEW
-  { value: 'bg-plasma',     label: '✦ Plasma' },     // ← NEW
+  { value: 'bg-starfield',  label: '✦ Starfield' },
+  { value: 'bg-plasma',     label: '✦ Plasma' },
   { value: 'bg-stars',      label: 'Stars' },
   { value: 'bg-nebula',     label: 'Nebula' },
   { value: 'bg-circuit',    label: 'Circuit' },
@@ -73,7 +73,7 @@ const DEFAULT_THEME = {
   handleOpacity:     '0.15',
   faviconOpacity:    '1',
   faviconFilter:     'none',
-  faviconSize:       '13',   // ← NEW
+  faviconSize:       '13',
   bgImage:           '',
   bgImageOpacity:    '1',
   openInNewTab:      'true',
@@ -125,7 +125,7 @@ function applyTheme(t) {
   r.setProperty('--handle-opacity',     t.handleOpacity)
   r.setProperty('--favicon-opacity',    t.faviconOpacity)
   r.setProperty('--favicon-filter',     t.faviconFilter)
-  r.setProperty('--favicon-size',       (t.faviconSize ?? '13') + 'px')  // ← NEW
+  r.setProperty('--favicon-size',       (t.faviconSize ?? '13') + 'px')
   r.setProperty('--pattern-color',      t.patternColor)
   r.setProperty('--pattern-opacity',    t.patternOpacity)
   r.setProperty('--notes-font-size',    t.notesFontSize + 'px')
@@ -356,7 +356,7 @@ export default function App() {
         theme: { ...theme, bgImage: '' },
         workspaces: (wsRes.data ?? []).map(ws => ({
           name: ws.name,
-          sections: (secRes.data ?? []).filter(s => s.workspace_id === ws.id).map(sec => ({
+          sections: (secRes.data ?? []).filter(sec => sec.workspace_id === ws.id).map(sec => ({
             name: sec.name, position: sec.position, collapsed: sec.collapsed ?? false,
             links: (lnkRes.data ?? []).filter(l => l.section_id === sec.id)
               .map(l => ({ title: l.title, url: l.url, position: l.position })),
@@ -379,7 +379,7 @@ export default function App() {
       try {
         const backup = JSON.parse(ev.target.result)
         if (!backup.workspaces || !Array.isArray(backup.workspaces)) { alert('Invalid backup file.'); return }
-        if (!confirm(`This will ADD ${backup.workspaces.length} workspace(s). Your existing data will not be deleted. Continue?`)) return
+        if (!confirm(`This will ADD ${backup.workspaces.length} workspace(s). Existing data will not be deleted. Continue?`)) return
         setImportingBackup(true)
         const s = sessionRef.current
         if (backup.theme && Object.keys(backup.theme).length > 0) {
@@ -477,7 +477,7 @@ export default function App() {
     <div className="app">
       <div className={`bg-layer ${theme.bgStyle}`} style={getBgStyle()} />
 
-      {/* ── Topbar ── */}
+      {/* Topbar */}
       <div className="topbar">
         <div className="workspace-tabs">
           {workspaces.map(ws => (
@@ -498,8 +498,8 @@ export default function App() {
               <button className="btn" type="button" onClick={() => setAddingWs(false)}>✕</button>
             </form>
           ) : (
-            <button className="btn btn-ghost" title="Add workspace"
-              onClick={() => setAddingWs(true)} style={{ padding: '0.25rem 0.7rem' }}>+</button>
+            <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
+              style={{ padding: '0.25rem 0.7rem' }}>+</button>
           )}
         </div>
 
@@ -513,10 +513,10 @@ export default function App() {
 
         <div className="topbar-actions">
           <div style={{ display: 'flex', gap: '0.25rem' }}>
-            <button className="btn btn-ghost" title="Collapse all sections"
+            <button className="btn btn-ghost" title="Collapse all"
               style={{ padding: '0.25rem 0.55rem', fontSize: '0.9em' }}
               onClick={() => setCollapseAllTrigger(n => n + 1)}>▸ all</button>
-            <button className="btn btn-ghost" title="Expand all sections"
+            <button className="btn btn-ghost" title="Expand all"
               style={{ padding: '0.25rem 0.55rem', fontSize: '0.9em' }}
               onClick={() => setExpandAllTrigger(n => n + 1)}>▾ all</button>
           </div>
@@ -531,7 +531,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Main layout ── */}
+      {/* Main layout */}
       <div className="main-layout" style={{ gridTemplateColumns: `1fr ${notesWidth}px` }}>
         <div className="main-col">
           <Sections
@@ -559,7 +559,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* ── Settings panel ── */}
+      {/* Settings panel */}
       {showSettings && (
         <>
           <div className="settings-veil" />
@@ -570,13 +570,15 @@ export default function App() {
                 <span style={{ fontWeight: 500 }}>Settings</span>
                 <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>
                   build {BUILD}
-                  {themeSyncing && <span style={{ marginLeft: '0.5rem', color: 'var(--accent)' }}>↑ syncing…</span>}
+                  {themeSyncing && (
+                    <span style={{ marginLeft: '0.5rem', color: 'var(--accent)' }}>↑ syncing…</span>
+                  )}
                 </span>
               </div>
               <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
             </div>
 
-            {/* ── Colours ── */}
+            {/* Colours */}
             <div className="settings-section">
               <div className="settings-title">Colours</div>
               {[
@@ -599,7 +601,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* ── Opacity ── */}
+            {/* Opacity */}
             <div className="settings-section">
               <div className="settings-title">Opacity</div>
               {[
@@ -617,7 +619,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* ── Background ── */}
+            {/* Background */}
             <div className="settings-section">
               <div className="settings-title">Background</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
@@ -729,7 +731,7 @@ export default function App() {
               )}
             </div>
 
-            {/* ── Typography ── */}
+            {/* Typography */}
             <div className="settings-section">
               <div className="settings-title">Typography</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}>
@@ -756,14 +758,14 @@ export default function App() {
               ))}
             </div>
 
-            {/* ── Layout ── */}
+            {/* Layout */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
               <div className="settings-row">
                 <span className="settings-label">
                   🔒 Lock cards
                   <span style={{ display: 'block', fontSize: '0.8em', color: 'var(--text-muted)' }}>
-                    Hides handles, arrows & edit buttons
+                    Hides handles, arrows &amp; edit buttons
                   </span>
                 </span>
                 <label className="toggle">
@@ -805,7 +807,7 @@ export default function App() {
               ))}
             </div>
 
-            {/* ── Search ── */}
+            {/* Search */}
             <div className="settings-section">
               <div className="settings-title">Search</div>
               <span className="settings-label" style={{ marginBottom: '0.15rem' }}>Search URL</span>
@@ -818,7 +820,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* ── Links ── */}
+            {/* Links */}
             <div className="settings-section">
               <div className="settings-title">Links</div>
               <div className="settings-row">
@@ -829,5 +831,91 @@ export default function App() {
                   <span className="toggle-slider" />
                 </label>
               </div>
+              <div className="settings-row">
+                <span className="settings-label">Favicon size — {theme.faviconSize ?? 13}px</span>
+                <input type="range" min="10" max="24" step="1"
+                  value={theme.faviconSize ?? 13} onChange={e => set('faviconSize', e.target.value)}
+                  style={{ width: 100 }} />
+              </div>
+              <div className="settings-row">
+                <span className="settings-label">Favicon style</span>
+                <div className="preset-slots">
+                  {[
+                    { label: 'Normal', value: 'none'         },
+                    { label: 'Dim',    value: 'opacity(0.5)' },
+                    { label: 'Mono',   value: 'grayscale(1)' },
+                    { label: 'Hide',   value: 'opacity(0)'   },
+                  ].map(opt => (
+                    <button key={opt.value}
+                      className={`preset-slot${theme.faviconFilter === opt.value ? ' active' : ''}`}
+                      onClick={() => set('faviconFilter', opt.value)}>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
 
-              {/*
+            {/* Backup */}
+            <div className="settings-section">
+              <div className="settings-title">Backup &amp; restore</div>
+              <button className="btn btn-primary" style={{ fontSize: '0.8em', width: '100%' }}
+                onClick={exportFullBackup}>
+                ↓ Export my start page
+              </button>
+              <label className={`btn${importingBackup ? ' btn-ghost' : ''}`}
+                style={{ fontSize: '0.8em', width: '100%', textAlign: 'center',
+                  cursor: importingBackup ? 'not-allowed' : 'pointer' }}>
+                {importingBackup ? '⏳ Importing…' : '↑ Import start page backup'}
+                <input ref={backupFileRef} type="file" accept=".json"
+                  style={{ display: 'none' }} onChange={importFullBackup}
+                  disabled={importingBackup} />
+              </label>
+              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
+                Export saves all workspaces, sections, links, notes and theme.
+                Import adds them without deleting existing data.
+              </div>
+            </div>
+
+            {/* Presets */}
+            <div className="settings-section">
+              <div className="settings-title">Theme presets</div>
+              <div className="import-export">
+                <button className="btn" style={{ fontSize: '0.8em' }}
+                  onClick={exportSettings}>↓ Export theme</button>
+                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
+                  ↑ Import theme
+                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
+                </label>
+                <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
+                  onClick={resetSettings}>Reset</button>
+              </div>
+              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
+                onClick={() => {
+                  setShowSettings(false)
+                  setTimeout(() => setImportSectionTrigger(n => n + 1), 150)
+                }}>
+                ↑ Import A Fine Start links
+              </button>
+              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
+                onClick={refreshCache}>
+                ↺ Refresh cached assets
+              </button>
+              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
+                Theme syncs automatically across browsers on Save. Background images are local only.
+              </div>
+            </div>
+
+            <div className="settings-footer">
+              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>
+                {themeSyncing ? '↑ Saving…' : 'Save & close'}
+              </button>
+              <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
+            </div>
+
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
