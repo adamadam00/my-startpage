@@ -18,6 +18,8 @@ const BG_OPTIONS = [
   { value: 'bg-gradient',   label: 'Gradient' },
   { value: 'bg-mesh',       label: 'Blobs' },
   { value: 'bg-aurora',     label: 'Aurora' },
+  { value: 'bg-starfield',  label: '✦ Starfield' },  // ← NEW
+  { value: 'bg-plasma',     label: '✦ Plasma' },     // ← NEW
   { value: 'bg-stars',      label: 'Stars' },
   { value: 'bg-nebula',     label: 'Nebula' },
   { value: 'bg-circuit',    label: 'Circuit' },
@@ -71,13 +73,14 @@ const DEFAULT_THEME = {
   handleOpacity:     '0.15',
   faviconOpacity:    '1',
   faviconFilter:     'none',
+  faviconSize:       '13',   // ← NEW
   bgImage:           '',
   bgImageOpacity:    '1',
   openInNewTab:      'true',
   notesFontSize:     '13',
   notesWidth:        '240',
   searchUrl:         'https://google.com/search?q=',
-  locked:            'false',   // ← NEW: lock drag handles
+  locked:            'false',
 }
 
 function loadTheme() {
@@ -122,6 +125,7 @@ function applyTheme(t) {
   r.setProperty('--handle-opacity',     t.handleOpacity)
   r.setProperty('--favicon-opacity',    t.faviconOpacity)
   r.setProperty('--favicon-filter',     t.faviconFilter)
+  r.setProperty('--favicon-size',       (t.faviconSize ?? '13') + 'px')  // ← NEW
   r.setProperty('--pattern-color',      t.patternColor)
   r.setProperty('--pattern-opacity',    t.patternOpacity)
   r.setProperty('--notes-font-size',    t.notesFontSize + 'px')
@@ -146,8 +150,8 @@ export default function App() {
   const [importingBackup,      setImportingBackup]      = useState(false)
   const [addSectionTrigger,    setAddSectionTrigger]    = useState(0)
   const [importSectionTrigger, setImportSectionTrigger] = useState(0)
-  const [collapseAllTrigger,   setCollapseAllTrigger]   = useState(0)  // ← NEW
-  const [expandAllTrigger,     setExpandAllTrigger]     = useState(0)  // ← NEW
+  const [collapseAllTrigger,   setCollapseAllTrigger]   = useState(0)
+  const [expandAllTrigger,     setExpandAllTrigger]     = useState(0)
   const fileRef       = useRef(null)
   const backupFileRef = useRef(null)
   const wsCache       = useRef({})
@@ -156,7 +160,6 @@ export default function App() {
 
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Auth ──
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session); setLoading(false)
@@ -165,20 +168,17 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Apply + persist theme ──
   useEffect(() => {
     applyTheme(theme)
     localStorage.setItem('current_theme', JSON.stringify(theme))
   }, [theme])
 
-  // ── Re-apply on focus ──
   useEffect(() => {
     const onFocus = () => { const s = loadTheme(); setTheme(s); applyTheme(s) }
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [])
 
-  // ── Sync theme to Supabase (debounced 2s) ──
   const syncThemeToCloud = useCallback(async (t) => {
     const s = sessionRef.current
     if (!s) return
@@ -195,32 +195,22 @@ export default function App() {
     }, 2000)
   }, [])
 
-  // ── Pull theme from Supabase on login ──
   const fetchTheme = useCallback(async (userId) => {
     try {
       const { data, error } = await supabase
-        .from('user_settings')
-        .select('theme')
-        .eq('user_id', userId)
-        .maybeSingle()
-
+        .from('user_settings').select('theme').eq('user_id', userId).maybeSingle()
       if (error) { console.warn('fetchTheme error:', error.message); return }
-
       if (data?.theme && Object.keys(data.theme).length > 0) {
         const merged = { ...DEFAULT_THEME, ...data.theme }
-        setTheme(merged)
-        applyTheme(merged)
+        setTheme(merged); applyTheme(merged)
         localStorage.setItem('current_theme', JSON.stringify(merged))
       } else {
         const local = loadTheme()
         await supabase.from('user_settings').upsert(
-          { user_id: userId, theme: { ...local, bgImage: '' } },
-          { onConflict: 'user_id' }
+          { user_id: userId, theme: { ...local, bgImage: '' } }, { onConflict: 'user_id' }
         )
       }
-    } catch (e) {
-      console.warn('fetchTheme failed:', e.message)
-    }
+    } catch (e) { console.warn('fetchTheme failed:', e.message) }
   }, [])
 
   useEffect(() => {
@@ -229,7 +219,6 @@ export default function App() {
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
 
-  // ── Workspaces ──
   const fetchWorkspaces = useCallback(async () => {
     const s = sessionRef.current
     if (!s) return
@@ -245,11 +234,9 @@ export default function App() {
     }
   }, [])
 
-  // ── Data fetch ──
   const fetchData = useCallback(async (wsId, silent = false) => {
     const s = sessionRef.current
     if (!s || !wsId) return
-
     if (!silent) {
       let hit = wsCache.current[wsId]
       if (!hit) {
@@ -260,31 +247,19 @@ export default function App() {
       }
       if (hit) {
         wsCache.current[wsId] = hit
-        setSections(hit.sections)
-        setLinks(hit.links)
-        setNotes(hit.notes)
-        fetchData(wsId, true)
-        return
+        setSections(hit.sections); setLinks(hit.links); setNotes(hit.notes)
+        fetchData(wsId, true); return
       }
     }
-
     const [sec, lnk, nt] = await Promise.all([
       supabase.from('sections').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
       supabase.from('links').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
       supabase.from('notes').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('created_at', { ascending: false }),
     ])
-
-    const fresh = {
-      sections: sec.data ?? [],
-      links:    lnk.data ?? [],
-      notes:    nt.data  ?? [],
-    }
+    const fresh = { sections: sec.data ?? [], links: lnk.data ?? [], notes: nt.data ?? [] }
     wsCache.current[wsId] = fresh
     try { localStorage.setItem(lcKey(wsId), JSON.stringify(fresh)) } catch {}
-
-    setSections(fresh.sections)
-    setLinks(fresh.links)
-    setNotes(fresh.notes)
+    setSections(fresh.sections); setLinks(fresh.links); setNotes(fresh.notes)
   }, [])
 
   const switchWorkspace = useCallback((id) => {
@@ -304,7 +279,6 @@ export default function App() {
   useEffect(() => { fetchWorkspaces() }, [session])
   useEffect(() => { if (activeWs) fetchData(activeWs) }, [activeWs])
 
-  // ── Workspace CRUD ──
   const addWorkspace = async (e) => {
     e.preventDefault()
     if (!newWsName.trim()) return
@@ -329,19 +303,16 @@ export default function App() {
     switchWorkspace(remaining[0]?.id ?? null)
   }
 
-  // ── Settings ──
   const saveSettings = async () => {
     localStorage.setItem('current_theme', JSON.stringify(theme))
-    applyTheme(theme)
-    setShowSettings(false)
+    applyTheme(theme); setShowSettings(false)
     syncThemeToCloud(theme)
   }
 
   const resetSettings = async () => {
     setTheme({ ...DEFAULT_THEME })
     localStorage.setItem('current_theme', JSON.stringify(DEFAULT_THEME))
-    applyTheme(DEFAULT_THEME)
-    syncThemeToCloud(DEFAULT_THEME)
+    applyTheme(DEFAULT_THEME); syncThemeToCloud(DEFAULT_THEME)
   }
 
   const exportSettings = () => {
@@ -364,19 +335,15 @@ export default function App() {
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0]; if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Please use an image under 2 MB for local caching.'); return
-    }
+    if (file.size > 2 * 1024 * 1024) { alert('Please use an image under 2 MB.'); return }
     const reader = new FileReader()
     reader.onload = (ev) =>
       setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: ev.target.result }))
     reader.readAsDataURL(file)
   }
 
-  // ── Full backup ──
   const exportFullBackup = async () => {
-    const s = sessionRef.current
-    if (!s) return
+    const s = sessionRef.current; if (!s) return
     try {
       const [wsRes, secRes, lnkRes, ntRes] = await Promise.all([
         supabase.from('workspaces').select('*').eq('user_id', s.user.id).order('created_at'),
@@ -385,30 +352,22 @@ export default function App() {
         supabase.from('notes').select('*').eq('user_id', s.user.id).order('created_at', { ascending: false }),
       ])
       const backup = {
-        version:     2,
-        exported_at: new Date().toISOString(),
-        theme:       { ...theme, bgImage: '' },
-        workspaces:  (wsRes.data ?? []).map(ws => ({
-          name:     ws.name,
-          sections: (secRes.data ?? [])
-            .filter(s => s.workspace_id === ws.id)
-            .map(sec => ({
-              name:      sec.name,
-              position:  sec.position,
-              collapsed: sec.collapsed ?? false,
-              links:     (lnkRes.data ?? [])
-                .filter(l => l.section_id === sec.id)
-                .map(l => ({ title: l.title, url: l.url, position: l.position })),
-            })),
-          notes: (ntRes.data ?? [])
-            .filter(n => n.workspace_id === ws.id)
+        version: 2, exported_at: new Date().toISOString(),
+        theme: { ...theme, bgImage: '' },
+        workspaces: (wsRes.data ?? []).map(ws => ({
+          name: ws.name,
+          sections: (secRes.data ?? []).filter(s => s.workspace_id === ws.id).map(sec => ({
+            name: sec.name, position: sec.position, collapsed: sec.collapsed ?? false,
+            links: (lnkRes.data ?? []).filter(l => l.section_id === sec.id)
+              .map(l => ({ title: l.title, url: l.url, position: l.position })),
+          })),
+          notes: (ntRes.data ?? []).filter(n => n.workspace_id === ws.id)
             .map(n => ({ content: n.content, created_at: n.created_at })),
         })),
       }
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-      a.download = `mystartpage-backup-${new Date().toISOString().slice(0,10)}.json`
-      a.click()
+      a.download = `mystartpage-backup-${new Date().toISOString().slice(0,10)}.json`; a.click()
     } catch (e) { alert('Export failed: ' + e.message) }
   }
 
@@ -419,71 +378,53 @@ export default function App() {
     reader.onload = async (ev) => {
       try {
         const backup = JSON.parse(ev.target.result)
-        if (!backup.workspaces || !Array.isArray(backup.workspaces)) {
-          alert('Invalid backup file.'); return
-        }
-        if (!confirm(`This will ADD ${backup.workspaces.length} workspace(s) from the backup to your account. Your existing data will not be deleted. Continue?`)) return
+        if (!backup.workspaces || !Array.isArray(backup.workspaces)) { alert('Invalid backup file.'); return }
+        if (!confirm(`This will ADD ${backup.workspaces.length} workspace(s). Your existing data will not be deleted. Continue?`)) return
         setImportingBackup(true)
         const s = sessionRef.current
         if (backup.theme && Object.keys(backup.theme).length > 0) {
           const t = { ...DEFAULT_THEME, ...backup.theme }
-          setTheme(t); applyTheme(t)
-          localStorage.setItem('current_theme', JSON.stringify(t))
-          await supabase.from('user_settings').upsert(
-            { user_id: s.user.id, theme: t }, { onConflict: 'user_id' }
-          )
+          setTheme(t); applyTheme(t); localStorage.setItem('current_theme', JSON.stringify(t))
+          await supabase.from('user_settings').upsert({ user_id: s.user.id, theme: t }, { onConflict: 'user_id' })
         }
         for (const ws of backup.workspaces) {
           const { data: newWs } = await supabase.from('workspaces')
             .insert({ user_id: s.user.id, name: ws.name }).select().single()
           if (!newWs) continue
           for (const sec of ws.sections ?? []) {
-            const { data: newSec } = await supabase.from('sections')
-              .insert({
-                user_id: s.user.id, workspace_id: newWs.id,
-                name: sec.name, position: sec.position ?? 0, collapsed: sec.collapsed ?? false,
-              }).select().single()
+            const { data: newSec } = await supabase.from('sections').insert({
+              user_id: s.user.id, workspace_id: newWs.id,
+              name: sec.name, position: sec.position ?? 0, collapsed: sec.collapsed ?? false,
+            }).select().single()
             if (!newSec) continue
-            if (sec.links?.length) {
+            if (sec.links?.length)
               await supabase.from('links').insert(
                 sec.links.map((l, i) => ({
                   user_id: s.user.id, workspace_id: newWs.id, section_id: newSec.id,
                   title: l.title, url: l.url, position: l.position ?? i,
                 }))
               )
-            }
           }
-          if (ws.notes?.length) {
+          if (ws.notes?.length)
             await supabase.from('notes').insert(
-              ws.notes.map(n => ({
-                user_id: s.user.id, workspace_id: newWs.id, content: n.content,
-              }))
+              ws.notes.map(n => ({ user_id: s.user.id, workspace_id: newWs.id, content: n.content }))
             )
-          }
         }
-        await fetchWorkspaces()
-        setImportingBackup(false)
-        alert('Backup imported successfully!')
-      } catch (err) {
-        setImportingBackup(false)
-        alert('Import failed: ' + err.message)
-      }
+        await fetchWorkspaces(); setImportingBackup(false); alert('Backup imported successfully!')
+      } catch (err) { setImportingBackup(false); alert('Import failed: ' + err.message) }
     }
     reader.readAsText(file)
   }
 
   const refreshCache = async () => {
-    Object.keys(localStorage)
-      .filter(k => k.startsWith('ws_data_'))
-      .forEach(k => localStorage.removeItem(k))
+    Object.keys(localStorage).filter(k => k.startsWith('ws_data_')).forEach(k => localStorage.removeItem(k))
     wsCache.current = {}
     try {
       const reg = await navigator.serviceWorker?.getRegistration()
       if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING')
       const keys = await caches.keys()
       await Promise.all(keys.map(k => caches.delete(k)))
-      await reg?.unregister()
-      await navigator.serviceWorker?.register('/sw.js')
+      await reg?.unregister(); await navigator.serviceWorker?.register('/sw.js')
     } catch {}
     window.location.reload()
   }
@@ -495,7 +436,7 @@ export default function App() {
   const colCount     = parseInt(theme.sectionsCols) || 2
   const notesWidth   = parseInt(theme.notesWidth)   || 240
   const openInNewTab = theme.openInNewTab !== 'false'
-  const locked       = theme.locked === 'true'             // ← NEW
+  const locked       = theme.locked === 'true'
 
   const getBgStyle = () => {
     if (theme.bgStyle === 'bg-image') return {
@@ -550,8 +491,7 @@ export default function App() {
           ))}
           {addingWs ? (
             <form onSubmit={addWorkspace} style={{ display: 'flex', gap: '0.4rem' }}>
-              <input className="input" value={newWsName}
-                onChange={e => setNewWsName(e.target.value)}
+              <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
                 placeholder="Name" autoFocus
                 style={{ width: 110, padding: '0.2rem 0.6rem', fontSize: 'var(--topbar-font-size)' }} />
               <button className="btn btn-primary" type="submit">+</button>
@@ -572,37 +512,22 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
-          {/* ── Collapse / Expand all ── */}
           <div style={{ display: 'flex', gap: '0.25rem' }}>
             <button className="btn btn-ghost" title="Collapse all sections"
               style={{ padding: '0.25rem 0.55rem', fontSize: '0.9em' }}
-              onClick={() => setCollapseAllTrigger(n => n + 1)}>
-              ▸ all
-            </button>
+              onClick={() => setCollapseAllTrigger(n => n + 1)}>▸ all</button>
             <button className="btn btn-ghost" title="Expand all sections"
               style={{ padding: '0.25rem 0.55rem', fontSize: '0.9em' }}
-              onClick={() => setExpandAllTrigger(n => n + 1)}>
-              ▾ all
-            </button>
+              onClick={() => setExpandAllTrigger(n => n + 1)}>▾ all</button>
           </div>
-
-          {/* ── Lock indicator ── */}
           {locked && (
             <span title="Cards locked — unlock in Settings"
-              style={{ fontSize: '0.85em', color: 'var(--text-muted)', userSelect: 'none' }}>
-              🔒
-            </span>
+              style={{ fontSize: '0.85em', color: 'var(--text-muted)', userSelect: 'none' }}>🔒</span>
           )}
-
-          <button className="btn btn-primary"
-            style={{ padding: '0.3rem 0.85rem' }}
-            onClick={() => setAddSectionTrigger(n => n + 1)}>
-            + Section
-          </button>
-          <button className="btn btn-ghost"
-            onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
-          <button className="btn btn-ghost"
-            onClick={() => supabase.auth.signOut()}>Sign out</button>
+          <button className="btn btn-primary" style={{ padding: '0.3rem 0.85rem' }}
+            onClick={() => setAddSectionTrigger(n => n + 1)}>+ Section</button>
+          <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
+          <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
         </div>
       </div>
 
@@ -780,7 +705,7 @@ export default function App() {
                   </button>
                   {theme.bgImage && (
                     <>
-                      <img src={theme.bgImage} alt="Background preview"
+                      <img src={theme.bgImage} alt="bg preview"
                         style={{ width: '100%', height: 80, objectFit: 'cover',
                           borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
                           border: '1px solid var(--border)' }} />
@@ -834,13 +759,11 @@ export default function App() {
             {/* ── Layout ── */}
             <div className="settings-section">
               <div className="settings-title">Layout</div>
-
-              {/* ── Lock toggle ── */}
               <div className="settings-row">
                 <span className="settings-label">
                   🔒 Lock cards
                   <span style={{ display: 'block', fontSize: '0.8em', color: 'var(--text-muted)' }}>
-                    Disables drag handles — prevents accidental moves
+                    Hides handles, arrows & edit buttons
                   </span>
                 </span>
                 <label className="toggle">
@@ -849,7 +772,6 @@ export default function App() {
                   <span className="toggle-slider" />
                 </label>
               </div>
-
               <div className="settings-row">
                 <span className="settings-label">Section columns</span>
                 <div className="preset-slots">
@@ -907,84 +829,5 @@ export default function App() {
                   <span className="toggle-slider" />
                 </label>
               </div>
-              <div className="settings-row">
-                <span className="settings-label">Favicon style</span>
-                <div className="preset-slots">
-                  {[
-                    { label: 'Normal', value: 'none'         },
-                    { label: 'Dim',    value: 'opacity(0.5)' },
-                    { label: 'Mono',   value: 'grayscale(1)' },
-                    { label: 'Hide',   value: 'opacity(0)'   },
-                  ].map(opt => (
-                    <button key={opt.value}
-                      className={`preset-slot${theme.faviconFilter === opt.value ? ' active' : ''}`}
-                      onClick={() => set('faviconFilter', opt.value)}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
 
-            {/* ── Backup ── */}
-            <div className="settings-section">
-              <div className="settings-title">Backup & restore</div>
-              <button className="btn btn-primary" style={{ fontSize: '0.8em', width: '100%' }}
-                onClick={exportFullBackup}>
-                ↓ Export my start page
-              </button>
-              <label className={`btn${importingBackup ? ' btn-ghost' : ''}`}
-                style={{ fontSize: '0.8em', width: '100%', textAlign: 'center', cursor: importingBackup ? 'not-allowed' : 'pointer' }}>
-                {importingBackup ? '⏳ Importing…' : '↑ Import start page backup'}
-                <input ref={backupFileRef} type="file" accept=".json"
-                  style={{ display: 'none' }} onChange={importFullBackup}
-                  disabled={importingBackup} />
-              </label>
-              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
-                Export saves all workspaces, sections, links, notes and theme.
-                Import adds them without deleting existing data.
-              </div>
-            </div>
-
-            {/* ── Presets ── */}
-            <div className="settings-section">
-              <div className="settings-title">Theme presets</div>
-              <div className="import-export">
-                <button className="btn" style={{ fontSize: '0.8em' }}
-                  onClick={exportSettings}>↓ Export theme</button>
-                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
-                  ↑ Import theme
-                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
-                </label>
-                <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
-                  onClick={resetSettings}>Reset</button>
-              </div>
-              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
-                onClick={() => {
-                  setShowSettings(false)
-                  setTimeout(() => setImportSectionTrigger(n => n + 1), 150)
-                }}>
-                ↑ Import A Fine Start links
-              </button>
-              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
-                onClick={refreshCache}>
-                ↺ Refresh cached assets
-              </button>
-              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
-                Theme syncs automatically across browsers on Save. Background images are local only.
-              </div>
-            </div>
-
-            <div className="settings-footer">
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>
-                {themeSyncing ? '↑ Saving…' : 'Save & close'}
-              </button>
-              <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
-            </div>
-
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
+              {/*

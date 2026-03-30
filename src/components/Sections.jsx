@@ -11,9 +11,6 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
-/* ─────────────────────────────────────────
-   A Fine Start parser
-───────────────────────────────────────── */
 function parseAFineStart(raw) {
   let data
   try { data = JSON.parse(raw) }
@@ -60,15 +57,11 @@ function parseAFineStart(raw) {
   throw new Error(`No groups found. Keys: ${Object.keys(data).join(', ')}`)
 }
 
-/* ─────────────────────────────────────────
-   Build columns array-of-arrays from flat sections
-───────────────────────────────────────── */
 function buildColumns(sections = [], colCount = 2) {
   const cols   = Math.max(colCount, 1)
   const result = Array.from({ length: cols }, () => [])
   const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const allZero = sorted.length > 0 && sorted.every(s => (s.col_index ?? 0) === 0)
-
   sorted.forEach((s, i) => {
     const ci = allZero
       ? i % cols
@@ -78,20 +71,16 @@ function buildColumns(sections = [], colCount = 2) {
   return result
 }
 
-/* ─────────────────────────────────────────
-   Find which column contains a given section id
-───────────────────────────────────────── */
 function findColIndex(cols, id) {
   return cols.findIndex(col => col.some(s => s.id === id))
 }
 
 /* ─────────────────────────────────────────
-   Section card — sortable wrapper
+   Section card
 ───────────────────────────────────────── */
 function SectionCard({
   section, links, userId, workspaceId, onRefresh,
-  openInNewTab, ghost, locked,
-  forceCollapsed,   // undefined = no override, true/false = forced
+  openInNewTab, ghost, locked, forceCollapsed,
 }) {
   const [collapsed,  setCollapsed]  = useState(section.collapsed ?? false)
   const [renaming,   setRenaming]   = useState(false)
@@ -109,7 +98,7 @@ function SectionCard({
     zIndex:   isDragging ? 20 : 'auto',
   }
 
-  // Respond to collapse-all / expand-all triggers from parent
+  // Respond to collapse-all / expand-all
   useEffect(() => {
     if (forceCollapsed === undefined) return
     setCollapsed(forceCollapsed)
@@ -140,7 +129,7 @@ function SectionCard({
 
   return (
     <div ref={setNodeRef} style={style}
-      className={`section-card${collapsed ? ' collapsed' : ''}`}>
+      className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}>
 
       <div className="section-header" onClick={toggleCollapse}>
 
@@ -149,8 +138,7 @@ function SectionCard({
           <span className="drag-handle" {...attributes} {...listeners}
             onClick={e => e.stopPropagation()} title="Drag to reorder">⠿</span>
         ) : (
-          // Reserve the same space so section-name stays centred
-          <span style={{ width: '1.6rem', flexShrink: 0 }} />
+          <span style={{ width: '0.4rem', flexShrink: 0 }} />
         )}
 
         {renaming ? (
@@ -166,7 +154,8 @@ function SectionCard({
           <span className="section-name">{section.name}</span>
         )}
 
-        {!renaming && (
+        {/* Actions — hidden when locked */}
+        {!renaming && !locked && (
           <div className="section-actions">
             <button className="icon-btn" title="Add link"
               onClick={e => { e.stopPropagation(); setCollapsed(false); setAddingLink(true) }}>+</button>
@@ -177,9 +166,12 @@ function SectionCard({
           </div>
         )}
 
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
-          {collapsed ? '▶' : '▼'}
-        </span>
+        {/* Collapse chevron — hidden when locked */}
+        {!locked && (
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
+            {collapsed ? '▶' : '▼'}
+          </span>
+        )}
       </div>
 
       {!collapsed && !ghost && (
@@ -202,23 +194,22 @@ function SectionCard({
    Main Sections component
 ───────────────────────────────────────── */
 export default function Sections({
-  sections         = [],
-  links            = [],
+  sections           = [],
+  links              = [],
   userId,
   workspaceId,
   onRefresh,
-  openInNewTab     = true,
-  colCount         = 2,
-  triggerAdd       = 0,
-  triggerImport    = 0,
-  triggerCollapseAll = 0,   // ← NEW
-  triggerExpandAll   = 0,   // ← NEW
-  locked           = false, // ← NEW
+  openInNewTab       = true,
+  colCount           = 2,
+  triggerAdd         = 0,
+  triggerImport      = 0,
+  triggerCollapseAll = 0,
+  triggerExpandAll   = 0,
+  locked             = false,
 }) {
   const [cols,          setCols]          = useState(() => buildColumns(sections, colCount))
   const [activeSection, setActiveSection] = useState(null)
   const [dragging,      setDragging]      = useState(false)
-
   const [addingSection, setAddingSection] = useState(false)
   const [newName,       setNewName]       = useState('')
   const [showImport,    setShowImport]    = useState(false)
@@ -226,16 +217,12 @@ export default function Sections({
   const [importError,   setImportError]   = useState('')
   const [importLoading, setImportLoading] = useState(false)
   const [importDone,    setImportDone]    = useState(false)
-
-  // forceCollapsed: undefined = no override, true = collapse all, false = expand all
   const [forceCollapsed, setForceCollapsed] = useState(undefined)
 
   const safeLinks = Array.isArray(links) ? links : []
-
-  const colsRef = useRef(cols)
+  const colsRef   = useRef(cols)
   useEffect(() => { colsRef.current = cols }, [cols])
 
-  // Sync from parent only when not dragging
   useEffect(() => {
     if (!dragging) setCols(buildColumns(sections, colCount))
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -246,14 +233,12 @@ export default function Sections({
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
 
-  // Collapse all — set forceCollapsed to true, then clear override after cards receive it
   useEffect(() => {
     if (!triggerCollapseAll) return
     setForceCollapsed(true)
     setTimeout(() => setForceCollapsed(undefined), 100)
   }, [triggerCollapseAll])
 
-  // Expand all
   useEffect(() => {
     if (!triggerExpandAll) return
     setForceCollapsed(false)
@@ -265,28 +250,20 @@ export default function Sections({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
-  /* ── Drag start ── */
   const handleDragStart = ({ active }) => {
     if (locked) return
     setDragging(true)
     const current = colsRef.current
     const ci = findColIndex(current, active.id)
-    if (ci !== -1) {
-      const section = current[ci].find(s => s.id === active.id)
-      setActiveSection(section ?? null)
-    }
+    if (ci !== -1) setActiveSection(current[ci].find(s => s.id === active.id) ?? null)
   }
 
-  /* ── Drag over ── */
   const handleDragOver = ({ active, over }) => {
     if (locked || !over || active.id === over.id) return
-
     const current   = colsRef.current
     const activeCol = findColIndex(current, active.id)
     const overCol   = findColIndex(current, over.id)
-
     if (activeCol === -1 || overCol === -1 || activeCol === overCol) return
-
     setCols(prev => {
       const next       = prev.map(col => [...col])
       const activeItem = next[activeCol].find(s => s.id === active.id)
@@ -299,24 +276,15 @@ export default function Sections({
     })
   }
 
-  /* ── Drag end ── */
   const handleDragEnd = async ({ active, over }) => {
     if (locked) return
-    setDragging(false)
-    setActiveSection(null)
-
-    if (!over) {
-      setCols(buildColumns(sections, colCount)); return
-    }
-
+    setDragging(false); setActiveSection(null)
+    if (!over) { setCols(buildColumns(sections, colCount)); return }
     const current   = colsRef.current
     const activeCol = findColIndex(current, active.id)
     const overCol   = findColIndex(current, over.id)
-
     if (activeCol === -1) return
-
     let finalCols = current.map(col => [...col])
-
     if (activeCol === overCol) {
       const from = finalCols[activeCol].findIndex(s => s.id === active.id)
       const to   = finalCols[activeCol].findIndex(s => s.id === over.id)
@@ -325,20 +293,16 @@ export default function Sections({
         setCols(finalCols)
       }
     }
-
     const updates = []
     finalCols.forEach((col, ci) => {
-      col.forEach((s, i) => {
-        updates.push(
-          supabase.from('sections').update({ position: i, col_index: ci }).eq('id', s.id)
-        )
-      })
+      col.forEach((s, i) =>
+        updates.push(supabase.from('sections').update({ position: i, col_index: ci }).eq('id', s.id))
+      )
     })
     await Promise.all(updates)
     onRefresh()
   }
 
-  /* ── Add section ── */
   const addSection = async e => {
     e.preventDefault()
     if (!newName.trim()) return
@@ -348,19 +312,16 @@ export default function Sections({
     await supabase.from('sections').insert({
       user_id: userId, workspace_id: workspaceId,
       name: newName.trim(),
-      position:  current[shortest].length,
-      col_index: shortest,
+      position: current[shortest].length, col_index: shortest,
     })
     setNewName(''); setAddingSection(false); onRefresh()
   }
 
-  /* ── Import ── */
   const runImport = async () => {
     setImportError(''); setImportLoading(true)
     try {
       const groups = parseAFineStart(importText.trim())
       if (!groups.length) throw new Error('No groups found.')
-
       for (const g of groups) {
         const current = buildColumns(sections, colCount)
         const ci      = current.reduce((best, col, i) =>
@@ -390,10 +351,8 @@ export default function Sections({
     }
   }
 
-  /* ── Render ── */
   return (
     <div style={{ width: '100%' }}>
-
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -404,9 +363,7 @@ export default function Sections({
         <div className="sections-grid">
           {cols.map((col, ci) => (
             <div key={ci} className="section-col">
-              <SortableContext
-                items={col.map(s => s.id)}
-                strategy={verticalListSortingStrategy}>
+              <SortableContext items={col.map(s => s.id)} strategy={verticalListSortingStrategy}>
                 {col.map(section => (
                   <SectionCard
                     key={section.id}
@@ -440,7 +397,6 @@ export default function Sections({
             </div>
           )}
         </DragOverlay>
-
       </DndContext>
 
       {addingSection && (
