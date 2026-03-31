@@ -1263,46 +1263,48 @@ input[type='range']::-moz-range-thumb {
 .bg-wall-texture { background-color: #cfc9c1; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E"), radial-gradient(ellipse at 28% 18%, rgba(255,255,255,0.14) 0%, transparent 55%); }
 .bg-timber-dark { background-color: #16100a; background-image: repeating-linear-gradient(175deg, transparent 0px, transparent 5px, rgba(255,255,255,0.020) 5px, rgba(255,255,255,0.020) 6px, transparent 6px, transparent 15px, rgba(0,0,0,0.22) 15px, rgba(0,0,0,0.22) 16px, transparent 16px, transparent 27px, rgba(255,255,255,0.014) 27px, rgba(255,255,255,0.014) 28px), radial-gradient(ellipse at 35% 25%, rgba(55,25,8,0.45) 0%, transparent 60%); }
 
+
 /* ── Notes fixes ── */
 .notes-panel {
   background: var(--notes-bg) !important;
-  border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.notes-header {
-  padding: 0.4rem 0.6rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  min-height: 0;
 }
 
 .notes-body {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 0.5rem 0.6rem;
+  padding: 0.4rem 0.5rem;
   overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.note-item {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.3rem !important;
+  padding: 0.3rem 0 !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
 }
 
 .note-content {
-  display: block !important;
+  flex: 1 !important;
   color: var(--text) !important;
   font-size: var(--notes-font-size) !important;
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: hidden;
-  max-height: 16em;
-  flex: 1;
-  cursor: text;
-  padding: 0.1rem 0;
-  /* Remove webkit-box which conflicts with flex */
-  -webkit-line-clamp: unset !important;
-  -webkit-box-orient: unset !important;
-}
-
-.note-content:hover {
+  line-height: 1.55 !important;
+  white-space: pre-wrap !important;
+  word-break: break-word !important;
+  cursor: text !important;
   opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
 }
