@@ -146,6 +146,7 @@ export default function App() {
   const [addingWs,             setAddingWs]             = useState(false)
   const [newWsName,            setNewWsName]            = useState('')
   const [showSettings,         setShowSettings]         = useState(false)
+  const [panelSide,            setPanelSide]            = useState(() => localStorage.getItem('settings_side') || 'right')
   const [theme,                setTheme]                = useState(loadTheme)
   const [themeSyncing,         setThemeSyncing]         = useState(false)
   const [importingBackup,      setImportingBackup]      = useState(false)
@@ -158,6 +159,12 @@ export default function App() {
   const wsCache       = useRef({})
   const sessionRef    = useRef(null)
   const syncTimer     = useRef(null)
+
+  const toggleSide = () => {
+    const n = panelSide === 'right' ? 'left' : 'right'
+    setPanelSide(n)
+    localStorage.setItem('settings_side', n)
+  }
 
   useEffect(() => { sessionRef.current = session }, [session])
 
@@ -574,7 +581,7 @@ export default function App() {
       {showSettings && (
         <>
           <div className="settings-veil" />
-          <div className="settings-panel">
+          <div className="settings-panel" data-side={panelSide}>
 
             <div className="settings-header">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
@@ -586,7 +593,16 @@ export default function App() {
                   )}
                 </span>
               </div>
-              <button className="icon-btn" onClick={saveSettings}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                <button onClick={toggleSide}
+                  title={panelSide === 'right' ? 'Move panel to left' : 'Move panel to right'}
+                  style={{ background: 'none', border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)', color: 'var(--text-dim)',
+                    padding: '0.22rem 0.55rem', fontSize: '0.82em', cursor: 'pointer' }}>
+                  {panelSide === 'right' ? '⇐' : '⇒'}
+                </button>
+                <button className="icon-btn" onClick={saveSettings}>✕</button>
+              </div>
             </div>
 
             {/* Colours */}
@@ -917,7 +933,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="settings-footer">
+            <div className="settings-footer" data-side={panelSide}>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>
                 {themeSyncing ? '↑ Saving…' : 'Save & close'}
               </button>
