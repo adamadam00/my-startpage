@@ -6,29 +6,29 @@ import Weather   from './components/Weather'
 import SearchBar from './components/SearchBar'
 import Notes     from './components/Notes'
 import Sections  from './components/Sections'
+import Bookmarks from './components/Bookmarks'
 
 const BUILD      = '31 Mar 2026'
 const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines', 'bg-crosshatch']
 
 const BG_OPTIONS = [
-  { value: 'bg-solid',      label: 'Solid' },
-  { value: 'bg-noise',      label: 'Noise' },
-  { value: 'bg-dots',       label: 'Dots' },
-  { value: 'bg-grid',       label: 'Grid' },
-  { value: 'bg-gradient',   label: 'Gradient' },
-  { value: 'bg-mesh',       label: 'Blobs' },
-  { value: 'bg-aurora',     label: 'Aurora' },
-  { value: 'bg-starfield',  label: '✦ Starfield' },
-  { value: 'bg-plasma',     label: '✦ Plasma' },
-  { value: 'bg-stars',      label: 'Stars' },
-  { value: 'bg-nebula',     label: 'Nebula' },
-  { value: 'bg-circuit',    label: 'Circuit' },
-  { value: 'bg-hex',        label: 'Hex' },
-  { value: 'bg-lines',      label: 'Lines' },
-  { value: 'bg-crosshatch', label: 'Crosshatch' },
-  { value: 'bg-carbon',     label: 'Carbon' },
-  { value: 'bg-topo',       label: 'Topo' },
-  { value: 'bg-image',      label: 'Image' },
+  { value: 'bg-solid',         label: 'Solid' },
+  { value: 'bg-noise',         label: 'Noise' },
+  { value: 'bg-dots',          label: 'Dots' },
+  { value: 'bg-grid',          label: 'Grid' },
+  { value: 'bg-gradient',      label: 'Gradient' },
+  { value: 'bg-mesh',          label: 'Blobs' },
+  { value: 'bg-aurora',        label: 'Aurora' },
+  { value: 'bg-starfield',     label: '✦ Starfield' },
+  { value: 'bg-plasma',        label: '✦ Plasma' },
+  { value: 'bg-stars',         label: 'Stars' },
+  { value: 'bg-nebula',        label: 'Nebula' },
+  { value: 'bg-lines',         label: 'Lines' },
+  { value: 'bg-image',         label: 'Image' },
+  { value: 'bg-light-bokeh',   label: '☀ Bokeh' },
+  { value: 'bg-silver-radial', label: '☀ Silver' },
+  { value: 'bg-wall-texture',  label: 'Wall' },
+  { value: 'bg-timber-dark',   label: 'Timber' },
 ]
 
 const FONTS = [
@@ -78,7 +78,7 @@ const DEFAULT_THEME = {
   bgImageOpacity:    '1',
   openInNewTab:      'true',
   notesFontSize:     '13',
-  notesWidth:        '240',
+  notesWidth:        '290',
   searchUrl:         'https://google.com/search?q=',
   locked:            'false',
 }
@@ -142,6 +142,7 @@ export default function App() {
   const [sections,             setSections]             = useState([])
   const [links,                setLinks]                = useState([])
   const [notes,                setNotes]                = useState([])
+  const [bookmarks,            setBookmarks]            = useState([])
   const [addingWs,             setAddingWs]             = useState(false)
   const [newWsName,            setNewWsName]            = useState('')
   const [showSettings,         setShowSettings]         = useState(false)
@@ -247,19 +248,20 @@ export default function App() {
       }
       if (hit) {
         wsCache.current[wsId] = hit
-        setSections(hit.sections); setLinks(hit.links); setNotes(hit.notes)
+        setSections(hit.sections); setLinks(hit.links); setNotes(hit.notes); setBookmarks(hit.bookmarks ?? [])
         fetchData(wsId, true); return
       }
     }
-    const [sec, lnk, nt] = await Promise.all([
+    const [sec, lnk, nt, bm] = await Promise.all([
       supabase.from('sections').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
       supabase.from('links').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
       supabase.from('notes').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('created_at', { ascending: false }),
+      supabase.from('bookmarks').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
     ])
-    const fresh = { sections: sec.data ?? [], links: lnk.data ?? [], notes: nt.data ?? [] }
+    const fresh = { sections: sec.data ?? [], links: lnk.data ?? [], notes: nt.data ?? [], bookmarks: bm.data ?? [] }
     wsCache.current[wsId] = fresh
     try { localStorage.setItem(lcKey(wsId), JSON.stringify(fresh)) } catch {}
-    setSections(fresh.sections); setLinks(fresh.links); setNotes(fresh.notes)
+    setSections(fresh.sections); setLinks(fresh.links); setNotes(fresh.notes); setBookmarks(fresh.bookmarks)
   }, [])
 
   const switchWorkspace = useCallback((id) => {
@@ -297,6 +299,7 @@ export default function App() {
     await supabase.from('links').delete().eq('workspace_id', id)
     await supabase.from('sections').delete().eq('workspace_id', id)
     await supabase.from('notes').delete().eq('workspace_id', id)
+    await supabase.from('bookmarks').delete().eq('workspace_id', id)
     await supabase.from('workspaces').delete().eq('id', id)
     const remaining = workspaces.filter(w => w.id !== id)
     setWorkspaces(remaining)
@@ -434,7 +437,7 @@ export default function App() {
 
   const isPatternBg  = PATTERN_BG.includes(theme.bgStyle)
   const colCount     = parseInt(theme.sectionsCols) || 2
-  const notesWidth   = parseInt(theme.notesWidth)   || 240
+  const notesWidth   = parseInt(theme.notesWidth)   || 290
   const openInNewTab = theme.openInNewTab !== 'false'
   const locked       = theme.locked === 'true'
 
@@ -531,6 +534,14 @@ export default function App() {
         </div>
       </div>
 
+      {/* Bookmarks bar */}
+      <Bookmarks
+        items={bookmarks}
+        workspaceId={activeWs}
+        userId={session.user.id}
+        onRefresh={handleRefresh}
+      />
+
       {/* Main layout */}
       <div className="main-layout" style={{ gridTemplateColumns: `1fr ${notesWidth}px` }}>
         <div className="main-col">
@@ -575,7 +586,7 @@ export default function App() {
                   )}
                 </span>
               </div>
-              <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
+              <button className="icon-btn" onClick={saveSettings}>✕</button>
             </div>
 
             {/* Colours */}

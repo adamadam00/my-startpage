@@ -98,7 +98,6 @@ function SectionCard({
     zIndex:   isDragging ? 20 : 'auto',
   }
 
-  // Respond to collapse-all / expand-all
   useEffect(() => {
     if (forceCollapsed === undefined) return
     setCollapsed(forceCollapsed)
@@ -131,47 +130,44 @@ function SectionCard({
     <div ref={setNodeRef} style={style}
       className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}>
 
-      <div className="section-header" onClick={toggleCollapse}>
+      <div className="section-header">
 
-        {/* Drag handle — hidden when locked */}
-        {!locked ? (
-          <span className="drag-handle" {...attributes} {...listeners}
-            onClick={e => e.stopPropagation()} title="Drag to reorder">⠿</span>
-        ) : (
-          <span style={{ width: '0.4rem', flexShrink: 0 }} />
-        )}
-
-        {renaming ? (
-          <form onSubmit={rename} onClick={e => e.stopPropagation()}
-            style={{ flex: 1, display: 'flex', gap: '0.35rem' }}>
-            <input className="input" value={name} onChange={e => setName(e.target.value)}
-              autoFocus style={{ flex: 1, fontSize: '0.82em' }} />
-            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.75em' }}>Save</button>
-            <button className="btn" type="button" style={{ fontSize: '0.75em' }}
-              onClick={() => setRenaming(false)}>Cancel</button>
-          </form>
-        ) : (
-          <span className="section-name">{section.name}</span>
-        )}
-
-        {/* Actions — hidden when locked */}
-        {!renaming && !locked && (
-          <div className="section-actions">
-            <button className="icon-btn" title="Add link"
-              onClick={e => { e.stopPropagation(); setCollapsed(false); setAddingLink(true) }}>+</button>
-            <button className="icon-btn" title="Rename"
-              onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎</button>
-            <button className="icon-btn section-delete-btn" title="Delete"
-              onClick={deleteSection}>✕</button>
-          </div>
-        )}
-
-        {/* Collapse chevron — hidden when locked */}
+        {/* Drag handle — its own zone, does NOT trigger collapse */}
         {!locked && (
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
-            {collapsed ? '▶' : '▼'}
+          <span className="section-drag-handle" {...attributes} {...listeners} title="Drag to reorder">
+            ⠿
           </span>
         )}
+
+        {/* Click zone — triggers collapse */}
+        <div className="section-header-click" onClick={toggleCollapse}>
+
+          {renaming ? (
+            <form onSubmit={rename} onClick={e => e.stopPropagation()}
+              style={{ flex: 1, display: 'flex', gap: '0.35rem' }}>
+              <input className="input" value={name} onChange={e => setName(e.target.value)}
+                autoFocus style={{ flex: 1, fontSize: '0.82em' }} />
+              <button className="btn btn-primary" type="submit" style={{ fontSize: '0.75em' }}>Save</button>
+              <button className="btn" type="button" style={{ fontSize: '0.75em' }}
+                onClick={() => setRenaming(false)}>Cancel</button>
+            </form>
+          ) : (
+            <span className="section-name">{section.name}</span>
+          )}
+
+          {/* Actions — hidden when locked */}
+          {!renaming && !locked && (
+            <div className="section-actions" onClick={e => e.stopPropagation()}>
+              <button className="icon-btn" title="Add link"
+                onClick={e => { e.stopPropagation(); setCollapsed(false); setAddingLink(true) }}>+</button>
+              <button className="icon-btn" title="Rename"
+                onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎</button>
+              <button className="icon-btn section-delete-btn" title="Delete"
+                onClick={deleteSection}>✕</button>
+            </div>
+          )}
+
+        </div>
       </div>
 
       {!collapsed && !ghost && (
@@ -228,7 +224,7 @@ export default function Sections({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, colCount])
 
-  useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
+  useEffect(() => { if (triggerAdd > 0) setAddingSection(true) }, [triggerAdd])
   useEffect(() => {
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
@@ -389,10 +385,11 @@ export default function Sections({
               opacity: 0.92, boxShadow: '0 8px 32px #0008',
               cursor: 'grabbing', pointerEvents: 'none',
             }}>
-              <div className="section-header" style={{ cursor: 'grabbing' }}>
-                <span className="drag-handle" style={{ opacity: 0.5 }}>⠿</span>
-                <span className="section-name">{activeSection.name}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>▼</span>
+              <div className="section-header">
+                <span className="section-drag-handle" style={{ opacity: 0.5 }}>⠿</span>
+                <div className="section-header-click">
+                  <span className="section-name">{activeSection.name}</span>
+                </div>
               </div>
             </div>
           )}
