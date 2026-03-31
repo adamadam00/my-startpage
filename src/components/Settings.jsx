@@ -42,7 +42,7 @@ const DEFAULT_THEME = {
   pageScale:        1,
   faviconOpacity:   1,
   faviconGreyscale: false,
-  mainGapTop:       12,   // ← NEW: px gap between topbar and cards
+  mainGapTop:       12,
 }
 
 const MIGRATE = { btnBg: ['#6c8fff', '#2d4fd4'] }
@@ -81,6 +81,16 @@ export default function Settings({
   onAddWorkspace, onDeleteWorkspace, onRenameWorkspace, onSwitchWorkspace,
   uiVisibility,
 }) {
+  // ── Panel side (persisted) ──
+  const [panelSide, setPanelSide] = useState(
+    () => localStorage.getItem('settings_side') || 'right'
+  )
+  const toggleSide = () => {
+    const next = panelSide === 'right' ? 'left' : 'right'
+    setPanelSide(next)
+    localStorage.setItem('settings_side', next)
+  }
+
   const [theme, setTheme] = useState(() => {
     try {
       const saved = localStorage.getItem('current_theme')
@@ -171,7 +181,7 @@ export default function Settings({
     r.setProperty('--sections-cols',    theme.sectionsCols)
     r.setProperty('--favicon-opacity',  theme.faviconOpacity)
     r.setProperty('--favicon-filter',   theme.faviconGreyscale ? 'grayscale(1)' : 'none')
-    r.setProperty('--main-gap-top',     (theme.mainGapTop ?? 12) + 'px')  // ← NEW
+    r.setProperty('--main-gap-top',     (theme.mainGapTop ?? 12) + 'px')
     document.body.style.zoom = theme.pageScale
   }, [theme])
 
@@ -260,11 +270,36 @@ export default function Settings({
   }
 
   return (
-    <div className="settings-panel">
+    <div className="settings-panel" data-side={panelSide}>
 
       <div className="settings-header">
-        <span style={{ fontWeight: 500 }}>Settings</span>
-        <span style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>Changes apply live</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
+          <span style={{ fontWeight: 500 }}>Settings</span>
+          <span style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>Changes apply live</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          {/* ⇐/⇒ side toggle */}
+          <button
+            onClick={toggleSide}
+            title={panelSide === 'right' ? 'Move panel to left' : 'Move panel to right'}
+            style={{
+              background: 'none',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              color: 'var(--text-dim)',
+              padding: '0.22rem 0.55rem',
+              fontSize: '0.82em',
+              cursor: 'pointer',
+              fontFamily: 'var(--font)',
+              lineHeight: 1,
+            }}>
+            {panelSide === 'right' ? '⇐' : '⇒'}
+          </button>
+          {/* ✕ saves and closes */}
+          <button className="icon-btn" onClick={handleClose} title="Save & close">
+            {saving ? '…' : '✕'}
+          </button>
+        </div>
       </div>
 
       {/* ── Workspaces ── */}
@@ -442,7 +477,6 @@ export default function Settings({
             onChange={e => set('radius', parseInt(e.target.value))}
             style={{ flex: 1 }} />
         </Row>
-        {/* ── NEW: topbar gap slider ── */}
         <Row label={`Topbar gap: ${theme.mainGapTop ?? 12}px`}>
           <input type="range" min="0" max="60" step="2"
             value={theme.mainGapTop ?? 12}
@@ -577,7 +611,7 @@ export default function Settings({
         </button>
       </SettingsSection>
 
-      <div className="settings-footer">
+      <div className="settings-footer" data-side={panelSide}>
         <button className="btn btn-primary" onClick={handleClose} disabled={saving} style={{ flex: 1 }}>
           {saving ? 'Saving…' : '✓ Save & Close'}
         </button>
