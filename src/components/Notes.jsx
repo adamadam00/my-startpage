@@ -55,27 +55,36 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
     if (!files.length) return
     const totalSize = files.reduce((s, f) => s + f.size, 0)
     if (totalSize > 25 * 1024 * 1024) { setErr('Files exceed 25 MB limit'); return }
-    setUploading(true)
+    setUploading(true); setErr('')
     for (const file of files) {
       const path = `${userId}/${Date.now()}_${file.name}`
-      const { error } = await supabase.storage.from('note-files').upload(path, file)
-      if (!error) {
-        const { data: { publicUrl } } = supabase.storage.from('note-files').getPublicUrl(path)
-        const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
-        await supabase.from('notes').insert({
-          user_id: userId, workspace_id: workspaceId,
-          content: `📎 ${file.name}\n${publicUrl}\n(auto-deletes ${expiry})`,
-        })
+      const { error: uploadErr } = await supabase.storage.from('note-files').upload(path, file)
+      if (uploadErr) {
+        setErr(`Upload failed: ${uploadErr.message} — make sure the "note-files" bucket exists in Supabase Storage.`)
+        setUploading(false); return
       }
+      const { data: { publicUrl } } = supabase.storage.from('note-files').getPublicUrl(path)
+      const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()
+      await supabase.from('notes').insert({
+        user_id: userId, workspace_id: workspaceId,
+        content: `📎 ${file.name}\n${publicUrl}\n(auto-deletes ${expiry})`,
+      })
     }
     setUploading(false); onRefresh()
   }
 
   const taBase = {
-    width: '100%', background: 'var(--notes-input-bg)',
+    width: '100%',
+    background: 'var(--notes-input-bg)',
     border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)',
-    borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.6rem', color: 'var(--text)',
-    outline: 'none', resize: 'none', lineHeight: 1.55, fontFamily: 'var(--font)',
+    borderRadius: 'var(--radius-sm)',
+    padding: '0.4rem 0.6rem',
+    color: 'var(--text)',
+    outline: 'none',
+    resize: 'none',
+    lineHeight: 1.55,
+    fontFamily: 'var(--font)',
+    fontSize: 'var(--notes-font-size)',
   }
 
   return (
@@ -99,7 +108,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
           {adding && (
             <div className="note-new">
               <textarea autoFocus
-                style={{ ...taBase, fontSize: 'calc(var(--notes-font-size) * 1.4)', minHeight: '80px' }}
+                style={{ ...taBase, minHeight: '80px' }}
                 value={newText} onChange={e => setNewText(e.target.value)}
                 onKeyDown={e => {
                   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add()
@@ -120,11 +129,15 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
             </p>
           )}
 
+          {err && !adding && (
+            <p style={{ color: 'var(--danger)', fontSize: '0.75em', margin: '0.2rem 0' }}>{err}</p>
+          )}
+
           {safeNotes.map(n => (
             <div key={n.id} className="note-item">
               {focusedId === n.id ? (
                 <textarea autoFocus
-                  style={{ ...taBase, fontSize: 'calc(var(--notes-font-size) * 1.4)', minHeight: '80px', maxHeight: '55vh', overflowY: 'auto' }}
+                  style={{ ...taBase, minHeight: '80px', maxHeight: '55vh', overflowY: 'auto' }}
                   value={editTexts[n.id] ?? n.content}
                   onChange={e => setEditTexts(prev => ({ ...prev, [n.id]: e.target.value }))}
                   onBlur={() => saveNote(n.id, editTexts[n.id] ?? n.content)}
