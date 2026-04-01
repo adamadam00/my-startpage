@@ -1,404 +1,360 @@
 import { useState, useRef } from 'react'
-import ImportExport from './ImportExport'
 
-const FONTS = [
-  { label: 'DM Mono',       value: 'DM Mono' },
-  { label: 'JetBrains Mono',value: 'JetBrains Mono' },
-  { label: 'Geist',         value: 'Geist' },
-  { label: 'Inter',         value: 'Inter' },
-  { label: 'IBM Plex Sans', value: 'IBM Plex Sans' },
-  { label: 'Outfit',        value: 'Outfit' },
-  { label: 'Space Grotesk', value: 'Space Grotesk' },
-  { label: 'Figtree',       value: 'Figtree' },
-]
+const FONTS = ['DM Mono','JetBrains Mono','IBM Plex Sans','Inter','Outfit','Space Grotesk','Figtree','Geist']
 
-const BG_OPTIONS = [
-  { value: 'bg-solid',      label: 'Solid' },
-  { value: 'bg-noise',      label: 'Noise' },
-  { value: 'bg-dots',       label: 'Dots' },
-  { value: 'bg-grid',       label: 'Grid' },
-  { value: 'bg-lines',      label: 'Lines' },
-  { value: 'bg-crosshatch', label: 'Crosshatch' },
-  { value: 'bg-carbon',     label: 'Carbon' },
-  { value: 'bg-topo',       label: 'Topo' },
-  { value: 'bg-hex',        label: 'Hex' },
-  { value: 'bg-circuit',    label: 'Circuit' },
-  { value: 'bg-gradient',   label: 'Gradient' },
-  { value: 'bg-mesh',       label: 'Blobs' },
-  { value: 'bg-aurora',     label: 'Aurora' },
-  { value: 'bg-stars',      label: 'Stars' },
-  { value: 'bg-nebula',     label: 'Nebula' },
-  { value: 'bg-starfield',  label: 'Starfield' },
-  { value: 'bg-plasma',     label: 'Plasma' },
-  { value: 'bg-fog',        label: 'Fog' },
-  { value: 'bg-scan',       label: 'Scan' },
-  { value: 'bg-vortex',     label: 'Vortex' },
-  { value: 'bg-ripple',     label: 'Ripple' },
-  { value: 'bg-filament',   label: 'Filament' },
-  { value: 'bg-breath',     label: 'Breath' },
-  { value: 'bg-shimmer',    label: 'Shimmer' },
-  { value: 'bg-oil',        label: 'Oil' },
-  { value: 'bg-image',      label: 'Image' },
-]
+const BG_META = {
+  'bg-solid':     { label:'Solid',      tip:'Flat solid colour, no pattern' },
+  'bg-noise':     { label:'Noise',      tip:'Subtle film-grain texture overlay' },
+  'bg-dots':      { label:'Dots',       tip:'Regular dot grid — colour & opacity adjustable' },
+  'bg-grid':      { label:'Grid',       tip:'Square grid lines — colour & opacity adjustable' },
+  'bg-gradient':  { label:'Gradient',   tip:'Directional gradient — configure type, angle & colours below' },
+  'bg-mesh':      { label:'Blobs',      tip:'Soft coloured blob mesh using your accent colour' },
+  'bg-aurora':    { label:'Aurora',     tip:'Slow animated northern-lights hue drift' },
+  'bg-starfield': { label:'✦ Starfield', tip:'Animated drifting star field — medium GPU use' },
+  'bg-plasma':    { label:'✦ Plasma',   tip:'Animated liquid colour blobs — higher GPU use' },
+  'bg-stars':     { label:'Stars',      tip:'Static scattered star pattern' },
+  'bg-nebula':    { label:'Nebula',     tip:'Deep-space nebula cloud with scattered stars' },
+  'bg-circuit':   { label:'Circuit',    tip:'Circuit-board trace grid — colour & opacity adjustable' },
+  'bg-hex':       { label:'Hex',        tip:'Hexagonal tile grid — colour & opacity adjustable' },
+  'bg-lines':     { label:'Lines',      tip:'Diagonal ruled lines — colour & opacity adjustable' },
+  'bg-crosshatch':{ label:'Crosshatch', tip:'Diagonal crosshatch weave — colour & opacity adjustable' },
+  'bg-carbon':    { label:'Carbon',     tip:'Carbon-fibre weave texture' },
+  'bg-topo':      { label:'Topo',       tip:'Topographic contour-map lines — colour & opacity adjustable' },
+  'bg-image':     { label:'Image',      tip:'Upload a custom background image (max 2 MB)' },
+}
 
-const FAVICON_FILTERS = [
-  { label: 'None',      value: 'none' },
-  { label: 'Greyscale', value: 'grayscale(1)' },
-  { label: 'Dim',       value: 'brightness(0.6)' },
-  { label: 'Invert',    value: 'invert(1)' },
-]
+const PATTERN_BG  = ['bg-dots','bg-grid','bg-lines','bg-crosshatch','bg-circuit','bg-hex','bg-topo']
+const GRADIENT_BG = ['bg-gradient']
+const IMAGE_BG    = ['bg-image']
 
-function Toggle({ checked, onChange, title }) {
+function Sec({ title, children }) {
   return (
-    <label className="toggle" title={title}>
+    <div className="settings-section">
+      <div className="settings-title">{title}</div>
+      {children}
+    </div>
+  )
+}
+
+function Row({ label, tip, children }) {
+  return (
+    <div className="settings-row" title={tip || ''}>
+      <span className="settings-label" title={tip || ''}>{label}</span>
+      {children}
+    </div>
+  )
+}
+
+function Slider({ value, min, max, step=1, onChange, tip }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:'0.4rem' }} title={tip || ''}>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={e => onChange(e.target.value)} style={{ maxWidth:90 }} />
+      <span style={{ fontSize:'0.75em', color:'var(--text-muted)', minWidth:28, textAlign:'right' }}>{value}</span>
+    </div>
+  )
+}
+
+function Toggle({ checked, onChange, tip }) {
+  return (
+    <label className="toggle" title={tip || ''}>
       <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
       <span className="toggle-slider" />
     </label>
   )
 }
 
-function Row({ label, children }) {
+function ColorRow({ label, tip, value, onChange }) {
   return (
-    <div className="settings-row">
-      <span className="settings-label">{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{children}</div>
-    </div>
-  )
-}
-
-function Sl({ label, min, max, step = 1, value, onChange, unit = '' }) {
-  return (
-    <Row label={label}>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(Number(e.target.value))} />
-      <span style={{ fontSize: '0.78em', color: 'var(--text-dim)', minWidth: 32, textAlign: 'right' }}>
-        {value}{unit}
-      </span>
-    </Row>
-  )
-}
-
-function ColPicker({ label, themeKey, t, set }) {
-  return (
-    <Row label={label}>
-      <input type="color" className="color-input" value={'#' + (t[themeKey] || '000000')}
-        onChange={e => set({ [themeKey]: e.target.value.replace('#', '') })} />
-      <span style={{ fontSize: '0.72em', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-        #{t[themeKey]}
-      </span>
+    <Row label={label} tip={tip}>
+      <input type="color" className="color-input" value={value || '#000000'} onChange={e => onChange(e.target.value)} title={tip || ''} />
     </Row>
   )
 }
 
 export default function Settings({
-  workspaces = [], activeWs, onWorkspaceChange, onCreateWorkspace, onDeleteWorkspace,
-  theme, setTheme, onClose, userId, onSignOut, side,
+  theme, set,
+  workspaces, activeWs, onSwitchWs, onDeleteWs,
+  onSave, onReset, onClose,
+  onExport, onImport,
+  onImageUpload,
+  onExportBackup, onImportBackup,
+  fileRef, backupFileRef,
+  onRefreshCache,
+  themeSyncing, importingBackup,
+  onAddSection, onImportSection, onCollapseAll, onExpandAll,
 }) {
-  const [newWsName, setNewWsName] = useState('')
   const [addingWs, setAddingWs] = useState(false)
-  const [presets, setPresets] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('theme-presets') || 'null') || [null, null, null, null] }
-    catch { return [null, null, null, null] }
-  })
-  const imgRef = useRef(null)
+  const [newWsName, setNewWsName] = useState('')
+  const importRef  = fileRef  || useRef()
+  const bkupRef    = backupFileRef || useRef()
 
-  const set = (patch) => setTheme(prev => ({ ...prev, ...patch }))
-
-  const t = theme
-
-  const savePreset = (i) => {
-    const next = [...presets]; next[i] = { ...t }
-    setPresets(next)
-    try { localStorage.setItem('theme-presets', JSON.stringify(next)) } catch {}
-  }
-  const loadPreset = (i) => { if (presets[i]) setTheme({ ...presets[i] }) }
-
-  const isPatternBg = ['bg-dots','bg-grid','bg-lines','bg-crosshatch','bg-carbon','bg-topo','bg-hex','bg-circuit'].includes(t.bgStyle)
-  const isGradientBg = t.bgStyle === 'bg-gradient'
-  const isImageBg = t.bgStyle === 'bg-image'
-
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = ev => set({ bgImage: ev.target.result })
-    reader.readAsDataURL(file)
-  }
+  const isBg       = (v) => theme.bgStyle === v
+  const isPattern  = PATTERN_BG.includes(theme.bgStyle)
+  const isGradient = GRADIENT_BG.includes(theme.bgStyle)
+  const isImage    = IMAGE_BG.includes(theme.bgStyle)
 
   return (
     <>
       <div className="settings-veil" />
-      <div className="settings-panel" data-side={side}>
+      <div className="settings-panel" data-side={theme.settingsSide || 'right'}>
+
         {/* ── Header ── */}
         <div className="settings-header">
-          <span style={{ fontWeight: 600, fontSize: '0.9em' }}>Settings</span>
-          <button className="icon-btn" onClick={onClose} title="Close">✕</button>
+          <span style={{ fontWeight:600, fontSize:'1em' }}>Settings</span>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            {themeSyncing && <span style={{ fontSize:'0.72em', color:'var(--text-muted)' }}>saving…</span>}
+            <button className="icon-btn" onClick={onClose} title="Close settings">✕</button>
+          </div>
         </div>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             1. WORKSPACES
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Workspaces</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-            {workspaces.map(ws => (
-              <div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+        ══════════════════════════════════════════ */}
+        <Sec title="Workspaces">
+          <div style={{ display:'flex', flexDirection:'column', gap:'0.3rem' }}>
+            {workspaces.map(w => (
+              <div key={w.id} style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>
                 <button
-                  onClick={() => onWorkspaceChange(ws.id)}
-                  style={{
-                    padding: '0.28rem 0.65rem', borderRadius: 'var(--radius-sm)',
-                    border: `1px solid ${ws.id === activeWs ? 'var(--accent)' : 'var(--border)'}`,
-                    background: ws.id === activeWs ? 'var(--accent-dim)' : 'transparent',
-                    color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)',
-                    fontSize: '0.8em', cursor: 'pointer', fontFamily: 'var(--font)',
-                  }}>
-                  {ws.name}
-                </button>
+                  className={'btn btn-ghost' + (w.id === activeWs ? ' btn-primary' : '')}
+                  style={{ flex:1, textAlign:'left', fontSize:'0.82em' }}
+                  onClick={() => onSwitchWs(w.id)}
+                  title={'Switch to workspace: ' + w.name}
+                >{w.name}</button>
                 {workspaces.length > 1 && (
-                  <button onClick={() => onDeleteWorkspace(ws.id)}
-                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75em', padding: '0 0.2rem' }}
-                    title="Delete workspace">✕</button>
+                  <button className="icon-btn" style={{ color:'var(--danger)', opacity:0.6 }}
+                    onClick={() => onDeleteWs(w.id)} title={'Delete workspace: ' + w.name}>✕</button>
                 )}
               </div>
             ))}
+            {addingWs ? (
+              <form onSubmit={e => { e.preventDefault(); if (newWsName.trim()) { onSwitchWs?.call?.(); setAddingWs(false) } }} style={{ display:'flex', gap:'0.3rem' }}>
+                <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
+                  placeholder="Workspace name" autoFocus style={{ flex:1, fontSize:'0.82em' }} />
+                <button type="button" className="btn" onClick={() => setAddingWs(false)}>Cancel</button>
+              </form>
+            ) : (
+              <button className="btn" style={{ fontSize:'0.8em' }} onClick={() => setAddingWs(true)} title="Create a new workspace">+ New workspace</button>
+            )}
           </div>
-          {addingWs ? (
-            <form onSubmit={e => { e.preventDefault(); if (newWsName.trim()) { onCreateWorkspace(newWsName.trim()); setNewWsName(''); setAddingWs(false) } }}
-              style={{ display: 'flex', gap: '0.4rem' }}>
-              <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
-                placeholder="Workspace name" autoFocus style={{ flex: 1, fontSize: '0.82em' }} />
-              <button className="btn btn-primary" type="submit" style={{ fontSize: '0.78em' }}>Add</button>
-              <button className="btn" type="button" style={{ fontSize: '0.78em' }} onClick={() => setAddingWs(false)}>✕</button>
-            </form>
-          ) : (
-            <button className="btn" style={{ alignSelf: 'flex-start', fontSize: '0.78em' }}
-              onClick={() => setAddingWs(true)}>+ New workspace</button>
-          )}
-        </div>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             2. BACKGROUND
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Background</div>
-
+        ══════════════════════════════════════════ */}
+        <Sec title="Background">
           {/* Style picker grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.3rem' }}>
-            {BG_OPTIONS.map(opt => (
-              <button key={opt.value}
-                onClick={() => set({ bgStyle: opt.value })}
-                style={{
-                  padding: '0.28rem 0.2rem', fontSize: '0.72em', borderRadius: 'var(--radius-sm)',
-                  border: `1px solid ${t.bgStyle === opt.value ? 'var(--accent)' : 'var(--border)'}`,
-                  background: t.bgStyle === opt.value ? 'var(--accent-dim)' : 'transparent',
-                  color: t.bgStyle === opt.value ? 'var(--accent)' : 'var(--text-dim)',
-                  cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all 0.12s',
-                }}>
-                {opt.label}
-              </button>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3, 1fr)', gap:'0.3rem' }}>
+            {Object.entries(BG_META).map(([val, { label, tip }]) => (
+              <button key={val}
+                className={'btn btn-ghost' + (isBg(val) ? ' btn-primary' : '')}
+                style={{ fontSize:'0.75em', padding:'0.28rem 0.3rem', textAlign:'center' }}
+                onClick={() => set('bgStyle', val)}
+                title={tip}
+              >{label}</button>
             ))}
           </div>
 
-          {/* Pattern options */}
-          {isPatternBg && <>
-            <ColPicker label="Pattern colour" themeKey="patternColor" t={t} set={set} />
-            <Sl label="Pattern opacity" min={0.1} max={1} step={0.05} value={t.patternOpacity ?? 1} onChange={v => set({ patternOpacity: v })} />
+          <ColorRow label="Background colour" tip="Main page background colour" value={theme.bg} onChange={v => set('bg', v)} />
+
+          {isPattern && <>
+            <ColorRow label="Pattern colour" tip="Colour of the pattern lines or dots" value={theme.patternColor} onChange={v => set('patternColor', v)} />
+            <Row label="Pattern opacity" tip="How visible the pattern is (0 = invisible, 1 = full)">
+              <Slider value={theme.patternOpacity} min={0} max={1} step={0.05} onChange={v => set('patternOpacity', v)} tip="Pattern visibility" />
+            </Row>
           </>}
 
-          {/* Gradient options */}
-          {isGradientBg && <>
-            <Row label="Direction">
-              <select value={t.gradientAngle ?? 135}
-                onChange={e => set({ gradientAngle: Number(e.target.value) })}
-                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.8em', padding: '0.2rem 0.4rem' }}>
-                {[[0,'↑'],[45,'↗'],[90,'→'],[135,'↘'],[180,'↓'],[225,'↙'],[270,'←'],[315,'↖']].map(([v,l]) =>
-                  <option key={v} value={v}>{l} {v}°</option>
-                )}
+          {isGradient && <>
+            <Row label="Type" tip="Linear goes in a straight direction; radial radiates from a point">
+              <select className="input" style={{ width:'auto', fontSize:'0.82em' }} value={theme.gradientType || 'linear'} onChange={e => set('gradientType', e.target.value)}>
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
               </select>
             </Row>
-            <Row label="Colours">
-              <input value={t.gradientColors ?? ''} onChange={e => set({ gradientColors: e.target.value })}
-                placeholder="hex,hex,hex" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.78em', padding: '0.22rem 0.5rem', width: 160, fontFamily: 'monospace' }} />
-            </Row>
+            {(theme.gradientType || 'linear') === 'linear' && (
+              <Row label="Angle" tip="Direction of the gradient in degrees (0 = top, 90 = right, 135 = diagonal)">
+                <Slider value={theme.gradientAngle || 135} min={0} max={360} step={5} onChange={v => set('gradientAngle', v)} />
+              </Row>
+            )}
           </>}
 
-          {/* Image options */}
-          {isImageBg && <>
-            <Row label="Image">
-              <button className="btn" style={{ fontSize: '0.78em' }} onClick={() => imgRef.current?.click()}>
-                {t.bgImage ? 'Change image' : 'Upload image'}
-              </button>
-              <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+          {isImage && <>
+            <Row label="Upload image" tip="JPG or PNG, max 2 MB — displayed as a full-cover background">
+              <button className="btn" style={{ fontSize:'0.8em' }} onClick={() => bkupRef.current?.click()}>Choose file</button>
             </Row>
-            <Sl label="Opacity" min={0.1} max={1} step={0.05} value={t.bgImageOpacity ?? 1} onChange={v => set({ bgImageOpacity: v })} />
+            <Row label="Image opacity" tip="Blend the image with the background colour">
+              <Slider value={theme.bgImageOpacity ?? 1} min={0} max={1} step={0.05} onChange={v => set('bgImageOpacity', v)} />
+            </Row>
           </>}
-        </div>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             3. COLOURS
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Colours</div>
-          <ColPicker label="Background"    themeKey="bg"       t={t} set={set} />
-          <ColPicker label="Card / surface" themeKey="card"    t={t} set={set} />
-          <Sl label="Card opacity" min={0} max={1} step={0.05} value={t.cardOpacity ?? 1} onChange={v => set({ cardOpacity: v })} />
-          <ColPicker label="Border"        themeKey="border"   t={t} set={set} />
-          <Sl label="Border opacity" min={0} max={1} step={0.05} value={t.borderOpacity ?? 1} onChange={v => set({ borderOpacity: v })} />
-          <ColPicker label="Accent"        themeKey="accent"   t={t} set={set} />
-          <ColPicker label="Text"          themeKey="text"     t={t} set={set} />
-          <ColPicker label="Text dim"      themeKey="textDim"  t={t} set={set} />
-          <ColPicker label="Section titles" themeKey="titleColor" t={t} set={set} />
-          <ColPicker label="Button"        themeKey="btnBg"    t={t} set={set} />
-          <ColPicker label="Notes surface" themeKey="notesBg"  t={t} set={set} />
-        </div>
+        ══════════════════════════════════════════ */}
+        <Sec title="Colours">
+          <ColorRow label="Card background"   tip="Background colour of section cards and widgets"          value={theme.card}         onChange={v => set('card', v)} />
+          <Row label="Card opacity" tip="How opaque cards are — lower values let the background show through">
+            <Slider value={theme.cardOpacity ?? 1} min={0} max={1} step={0.05} onChange={v => set('cardOpacity', v)} />
+          </Row>
+          <ColorRow label="Border"        tip="Colour of card and element borders"        value={theme.border}       onChange={v => set('border', v)} />
+          <Row label="Border opacity" tip="Visibility of all borders">
+            <Slider value={theme.borderOpacity ?? 1} min={0} max={1} step={0.05} onChange={v => set('borderOpacity', v)} />
+          </Row>
+          <ColorRow label="Accent"        tip="Highlight colour for active items, links on hover, and focus rings" value={theme.accent}  onChange={v => set('accent', v)} />
+          <ColorRow label="Text"          tip="Primary text colour"                       value={theme.text}         onChange={v => set('text', v)} />
+          <ColorRow label="Text dim"      tip="Secondary / muted text colour"             value={theme.textDim}      onChange={v => set('textDim', v)} />
+          <ColorRow label="Section titles" tip="Colour of section header labels"          value={theme.titleColor}   onChange={v => set('titleColor', v)} />
+          <ColorRow label="Button"        tip="Background colour of primary action buttons" value={theme.btnBg}      onChange={v => set('btnBg', v)} />
+          <ColorRow label="Notes bg"      tip="Background colour of the notes panel"      value={theme.notesBg}      onChange={v => set('notesBg', v)} />
+          <ColorRow label="Notes input"   tip="Background colour of note text inputs"     value={theme.notesInputBg} onChange={v => set('notesInputBg', v)} />
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             4. TYPOGRAPHY
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Typography</div>
-          <Row label="Font">
-            <select value={t.font ?? 'DM Mono'}
-              onChange={e => set({ font: e.target.value })}
-              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.8em', padding: '0.2rem 0.5rem', fontFamily: `'${e => e}', monospace` }}>
-              {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+        ══════════════════════════════════════════ */}
+        <Sec title="Typography">
+          <Row label="Font" tip="Main typeface used across the entire UI">
+            <select className="input" style={{ width:'auto', fontSize:'0.82em' }} value={theme.font} onChange={e => set('font', e.target.value)}>
+              {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </Row>
-          <Sl label="Body size"     min={10} max={20} value={t.workspaceFontSize ?? 14} onChange={v => set({ workspaceFontSize: v })} unit="px" />
-          <Sl label="Topbar size"   min={10} max={16} value={t.topbarFontSize ?? 12}    onChange={v => set({ topbarFontSize: v })}    unit="px" />
-          <Sl label="Settings size" min={10} max={16} value={t.settingsFontSize ?? 13}  onChange={v => set({ settingsFontSize: v })}  unit="px" />
-          <Sl label="Notes size"    min={10} max={18} value={t.notesFontSize ?? 13}     onChange={v => set({ notesFontSize: v })}     unit="px" />
-          <Sl label="Clock scale"   min={0.6} max={2.5} step={0.05} value={t.clockWidgetScale ?? 1} onChange={v => set({ clockWidgetScale: v })} unit="×" />
-        </div>
+          <Row label="Body size" tip="Font size for link text, section content, and notes">
+            <Slider value={theme.workspaceFontSize} min={10} max={20} step={1} onChange={v => set('workspaceFontSize', v)} tip="Body font size in px" />
+          </Row>
+          <Row label="Topbar size" tip="Font size for the clock, search bar, workspace tabs, and bookmarks bar">
+            <Slider value={theme.topbarFontSize} min={9} max={16} step={1} onChange={v => set('topbarFontSize', v)} tip="Topbar font size in px" />
+          </Row>
+          <Row label="Settings size" tip="Font size within this settings panel">
+            <Slider value={theme.settingsFontSize ?? 13} min={10} max={16} step={1} onChange={v => set('settingsFontSize', v)} tip="Settings panel font size in px" />
+          </Row>
+          <Row label="Clock scale" tip="Size of the clock widget in the topbar (multiplier of the topbar font size)">
+            <Slider value={theme.clockWidgetScale} min={0.6} max={3} step={0.1} onChange={v => set('clockWidgetScale', v)} tip="Clock size multiplier" />
+          </Row>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             5. SPACING & LAYOUT
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Spacing & Layout</div>
-          <Sl label="Columns"         min={1} max={6}   value={t.sectionsCols ?? 2}     onChange={v => set({ sectionsCols: v })} />
-          <Sl label="Column gap"      min={0} max={32}  value={t.sectionGapH ?? 0}      onChange={v => set({ sectionGapH: v })}  unit="px" />
-          <Sl label="Section gap"     min={0} max={24}  value={t.sectionGap ?? 0}       onChange={v => set({ sectionGap: v })}   unit="px" />
-          <Sl label="Card padding"    min={0.25} max={2} step={0.05} value={t.cardPadding ?? 0.75} onChange={v => set({ cardPadding: v })} unit="rem" />
-          <Sl label="Link gap"        min={0} max={1.5} step={0.05} value={t.linkGap ?? 0.5}       onChange={v => set({ linkGap: v })}    unit="rem" />
-          <Sl label="Top gap"         min={0} max={48}  value={t.mainGapTop ?? 12}       onChange={v => set({ mainGapTop: v })}  unit="px" />
-          <Sl label="Notes width"     min={180} max={480} value={t.notesWidth ?? 240}   onChange={v => set({ notesWidth: v })}  unit="px" />
-        </div>
+        ══════════════════════════════════════════ */}
+        <Sec title="Spacing & Layout">
+          <Row label="Columns" tip="Number of section columns in the main area">
+            <Slider value={theme.sectionsCols ?? 2} min={1} max={6} step={1} onChange={v => set('sectionsCols', v)} />
+          </Row>
+          <Row label="Column gap" tip="Horizontal gap between section columns (px)">
+            <Slider value={theme.sectionGapH ?? 0} min={0} max={32} step={1} onChange={v => set('sectionGapH', v)} />
+          </Row>
+          <Row label="Row gap" tip="Vertical gap between section cards (px)">
+            <Slider value={theme.sectionGap ?? 0} min={0} max={32} step={1} onChange={v => set('sectionGap', v)} />
+          </Row>
+          <Row label="Card padding" tip="Inner padding of section cards (rem)">
+            <Slider value={theme.cardPadding ?? 0.75} min={0} max={2} step={0.05} onChange={v => set('cardPadding', v)} />
+          </Row>
+          <Row label="Link gap" tip="Vertical spacing between links within a section (rem)">
+            <Slider value={theme.linkGap ?? 0.5} min={0} max={1.5} step={0.05} onChange={v => set('linkGap', v)} />
+          </Row>
+          <Row label="Top gap" tip="Gap between the topbar and the main content area (px)">
+            <Slider value={theme.mainGapTop ?? 12} min={0} max={48} step={1} onChange={v => set('mainGapTop', v)} />
+          </Row>
+          <Row label="Notes width" tip="Width of the notes sidebar panel (px)">
+            <Slider value={theme.notesWidth ?? 240} min={160} max={420} step={10} onChange={v => set('notesWidth', v)} />
+          </Row>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             6. SHAPE & SCALE
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Shape & Scale</div>
-          <Sl label="Card radius"    min={0} max={20} value={t.radius ?? 10}          onChange={v => set({ radius: v })}          unit="px" />
-          <Sl label="Button radius"  min={0} max={16} value={t.radiusSm ?? 6}         onChange={v => set({ radiusSm: v })}        unit="px" />
-          <Sl label="Section radius" min={0} max={16} value={t.sectionRadius ?? 0}    onChange={v => set({ sectionRadius: v })}   unit="px" />
-          <Sl label="Page scale"     min={0.5} max={1.5} step={0.02} value={t.pageScale ?? 1} onChange={v => set({ pageScale: v })} unit="×" />
-          <Sl label="Handle opacity" min={0} max={1} step={0.05} value={t.handleOpacity ?? 0.15} onChange={v => set({ handleOpacity: v })} />
-        </div>
+        ══════════════════════════════════════════ */}
+        <Sec title="Shape & Scale">
+          <Row label="Card radius" tip="Border radius of cards and modals (px)">
+            <Slider value={theme.radius ?? 10} min={0} max={24} step={1} onChange={v => set('radius', v)} />
+          </Row>
+          <Row label="Button radius" tip="Border radius of buttons, inputs, and small elements (px)">
+            <Slider value={theme.radiusSm ?? 6} min={0} max={16} step={1} onChange={v => set('radiusSm', v)} />
+          </Row>
+          <Row label="Section radius" tip="Border radius specifically for section cards (px) — set to 0 for flush/edge-to-edge look">
+            <Slider value={theme.sectionRadius ?? 0} min={0} max={20} step={1} onChange={v => set('sectionRadius', v)} />
+          </Row>
+          <Row label="Page scale" tip="Zoom level for the entire page (1 = 100%). Use this to fit more on screen without changing font sizes">
+            <Slider value={theme.pageScale ?? 1} min={0.5} max={1.5} step={0.05} onChange={v => set('pageScale', v)} />
+          </Row>
+          <Row label="Handle opacity" tip="Visibility of drag handles on section cards (0 = hidden, 0.15 = subtle)">
+            <Slider value={theme.handleOpacity ?? 0.15} min={0} max={1} step={0.05} onChange={v => set('handleOpacity', v)} />
+          </Row>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             7. FAVICONS
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Favicons</div>
-          <Sl label="Size"    min={10} max={24} value={t.faviconSize ?? 13}     onChange={v => set({ faviconSize: v })}    unit="px" />
-          <Sl label="Opacity" min={0.1} max={1} step={0.05} value={t.faviconOpacity ?? 1} onChange={v => set({ faviconOpacity: v })} />
-          <Row label="Filter">
-            <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
-              {FAVICON_FILTERS.map(f => (
-                <button key={f.value} onClick={() => set({ faviconFilter: f.value })}
-                  style={{
-                    padding: '0.2rem 0.5rem', fontSize: '0.75em', borderRadius: 'var(--radius-sm)',
-                    border: `1px solid ${t.faviconFilter === f.value ? 'var(--accent)' : 'var(--border)'}`,
-                    background: t.faviconFilter === f.value ? 'var(--accent-dim)' : 'transparent',
-                    color: t.faviconFilter === f.value ? 'var(--accent)' : 'var(--text-dim)',
-                    cursor: 'pointer', fontFamily: 'var(--font)',
-                  }}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
+        ══════════════════════════════════════════ */}
+        <Sec title="Favicons">
+          <Row label="Size" tip="Width and height of favicon icons next to link titles (px)">
+            <Slider value={theme.faviconSize ?? 13} min={8} max={24} step={1} onChange={v => set('faviconSize', v)} />
           </Row>
-        </div>
+          <Row label="Opacity" tip="How visible the favicon icons are (1 = full colour, 0 = hidden)">
+            <Slider value={theme.faviconOpacity ?? 1} min={0} max={1} step={0.05} onChange={v => set('faviconOpacity', v)} />
+          </Row>
+          <Row label="Filter" tip="CSS filter applied to all favicons — e.g. grayscale(1) to desaturate">
+            <select className="input" style={{ width:'auto', fontSize:'0.82em' }} value={theme.faviconFilter ?? 'none'} onChange={e => set('faviconFilter', e.target.value)}>
+              <option value="none">None</option>
+              <option value="grayscale(1)">Greyscale</option>
+              <option value="invert(1)">Invert</option>
+              <option value="grayscale(1) opacity(0.6)">Greyscale dim</option>
+            </select>
+          </Row>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             8. BEHAVIOUR
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Behaviour</div>
-          <Row label="Open links in new tab">
-            <Toggle checked={t.openInNewTab ?? true} onChange={v => set({ openInNewTab: v })} />
+        ══════════════════════════════════════════ */}
+        <Sec title="Behaviour">
+          <Row label="Open in new tab" tip="Links open in a new browser tab when clicked">
+            <Toggle checked={theme.openInNewTab === 'true'} onChange={v => set('openInNewTab', String(v))} tip="Open links in a new tab" />
           </Row>
-          <Row label="Lock layout">
-            <Toggle checked={t.locked ?? false} onChange={v => set({ locked: v })} />
+          <Row label="Lock layout" tip="Prevents accidental section reordering and hides drag handles">
+            <Toggle checked={theme.locked === 'true'} onChange={v => set('locked', String(v))} tip="Lock section layout" />
           </Row>
-          <Row label="Search URL">
-            <input value={t.searchUrl ?? 'https://google.com/search?q='}
-              onChange={e => set({ searchUrl: e.target.value })}
-              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.75em', padding: '0.22rem 0.5rem', width: 170, fontFamily: 'monospace' }} />
+          <Row label="Settings side" tip="Which edge of the screen the settings panel slides in from">
+            <select className="input" style={{ width:'auto', fontSize:'0.82em' }} value={theme.settingsSide || 'right'} onChange={e => set('settingsSide', e.target.value)}>
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
           </Row>
-          <Row label="Settings side">
-            <div style={{ display: 'flex', gap: '0.3rem' }}>
-              {['right','left'].map(s => (
-                <button key={s} onClick={() => set({ settingsSide: s })}
-                  style={{
-                    padding: '0.2rem 0.55rem', fontSize: '0.75em', borderRadius: 'var(--radius-sm)',
-                    border: `1px solid ${(t.settingsSide ?? 'right') === s ? 'var(--accent)' : 'var(--border)'}`,
-                    background: (t.settingsSide ?? 'right') === s ? 'var(--accent-dim)' : 'transparent',
-                    color: (t.settingsSide ?? 'right') === s ? 'var(--accent)' : 'var(--text-dim)',
-                    cursor: 'pointer', fontFamily: 'var(--font)',
-                  }}>
-                  {s}
-                </button>
-              ))}
-            </div>
+          <Row label="Search URL" tip="The search engine URL — your query is appended after the last = or + character">
+            <input className="input" style={{ fontSize:'0.8em', maxWidth:180 }} value={theme.searchUrl ?? ''} onChange={e => set('searchUrl', e.target.value)} title="Search engine URL, query is appended here" />
           </Row>
-        </div>
+        </Sec>
 
-        {/* ══════════════════════════════
-            9. THEME PRESETS
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Theme Presets</div>
-          <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-            Click to load · right-click to save current theme
+        {/* ══════════════════════════════════════════
+            9. SECTIONS — quick actions
+        ══════════════════════════════════════════ */}
+        <Sec title="Sections">
+          <div style={{ display:'flex', gap:'0.4rem', flexWrap:'wrap' }}>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onAddSection} title="Add a new empty section to the current workspace">+ Add section</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onImportSection} title="Import a section from a JSON file">Import</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onCollapseAll} title="Collapse all sections">Collapse all</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onExpandAll} title="Expand all sections">Expand all</button>
           </div>
-          <div className="preset-slots">
-            {presets.map((p, i) => (
-              <button key={i}
-                className={`preset-slot${p ? '' : ''}`}
-                onClick={() => loadPreset(i)}
-                onContextMenu={e => { e.preventDefault(); savePreset(i) }}
-                title={p ? `Load preset ${i + 1} (right-click to overwrite)` : `Right-click to save current theme as preset ${i + 1}`}
-                style={{
-                  background: p ? `#${p.bg}` : 'var(--bg3)',
-                  borderColor: p ? `#${p.accent}` : 'var(--border)',
-                  color: p ? `#${p.text}` : 'var(--text-muted)',
-                }}>
-                {p ? <span style={{ fontSize: '0.85em', fontWeight: 600 }}>{i + 1}</span> : <span style={{ opacity: 0.4 }}>{i + 1}</span>}
-              </button>
-            ))}
-          </div>
-        </div>
+        </Sec>
 
-        {/* ══════════════════════════════
+        {/* ══════════════════════════════════════════
             10. DATA
-        ══════════════════════════════ */}
-        <div className="settings-section">
-          <div className="settings-title">Data</div>
-          <ImportExport userId={userId} />
-          <button className="btn btn-danger" style={{ fontSize: '0.8em', marginTop: '0.25rem' }}
-            onClick={() => { if (confirm('Reset all settings to defaults?')) setTheme({}) }}>
-            Reset to defaults
-          </button>
-        </div>
+        ══════════════════════════════════════════ */}
+        <Sec title="Data">
+          <div style={{ display:'flex', gap:'0.4rem', flexWrap:'wrap' }}>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onExportBackup} title="Export all workspaces, sections, links, notes and theme to a JSON file">Export backup</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={() => bkupRef.current?.click()} title="Import and merge a previously exported backup file">Import backup</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onExport} title="Export just the current theme/appearance settings as JSON">Export theme</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={() => importRef.current?.click()} title="Import a previously exported theme JSON file">Import theme</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onRefreshCache} title="Clear the service worker cache and reload the page — use if the app feels stale">Refresh cache</button>
+          </div>
+          {importingBackup && <div style={{ fontSize:'0.78em', color:'var(--text-muted)', marginTop:'0.3rem' }}>Importing…</div>}
+          <input ref={importRef}  type="file" accept=".json" style={{ display:'none' }} onChange={onImport} />
+          <input ref={bkupRef}    type="file" accept=".json,.jpg,.png,.webp" style={{ display:'none' }} onChange={(e) => { onImportBackup?.(e); onImageUpload?.(e) }} />
+        </Sec>
 
       </div>
 
       {/* ── Footer ── */}
-      <div className="settings-footer" data-side={side}>
-        <button className="btn btn-ghost" style={{ fontSize: '0.82em' }} onClick={onSignOut}>Sign out</button>
+      <div className="settings-footer" data-side={theme.settingsSide || 'right'}>
+        <button className="btn btn-primary" style={{ flex:1 }} onClick={onSave} title="Save all settings and close the panel">Save</button>
+        <button className="btn btn-ghost"   onClick={onReset}  title="Reset all settings back to defaults — cannot be undone">Reset defaults</button>
+        <button className="btn btn-ghost"   onClick={onClose}  title="Close without saving">Close</button>
       </div>
     </>
   )
