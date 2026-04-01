@@ -3,27 +3,27 @@ import { useState, useRef } from 'react'
 const FONTS = ['DM Mono','JetBrains Mono','IBM Plex Sans','Inter','Outfit','Space Grotesk','Figtree','Geist']
 
 const BG_META = {
-  'bg-solid':     { label:'Solid',      tip:'Flat solid colour, no pattern' },
-  'bg-noise':     { label:'Noise',      tip:'Subtle film-grain texture overlay' },
-  'bg-dots':      { label:'Dots',       tip:'Regular dot grid — colour & opacity adjustable' },
-  'bg-grid':      { label:'Grid',       tip:'Square grid lines — colour & opacity adjustable' },
-  'bg-gradient':  { label:'Gradient',   tip:'Directional gradient — configure type, angle & colours below' },
-  'bg-mesh':      { label:'Blobs',      tip:'Soft coloured blob mesh using your accent colour' },
-  'bg-aurora':    { label:'Aurora',     tip:'Slow animated northern-lights hue drift' },
-  'bg-starfield': { label:'✦ Starfield', tip:'Animated drifting star field — medium GPU use' },
-  'bg-plasma':    { label:'✦ Plasma',   tip:'Animated liquid colour blobs — higher GPU use' },
-  'bg-stars':     { label:'Stars',      tip:'Static scattered star pattern' },
-  'bg-nebula':    { label:'Nebula',     tip:'Deep-space nebula cloud with scattered stars' },
-  'bg-circuit':   { label:'Circuit',    tip:'Circuit-board trace grid — colour & opacity adjustable' },
-  'bg-hex':       { label:'Hex',        tip:'Hexagonal tile grid — colour & opacity adjustable' },
-  'bg-lines':     { label:'Lines',      tip:'Diagonal ruled lines — colour & opacity adjustable' },
-  'bg-crosshatch':{ label:'Crosshatch', tip:'Diagonal crosshatch weave — colour & opacity adjustable' },
-  'bg-carbon':    { label:'Carbon',     tip:'Carbon-fibre weave texture' },
-  'bg-topo':      { label:'Topo',       tip:'Topographic contour-map lines — colour & opacity adjustable' },
-  'bg-image':     { label:'Image',      tip:'Upload a custom background image (max 2 MB)' },
+  'bg-solid':    { label:'Solid',         tip:'Flat solid colour' },
+  'bg-noise':    { label:'Noise',         tip:'Subtle film-grain texture overlay' },
+  'bg-dots':     { label:'Dots',          tip:'Regular dot grid — colour & opacity adjustable' },
+  'bg-grid':     { label:'Grid',          tip:'Square grid lines — colour & opacity adjustable' },
+  'bg-lines':    { label:'Lines',         tip:'Diagonal ruled lines — colour & opacity adjustable' },
+  'bg-gradient': { label:'Gradient',      tip:'Directional gradient — configure type, angle & colours below' },
+  'bg-mesh':     { label:'* Blobs',       tip:'Animated soft coloured blob mesh using your accent colour' },
+  'bg-aurora':   { label:'* Aurora',      tip:'Animated slow northern-lights hue drift' },
+  'bg-starfield':{ label:'* Starfield',   tip:'Animated drifting star field — medium GPU use' },
+  'bg-stars':    { label:'Stars',         tip:'Static scattered star pattern' },
+  'bg-nebula':   { label:'Nebula',        tip:'Deep-space nebula cloud with scattered stars' },
+  'bg-circuit':  { label:'Circuit',       tip:'Circuit-board trace grid' },
+  'bg-plasma':   { label:'* Plasma',      tip:'Animated liquid colour blobs — higher GPU use' },
+  'bg-inferno':  { label:'* Inferno',     tip:'Animated plasma — red/orange fire palette' },
+  'bg-mint':     { label:'* Mint',        tip:'Animated plasma — green/teal/cyan palette' },
+  'bg-dusk':     { label:'* Dusk',        tip:'Animated plasma — pink/violet/peach palette' },
+  'bg-mono':     { label:'* Mono',        tip:'Animated plasma — deep navy monochrome' },
+  'bg-image':    { label:'Image',         tip:'Upload a custom background image (max 2 MB)' },
 }
-
-const PATTERN_BG  = ['bg-dots','bg-grid','bg-lines','bg-crosshatch','bg-circuit','bg-hex','bg-topo']
+const PATTERN_BG  = ['bg-dots','bg-grid','bg-lines','bg-circuit']
+const PLASMA_BG   = ['bg-plasma','bg-inferno','bg-mint','bg-dusk','bg-mono']
 const GRADIENT_BG = ['bg-gradient']
 const IMAGE_BG    = ['bg-image']
 
@@ -90,6 +90,7 @@ export default function Settings({
 
   const isBg       = (v) => theme.bgStyle === v
   const isPattern  = PATTERN_BG.includes(theme.bgStyle)
+  const isPlasma   = PLASMA_BG.includes(theme.bgStyle)
   const isGradient = GRADIENT_BG.includes(theme.bgStyle)
   const isImage    = IMAGE_BG.includes(theme.bgStyle)
 
@@ -127,7 +128,7 @@ export default function Settings({
               </div>
             ))}
             {addingWs ? (
-              <form onSubmit={e => { e.preventDefault(); if (newWsName.trim()) { onSwitchWs?.call?.(); setAddingWs(false) } }} style={{ display:'flex', gap:'0.3rem' }}>
+              <form onSubmit={e => { e.preventDefault(); if (newWsName.trim() && onSave) { onSave(newWsName.trim()); setNewWsName(''); setAddingWs(false) } else setAddingWs(false) }} style={{ display:'flex', gap:'0.3rem' }}>
                 <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
                   placeholder="Workspace name" autoFocus style={{ flex:1, fontSize:'0.82em' }} />
                 <button type="button" className="btn" onClick={() => setAddingWs(false)}>Cancel</button>
@@ -183,6 +184,14 @@ export default function Settings({
             </Row>
             <Row label="Image opacity" tip="Blend the image with the background colour">
               <Slider value={theme.bgImageOpacity ?? 1} min={0} max={1} step={0.05} onChange={v => set('bgImageOpacity', v)} />
+            </Row>
+          </>}
+          {isPlasma && <>
+            <Row label="Speed" tip="Animation speed multiplier — higher = faster moving blobs">
+              <Slider value={theme.plasmaSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('plasmaSpeed', v)} />
+            </Row>
+            <Row label="Blur" tip="Blur intensity multiplier — higher = softer, more diffuse blobs">
+              <Slider value={theme.plasmaBlur ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('plasmaBlur', v)} />
             </Row>
           </>}
         </Sec>

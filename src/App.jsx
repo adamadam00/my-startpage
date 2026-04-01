@@ -6,6 +6,7 @@ import Weather   from './components/Weather'
 import SearchBar from './components/SearchBar'
 import Notes     from './components/Notes'
 import Sections  from './components/Sections'
+import Settings  from './components/Settings'
 
 const BUILD      = '31 Mar 2026'
 const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines']
@@ -161,6 +162,7 @@ export default function App() {
   const [importSectionTrigger, setImportSectionTrigger] = useState(0)
   const [collapseAllTrigger,   setCollapseAllTrigger]   = useState(0)
   const [expandAllTrigger,     setExpandAllTrigger]     = useState(0)
+  const [allExpanded,          setAllExpanded]          = useState(true)
   const fileRef       = useRef(null)
   const backupFileRef = useRef(null)
   const wsCache       = useRef({})
@@ -522,20 +524,22 @@ export default function App() {
         </div>
 
         <div className="topbar-actions">
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
-            <button className="btn btn-ghost" title="Collapse all"
-              style={{ padding: '0.25rem 0.55rem', fontSize: '0.9em' }}
-              onClick={() => setCollapseAllTrigger(n => n + 1)}>▸ all</button>
-            <button className="btn btn-ghost" title="Expand all"
-              style={{ padding: '0.25rem 0.55rem', fontSize: '0.9em' }}
-              onClick={() => setExpandAllTrigger(n => n + 1)}>▾ all</button>
-          </div>
+          <button className="btn btn-ghost"
+            title={allExpanded ? 'Collapse all sections' : 'Expand all sections'}
+            style={{ padding: '0.25rem 0.6rem', fontSize: '0.9em' }}
+            onClick={() => {
+              if (allExpanded) setCollapseAllTrigger(n => n + 1)
+              else             setExpandAllTrigger(n => n + 1)
+              setAllExpanded(v => !v)
+            }}>{allExpanded ? '▸' : '▾'}</button>
           {locked && (
             <span title="Cards locked — unlock in Settings"
               style={{ fontSize: '0.85em', color: 'var(--text-muted)', userSelect: 'none' }}>🔒</span>
           )}
-          <button className="btn btn-primary" style={{ padding: '0.3rem 0.85rem' }}
-            onClick={() => setAddSectionTrigger(n => n + 1)}>+ Section</button>
+          <button className="btn btn-ghost"
+            title="Add section"
+            style={{ padding: '0.25rem 0.65rem', fontSize: '1.1em', lineHeight: 1 }}
+            onClick={() => setAddSectionTrigger(n => n + 1)}>+</button>
           <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
           <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
         </div>
@@ -571,377 +575,52 @@ export default function App() {
 
       {/* Settings panel */}
       {showSettings && (
-        <>
-          <div className="settings-veil" />
-          <div className="settings-panel">
-
-            <div className="settings-header">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                <span style={{ fontWeight: 500 }}>Settings</span>
-                <span style={{ fontSize: '0.68em', color: 'var(--text-muted)' }}>
-                  build {BUILD}
-                  {themeSyncing && (
-                    <span style={{ marginLeft: '0.5rem', color: 'var(--accent)' }}>↑ syncing…</span>
-                  )}
-                </span>
-              </div>
-              <button className="icon-btn" onClick={() => setShowSettings(false)}>✕</button>
-            </div>
-
-            {/* Colours */}
-            <div className="settings-section">
-              <div className="settings-title">Colours</div>
-              {[
-                ['Background',    'bg'],
-                ['Card',          'card'],
-                ['Border',        'border'],
-                ['Accent',        'accent'],
-                ['Text',          'text'],
-                ['Text dim',      'textDim'],
-                ['Section title', 'titleColor'],
-                ['Button',        'btnBg'],
-                ['Notes panel',   'notesBg'],
-                ['Notes input',   'notesInputBg'],
-              ].map(([label, key]) => (
-                <div className="settings-row" key={key}>
-                  <span className="settings-label">{label}</span>
-                  <input type="color" className="color-input"
-                    value={theme[key] ?? '#13131a'} onChange={e => set(key, e.target.value)} />
-                </div>
-              ))}
-            </div>
-
-            {/* Opacity */}
-            <div className="settings-section">
-              <div className="settings-title">Opacity</div>
-              {[
-                ['Card opacity',    'cardOpacity'],
-                ['Border opacity',  'borderOpacity'],
-                ['Handle opacity',  'handleOpacity'],
-                ['Favicon opacity', 'faviconOpacity'],
-              ].map(([label, key]) => (
-                <div className="settings-row" key={key}>
-                  <span className="settings-label">{label} — {parseFloat(theme[key]).toFixed(2)}</span>
-                  <input type="range" min="0" max="1" step="0.01"
-                    value={theme[key]} onChange={e => set(key, e.target.value)}
-                    style={{ width: 100 }} />
-                </div>
-              ))}
-            </div>
-
-            {/* Background */}
-            <div className="settings-section">
-              <div className="settings-title">Background</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                {BG_OPTIONS.map(opt => (
-                  <button key={opt.value}
-                    className={`preset-slot${theme.bgStyle === opt.value ? ' active' : ''}`}
-                    style={{ flex: 'none', padding: '0.25rem 0.55rem' }}
-                    onClick={() => set('bgStyle', opt.value)}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-
-              {isPatternBg && (
-                <>
-                  <div className="settings-row" style={{ marginTop: '0.5rem' }}>
-                    <span className="settings-label">Pattern colour</span>
-                    <input type="color" className="color-input"
-                      value={theme.patternColor} onChange={e => set('patternColor', e.target.value)} />
-                  </div>
-                  <div className="settings-row">
-                    <span className="settings-label">
-                      Pattern opacity — {parseFloat(theme.patternOpacity).toFixed(2)}
-                    </span>
-                    <input type="range" min="0" max="1" step="0.01"
-                      value={theme.patternOpacity} onChange={e => set('patternOpacity', e.target.value)}
-                      style={{ width: 100 }} />
-                  </div>
-                </>
-              )}
-
-              {theme.bgStyle === 'bg-gradient' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <div className="settings-row">
-                    <span className="settings-label">Type</span>
-                    <div className="preset-slots">
-                      {['linear', 'radial'].map(gt => (
-                        <button key={gt}
-                          className={`preset-slot${theme.gradientType === gt ? ' active' : ''}`}
-                          onClick={() => set('gradientType', gt)}>
-                          {gt.charAt(0).toUpperCase() + gt.slice(1)}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {theme.gradientType === 'linear' && (
-                    <div className="settings-row">
-                      <span className="settings-label">Angle — {theme.gradientAngle}°</span>
-                      <input type="range" min="0" max="360" step="5"
-                        value={theme.gradientAngle} onChange={e => set('gradientAngle', e.target.value)}
-                        style={{ width: 100 }} />
-                    </div>
-                  )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
-                    <span className="settings-label">Colour stops ({gradColors.length}/6)</span>
-                    {gradColors.map((c, i) => (
-                      <div key={i} className="settings-row">
-                        <span className="settings-label">Stop {i + 1}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <input type="color" className="color-input" value={c}
-                            onChange={e => updateGradColor(i, e.target.value)} />
-                          {gradColors.length > 2 && (
-                            <button className="icon-btn" style={{ fontSize: '0.7em' }}
-                              onClick={() => removeGradStop(i)}>✕</button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    {gradColors.length < 6 && (
-                      <button className="btn" style={{ fontSize: '0.75em', alignSelf: 'flex-start' }}
-                        onClick={addGradStop}>+ Add stop</button>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {theme.bgStyle === 'bg-image' && (
-                <>
-                  <input ref={fileRef} type="file" accept="image/*"
-                    style={{ display: 'none' }} onChange={handleImageUpload} />
-                  <button className="btn"
-                    style={{ marginTop: '0.5rem', fontSize: '0.8em', width: '100%' }}
-                    onClick={() => fileRef.current?.click()}>
-                    {theme.bgImage ? '↺ Change image' : '↑ Upload image (max 2 MB, cached locally)'}
-                  </button>
-                  {theme.bgImage && (
-                    <>
-                      <img src={theme.bgImage} alt="bg preview"
-                        style={{ width: '100%', height: 80, objectFit: 'cover',
-                          borderRadius: 'var(--radius-sm)', marginTop: '0.4rem',
-                          border: '1px solid var(--border)' }} />
-                      <div className="settings-row" style={{ marginTop: '0.4rem' }}>
-                        <span className="settings-label">
-                          Image opacity — {parseFloat(theme.bgImageOpacity).toFixed(2)}
-                        </span>
-                        <input type="range" min="0.05" max="1" step="0.01"
-                          value={theme.bgImageOpacity} onChange={e => set('bgImageOpacity', e.target.value)}
-                          style={{ width: 100 }} />
-                      </div>
-                      <button className="btn btn-danger"
-                        style={{ marginTop: '0.35rem', fontSize: '0.75em', width: '100%' }}
-                        onClick={() => set('bgImage', '')}>Remove image</button>
-                    </>
-                  )}
-                  <div style={{ fontSize: '0.7em', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-                    Background image is stored locally only — not synced to other browsers.
-                  </div>
-                </>
-              )}
-
-              {isPlasmasBg && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.5rem' }}>
-                  <div className="settings-row">
-                    <span className="settings-label">Speed — {parseFloat(theme.plasmaSpeed ?? 1).toFixed(1)}x</span>
-                    <input type="range" min="0.2" max="3" step="0.1"
-                      value={theme.plasmaSpeed ?? 1} onChange={e => set('plasmaSpeed', e.target.value)}
-                      style={{ width: 100 }} />
-                  </div>
-                  <div className="settings-row">
-                    <span className="settings-label">Blur — {parseFloat(theme.plasmaBlur ?? 1).toFixed(1)}x</span>
-                    <input type="range" min="0.2" max="3" step="0.1"
-                      value={theme.plasmaBlur ?? 1} onChange={e => set('plasmaBlur', e.target.value)}
-                      style={{ width: 100 }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Typography */}
-            <div className="settings-section">
-              <div className="settings-title">Typography</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.5rem' }}>
-                {FONTS.map(f => (
-                  <button key={f}
-                    className={`preset-slot${theme.font === f ? ' active' : ''}`}
-                    style={{ flex: 'none', fontFamily: f }} onClick={() => set('font', f)}>
-                    {f}
-                  </button>
-                ))}
-              </div>
-              {[
-                ['Workspace font',  'workspaceFontSize', 11,   18,  1,    'px'],
-                ['Topbar font',     'topbarFontSize',    10,   16,  1,    'px'],
-                ['Settings font',   'settingsFontSize',  10,   18,  1,    'px'],
-                ['Clock & weather', 'clockWidgetScale',  0.75, 2.5, 0.05, 'rem'],
-              ].map(([label, key, min, max, step, unit]) => (
-                <div className="settings-row" key={key}>
-                  <span className="settings-label">{label} — {theme[key]}{unit}</span>
-                  <input type="range" min={min} max={max} step={step}
-                    value={theme[key]} onChange={e => set(key, e.target.value)}
-                    style={{ width: 100 }} />
-                </div>
-              ))}
-            </div>
-
-            {/* Layout */}
-            <div className="settings-section">
-              <div className="settings-title">Layout</div>
-              <div className="settings-row">
-                <span className="settings-label">
-                  🔒 Lock cards
-                  <span style={{ display: 'block', fontSize: '0.8em', color: 'var(--text-muted)' }}>
-                    Hides handles, arrows &amp; edit buttons
-                  </span>
-                </span>
-                <label className="toggle">
-                  <input type="checkbox" checked={theme.locked === 'true'}
-                    onChange={e => set('locked', e.target.checked ? 'true' : 'false')} />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-              <div className="settings-row">
-                <span className="settings-label">Section columns</span>
-                <div className="preset-slots">
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button key={n}
-                      className={`preset-slot${parseInt(theme.sectionsCols) === n ? ' active' : ''}`}
-                      onClick={() => set('sectionsCols', String(n))}>
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {[
-                ['Topbar → cards gap',       'mainGapTop',    0,   180,  2,    'px'],
-                ['Card padding',             'cardPadding',   0.1, 2.5,  0.05, 'rem'],
-                ['Section gap (vertical)',   'sectionGap',    0,   24,   1,    'px'],
-                ['Section gap (horizontal)', 'sectionGapH',   0,   24,   1,    'px'],
-                ['Section card radius',      'sectionRadius', 0,   20,   1,    'px'],
-                ['Notes panel width',        'notesWidth',    140, 420,  10,   'px'],
-                ['Notes font size',          'notesFontSize', 11,  18,   1,    'px'],
-                ['Link gap',                 'linkGap',       0,   1.5,  0.05, 'rem'],
-                ['Page scale',               'pageScale',     0.5, 1.3,  0.05, ''],
-                ['Radius (UI elements)',     'radius',        0,   20,   1,    'px'],
-              ].map(([label, key, min, max, step, unit]) => (
-                <div className="settings-row" key={key}>
-                  <span className="settings-label">{label} — {theme[key] ?? 0}{unit}</span>
-                  <input type="range" min={min} max={max} step={step}
-                    value={theme[key] ?? 0} onChange={e => set(key, e.target.value)}
-                    style={{ width: 100 }} />
-                </div>
-              ))}
-            </div>
-
-            {/* Search */}
-            <div className="settings-section">
-              <div className="settings-title">Search</div>
-              <span className="settings-label" style={{ marginBottom: '0.15rem' }}>Search URL</span>
-              <input className="input" value={theme.searchUrl}
-                onChange={e => set('searchUrl', e.target.value)}
-                placeholder="https://google.com/search?q="
-                style={{ fontSize: '0.8em' }} />
-              <div style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>
-                Query is appended to the end of this URL.
-              </div>
-            </div>
-
-            {/* Links */}
-            <div className="settings-section">
-              <div className="settings-title">Links</div>
-              <div className="settings-row">
-                <span className="settings-label">Open links in new tab</span>
-                <label className="toggle">
-                  <input type="checkbox" checked={theme.openInNewTab !== 'false'}
-                    onChange={e => set('openInNewTab', e.target.checked ? 'true' : 'false')} />
-                  <span className="toggle-slider" />
-                </label>
-              </div>
-              <div className="settings-row">
-                <span className="settings-label">Favicon size — {theme.faviconSize ?? 13}px</span>
-                <input type="range" min="10" max="24" step="1"
-                  value={theme.faviconSize ?? 13} onChange={e => set('faviconSize', e.target.value)}
-                  style={{ width: 100 }} />
-              </div>
-              <div className="settings-row">
-                <span className="settings-label">Favicon style</span>
-                <div className="preset-slots">
-                  {[
-                    { label: 'Normal', value: 'none'         },
-                    { label: 'Dim',    value: 'opacity(0.5)' },
-                    { label: 'Mono',   value: 'grayscale(1)' },
-                    { label: 'Hide',   value: 'opacity(0)'   },
-                  ].map(opt => (
-                    <button key={opt.value}
-                      className={`preset-slot${theme.faviconFilter === opt.value ? ' active' : ''}`}
-                      onClick={() => set('faviconFilter', opt.value)}>
-                      {opt.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Backup */}
-            <div className="settings-section">
-              <div className="settings-title">Backup &amp; restore</div>
-              <button className="btn btn-primary" style={{ fontSize: '0.8em', width: '100%' }}
-                onClick={exportFullBackup}>
-                ↓ Export my start page
-              </button>
-              <label className={`btn${importingBackup ? ' btn-ghost' : ''}`}
-                style={{ fontSize: '0.8em', width: '100%', textAlign: 'center',
-                  cursor: importingBackup ? 'not-allowed' : 'pointer' }}>
-                {importingBackup ? '⏳ Importing…' : '↑ Import start page backup'}
-                <input ref={backupFileRef} type="file" accept=".json"
-                  style={{ display: 'none' }} onChange={importFullBackup}
-                  disabled={importingBackup} />
-              </label>
-              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
-                Export saves all workspaces, sections, links, notes and theme.
-                Import adds them without deleting existing data.
-              </div>
-            </div>
-
-            {/* Presets */}
-            <div className="settings-section">
-              <div className="settings-title">Theme presets</div>
-              <div className="import-export">
-                <button className="btn" style={{ fontSize: '0.8em' }}
-                  onClick={exportSettings}>↓ Export theme</button>
-                <label className="btn" style={{ fontSize: '0.8em', cursor: 'pointer' }}>
-                  ↑ Import theme
-                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={importSettings} />
-                </label>
-                <button className="btn btn-danger" style={{ fontSize: '0.8em' }}
-                  onClick={resetSettings}>Reset</button>
-              </div>
-              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
-                onClick={() => {
-                  setShowSettings(false)
-                  setTimeout(() => setImportSectionTrigger(n => n + 1), 150)
-                }}>
-                ↑ Import A Fine Start links
-              </button>
-              <button className="btn" style={{ fontSize: '0.8em', width: '100%' }}
-                onClick={refreshCache}>
-                ↺ Refresh cached assets
-              </button>
-              <div style={{ fontSize: '0.7em', color: 'var(--text-muted)' }}>
-                Theme syncs automatically across browsers on Save. Background images are local only.
-              </div>
-            </div>
-
-            <div className="settings-footer">
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveSettings}>
-                {themeSyncing ? '↑ Saving…' : 'Save & close'}
-              </button>
-              <button className="btn" onClick={() => setShowSettings(false)}>Cancel</button>
-            </div>
-
-          </div>
-        </>
+        <Settings
+          theme={theme}
+          set={set}
+          workspaces={workspaces}
+          activeWs={activeWs}
+          onSwitchWs={switchWorkspace}
+          onDeleteWs={deleteWorkspace}
+          onSave={saveSettings}
+          onReset={resetSettings}
+          onClose={() => setShowSettings(false)}
+          onExport={exportSettings}
+          onImport={importSettings}
+          onImageUpload={handleImageUpload}
+          onExportBackup={exportSettings}
+          onImportBackup={(e) => {
+            const f = e.target.files?.[0]
+            if (!f) return
+            setImportingBackup(true)
+            const r = new FileReader()
+            r.onload = async (ev) => {
+              try {
+                const data = JSON.parse(ev.target.result)
+                if (data.workspaces) {
+                  for (const ws of data.workspaces) {
+                    const { data: newWs } = await supabase.from('workspaces').insert({ user_id: session.user.id, name: ws.name }).select().single()
+                    if (ws.sections?.length) await supabase.from('sections').insert(ws.sections.map(s => ({ ...s, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
+                    if (ws.links?.length)    await supabase.from('links').insert(ws.links.map(l => ({ ...l, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
+                    if (ws.notes?.length)   await supabase.from('notes').insert(ws.notes.map(n => ({ ...n, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
+                  }
+                }
+                handleRefresh()
+              } catch (err) { alert('Import failed: ' + err.message) }
+              finally { setImportingBackup(false) }
+            }
+            r.readAsText(f)
+          }}
+          fileRef={fileRef}
+          backupFileRef={backupFileRef}
+          onRefreshCache={() => caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k))).then(handleRefresh))}
+          themeSyncing={themeSyncing}
+          importingBackup={importingBackup}
+          onAddSection={() => setAddSectionTrigger(n => n + 1)}
+          onImportSection={() => setImportSectionTrigger(n => n + 1)}
+          onCollapseAll={() => { setCollapseAllTrigger(n => n + 1); setAllExpanded(false) }}
+          onExpandAll={()   => { setExpandAllTrigger(n => n + 1);   setAllExpanded(true)  }}
+        />
       )}
     </div>
   )
