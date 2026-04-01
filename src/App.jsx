@@ -795,7 +795,7 @@ export default function App() {
                 ['Notes panel width',        'notesWidth',    140, 420,  10,   'px'],
                 ['Notes font size',          'notesFontSize', 11,  18,   1,    'px'],
                 ['Link gap',                 'linkGap',       0,   1.5,  0.05, 'rem'],
-                ['Page scale',               'pageScale',     0.5, 1.3,  0.05, ''],
+                ['Page scale',               'pageScale',     0.5, 1.4,  0.05, ''],
                 ['Radius (UI elements)',     'radius',        0,   20,   1,    'px'],
               ].map(([label, key, min, max, step, unit]) => (
                 <div className="settings-row" key={key}>
