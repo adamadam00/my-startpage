@@ -1,51 +1,52 @@
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { useState, useRef } from 'react'
 import ImportExport from './ImportExport'
 
 const FONTS = [
-  { label: 'DM Mono',        value: "'DM Mono', monospace" },
-  { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
-  { label: 'Geist',          value: "'Geist', sans-serif" },
-  { label: 'Inter',          value: "'Inter', sans-serif" },
-  { label: 'IBM Plex Sans',  value: "'IBM Plex Sans', sans-serif" },
-  { label: 'Outfit',         value: "'Outfit', sans-serif" },
-  { label: 'Space Grotesk',  value: "'Space Grotesk', sans-serif" },
-  { label: 'Figtree',        value: "'Figtree', sans-serif" },
+  { label: 'DM Mono',       value: 'DM Mono' },
+  { label: 'JetBrains Mono',value: 'JetBrains Mono' },
+  { label: 'Geist',         value: 'Geist' },
+  { label: 'Inter',         value: 'Inter' },
+  { label: 'IBM Plex Sans', value: 'IBM Plex Sans' },
+  { label: 'Outfit',        value: 'Outfit' },
+  { label: 'Space Grotesk', value: 'Space Grotesk' },
+  { label: 'Figtree',       value: 'Figtree' },
 ]
 
-const BG_PRESETS = ['noise', 'dots', 'grid', 'mesh', 'aurora', 'solid']
+const BG_OPTIONS = [
+  { value: 'bg-solid',      label: 'Solid' },
+  { value: 'bg-noise',      label: 'Noise' },
+  { value: 'bg-dots',       label: 'Dots' },
+  { value: 'bg-grid',       label: 'Grid' },
+  { value: 'bg-lines',      label: 'Lines' },
+  { value: 'bg-crosshatch', label: 'Crosshatch' },
+  { value: 'bg-carbon',     label: 'Carbon' },
+  { value: 'bg-topo',       label: 'Topo' },
+  { value: 'bg-hex',        label: 'Hex' },
+  { value: 'bg-circuit',    label: 'Circuit' },
+  { value: 'bg-gradient',   label: 'Gradient' },
+  { value: 'bg-mesh',       label: 'Blobs' },
+  { value: 'bg-aurora',     label: 'Aurora' },
+  { value: 'bg-stars',      label: 'Stars' },
+  { value: 'bg-nebula',     label: 'Nebula' },
+  { value: 'bg-starfield',  label: 'Starfield' },
+  { value: 'bg-plasma',     label: 'Plasma' },
+  { value: 'bg-fog',        label: 'Fog' },
+  { value: 'bg-scan',       label: 'Scan' },
+  { value: 'bg-vortex',     label: 'Vortex' },
+  { value: 'bg-ripple',     label: 'Ripple' },
+  { value: 'bg-filament',   label: 'Filament' },
+  { value: 'bg-breath',     label: 'Breath' },
+  { value: 'bg-shimmer',    label: 'Shimmer' },
+  { value: 'bg-oil',        label: 'Oil' },
+  { value: 'bg-image',      label: 'Image' },
+]
 
-const DEFAULT_THEME = {
-  bg:               '#0c0c0f',
-  bg2:              '#13131a',
-  bg3:              '#1a1a24',
-  card:             '#13131a',
-  cardOpacity:      1,
-  borderOpacity:    1,
-  handleOpacity:    0.15,
-  border:           '#2a2a3a',
-  borderHover:      '#3d3d55',
-  text:             '#e8e8f0',
-  textDim:          '#7878a0',
-  accent:           '#6c8fff',
-  danger:           '#ff6b6b',
-  success:          '#6bffb8',
-  btnBg:            '#1e3a8a',
-  btnText:          '#ffffff',
-  font:             "'DM Mono', monospace",
-  fontSize:         14,
-  clockSize:        1.0,
-  radius:           10,
-  linkGap:          0.5,
-  cardPadding:      1,
-  sectionsCols:     2,
-  pageScale:        1,
-  faviconOpacity:   1,
-  faviconGreyscale: false,
-  mainGapTop:       12,
-}
-
-const MIGRATE = { btnBg: ['#6c8fff', '#2d4fd4'] }
+const FAVICON_FILTERS = [
+  { label: 'None',      value: 'none' },
+  { label: 'Greyscale', value: 'grayscale(1)' },
+  { label: 'Dim',       value: 'brightness(0.6)' },
+  { label: 'Invert',    value: 'invert(1)' },
+]
 
 function Toggle({ checked, onChange, title }) {
   return (
@@ -56,567 +57,349 @@ function Toggle({ checked, onChange, title }) {
   )
 }
 
-function Row({ label, children, tip }) {
+function Row({ label, children }) {
   return (
-    <div className="settings-row" title={tip}>
+    <div className="settings-row">
       <span className="settings-label">{label}</span>
-      {children}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>{children}</div>
     </div>
   )
 }
 
-function SettingsSection({ title, children }) {
+function Sl({ label, min, max, step = 1, value, onChange, unit = '' }) {
   return (
-    <div className="settings-section">
-      <div className="settings-title">{title}</div>
-      {children}
-    </div>
+    <Row label={label}>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))} />
+      <span style={{ fontSize: '0.78em', color: 'var(--text-dim)', minWidth: 32, textAlign: 'right' }}>
+        {value}{unit}
+      </span>
+    </Row>
+  )
+}
+
+function ColPicker({ label, themeKey, t, set }) {
+  return (
+    <Row label={label}>
+      <input type="color" className="color-input" value={'#' + (t[themeKey] || '000000')}
+        onChange={e => set({ [themeKey]: e.target.value.replace('#', '') })} />
+      <span style={{ fontSize: '0.72em', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+        #{t[themeKey]}
+      </span>
+    </Row>
   )
 }
 
 export default function Settings({
-  session, userSettings, onSettingsChange, onClose,
-  onResetLinks, onExportAll,
-  activeWs, workspaces,
-  onAddWorkspace, onDeleteWorkspace, onRenameWorkspace, onSwitchWorkspace,
-  uiVisibility,
+  workspaces = [], activeWs, onWorkspaceChange, onCreateWorkspace, onDeleteWorkspace,
+  theme, setTheme, onClose, userId, onSignOut, side,
 }) {
-  // ── Panel side (persisted) ──
-  const [panelSide, setPanelSide] = useState(
-    () => localStorage.getItem('settings_side') || 'right'
-  )
-  const toggleSide = () => {
-    const next = panelSide === 'right' ? 'left' : 'right'
-    setPanelSide(next)
-    localStorage.setItem('settings_side', next)
-  }
-
-  const [theme, setTheme] = useState(() => {
-    try {
-      const saved = localStorage.getItem('current_theme')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        for (const [key, oldVals] of Object.entries(MIGRATE)) {
-          if (oldVals.includes(parsed[key])) parsed[key] = DEFAULT_THEME[key]
-        }
-        return { ...DEFAULT_THEME, ...parsed }
-      }
-      return DEFAULT_THEME
-    } catch { return DEFAULT_THEME }
+  const [newWsName, setNewWsName] = useState('')
+  const [addingWs, setAddingWs] = useState(false)
+  const [presets, setPresets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('theme-presets') || 'null') || [null, null, null, null] }
+    catch { return [null, null, null, null] }
   })
+  const imgRef = useRef(null)
 
-  const [activeSlot,   setActiveSlot]   = useState(null)
-  const [slotNames,    setSlotNames]    = useState({ 1: 'Preset 1', 2: 'Preset 2', 3: 'Preset 3', 4: 'Preset 4' })
-  const [presets,      setPresets]      = useState({})
-  const [clockFormat,  setClockFormat]  = useState(userSettings?.clock_format    ?? '12h')
-  const [openNewTab,   setOpenNewTab]   = useState(userSettings?.open_in_new_tab ?? true)
-  const [bgPreset,     setBgPreset]     = useState(userSettings?.bg_preset       ?? 'noise')
-  const [bgImage,      setBgImage]      = useState(localStorage.getItem('bg_image') ?? null)
-  const [weatherName,  setWeatherName]  = useState(userSettings?.weather_name ?? 'Melbourne')
-  const [weatherLat,   setWeatherLat]   = useState(userSettings?.weather_lat  ?? -37.8136)
-  const [weatherLon,   setWeatherLon]   = useState(userSettings?.weather_lon  ?? 144.9631)
-  const [showClock,    setShowClock]    = useState(uiVisibility?.showClock   ?? true)
-  const [showWeather,  setShowWeather]  = useState(uiVisibility?.showWeather ?? true)
-  const [showSearch,   setShowSearch]   = useState(uiVisibility?.showSearch  ?? true)
-  const [showNotes,    setShowNotes]    = useState(uiVisibility?.showNotes   ?? true)
-  const [saving,       setSaving]       = useState(false)
-  const [newWsName,    setNewWsName]    = useState('')
-  const [addingWs,     setAddingWs]     = useState(false)
-  const [renamingWs,   setRenamingWs]   = useState(null)
-  const [renameVal,    setRenameVal]    = useState('')
-  const fileRef = useRef()
+  const set = (patch) => setTheme(prev => ({ ...prev, ...patch }))
 
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') handleClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
+  const t = theme
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('theme_presets').select('*')
-        .eq('user_id', session.user.id)
-      if (data) {
-        const map = {}
-        const names = { ...slotNames }
-        data.forEach(p => { map[p.slot] = p.config; names[p.slot] = p.name })
-        setPresets(map)
-        setSlotNames(names)
-      }
-    }
-    load()
-  }, [session])
-
-  useEffect(() => {
-    localStorage.setItem('current_theme', JSON.stringify(theme))
-    window.dispatchEvent(new Event('theme_cols_changed'))
-
-    const r = document.documentElement.style
-    r.setProperty('--bg',               theme.bg)
-    r.setProperty('--bg2',              theme.bg2)
-    r.setProperty('--bg3',              theme.bg3)
-    r.setProperty('--card',             theme.card)
-    r.setProperty('--card-opacity',     theme.cardOpacity)
-    r.setProperty('--border-opacity',   theme.borderOpacity)
-    r.setProperty('--handle-opacity',   theme.handleOpacity ?? 0.15)
-    r.setProperty('--border',           theme.border)
-    r.setProperty('--border-hover',     theme.borderHover)
-    r.setProperty('--text',             theme.text)
-    r.setProperty('--text-dim',         theme.textDim)
-    r.setProperty('--accent',           theme.accent)
-    r.setProperty('--accent-dim',       theme.accent + '33')
-    r.setProperty('--accent-glow',      theme.accent + '22')
-    r.setProperty('--danger',           theme.danger)
-    r.setProperty('--success',          theme.success)
-    r.setProperty('--btn-bg',           theme.btnBg)
-    r.setProperty('--btn-text',         theme.btnText)
-    r.setProperty('--font',             theme.font)
-    r.setProperty('--font-size',        theme.fontSize + 'px')
-    r.setProperty('--clock-size',       theme.clockSize + 'rem')
-    r.setProperty('--radius',           theme.radius + 'px')
-    r.setProperty('--radius-sm',        Math.max(2, theme.radius - 4) + 'px')
-    r.setProperty('--link-gap',         theme.linkGap + 'rem')
-    r.setProperty('--card-padding',     theme.cardPadding + 'rem')
-    r.setProperty('--sections-cols',    theme.sectionsCols)
-    r.setProperty('--favicon-opacity',  theme.faviconOpacity)
-    r.setProperty('--favicon-filter',   theme.faviconGreyscale ? 'grayscale(1)' : 'none')
-    r.setProperty('--main-gap-top',     (theme.mainGapTop ?? 12) + 'px')
-    document.body.style.zoom = theme.pageScale
-  }, [theme])
-
-  const set = (key, val) => setTheme(t => ({ ...t, [key]: val }))
-
-  const loadSlot = (slot) => {
-    setActiveSlot(slot)
-    if (presets[slot]) setTheme({ ...DEFAULT_THEME, ...presets[slot] })
+  const savePreset = (i) => {
+    const next = [...presets]; next[i] = { ...t }
+    setPresets(next)
+    try { localStorage.setItem('theme-presets', JSON.stringify(next)) } catch {}
   }
+  const loadPreset = (i) => { if (presets[i]) setTheme({ ...presets[i] }) }
 
-  const saveSlot = async (slot) => {
-    if (!slot) return
-    await supabase.from('theme_presets').upsert({
-      user_id: session.user.id, slot, name: slotNames[slot], config: theme,
-    }, { onConflict: 'user_id,slot' })
-    setPresets(p => ({ ...p, [slot]: theme }))
-  }
+  const isPatternBg = ['bg-dots','bg-grid','bg-lines','bg-crosshatch','bg-carbon','bg-topo','bg-hex','bg-circuit'].includes(t.bgStyle)
+  const isGradientBg = t.bgStyle === 'bg-gradient'
+  const isImageBg = t.bgStyle === 'bg-image'
 
-  const handleBgImage = (e) => {
-    const file = e.target.files[0]
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (ev) => {
-      localStorage.setItem('bg_image', ev.target.result)
-      setBgImage(ev.target.result)
-      setBgPreset('image')
-    }
+    reader.onload = ev => set({ bgImage: ev.target.result })
     reader.readAsDataURL(file)
   }
 
-  const clearBgImage = () => {
-    localStorage.removeItem('bg_image')
-    setBgImage(null)
-    setBgPreset('noise')
-  }
-
-  const resetTheme = () => {
-    if (!confirm('⚠ Reset ALL theme settings to defaults?\n\nSaved presets will not be affected.')) return
-    setTheme(DEFAULT_THEME)
-  }
-
-  const handleClose = async () => {
-    setSaving(true)
-    try {
-      await supabase.from('user_settings').upsert({
-        user_id:         session.user.id,
-        clock_format:    clockFormat,
-        open_in_new_tab: openNewTab,
-        bg_preset:       bgPreset,
-        weather_name:    weatherName,
-        weather_lat:     parseFloat(weatherLat),
-        weather_lon:     parseFloat(weatherLon),
-      }, { onConflict: 'user_id' })
-
-      if (activeSlot) await saveSlot(activeSlot)
-
-      onSettingsChange({
-        clock_format:    clockFormat,
-        open_in_new_tab: openNewTab,
-        bg_preset:       bgPreset,
-        weather_name:    weatherName,
-        weather_lat:     parseFloat(weatherLat),
-        weather_lon:     parseFloat(weatherLon),
-        showClock, showWeather, showSearch, showNotes,
-      })
-    } finally {
-      setSaving(false)
-      onClose()
-    }
-  }
-
-  const handleAddWs = async (e) => {
-    e.preventDefault()
-    if (!newWsName.trim()) return
-    await onAddWorkspace(newWsName.trim())
-    setNewWsName('')
-    setAddingWs(false)
-  }
-
-  const startRename = (ws) => { setRenamingWs(ws.id); setRenameVal(ws.name) }
-
-  const submitRename = async (e, id) => {
-    e.preventDefault()
-    await onRenameWorkspace(id, renameVal)
-    setRenamingWs(null)
-  }
-
   return (
-    <div className="settings-panel" data-side={panelSide}>
+    <>
+      <div className="settings-veil" />
+      <div className="settings-panel" data-side={side}>
+        {/* ── Header ── */}
+        <div className="settings-header">
+          <span style={{ fontWeight: 600, fontSize: '0.9em' }}>Settings</span>
+          <button className="icon-btn" onClick={onClose} title="Close">✕</button>
+        </div>
 
-      <div className="settings-header">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-          <span style={{ fontWeight: 500 }}>Settings</span>
-          <span style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>Changes apply live</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-          {/* ⇐/⇒ side toggle */}
-          <button
-            onClick={toggleSide}
-            title={panelSide === 'right' ? 'Move panel to left' : 'Move panel to right'}
-            style={{
-              background: 'none',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--text-dim)',
-              padding: '0.22rem 0.55rem',
-              fontSize: '0.82em',
-              cursor: 'pointer',
-              fontFamily: 'var(--font)',
-              lineHeight: 1,
-            }}>
-            {panelSide === 'right' ? '⇐' : '⇒'}
-          </button>
-          {/* ✕ saves and closes */}
-          <button className="icon-btn" onClick={handleClose} title="Save & close">
-            {saving ? '…' : '✕'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Workspaces ── */}
-      <SettingsSection title="Workspaces">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {workspaces.map(ws => (
-            <div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {renamingWs === ws.id ? (
-                <form onSubmit={e => submitRename(e, ws.id)}
-                  style={{ flex: 1, display: 'flex', gap: '0.4rem' }}>
-                  <input className="input" value={renameVal}
-                    onChange={e => setRenameVal(e.target.value)} autoFocus style={{ flex: 1 }} />
-                  <button className="btn btn-primary" type="submit">Save</button>
-                  <button className="btn" type="button" onClick={() => setRenamingWs(null)}>✕</button>
-                </form>
-              ) : (
-                <>
-                  <button
-                    className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-                    style={{ flex: 1, textAlign: 'left' }}
-                    onClick={() => onSwitchWorkspace(ws.id)}>
-                    {ws.name} {activeWs === ws.id && '✓'}
-                  </button>
-                  <button className="icon-btn" onClick={() => startRename(ws)} title="Rename">✎</button>
-                  {workspaces.length > 1 && (
-                    <button className="icon-btn" onClick={() => onDeleteWorkspace(ws.id)}
-                      title="Delete workspace" style={{ color: 'var(--danger)' }}>✕</button>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-        {workspaces.length < 5 && (
-          addingWs ? (
-            <form onSubmit={handleAddWs} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input className="input" value={newWsName}
-                onChange={e => setNewWsName(e.target.value)}
-                placeholder="Workspace name" autoFocus style={{ flex: 1 }} />
-              <button className="btn btn-primary" type="submit">Add</button>
-              <button className="btn" type="button" onClick={() => setAddingWs(false)}>✕</button>
+        {/* ══════════════════════════════
+            1. WORKSPACES
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Workspaces</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+            {workspaces.map(ws => (
+              <div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+                <button
+                  onClick={() => onWorkspaceChange(ws.id)}
+                  style={{
+                    padding: '0.28rem 0.65rem', borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${ws.id === activeWs ? 'var(--accent)' : 'var(--border)'}`,
+                    background: ws.id === activeWs ? 'var(--accent-dim)' : 'transparent',
+                    color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)',
+                    fontSize: '0.8em', cursor: 'pointer', fontFamily: 'var(--font)',
+                  }}>
+                  {ws.name}
+                </button>
+                {workspaces.length > 1 && (
+                  <button onClick={() => onDeleteWorkspace(ws.id)}
+                    style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75em', padding: '0 0.2rem' }}
+                    title="Delete workspace">✕</button>
+                )}
+              </div>
+            ))}
+          </div>
+          {addingWs ? (
+            <form onSubmit={e => { e.preventDefault(); if (newWsName.trim()) { onCreateWorkspace(newWsName.trim()); setNewWsName(''); setAddingWs(false) } }}
+              style={{ display: 'flex', gap: '0.4rem' }}>
+              <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
+                placeholder="Workspace name" autoFocus style={{ flex: 1, fontSize: '0.82em' }} />
+              <button className="btn btn-primary" type="submit" style={{ fontSize: '0.78em' }}>Add</button>
+              <button className="btn" type="button" style={{ fontSize: '0.78em' }} onClick={() => setAddingWs(false)}>✕</button>
             </form>
           ) : (
-            <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              style={{ fontSize: '0.82em', alignSelf: 'flex-start' }}>
-              + add workspace
-            </button>
-          )
-        )}
-        <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          Max 5 workspaces. Active workspace remembered per device.
-        </div>
-      </SettingsSection>
-
-      {/* ── Theme Presets ── */}
-      <SettingsSection title="Theme Presets">
-        <div className="preset-slots">
-          {[1,2,3,4].map(slot => (
-            <button key={slot}
-              className={`preset-slot${activeSlot === slot ? ' active' : ''}`}
-              onClick={() => loadSlot(slot)}>
-              {slotNames[slot]}
-            </button>
-          ))}
-        </div>
-        {activeSlot && (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input className="input" value={slotNames[activeSlot]}
-              onChange={e => setSlotNames(n => ({ ...n, [activeSlot]: e.target.value }))}
-              placeholder="Preset name" style={{ flex: 1 }} />
-            <button className="btn btn-primary" onClick={() => saveSlot(activeSlot)}>
-              Save to {activeSlot}
-            </button>
-          </div>
-        )}
-      </SettingsSection>
-
-      {/* ── Colors ── */}
-      <SettingsSection title="Colors">
-        {[
-          ['Background',    'bg'],
-          ['Surface',       'bg2'],
-          ['Input / Hover', 'bg3'],
-          ['Card color',    'card'],
-          ['Border',        'border'],
-          ['Border hover',  'borderHover'],
-          ['Text',          'text'],
-          ['Text dim',      'textDim'],
-          ['Accent',        'accent'],
-          ['Danger',        'danger'],
-          ['Success',       'success'],
-          ['Button BG',     'btnBg'],
-          ['Button text',   'btnText'],
-        ].map(([label, key]) => (
-          <Row key={key} label={label}>
-            <input type="color" className="color-input"
-              value={theme[key]} onChange={e => set(key, e.target.value)} />
-          </Row>
-        ))}
-      </SettingsSection>
-
-      {/* ── Transparency ── */}
-      <SettingsSection title="Transparency & Handles">
-        <Row label={`Card opacity: ${Math.round(theme.cardOpacity * 100)}%`}>
-          <input type="range" min="0.05" max="1" step="0.05"
-            value={theme.cardOpacity}
-            onChange={e => set('cardOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Border opacity: ${Math.round(theme.borderOpacity * 100)}%`}>
-          <input type="range" min="0" max="1" step="0.05"
-            value={theme.borderOpacity}
-            onChange={e => set('borderOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Handle opacity: ${Math.round((theme.handleOpacity ?? 0.15) * 100)}%`}>
-          <input type="range" min="0" max="1" step="0.05"
-            value={theme.handleOpacity ?? 0.15}
-            onChange={e => set('handleOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-      </SettingsSection>
-
-      {/* ── Typography ── */}
-      <SettingsSection title="Typography">
-        <Row label="Font family">
-          <select className="input" style={{ width: 'auto', flex: 1 }}
-            value={theme.font} onChange={e => set('font', e.target.value)}>
-            {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-        </Row>
-        <Row label={`Base size: ${theme.fontSize}px`}>
-          <input type="range" min="11" max="20" step="1"
-            value={theme.fontSize}
-            onChange={e => set('fontSize', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Clock size: ${theme.clockSize}rem`}>
-          <input type="range" min="0.7" max="2" step="0.05"
-            value={theme.clockSize}
-            onChange={e => set('clockSize', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-      </SettingsSection>
-
-      {/* ── Layout ── */}
-      <SettingsSection title="Layout">
-        <Row label={`Page scale: ${Math.round(theme.pageScale * 100)}%`}>
-          <input type="range" min="0.5" max="1.5" step="0.05"
-            value={theme.pageScale}
-            onChange={e => set('pageScale', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Section columns: ${theme.sectionsCols}`}>
-          <input type="range" min="1" max="5" step="1"
-            value={theme.sectionsCols}
-            onChange={e => set('sectionsCols', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Card padding: ${theme.cardPadding}rem`}>
-          <input type="range" min="0.1" max="2" step="0.1"
-            value={theme.cardPadding}
-            onChange={e => set('cardPadding', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Link spacing: ${theme.linkGap}rem`}>
-          <input type="range" min="0" max="1.5" step="0.05"
-            value={theme.linkGap}
-            onChange={e => set('linkGap', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Border radius: ${theme.radius}px`}>
-          <input type="range" min="0" max="24" step="1"
-            value={theme.radius}
-            onChange={e => set('radius', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Topbar gap: ${theme.mainGapTop ?? 12}px`}>
-          <input type="range" min="0" max="60" step="2"
-            value={theme.mainGapTop ?? 12}
-            onChange={e => set('mainGapTop', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-      </SettingsSection>
-
-      {/* ── Favicons ── */}
-      <SettingsSection title="Link Icons (Favicons)">
-        <Row label={`Opacity: ${Math.round(theme.faviconOpacity * 100)}%`}>
-          <input type="range" min="0" max="1" step="0.05"
-            value={theme.faviconOpacity}
-            onChange={e => set('faviconOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label="Greyscale icons">
-          <Toggle checked={theme.faviconGreyscale}
-            onChange={v => set('faviconGreyscale', v)} />
-        </Row>
-      </SettingsSection>
-
-      {/* ── Background ── */}
-      <SettingsSection title="Background">
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {BG_PRESETS.map(p => (
-            <button key={p}
-              className={`preset-slot${bgPreset === p ? ' active' : ''}`}
-              onClick={() => { setBgPreset(p); onSettingsChange({ bg_preset: p }) }}
-              style={{ flex: 'none' }}>
-              {p}
-            </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => fileRef.current.click()}>
-            📁 Upload image
-          </button>
-          {bgImage && (
-            <button className="btn btn-danger" onClick={clearBgImage}>Remove image</button>
+            <button className="btn" style={{ alignSelf: 'flex-start', fontSize: '0.78em' }}
+              onClick={() => setAddingWs(true)}>+ New workspace</button>
           )}
-          <input ref={fileRef} type="file" accept="image/*"
-            style={{ display: 'none' }} onChange={handleBgImage} />
         </div>
-        {bgImage && (
-          <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-            ✓ Saved locally on this device only
-          </div>
-        )}
-      </SettingsSection>
 
-      {/* ── Show / Hide ── */}
-      <SettingsSection title="Show / Hide Elements">
-        <Row label="Clock in topbar">
-          <Toggle checked={showClock}
-            onChange={v => { setShowClock(v); onSettingsChange({ showClock: v }) }} />
-        </Row>
-        <Row label="Weather in topbar">
-          <Toggle checked={showWeather}
-            onChange={v => { setShowWeather(v); onSettingsChange({ showWeather: v }) }} />
-        </Row>
-        <Row label="Search bar">
-          <Toggle checked={showSearch}
-            onChange={v => { setShowSearch(v); onSettingsChange({ showSearch: v }) }} />
-        </Row>
-        <Row label="Notes panel">
-          <Toggle checked={showNotes}
-            onChange={v => { setShowNotes(v); onSettingsChange({ showNotes: v }) }} />
-        </Row>
-      </SettingsSection>
+        {/* ══════════════════════════════
+            2. BACKGROUND
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Background</div>
 
-      {/* ── Clock & Search ── */}
-      <SettingsSection title="Clock & Search">
-        <Row label="Clock format">
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
-            {['12h','24h'].map(f => (
-              <button key={f}
-                className={`engine-tab${clockFormat === f ? ' active' : ''}`}
-                onClick={() => setClockFormat(f)}>{f}
+          {/* Style picker grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.3rem' }}>
+            {BG_OPTIONS.map(opt => (
+              <button key={opt.value}
+                onClick={() => set({ bgStyle: opt.value })}
+                style={{
+                  padding: '0.28rem 0.2rem', fontSize: '0.72em', borderRadius: 'var(--radius-sm)',
+                  border: `1px solid ${t.bgStyle === opt.value ? 'var(--accent)' : 'var(--border)'}`,
+                  background: t.bgStyle === opt.value ? 'var(--accent-dim)' : 'transparent',
+                  color: t.bgStyle === opt.value ? 'var(--accent)' : 'var(--text-dim)',
+                  cursor: 'pointer', fontFamily: 'var(--font)', transition: 'all 0.12s',
+                }}>
+                {opt.label}
               </button>
             ))}
           </div>
-        </Row>
-        <Row label="Open links in new tab">
-          <Toggle checked={openNewTab} onChange={setOpenNewTab} />
-        </Row>
-        <Row label="Search engine URL">
-          <input
-            className="input"
-            style={{ flex: 1, fontSize: '0.78em' }}
-            defaultValue={localStorage.getItem('search_url') || 'https://www.google.com.au/search?q='}
-            placeholder="https://www.google.com.au/search?q="
-            onBlur={e => {
-              localStorage.setItem('search_url', e.target.value)
-              window.dispatchEvent(new Event('search_url_changed'))
-            }} />
-        </Row>
-      </SettingsSection>
 
-      {/* ── Weather ── */}
-      <SettingsSection title="Weather Location">
-        <input className="input" placeholder="City name"
-          value={weatherName} onChange={e => setWeatherName(e.target.value)} />
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input className="input" placeholder="Latitude e.g. -37.8136"
-            value={weatherLat} onChange={e => setWeatherLat(e.target.value)} />
-          <input className="input" placeholder="Longitude e.g. 144.9631"
-            value={weatherLon} onChange={e => setWeatherLon(e.target.value)} />
+          {/* Pattern options */}
+          {isPatternBg && <>
+            <ColPicker label="Pattern colour" themeKey="patternColor" t={t} set={set} />
+            <Sl label="Pattern opacity" min={0.1} max={1} step={0.05} value={t.patternOpacity ?? 1} onChange={v => set({ patternOpacity: v })} />
+          </>}
+
+          {/* Gradient options */}
+          {isGradientBg && <>
+            <Row label="Direction">
+              <select value={t.gradientAngle ?? 135}
+                onChange={e => set({ gradientAngle: Number(e.target.value) })}
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.8em', padding: '0.2rem 0.4rem' }}>
+                {[[0,'↑'],[45,'↗'],[90,'→'],[135,'↘'],[180,'↓'],[225,'↙'],[270,'←'],[315,'↖']].map(([v,l]) =>
+                  <option key={v} value={v}>{l} {v}°</option>
+                )}
+              </select>
+            </Row>
+            <Row label="Colours">
+              <input value={t.gradientColors ?? ''} onChange={e => set({ gradientColors: e.target.value })}
+                placeholder="hex,hex,hex" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.78em', padding: '0.22rem 0.5rem', width: 160, fontFamily: 'monospace' }} />
+            </Row>
+          </>}
+
+          {/* Image options */}
+          {isImageBg && <>
+            <Row label="Image">
+              <button className="btn" style={{ fontSize: '0.78em' }} onClick={() => imgRef.current?.click()}>
+                {t.bgImage ? 'Change image' : 'Upload image'}
+              </button>
+              <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+            </Row>
+            <Sl label="Opacity" min={0.1} max={1} step={0.05} value={t.bgImageOpacity ?? 1} onChange={v => set({ bgImageOpacity: v })} />
+          </>}
         </div>
-        <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          Find at{' '}
-          <a href="https://latlong.net" target="_blank" rel="noreferrer"
-            style={{ color: 'var(--accent)' }}>latlong.net</a>
+
+        {/* ══════════════════════════════
+            3. COLOURS
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Colours</div>
+          <ColPicker label="Background"    themeKey="bg"       t={t} set={set} />
+          <ColPicker label="Card / surface" themeKey="card"    t={t} set={set} />
+          <Sl label="Card opacity" min={0} max={1} step={0.05} value={t.cardOpacity ?? 1} onChange={v => set({ cardOpacity: v })} />
+          <ColPicker label="Border"        themeKey="border"   t={t} set={set} />
+          <Sl label="Border opacity" min={0} max={1} step={0.05} value={t.borderOpacity ?? 1} onChange={v => set({ borderOpacity: v })} />
+          <ColPicker label="Accent"        themeKey="accent"   t={t} set={set} />
+          <ColPicker label="Text"          themeKey="text"     t={t} set={set} />
+          <ColPicker label="Text dim"      themeKey="textDim"  t={t} set={set} />
+          <ColPicker label="Section titles" themeKey="titleColor" t={t} set={set} />
+          <ColPicker label="Button"        themeKey="btnBg"    t={t} set={set} />
+          <ColPicker label="Notes surface" themeKey="notesBg"  t={t} set={set} />
         </div>
-      </SettingsSection>
 
-      {/* ── Import / Export ── */}
-      <SettingsSection title="Import / Export">
-        <ImportExport session={session} workspaceId={activeWs} onRefresh={() => {}} />
-        <button className="btn btn-primary" onClick={onExportAll} style={{ width: '100%' }}>
-          ⬇ Export everything (full backup)
-        </button>
-      </SettingsSection>
+        {/* ══════════════════════════════
+            4. TYPOGRAPHY
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Typography</div>
+          <Row label="Font">
+            <select value={t.font ?? 'DM Mono'}
+              onChange={e => set({ font: e.target.value })}
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.8em', padding: '0.2rem 0.5rem', fontFamily: `'${e => e}', monospace` }}>
+              {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </Row>
+          <Sl label="Body size"     min={10} max={20} value={t.workspaceFontSize ?? 14} onChange={v => set({ workspaceFontSize: v })} unit="px" />
+          <Sl label="Topbar size"   min={10} max={16} value={t.topbarFontSize ?? 12}    onChange={v => set({ topbarFontSize: v })}    unit="px" />
+          <Sl label="Settings size" min={10} max={16} value={t.settingsFontSize ?? 13}  onChange={v => set({ settingsFontSize: v })}  unit="px" />
+          <Sl label="Notes size"    min={10} max={18} value={t.notesFontSize ?? 13}     onChange={v => set({ notesFontSize: v })}     unit="px" />
+          <Sl label="Clock scale"   min={0.6} max={2.5} step={0.05} value={t.clockWidgetScale ?? 1} onChange={v => set({ clockWidgetScale: v })} unit="×" />
+        </div>
 
-      {/* ── Danger Zone ── */}
-      <SettingsSection title="⚠ Danger Zone">
-        <button className="btn btn-danger" onClick={resetTheme} style={{ width: '100%' }}>
-          ↺ Reset theme to defaults
-        </button>
-        <button className="btn btn-danger" onClick={onResetLinks} style={{ width: '100%' }}>
-          ✕ Clear all links in this workspace
-        </button>
-      </SettingsSection>
+        {/* ══════════════════════════════
+            5. SPACING & LAYOUT
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Spacing & Layout</div>
+          <Sl label="Columns"         min={1} max={6}   value={t.sectionsCols ?? 2}     onChange={v => set({ sectionsCols: v })} />
+          <Sl label="Column gap"      min={0} max={32}  value={t.sectionGapH ?? 0}      onChange={v => set({ sectionGapH: v })}  unit="px" />
+          <Sl label="Section gap"     min={0} max={24}  value={t.sectionGap ?? 0}       onChange={v => set({ sectionGap: v })}   unit="px" />
+          <Sl label="Card padding"    min={0.25} max={2} step={0.05} value={t.cardPadding ?? 0.75} onChange={v => set({ cardPadding: v })} unit="rem" />
+          <Sl label="Link gap"        min={0} max={1.5} step={0.05} value={t.linkGap ?? 0.5}       onChange={v => set({ linkGap: v })}    unit="rem" />
+          <Sl label="Top gap"         min={0} max={48}  value={t.mainGapTop ?? 12}       onChange={v => set({ mainGapTop: v })}  unit="px" />
+          <Sl label="Notes width"     min={180} max={480} value={t.notesWidth ?? 240}   onChange={v => set({ notesWidth: v })}  unit="px" />
+        </div>
 
-      <div className="settings-footer" data-side={panelSide}>
-        <button className="btn btn-primary" onClick={handleClose} disabled={saving} style={{ flex: 1 }}>
-          {saving ? 'Saving…' : '✓ Save & Close'}
-        </button>
+        {/* ══════════════════════════════
+            6. SHAPE & SCALE
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Shape & Scale</div>
+          <Sl label="Card radius"    min={0} max={20} value={t.radius ?? 10}          onChange={v => set({ radius: v })}          unit="px" />
+          <Sl label="Button radius"  min={0} max={16} value={t.radiusSm ?? 6}         onChange={v => set({ radiusSm: v })}        unit="px" />
+          <Sl label="Section radius" min={0} max={16} value={t.sectionRadius ?? 0}    onChange={v => set({ sectionRadius: v })}   unit="px" />
+          <Sl label="Page scale"     min={0.5} max={1.5} step={0.02} value={t.pageScale ?? 1} onChange={v => set({ pageScale: v })} unit="×" />
+          <Sl label="Handle opacity" min={0} max={1} step={0.05} value={t.handleOpacity ?? 0.15} onChange={v => set({ handleOpacity: v })} />
+        </div>
+
+        {/* ══════════════════════════════
+            7. FAVICONS
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Favicons</div>
+          <Sl label="Size"    min={10} max={24} value={t.faviconSize ?? 13}     onChange={v => set({ faviconSize: v })}    unit="px" />
+          <Sl label="Opacity" min={0.1} max={1} step={0.05} value={t.faviconOpacity ?? 1} onChange={v => set({ faviconOpacity: v })} />
+          <Row label="Filter">
+            <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+              {FAVICON_FILTERS.map(f => (
+                <button key={f.value} onClick={() => set({ faviconFilter: f.value })}
+                  style={{
+                    padding: '0.2rem 0.5rem', fontSize: '0.75em', borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${t.faviconFilter === f.value ? 'var(--accent)' : 'var(--border)'}`,
+                    background: t.faviconFilter === f.value ? 'var(--accent-dim)' : 'transparent',
+                    color: t.faviconFilter === f.value ? 'var(--accent)' : 'var(--text-dim)',
+                    cursor: 'pointer', fontFamily: 'var(--font)',
+                  }}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </Row>
+        </div>
+
+        {/* ══════════════════════════════
+            8. BEHAVIOUR
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Behaviour</div>
+          <Row label="Open links in new tab">
+            <Toggle checked={t.openInNewTab ?? true} onChange={v => set({ openInNewTab: v })} />
+          </Row>
+          <Row label="Lock layout">
+            <Toggle checked={t.locked ?? false} onChange={v => set({ locked: v })} />
+          </Row>
+          <Row label="Search URL">
+            <input value={t.searchUrl ?? 'https://google.com/search?q='}
+              onChange={e => set({ searchUrl: e.target.value })}
+              style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)', fontSize: '0.75em', padding: '0.22rem 0.5rem', width: 170, fontFamily: 'monospace' }} />
+          </Row>
+          <Row label="Settings side">
+            <div style={{ display: 'flex', gap: '0.3rem' }}>
+              {['right','left'].map(s => (
+                <button key={s} onClick={() => set({ settingsSide: s })}
+                  style={{
+                    padding: '0.2rem 0.55rem', fontSize: '0.75em', borderRadius: 'var(--radius-sm)',
+                    border: `1px solid ${(t.settingsSide ?? 'right') === s ? 'var(--accent)' : 'var(--border)'}`,
+                    background: (t.settingsSide ?? 'right') === s ? 'var(--accent-dim)' : 'transparent',
+                    color: (t.settingsSide ?? 'right') === s ? 'var(--accent)' : 'var(--text-dim)',
+                    cursor: 'pointer', fontFamily: 'var(--font)',
+                  }}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </Row>
+        </div>
+
+        {/* ══════════════════════════════
+            9. THEME PRESETS
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Theme Presets</div>
+          <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
+            Click to load · right-click to save current theme
+          </div>
+          <div className="preset-slots">
+            {presets.map((p, i) => (
+              <button key={i}
+                className={`preset-slot${p ? '' : ''}`}
+                onClick={() => loadPreset(i)}
+                onContextMenu={e => { e.preventDefault(); savePreset(i) }}
+                title={p ? `Load preset ${i + 1} (right-click to overwrite)` : `Right-click to save current theme as preset ${i + 1}`}
+                style={{
+                  background: p ? `#${p.bg}` : 'var(--bg3)',
+                  borderColor: p ? `#${p.accent}` : 'var(--border)',
+                  color: p ? `#${p.text}` : 'var(--text-muted)',
+                }}>
+                {p ? <span style={{ fontSize: '0.85em', fontWeight: 600 }}>{i + 1}</span> : <span style={{ opacity: 0.4 }}>{i + 1}</span>}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ══════════════════════════════
+            10. DATA
+        ══════════════════════════════ */}
+        <div className="settings-section">
+          <div className="settings-title">Data</div>
+          <ImportExport userId={userId} />
+          <button className="btn btn-danger" style={{ fontSize: '0.8em', marginTop: '0.25rem' }}
+            onClick={() => { if (confirm('Reset all settings to defaults?')) setTheme({}) }}>
+            Reset to defaults
+          </button>
+        </div>
+
       </div>
 
-    </div>
+      {/* ── Footer ── */}
+      <div className="settings-footer" data-side={side}>
+        <button className="btn btn-ghost" style={{ fontSize: '0.82em' }} onClick={onSignOut}>Sign out</button>
+      </div>
+    </>
   )
 }
