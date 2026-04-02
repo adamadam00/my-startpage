@@ -1,710 +1,665 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react'
-import { supabase } from './lib/supabase'
-import Auth      from './components/Auth'
-import Clock     from './components/Clock'
-import Weather   from './components/Weather'
-import SearchBar from './components/SearchBar'
-import Notes     from './components/Notes'
-import Sections  from './components/Sections'
-import Settings  from './components/Settings'
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=DM+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=Figtree:wght@300;400;500;600&display=swap');
 
-const BUILD      = '31 Mar 2026'
-const PATTERN_BG = ['bg-dots', 'bg-grid', 'bg-lines']
-const PLASMA_BG   = ['bg-plasma', 'bg-inferno', 'bg-mint', 'bg-dusk', 'bg-mono']
-
-const BG_OPTIONS = [
-  { value: 'bg-solid',    label: 'Solid' },
-  { value: 'bg-noise',    label: 'Noise' },
-  { value: 'bg-dots',     label: 'Dots' },
-  { value: 'bg-grid',     label: 'Grid' },
-  { value: 'bg-lines',    label: 'Lines' },
-  { value: 'bg-gradient', label: 'Gradient' },
-  { value: 'bg-mesh',     label: 'Blobs' },
-  { value: 'bg-aurora',   label: 'Aurora' },
-  { value: 'bg-starfield',label: 'Starfield' },
-  { value: 'bg-stars',    label: 'Stars' },
-  { value: 'bg-nebula',   label: 'Nebula' },
-  { value: 'bg-circuit',  label: 'Circuit' },
-  { value: 'bg-plasma',   label: 'Plasma' },
-  { value: 'bg-inferno',  label: 'Inferno' },
-  { value: 'bg-mint',     label: 'Mint' },
-  { value: 'bg-dusk',     label: 'Dusk' },
-  { value: 'bg-mono',     label: 'Mono' },
-  { value: 'bg-image',    label: 'Image' },
-]
-
-const FONTS = [
-  'DM Mono', 'JetBrains Mono', 'IBM Plex Sans',
-  'Inter', 'Outfit', 'Space Grotesk', 'Figtree', 'Geist',
-]
-
-const DEFAULT_THEME = {
-  bg:                '#0c0c0f',
-  card:              '#13131a',
-  cardOpacity:       '1',
-  border:            '#2a2a3a',
-  borderOpacity:     '1',
-  accent:            '#6c8fff',
-  text:              '#e8e8f0',
-  textDim:           '#7878a0',
-  titleColor:        '#7878a0',
-  btnBg:             '#1e3a8a',
-  notesBg:           '#13131a',
-  notesInputBg:      '#0c0c0f',
-  bgStyle:           'bg-dots',
-  plasmaSpeed:       '1',
-  plasmaBlur:        '1',
-  patternColor:      '#2a2a3a',
-  patternOpacity:    '1',
-  gradientType:      'linear',
-  gradientAngle:     '135',
-  gradientColors:    '["#6c8fff","#9c6fff","#0c0c0f"]',
-  font:              'DM Mono',
-  workspaceFontSize: '14',
-  topbarFontSize:    '12',
-  settingsFontSize:  '13',
-  clockWidgetScale:  '1',
-  radius:            '10',
-  radiusSm:          '6',
-  sectionRadius:     '0',
-  linkGap:           '0.5',
-  sectionsCols:      '2',
-  sectionGap:        '0',
-  sectionGapH:       '0',
-  mainGapTop:        '12',
-  cardPadding:       '0.75',
-  pageScale:         '1',
-  handleOpacity:     '0.15',
-  faviconOpacity:    '1',
-  faviconFilter:     'none',
-  faviconSize:       '13',
-  bgImage:           '',
-  bgImageOpacity:    '1',
-  openInNewTab:      'true',
-  notesFontSize:     '13',
-  notesWidth:        '240',
-  starfieldSpeed:    '1',
-  starfieldColor:    '#ffffff',
-  auroraSpeed:       '1',
-  auroraColor:       '#6c8fff',
-  meshSpeed:         '1',
-  meshColor:         '#6c8fff',
-  laserSpeed:        '1',
-  laserColor:        '#6c8fff',
-  laserColor2:       '#ff6bff',
-  editbarScale:      '1',
-  searchUrl:         'https://google.com/search?q=',
-  locked:            'false',
+/* ─────────────────────────────────────────
+   CSS Variables
+───────────────────────────────────────── */
+:root {
+  --bg:                 #0c0c0f;
+  --bg2:                #13131a;
+  --bg3:                #1a1a24;
+  --card:               #13131a;
+  --card-opacity:       1;
+  --border:             #2a2a3a;
+  --border-hover:       #3d3d55;
+  --border-opacity:     1;
+  --handle-opacity:     0.15;
+  --text:               #e8e8f0;
+  --text-dim:           #7878a0;
+  --text-muted:         #4a4a6a;
+  --title-color:        #7878a0;
+  --accent:             #6c8fff;
+  --accent-dim:         #3355cc22;
+  --accent-glow:        #6c8fff33;
+  --danger:             #ff6b6b;
+  --success:            #6bffb8;
+  --btn-bg:             #1e3a8a;
+  --btn-text:           #ffffff;
+  --notes-bg:           #13131a;
+  --notes-input-bg:     #0c0c0f;
+  --font:               'DM Mono', monospace;
+  --font-size:          14px;
+  --topbar-font-size:   12px;
+  --settings-font-size: 13px;
+  --clock-widget-size:  1rem;
+  --notes-font-size:    13px;
+  --notes-width:        240px;
+  --radius:             10px;
+  --radius-sm:          6px;
+  --section-radius:     0px;
+  --link-gap:           0.5rem;
+  --card-padding:       0.75rem;
+  --section-gap:        0px;
+  --section-gap-h:      0px;
+  --main-gap-top:       12px;
+  --page-scale:         1;
+  --favicon-opacity:    1;
+  --favicon-filter:     none;
+  --favicon-size:       13px;
+  --pattern-color:      #2a2a3a;
+  --pattern-opacity:    1;
+  --plasma-c1:          rgba(108,143,255,0.28);
+  --plasma-c2:          rgba(156,111,255,0.25);
+  --plasma-c3:          rgba(80,200,255,0.16);
+  --plasma-c4:          rgba(255,100,200,0.12);
+  --plasma-c5:          rgba(156,111,255,0.12);
+  --plasma-c6:          rgba(108,143,255,0.16);
+  --plasma-speed-a:     20s;
+  --plasma-speed-b:     28s;
+  --plasma-blur-a:      45px;
+  --plasma-blur-b:      65px;
 }
 
-function loadTheme() {
-  try { return { ...DEFAULT_THEME, ...JSON.parse(localStorage.getItem('current_theme') || '{}') } }
-  catch { return { ...DEFAULT_THEME } }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { height: 100%; overflow: hidden; }
+
+body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--font-size);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  transform-origin: top left;
+  transform: scale(var(--page-scale));
+  width: calc(100% / var(--page-scale));
+  height: calc(100% / var(--page-scale));
 }
 
-function applyTheme(t) {
-  const r = document.documentElement.style
-  r.setProperty('--bg',                 t.bg)
-  r.setProperty('--bg2',                t.bg)
-  r.setProperty('--bg3',                t.card)
-  r.setProperty('--card',               t.card)
-  r.setProperty('--card-opacity',       t.cardOpacity)
-  r.setProperty('--border',             t.border)
-  r.setProperty('--border-opacity',     t.borderOpacity)
-  r.setProperty('--accent',             t.accent)
-  r.setProperty('--accent-dim',         t.accent + '22')
-  r.setProperty('--accent-glow',        t.accent + '33')
-  r.setProperty('--text',               t.text)
-  r.setProperty('--text-dim',           t.textDim)
-  r.setProperty('--text-muted',         t.textDim + '88')
-  r.setProperty('--title-color',        t.titleColor)
-  r.setProperty('--btn-bg',             t.btnBg)
-  r.setProperty('--btn-text',           '#ffffff')
-  r.setProperty('--notes-bg',           t.notesBg      ?? t.card)
-  r.setProperty('--notes-input-bg',     t.notesInputBg ?? t.bg)
-  r.setProperty('--font',               `'${t.font}', monospace`)
-  r.setProperty('--font-size',          t.workspaceFontSize  + 'px')
-  r.setProperty('--topbar-font-size',   t.topbarFontSize     + 'px')
-  r.setProperty('--settings-font-size', (t.settingsFontSize ?? '13') + 'px')
-  r.setProperty('--clock-widget-size',  t.clockWidgetScale   + 'rem')
-  r.setProperty('--radius',             t.radius             + 'px')
-  r.setProperty('--radius-sm',          t.radiusSm           + 'px')
-  r.setProperty('--section-radius',     (t.sectionRadius ?? '0')   + 'px')
-  r.setProperty('--link-gap',           t.linkGap            + 'rem')
-  r.setProperty('--section-gap',        t.sectionGap         + 'px')
-  r.setProperty('--section-gap-h',      t.sectionGapH        + 'px')
-  r.setProperty('--main-gap-top',       (t.mainGapTop  ?? '12')   + 'px')
-  r.setProperty('--card-padding',       (t.cardPadding ?? '0.75') + 'rem')
-  r.setProperty('--page-scale',         t.pageScale)
-  r.setProperty('--handle-opacity',     t.handleOpacity)
-  r.setProperty('--favicon-opacity',    t.faviconOpacity)
-  r.setProperty('--favicon-filter',     t.faviconFilter)
-  r.setProperty('--favicon-size',       (t.faviconSize ?? '13') + 'px')
-  r.setProperty('--pattern-color',      t.patternColor)
-  r.setProperty('--pattern-opacity',    t.patternOpacity)
-  const _spd = parseFloat(t.plasmaSpeed ?? 1)
-  r.setProperty('--plasma-speed-a', (20 / _spd).toFixed(1) + 's')
-  r.setProperty('--plasma-speed-b', (28 / _spd).toFixed(1) + 's')
-  const _blr = parseFloat(t.plasmaBlur ?? 1)
-  r.setProperty('--plasma-blur-a',  (45 * _blr).toFixed(0) + 'px')
-  r.setProperty('--plasma-blur-b',  (65 * _blr).toFixed(0) + 'px')
-  r.setProperty('--notes-font-size',    t.notesFontSize + 'px')
-  r.setProperty('--notes-width',        t.notesWidth    + 'px')
-  // animated bg speed/colour
-  const _sf = parseFloat(t.starfieldSpeed ?? 1)
-  r.setProperty('--starfield-speed-a', (80  / _sf).toFixed(1) + 's')
-  r.setProperty('--starfield-speed-b', (130 / _sf).toFixed(1) + 's')
-  r.setProperty('--starfield-color',   t.starfieldColor ?? '#ffffff')
-  r.setProperty('--aurora-speed',      (12 / parseFloat(t.auroraSpeed ?? 1)).toFixed(1) + 's')
-  r.setProperty('--aurora-color',      t.auroraColor ?? '#6c8fff')
-  r.setProperty('--mesh-color',        t.meshColor ?? t.accent ?? '#6c8fff')
-  r.setProperty('--laser-color',       t.laserColor  ?? '#6c8fff')
-  r.setProperty('--laser-color2',      t.laserColor2 ?? '#ff6bff')
-  r.setProperty('--laser-speed',       t.laserSpeed  ?? '1')
-  r.setProperty('--editbar-scale',     t.editbarScale ?? '1')
+#root { height: 100%; overflow: hidden; }
+button { cursor: pointer; font-family: var(--font); }
+input, textarea, select { font-family: var(--font); font-size: var(--font-size); }
+a { color: inherit; text-decoration: none; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--border) 55%, var(--text-muted) 45%); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--border) 35%, var(--text-dim) 65%); }
+::selection { background: var(--accent-dim); color: var(--accent); }
+
+/* ─── Backgrounds ─── */
+.bg-layer { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+.bg-solid  { background: var(--bg); }
+
+.bg-noise {
+  background: var(--bg);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
-const lcKey = (id) => `ws_data_${id}`
-
-// ── Laser bounce canvas background ──────────────────────────────────────────
-function LaserCanvas({ color, color2, speed }) {
-  const ref = React.useRef()
-  React.useEffect(() => {
-    const canvas = ref.current; if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    let id
-    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
-    resize(); window.addEventListener('resize', resize)
-    const s = Math.max(0.2, parseFloat(speed) || 1)
-    const mk = (x, y, dx, dy, c) => ({ x, y, dx: dx*s, dy: dy*s, c, t: [] })
-    const beams = [
-      mk(200, 150,  2.2,  1.3, color  || '#6c8fff'),
-      mk(600, 400, -1.7,  1.9, color2 || '#ff6bff'),
-      mk(900, 200,  1.5, -2.1, color  || '#6c8fff'),
-      mk(400, 600, -2.4, -1.1, color2 || '#ff6bff'),
-    ]
-    ctx.fillStyle = '#05050f'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    const draw = () => {
-      ctx.fillStyle = 'rgba(5,5,15,0.18)'
-      ctx.fillRect(0, 0, canvas.width, canvas.height)
-      beams.forEach(b => {
-        b.x += b.dx; b.y += b.dy
-        if (b.x < 0 || b.x > canvas.width)  b.dx = -b.dx
-        if (b.y < 0 || b.y > canvas.height) b.dy = -b.dy
-        b.t.push({ x: b.x, y: b.y })
-        if (b.t.length > 80) b.t.shift()
-        ctx.save()
-        for (let i = 1; i < b.t.length; i++) {
-          const a   = i / b.t.length
-          const hex = Math.floor(a * 255).toString(16).padStart(2, '0')
-          ctx.beginPath()
-          ctx.moveTo(b.t[i-1].x, b.t[i-1].y)
-          ctx.lineTo(b.t[i].x,   b.t[i].y)
-          ctx.strokeStyle = b.c + hex
-          ctx.lineWidth   = 1 + a * 2.5
-          ctx.shadowColor = b.c
-          ctx.shadowBlur  = 18 * a
-          ctx.stroke()
-        }
-        // bright tip dot
-        ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2)
-        ctx.fillStyle   = '#ffffff'
-        ctx.shadowColor = b.c
-        ctx.shadowBlur  = 24
-        ctx.fill()
-        ctx.restore()
-      })
-      id = requestAnimationFrame(draw)
-    }
-    draw()
-    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', resize) }
-  }, [color, color2, speed])
-  return <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} />
+.bg-dots {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--pattern-color) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: var(--pattern-opacity);
 }
 
-export default function App() {
-  const [session,              setSession]              = useState(null)
-  const [loading,              setLoading]              = useState(true)
-  const [workspaces,           setWorkspaces]           = useState([])
-  const [activeWs,             setActiveWs]             = useState(null)
-  const [sections,             setSections]             = useState([])
-  const [links,                setLinks]                = useState([])
-  const [notes,                setNotes]                = useState([])
-  const [addingWs,             setAddingWs]             = useState(false)
-  const [newWsName,            setNewWsName]            = useState('')
-  const [showSettings,         setShowSettings]         = useState(false)
-  const [theme,                setTheme]                = useState(loadTheme)
-  const [themeSyncing,         setThemeSyncing]         = useState(false)
-  const [importingBackup,      setImportingBackup]      = useState(false)
-  const [addSectionTrigger,    setAddSectionTrigger]    = useState(0)
-  const [importSectionTrigger, setImportSectionTrigger] = useState(0)
-  const [collapseAllTrigger,   setCollapseAllTrigger]   = useState(0)
-  const [expandAllTrigger,     setExpandAllTrigger]     = useState(0)
-  const [allExpanded,          setAllExpanded]          = useState(true)
-  const fileRef       = useRef(null)
-  const backupFileRef = useRef(null)
-  const wsCache       = useRef({})
-  const sessionRef    = useRef(null)
-  const syncTimer     = useRef(null)
+.bg-grid {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--pattern-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--pattern-color) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: var(--pattern-opacity);
+}
 
-  useEffect(() => { sessionRef.current = session }, [session])
+.bg-gradient { background: var(--bg); }
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session); setLoading(false)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => subscription.unsubscribe()
-  }, [])
+.bg-mesh {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 50%, var(--accent-glow) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, #9c6fff22 0%, transparent 60%),
+    radial-gradient(ellipse at 60% 80%, #ff6b6b11 0%, transparent 60%);
+}
 
-  useEffect(() => {
-    applyTheme(theme)
-    localStorage.setItem('current_theme', JSON.stringify(theme))
-  }, [theme])
+.bg-aurora {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 0%   0%,   #6c8fff18 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 0%,   #6bffb818 0%, transparent 50%),
+    radial-gradient(ellipse at 50%  100%, #9c6fff18 0%, transparent 50%);
+  animation: aurora var(--aurora-speed,12s) ease-in-out infinite alternate;
+}
+@keyframes aurora { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(40deg); } }
 
-  useEffect(() => {
-    const onFocus = () => { const s = loadTheme(); setTheme(s); applyTheme(s) }
-    window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
-  }, [])
+.bg-stars {
+  background: var(--bg);
+  background-image:
+    radial-gradient(1px 1px at 8% 12%, rgba(255,255,255,.65) 0%,transparent 100%),
+    radial-gradient(1px 1px at 22% 38%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 38% 8%, rgba(255,255,255,.55) 0%,transparent 100%),
+    radial-gradient(1px 1px at 53% 58%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 68% 22%, rgba(255,255,255,.55) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 79% 72%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 91% 43%, rgba(255,255,255,.30) 0%,transparent 100%),
+    radial-gradient(1px 1px at 14% 78%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 33% 88%, rgba(255,255,255,.30) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 59% 83%, rgba(255,255,255,.55) 0%,transparent 100%),
+    radial-gradient(1px 1px at 4% 52%, rgba(255,255,255,.30) 0%,transparent 100%),
+    radial-gradient(1px 1px at 46% 33%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 72% 5%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 85% 48%, rgba(255,255,255,.50) 0%,transparent 100%),
+    radial-gradient(1px 1px at 27% 62%, rgba(255,255,255,.30) 0%,transparent 100%),
+    radial-gradient(1px 1px at 2% 29%, rgba(255,255,255,.40) 0%,transparent 100%),
+    radial-gradient(1px 1px at 63% 17%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 44% 95%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 97% 67%, rgba(255,255,255,.30) 0%,transparent 100%),
+    radial-gradient(1px 1px at 17% 3%, rgba(255,255,255,.50) 0%,transparent 100%);
+}
 
-  const syncThemeToCloud = useCallback(async (t) => {
-    const s = sessionRef.current
-    if (!s) return
-    clearTimeout(syncTimer.current)
-    syncTimer.current = setTimeout(async () => {
-      setThemeSyncing(true)
-      try {
-        await supabase.from('user_settings').upsert(
-          { user_id: s.user.id, theme: { ...t, bgImage: '' } },
-          { onConflict: 'user_id' }
-        )
-      } catch {}
-      finally { setThemeSyncing(false) }
-    }, 2000)
-  }, [])
+.bg-nebula {
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 15% 25%, #1a0a2e66 0%, transparent 45%),
+    radial-gradient(ellipse at 85% 70%, #0a1a2e66 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 50%, #0a0a1866 0%, transparent 60%),
+    radial-gradient(1px 1px at 20% 30%, rgba(255,255,255,.55) 0%,transparent 100%),
+    radial-gradient(1px 1px at 50% 15%, rgba(255,255,255,.40) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 75% 55%, rgba(255,255,255,.50) 0%,transparent 100%),
+    radial-gradient(1px 1px at 35% 75%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 88% 25%, rgba(255,255,255,.50) 0%,transparent 100%),
+    radial-gradient(1px 1px at 10% 65%, rgba(255,255,255,.30) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 60% 90%, rgba(255,255,255,.45) 0%,transparent 100%);
+}
 
-  const fetchTheme = useCallback(async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('user_settings').select('theme').eq('user_id', userId).maybeSingle()
-      if (error) { console.warn('fetchTheme error:', error.message); return }
-      if (data?.theme && Object.keys(data.theme).length > 0) {
-        const merged = { ...DEFAULT_THEME, ...data.theme }
-        setTheme(merged); applyTheme(merged)
-        localStorage.setItem('current_theme', JSON.stringify(merged))
-      } else {
-        const local = loadTheme()
-        await supabase.from('user_settings').upsert(
-          { user_id: userId, theme: { ...local, bgImage: '' } }, { onConflict: 'user_id' }
-        )
-      }
-    } catch (e) { console.warn('fetchTheme failed:', e.message) }
-  }, [])
+.bg-lines {
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(
+    45deg, transparent, transparent 18px,
+    var(--pattern-color) 18px, var(--pattern-color) 19px
+  );
+  opacity: var(--pattern-opacity);
+}
 
-  useEffect(() => {
-    if (session?.user?.id) fetchTheme(session.user.id)
-  }, [session?.user?.id])
+.bg-image { background-size: cover; background-position: center; background-repeat: no-repeat; }
 
-  const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
+/* ─── Starfield ─── */
+.bg-layer.bg-starfield { background: #05050f; overflow: hidden; }
+.bg-layer.bg-starfield::before, .bg-layer.bg-starfield::after {
+  content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.90) 0%,transparent 100%),
+    radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.70) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 52% 10%, rgba(255,255,255,0.80) 0%,transparent 100%),
+    radial-gradient(1px 1px at 71% 44%, rgba(255,255,255,0.60) 0%,transparent 100%),
+    radial-gradient(1px 1px at 88% 80%, rgba(255,255,255,0.90) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 42% 88%, rgba(255,255,255,0.70) 0%,transparent 100%),
+    radial-gradient(1px 1px at 65% 33%, rgba(255,255,255,0.50) 0%,transparent 100%),
+    radial-gradient(1px 1px at 20% 55%, rgba(255,255,255,0.80) 0%,transparent 100%),
+    radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.60) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 5% 90%, rgba(255,255,255,0.90) 0%,transparent 100%),
+    radial-gradient(1px 1px at 95% 50%, rgba(200,210,255,0.70) 0%,transparent 100%),
+    radial-gradient(1px 1px at 55% 75%, rgba(200,210,255,0.60) 0%,transparent 100%),
+    radial-gradient(1px 1px at 22% 38%, rgba(255,255,255,0.55) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 77% 62%, rgba(210,220,255,0.75) 0%,transparent 100%),
+    radial-gradient(1px 1px at 47% 47%, rgba(255,255,255,0.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 13% 73%, rgba(255,255,255,0.65) 0%,transparent 100%),
+    radial-gradient(1px 1px at 60% 5%, rgba(200,200,255,0.80) 0%,transparent 100%),
+    radial-gradient(2px 2px at 35% 25%, rgba(255,255,255,0.40) 0%,transparent 100%),
+    radial-gradient(1px 1px at 90% 35%, rgba(255,255,255,0.70) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 18% 92%, rgba(180,200,255,0.60) 0%,transparent 100%);
+  background-size: 700px 700px;
+  animation: starfield-drift var(--starfield-speed-a,80s) linear infinite;
+}
+.bg-layer.bg-starfield::after { background-size: 450px 450px; animation: starfield-drift var(--starfield-speed-b,130s) linear infinite reverse; opacity: 0.55; }
+@keyframes starfield-drift { from { transform: translate(0,0) rotate(0deg); } to { transform: translate(-220px,-220px) rotate(6deg); } }
+.bg-layer.bg-laser { background: #05050f; overflow: hidden; }
 
-  const fetchWorkspaces = useCallback(async () => {
-    const s = sessionRef.current
-    if (!s) return
-    const { data } = await supabase.from('workspaces').select('*')
-      .eq('user_id', s.user.id).order('created_at')
-    if (data) {
-      setWorkspaces(data)
-      setActiveWs(prev => {
-        const stored = localStorage.getItem('active_ws')
-        if (stored && data.find(w => w.id === stored)) return stored
-        return prev ?? data[0]?.id ?? null
-      })
-    }
-  }, [])
 
-  const fetchData = useCallback(async (wsId, silent = false) => {
-    const s = sessionRef.current
-    if (!s || !wsId) return
-    if (!silent) {
-      let hit = wsCache.current[wsId]
-      if (!hit) {
-        try {
-          const raw = localStorage.getItem(lcKey(wsId))
-          if (raw) hit = JSON.parse(raw)
-        } catch {}
-      }
-      if (hit) {
-        wsCache.current[wsId] = hit
-        setSections(hit.sections); setLinks(hit.links); setNotes(hit.notes)
-        fetchData(wsId, true); return
-      }
-    }
-    const [sec, lnk, nt] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
-      supabase.from('links').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('position'),
-      supabase.from('notes').select('*').eq('workspace_id', wsId).eq('user_id', s.user.id).order('created_at', { ascending: false }),
-    ])
-    const fresh = { sections: sec.data ?? [], links: lnk.data ?? [], notes: nt.data ?? [] }
-    wsCache.current[wsId] = fresh
-    try { localStorage.setItem(lcKey(wsId), JSON.stringify(fresh)) } catch {}
-    setSections(fresh.sections); setLinks(fresh.links); setNotes(fresh.notes)
-  }, [])
+/* ─── Plasma ─── */
+.bg-layer.bg-plasma  { background: #07071a; }
+.bg-layer.bg-inferno { background: #0f0300;
+  --plasma-c1: rgba(255,65,10,0.34); --plasma-c2: rgba(255,140,0,0.30);
+  --plasma-c3: rgba(220,20,0,0.24);  --plasma-c4: rgba(255,190,40,0.16);
+  --plasma-c5: rgba(200,10,0,0.16);  --plasma-c6: rgba(255,100,5,0.20);
+}
+.bg-layer.bg-mint { background: #020f09;
+  --plasma-c1: rgba(0,220,140,0.28); --plasma-c2: rgba(0,190,255,0.24);
+  --plasma-c3: rgba(40,255,160,0.18); --plasma-c4: rgba(0,160,200,0.14);
+  --plasma-c5: rgba(20,210,110,0.14); --plasma-c6: rgba(0,220,190,0.16);
+}
+.bg-layer.bg-dusk { background: #0d050c;
+  --plasma-c1: rgba(255,100,160,0.30); --plasma-c2: rgba(210,80,255,0.26);
+  --plasma-c3: rgba(255,165,80,0.22);  --plasma-c4: rgba(180,60,210,0.16);
+  --plasma-c5: rgba(255,120,110,0.16); --plasma-c6: rgba(210,100,255,0.18);
+}
+.bg-layer.bg-mono { background: #040610;
+  --plasma-c1: rgba(80,105,255,0.22); --plasma-c2: rgba(60,85,230,0.18);
+  --plasma-c3: rgba(100,125,255,0.14); --plasma-c4: rgba(40,65,205,0.12);
+  --plasma-c5: rgba(70,95,245,0.12);  --plasma-c6: rgba(50,75,215,0.14);
+}
+.bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono) { overflow: hidden; }
+.bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, var(--plasma-c1) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  filter: blur(var(--plasma-blur-a,45px));
+  animation: plasma-shift-a var(--plasma-speed-a,20s) ease-in-out infinite alternate;
+}
+.bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
+    radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c6) 0%,transparent 65%);
+  filter: blur(var(--plasma-blur-b,65px));
+  animation: plasma-shift-b var(--plasma-speed-b,28s) ease-in-out infinite alternate-reverse;
+}
+@keyframes plasma-shift-a {
+  0%   { transform: translate(0,0) scale(1.00); }
+  20%  { transform: translate(45px,-35px) scale(1.06); }
+  40%  { transform: translate(-25px,55px) scale(0.96); }
+  60%  { transform: translate(65px,25px) scale(1.04); }
+  80%  { transform: translate(-15px,-45px) scale(1.08); }
+  100% { transform: translate(-50px,60px) scale(0.98); }
+}
+@keyframes plasma-shift-b {
+  0%   { transform: translate(0,0) scale(1.00); }
+  25%  { transform: translate(-55px,40px) scale(1.05); }
+  50%  { transform: translate(30px,-60px) scale(0.95); }
+  75%  { transform: translate(70px,30px) scale(1.07); }
+  100% { transform: translate(-35px,55px) scale(0.97); }
+}
 
-  const switchWorkspace = useCallback((id) => {
-    localStorage.setItem('active_ws', id)
-    delete wsCache.current[id]
-    try { localStorage.removeItem(lcKey(id)) } catch {}
-    setActiveWs(id)
-  }, [])
+/* ─── Fog ─── */
+.bg-layer.bg-fog { background: #05050d; overflow: hidden; }
+.bg-layer.bg-fog::before {
+  content: ''; position: absolute; inset: -150px;
+  background:
+    radial-gradient(ellipse 70% 55% at 25% 45%, rgba(50,60,110,0.22) 0%,transparent 70%),
+    radial-gradient(ellipse 55% 70% at 72% 58%, rgba(40,50,100,0.18) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 45% at 48% 82%, rgba(45,55,105,0.15) 0%,transparent 70%);
+  filter: blur(75px);
+  animation: fog-a 42s ease-in-out infinite alternate;
+}
+.bg-layer.bg-fog::after {
+  content: ''; position: absolute; inset: -150px;
+  background:
+    radial-gradient(ellipse 60% 65% at 78% 22%, rgba(35,55,105,0.16) 0%,transparent 70%),
+    radial-gradient(ellipse 75% 45% at 18% 68%, rgba(50,45,100,0.14) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 50% 40%, rgba(40,40,90,0.10) 0%,transparent 70%);
+  filter: blur(95px);
+  animation: fog-b 58s ease-in-out infinite alternate-reverse;
+}
+@keyframes fog-a {
+  0%   { transform: translate(0,0) scale(1.00); }
+  33%  { transform: translate(58px,-40px) scale(1.04); }
+  66%  { transform: translate(-35px,65px) scale(0.97); }
+  100% { transform: translate(50px,32px) scale(1.02); }
+}
+@keyframes fog-b {
+  0%   { transform: translate(0,0) scale(1.00); }
+  33%  { transform: translate(-68px,48px) scale(1.06); }
+  66%  { transform: translate(42px,-58px) scale(0.94); }
+  100% { transform: translate(-32px,72px) scale(1.03); }
+}
 
-  const handleRefresh = useCallback(() => {
-    if (!activeWs) return
-    delete wsCache.current[activeWs]
-    try { localStorage.removeItem(lcKey(activeWs)) } catch {}
-    fetchData(activeWs)
-  }, [activeWs, fetchData])
+/* ─── Scan ─── */
+.bg-layer.bg-scan { background: #05050d; overflow: hidden; }
+.bg-layer.bg-scan::after {
+  content: ''; position: absolute; inset: 0;
+  background: repeating-linear-gradient(180deg,transparent 0px,transparent 3px,rgba(255,255,255,0.008) 3px,rgba(255,255,255,0.008) 4px);
+  pointer-events: none;
+}
+.bg-layer.bg-scan::before {
+  content: ''; position: absolute; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg,transparent 0%,rgba(108,143,255,0.00) 5%,rgba(108,143,255,0.55) 30%,rgba(180,210,255,0.90) 50%,rgba(108,143,255,0.55) 70%,rgba(108,143,255,0.00) 95%,transparent 100%);
+  box-shadow: 0 0 12px 3px rgba(108,143,255,0.20),0 0 40px 8px rgba(108,143,255,0.08),0 0 80px 16px rgba(108,143,255,0.04);
+  animation: scan-sweep 7s cubic-bezier(0.4,0,0.6,1) infinite;
+}
+@keyframes scan-sweep { 0% { top:-2px; opacity:0; } 4% { opacity:1; } 92% { opacity:0.85; } 100% { top:100%; opacity:0; } }
 
-  useEffect(() => { fetchWorkspaces() }, [session])
-  useEffect(() => { if (activeWs) fetchData(activeWs) }, [activeWs])
+/* ─── Vortex ─── */
+.bg-layer.bg-vortex { background: #05050d; overflow: hidden; }
+.bg-layer.bg-vortex::before {
+  content: ''; position: absolute; inset: -25%; width: 150%; height: 150%;
+  background: conic-gradient(from 0deg at 50% 50%,transparent 0deg,rgba(60,80,150,0.07) 55deg,transparent 110deg,rgba(50,65,140,0.05) 175deg,transparent 230deg,rgba(70,55,145,0.06) 295deg,transparent 360deg);
+  filter: blur(10px); animation: vortex-spin 70s linear infinite;
+}
+.bg-layer.bg-vortex::after {
+  content: ''; position: absolute; inset: -35%; width: 170%; height: 170%;
+  background: conic-gradient(from 180deg at 50% 50%,transparent 0deg,rgba(80,55,160,0.04) 80deg,transparent 160deg,rgba(55,80,150,0.05) 255deg,transparent 330deg,rgba(60,70,145,0.03) 360deg);
+  filter: blur(20px); animation: vortex-spin 110s linear infinite reverse;
+}
+@keyframes vortex-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-  const addWorkspace = async (e) => {
-    e.preventDefault()
-    if (!newWsName.trim()) return
-    const s = sessionRef.current
-    const { data } = await supabase.from('workspaces')
-      .insert({ user_id: s.user.id, name: newWsName.trim() }).select().single()
-    setNewWsName(''); setAddingWs(false)
-    await fetchWorkspaces()
-    if (data) switchWorkspace(data.id)
-  }
+/* ─── Ripple ─── */
+.bg-layer.bg-ripple { background: #05050d; overflow: hidden; }
+.bg-layer.bg-ripple::before {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 2px; height: 2px; margin: -1px; border-radius: 50%;
+  box-shadow: 0 0 0 70px rgba(108,143,255,0.045),0 0 0 160px rgba(108,143,255,0.035),0 0 0 270px rgba(108,143,255,0.025),0 0 0 400px rgba(108,143,255,0.018),0 0 0 550px rgba(108,143,255,0.012),0 0 0 720px rgba(108,143,255,0.007);
+  animation: ripple-breathe 9s ease-in-out infinite alternate;
+}
+.bg-layer.bg-ripple::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 2px; height: 2px; margin: -1px; border-radius: 50%;
+  box-shadow: 0 0 0 115px rgba(156,111,255,0.025),0 0 0 215px rgba(156,111,255,0.020),0 0 0 335px rgba(156,111,255,0.015),0 0 0 475px rgba(156,111,255,0.010),0 0 0 635px rgba(156,111,255,0.006);
+  animation: ripple-breathe 12s ease-in-out infinite alternate-reverse;
+}
+@keyframes ripple-breathe { 0% { transform: scale(0.88); opacity: 0.7; } 100% { transform: scale(1.14); opacity: 1.0; } }
 
-  const deleteWorkspace = async (id) => {
-    if (!confirm('Delete this workspace and all its data?')) return
-    delete wsCache.current[id]
-    try { localStorage.removeItem(lcKey(id)) } catch {}
-    await supabase.from('links').delete().eq('workspace_id', id)
-    await supabase.from('sections').delete().eq('workspace_id', id)
-    await supabase.from('notes').delete().eq('workspace_id', id)
-    await supabase.from('workspaces').delete().eq('id', id)
-    const remaining = workspaces.filter(w => w.id !== id)
-    setWorkspaces(remaining)
-    switchWorkspace(remaining[0]?.id ?? null)
-  }
+/* ─── Filament ─── */
+.bg-layer.bg-filament { background: #05050d; overflow: hidden; }
+.bg-layer.bg-filament::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(-50deg,transparent,transparent 48px,rgba(108,143,255,0.028) 48px,rgba(108,143,255,0.028) 49px,transparent 49px,transparent 96px,rgba(108,143,255,0.016) 96px,rgba(108,143,255,0.016) 97px);
+  animation: filament-flow-a 22s linear infinite;
+}
+.bg-layer.bg-filament::after {
+  content: ''; position: absolute; inset: 0; opacity: 0.8;
+  background-image: repeating-linear-gradient(-50deg,transparent,transparent 72px,rgba(156,111,255,0.018) 72px,rgba(156,111,255,0.018) 73px,transparent 73px,transparent 140px,rgba(156,111,255,0.012) 140px,rgba(156,111,255,0.012) 141px);
+  animation: filament-flow-b 34s linear infinite reverse;
+}
+@keyframes filament-flow-a { from { background-position: 0 0; } to { background-position: 0 200px; } }
+@keyframes filament-flow-b { from { background-position: 0 0; } to { background-position: 200px 0; } }
 
-  const saveSettings = async () => {
-    localStorage.setItem('current_theme', JSON.stringify(theme))
-    applyTheme(theme); setShowSettings(false)
-    syncThemeToCloud(theme)
-  }
+/* ─── Light / photo backgrounds ─── */
+.bg-light-bokeh {
+  background: #f0f1f6;
+  background-image:
+    radial-gradient(ellipse 28% 28% at 12% 18%, rgba(255,255,255,0.95) 0%,transparent 60%),
+    radial-gradient(ellipse 22% 22% at 68% 55%, rgba(210,220,255,0.65) 0%,transparent 55%),
+    radial-gradient(ellipse 32% 32% at 38% 78%, rgba(255,255,255,0.75) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,255,255,0.30) 0%,transparent 70%);
+}
+.bg-silver-radial { background: #e2e3e9; background-image: radial-gradient(ellipse 90% 90% at 50% 40%,#f4f4f8 0%,#dcdce6 45%,#c6c6d4 75%,#b4b4c6 100%); }
+.bg-wall-texture { background-color: #cfc9c1; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.22'/%3E%3C/svg%3E"),radial-gradient(ellipse at 28% 18%,rgba(255,255,255,0.14) 0%,transparent 55%); }
+.bg-timber-dark { background-color: #16100a; background-image: repeating-linear-gradient(175deg,transparent 0px,transparent 5px,rgba(255,255,255,0.020) 5px,rgba(255,255,255,0.020) 6px,transparent 6px,transparent 15px,rgba(0,0,0,0.22) 15px,rgba(0,0,0,0.22) 16px,transparent 16px,transparent 27px,rgba(255,255,255,0.014) 27px,rgba(255,255,255,0.014) 28px),radial-gradient(ellipse at 35% 25%,rgba(55,25,8,0.45) 0%,transparent 60%); }
 
-  const resetSettings = async () => {
-    setTheme({ ...DEFAULT_THEME })
-    localStorage.setItem('current_theme', JSON.stringify(DEFAULT_THEME))
-    applyTheme(DEFAULT_THEME); syncThemeToCloud(DEFAULT_THEME)
-  }
+/* ─────────────────────────────────────────
+   App shell
+───────────────────────────────────────── */
+.app { position: relative; z-index: 1; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 
-  const exportSettings = () => {
-    const blob = new Blob([JSON.stringify({ ...theme, bgImage: '' }, null, 2)], { type: 'application/json' })
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-    a.download = 'theme.json'; a.click()
-  }
+/* ─────────────────────────────────────────
+   Topbar
+───────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 1.25rem;
+  padding: 0.55rem 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent);
+  background: color-mix(in srgb, var(--card) calc(var(--card-opacity)*100%), transparent);
+  backdrop-filter: blur(12px); flex-shrink: 0; font-size: var(--topbar-font-size);
+}
 
-  const importSettings = (e) => {
-    const file = e.target.files?.[0]; if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      try {
-        const t = { ...DEFAULT_THEME, ...JSON.parse(ev.target.result) }
-        setTheme(t); applyTheme(t); localStorage.setItem('current_theme', JSON.stringify(t))
-      } catch { alert('Invalid theme file') }
-    }
-    reader.readAsText(file)
-  }
+.workspace-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; flex-shrink: 0; align-items: center; }
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files?.[0]; if (!file) return
-    if (file.size > 2 * 1024 * 1024) { alert('Please use an image under 2 MB.'); return }
-    const reader = new FileReader()
-    reader.onload = (ev) =>
-      setTheme(prev => ({ ...prev, bgStyle: 'bg-image', bgImage: ev.target.result }))
-    reader.readAsDataURL(file)
-  }
+.workspace-tab {
+  padding: 0.3rem 0.85rem; border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent);
+  background: transparent; color: var(--text-dim); font-size: var(--topbar-font-size);
+  font-weight: 400; transition: all 0.15s; display: flex; align-items: center; gap: 0.4rem;
+  white-space: nowrap; cursor: pointer;
+}
+.workspace-tab:hover { border-color: var(--border-hover); color: var(--text); }
+.workspace-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.workspace-tab .del-ws { opacity: 0; font-size: 0.7em; color: var(--danger); background: none; border: none; padding: 0; line-height: 1; }
+.workspace-tab:hover .del-ws { opacity: 1; }
 
-  const exportFullBackup = async () => {
-    const s = sessionRef.current; if (!s) return
-    try {
-      const [wsRes, secRes, lnkRes, ntRes] = await Promise.all([
-        supabase.from('workspaces').select('*').eq('user_id', s.user.id).order('created_at'),
-        supabase.from('sections').select('*').eq('user_id', s.user.id).order('position'),
-        supabase.from('links').select('*').eq('user_id', s.user.id).order('position'),
-        supabase.from('notes').select('*').eq('user_id', s.user.id).order('created_at', { ascending: false }),
-      ])
-      const backup = {
-        version: 2, exported_at: new Date().toISOString(),
-        theme: { ...theme, bgImage: '' },
-        workspaces: (wsRes.data ?? []).map(ws => ({
-          name: ws.name,
-          sections: (secRes.data ?? []).filter(sec => sec.workspace_id === ws.id).map(sec => ({
-            name: sec.name, position: sec.position, collapsed: sec.collapsed ?? false,
-            links: (lnkRes.data ?? []).filter(l => l.section_id === sec.id)
-              .map(l => ({ title: l.title, url: l.url, position: l.position })),
-          })),
-          notes: (ntRes.data ?? []).filter(n => n.workspace_id === ws.id)
-            .map(n => ({ content: n.content, created_at: n.created_at })),
-        })),
-      }
-      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
-      a.download = `mystartpage-backup-${new Date().toISOString().slice(0,10)}.json`; a.click()
-    } catch (e) { alert('Export failed: ' + e.message) }
-  }
+.topbar-widgets { display: flex; align-items: center; gap: 1.1rem; flex: 1; min-width: 0; overflow: hidden; }
+.topbar-divider { width: 1px; height: 14px; flex-shrink: 0; align-self: center; background: color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); }
 
-  const importFullBackup = (e) => {
-    const file = e.target.files?.[0]; if (!file) return
-    e.target.value = ''
-    const reader = new FileReader()
-    reader.onload = async (ev) => {
-      try {
-        const backup = JSON.parse(ev.target.result)
-        if (!backup.workspaces || !Array.isArray(backup.workspaces)) { alert('Invalid backup file.'); return }
-        if (!confirm(`This will ADD ${backup.workspaces.length} workspace(s). Existing data will not be deleted. Continue?`)) return
-        setImportingBackup(true)
-        const s = sessionRef.current
-        if (backup.theme && Object.keys(backup.theme).length > 0) {
-          const t = { ...DEFAULT_THEME, ...backup.theme }
-          setTheme(t); applyTheme(t); localStorage.setItem('current_theme', JSON.stringify(t))
-          await supabase.from('user_settings').upsert({ user_id: s.user.id, theme: t }, { onConflict: 'user_id' })
-        }
-        for (const ws of backup.workspaces) {
-          const { data: newWs } = await supabase.from('workspaces')
-            .insert({ user_id: s.user.id, name: ws.name }).select().single()
-          if (!newWs) continue
-          for (const sec of ws.sections ?? []) {
-            const { data: newSec } = await supabase.from('sections').insert({
-              user_id: s.user.id, workspace_id: newWs.id,
-              name: sec.name, position: sec.position ?? 0, collapsed: sec.collapsed ?? false,
-            }).select().single()
-            if (!newSec) continue
-            if (sec.links?.length)
-              await supabase.from('links').insert(
-                sec.links.map((l, i) => ({
-                  user_id: s.user.id, workspace_id: newWs.id, section_id: newSec.id,
-                  title: l.title, url: l.url, position: l.position ?? i,
-                }))
-              )
-          }
-          if (ws.notes?.length)
-            await supabase.from('notes').insert(
-              ws.notes.map(n => ({ user_id: s.user.id, workspace_id: newWs.id, content: n.content }))
-            )
-        }
-        await fetchWorkspaces(); setImportingBackup(false); alert('Backup imported successfully!')
-      } catch (err) { setImportingBackup(false); alert('Import failed: ' + err.message) }
-    }
-    reader.readAsText(file)
-  }
+.clock-compact      { display: flex; align-items: baseline; gap: 0.5rem; flex-shrink: 0; }
+.clock-compact-time { font-size: var(--clock-widget-size); font-weight: 500; color: var(--text); white-space: nowrap; }
+.clock-compact-date { font-size: var(--topbar-font-size); color: var(--text-dim); white-space: nowrap; }
 
-  const refreshCache = async () => {
-    Object.keys(localStorage).filter(k => k.startsWith('ws_data_')).forEach(k => localStorage.removeItem(k))
-    wsCache.current = {}
-    try {
-      const reg = await navigator.serviceWorker?.getRegistration()
-      if (reg?.waiting) reg.waiting.postMessage('SKIP_WAITING')
-      const keys = await caches.keys()
-      await Promise.all(keys.map(k => caches.delete(k)))
-      await reg?.unregister(); await navigator.serviceWorker?.register('/sw.js')
-    } catch {}
-    window.location.reload()
-  }
+.weather-wrap { display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; white-space: nowrap; }
+.weather-icon { font-size: var(--clock-widget-size); line-height: 1; }
+.weather-temp { font-size: var(--clock-widget-size); color: var(--text); font-weight: 500; }
+.weather-desc { font-size: var(--topbar-font-size); color: var(--text-dim); }
 
-  if (loading) return <div className="auth-wrap" style={{ color: 'var(--text-dim)' }}>Loading…</div>
-  if (!session) return <Auth onAuth={setSession} />
+.search-compact       { display: flex; align-items: stretch; gap: 0.5rem; flex: 1; min-width: 0; }
+.search-compact-input { flex: 1; min-width: 80px; padding: 0.28rem 0.7rem; font-size: var(--topbar-font-size); }
+.search-btn           { flex-shrink: 0; padding: 0.28rem 0.85rem; align-self: stretch; font-size: var(--topbar-font-size); }
+.topbar-actions       { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
 
-  const isPatternBg  = PATTERN_BG.includes(theme.bgStyle)
-  const isPlasmasBg  = PLASMA_BG.includes(theme.bgStyle)
-  const colCount     = parseInt(theme.sectionsCols) || 2
-  const notesWidth   = parseInt(theme.notesWidth)   || 240
-  const openInNewTab = theme.openInNewTab !== 'false'
-  const locked       = theme.locked === 'true'
+/* ─── Bookmarks bar ─── */
+.bookmarks-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 0.2rem; padding: 0.28rem 0.75rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent); background: color-mix(in srgb, var(--bg2) 85%, transparent); min-height: 30px; flex-shrink: 0; }
+.bookmark-item { display: flex; align-items: center; border-radius: var(--radius-sm); border: 1px solid transparent; transition: border-color 0.15s, background 0.15s; }
+.bookmark-item:hover { border-color: var(--border); background: var(--bg3); }
+.bookmark-link { display: flex; align-items: center; gap: 0.28rem; padding: 0.18rem 0.4rem; color: var(--text-dim); font-size: var(--topbar-font-size,12px); text-decoration: none !important; transition: color 0.15s; max-width: 150px; }
+.bookmark-link:hover { color: var(--text); }
+.bookmark-favicon { width: var(--favicon-size,13px); height: var(--favicon-size,13px); object-fit: contain; opacity: var(--favicon-opacity,1); filter: var(--favicon-filter,none); flex-shrink: 0; }
+.bookmark-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bookmark-remove { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0.1rem 0.35rem; font-size: 0.85em; opacity: 0; transition: opacity 0.15s, color 0.15s; }
+.bookmark-item:hover .bookmark-remove { opacity: 1; }
+.bookmark-remove:hover { color: var(--danger); }
+.bookmark-add-btn { background: none; border: 1px dashed color-mix(in srgb, var(--border) 60%, transparent); border-radius: var(--radius-sm); color: var(--text-muted); font-size: 0.8em; padding: 0.12rem 0.45rem; cursor: pointer; font-family: var(--font); transition: border-color 0.15s, color 0.15s; }
+.bookmark-add-btn:hover { border-color: var(--accent); color: var(--accent); }
+.bookmark-add-form { display: flex; align-items: center; gap: 0.28rem; }
+.bookmark-add-form input { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text); padding: 0.16rem 0.4rem; font-size: 0.78em; width: 100px; outline: none; font-family: var(--font); }
+.bookmark-add-form input:focus { border-color: var(--accent); }
+.bookmark-add-form button { background: none; border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-dim); padding: 0.16rem 0.4rem; font-size: 0.78em; cursor: pointer; font-family: var(--font); }
 
-  const getBgStyle = () => {
-    if (theme.bgStyle === 'bg-image') return {
-      backgroundImage: theme.bgImage ? `url(${theme.bgImage})` : 'none',
-      backgroundSize: 'cover', backgroundPosition: 'center',
-      opacity: parseFloat(theme.bgImageOpacity ?? 1),
-    }
-    if (theme.bgStyle === 'bg-gradient') {
-      try {
-        const colors = JSON.parse(theme.gradientColors || '["#6c8fff","#0c0c0f"]')
-        return {
-          background: theme.gradientType === 'radial'
-            ? `radial-gradient(ellipse at center, ${colors.join(', ')})`
-            : `linear-gradient(${theme.gradientAngle}deg, ${colors.join(', ')})`,
-        }
-      } catch { return {} }
-    }
-    return {}
-  }
+/* ─────────────────────────────────────────
+   Main layout
+───────────────────────────────────────── */
+.main-layout { display: grid; grid-template-rows: 1fr; gap: 0.75rem; padding: var(--main-gap-top) 0.75rem 0.75rem 0.75rem; flex: 1; min-height: 0; overflow: hidden; }
+.main-col { min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 2px; }
+.side-col { min-height: 0; overflow-y: hidden; display: flex; flex-direction: column; padding-right: 2px; }
 
-  const gradColors = (() => {
-    try { return JSON.parse(theme.gradientColors) } catch { return ['#6c8fff', '#0c0c0f'] }
-  })()
-  const updateGradColor = (i, val) => {
-    const next = [...gradColors]; next[i] = val
-    set('gradientColors', JSON.stringify(next))
-  }
-  const addGradStop = () => {
-    if (gradColors.length >= 6) return
-    set('gradientColors', JSON.stringify([...gradColors, '#444466']))
-  }
-  const removeGradStop = (i) => {
-    if (gradColors.length <= 2) return
-    set('gradientColors', JSON.stringify(gradColors.filter((_, idx) => idx !== i)))
-  }
+/* ─── Cards ─── */
+.card { background: color-mix(in srgb, var(--card) calc(var(--card-opacity)*100%), transparent); border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); border-radius: var(--radius); padding: var(--card-padding,0.75rem); }
 
-  return (
-    <div className="app">
-      <div className={`bg-layer ${theme.bgStyle}`} style={getBgStyle()}>
-        {theme.bgStyle === 'bg-laser' && (
-          <LaserCanvas color={theme.laserColor} color2={theme.laserColor2} speed={theme.laserSpeed} />
-        )}
-      </div>
+/* ─── Buttons ─── */
+.btn { padding: 0.35rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); background: var(--bg3); color: var(--text); font-size: var(--topbar-font-size); transition: all 0.15s; }
+.btn:hover         { border-color: var(--border-hover); }
+.btn-primary       { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); }
+.btn-primary:hover { filter: brightness(1.2); }
+.btn-danger        { background: transparent; color: var(--danger); border-color: var(--danger); }
+.btn-danger:hover  { background: var(--danger); color: #fff; }
+.btn-ghost         { background: transparent; border-color: transparent; color: var(--text-dim); }
+.btn-ghost:hover   { color: var(--text); border-color: var(--border); }
+.btn:disabled      { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
 
-      {/* Topbar */}
-      <div className="topbar">
-        <div className="workspace-tabs">
-          {workspaces.map(ws => (
-            <button key={ws.id}
-              className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-              onClick={() => switchWorkspace(ws.id)}>
-              {ws.name}
-              <button className="del-ws"
-                onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}>✕</button>
-            </button>
-          ))}
-          {addingWs ? (
-            <form onSubmit={addWorkspace} style={{ display: 'flex', gap: '0.4rem' }}>
-              <input className="input" value={newWsName} onChange={e => setNewWsName(e.target.value)}
-                placeholder="Name" autoFocus
-                style={{ width: 110, padding: '0.2rem 0.6rem', fontSize: 'var(--topbar-font-size)' }} />
-              <button className="btn btn-primary" type="submit">+</button>
-              <button className="btn" type="button" onClick={() => setAddingWs(false)}>✕</button>
-            </form>
-          ) : (
-            <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              style={{ padding: '0.25rem 0.7rem' }}>+</button>
-          )}
-        </div>
+.btn-xs { padding: 0.2rem 0.55rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg3); color: var(--text-dim); font-size: 0.78em; cursor: pointer; font-family: var(--font); transition: border-color 0.15s, color 0.15s; }
+.btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+.btn-xs.btn-primary { background: var(--btn-bg); color: var(--btn-text); border-color: var(--btn-bg); }
 
-        <div className="topbar-widgets">
-          <div className="clock-compact"><Clock /></div>
-          <div className="topbar-divider" />
-          <Weather />
-          <div className="topbar-divider" />
-          <SearchBar searchUrl={theme.searchUrl} />
-        </div>
+.icon-btn { background: none; border: none; color: var(--text-dim); padding: 0.2rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; }
+.icon-btn:hover { color: var(--text); background: var(--bg3); }
 
-        <div className="topbar-actions">
-          <button className="btn btn-ghost"
-            title={allExpanded ? 'Collapse all sections' : 'Expand all sections'}
-            style={{ padding: '0.25rem 0.6rem', fontSize: '0.9em' }}
-            onClick={() => {
-              if (allExpanded) setCollapseAllTrigger(n => n + 1)
-              else             setExpandAllTrigger(n => n + 1)
-              setAllExpanded(v => !v)
-            }}>{allExpanded ? '▸' : '▾'}</button>
-          {locked && (
-            <span title="Cards locked — unlock in Settings"
-              style={{ fontSize: '0.85em', color: 'var(--text-muted)', userSelect: 'none' }}>🔒</span>
-          )}
-          <button className="btn btn-ghost"
-            title="Add section"
-            style={{ padding: '0.25rem 0.65rem', fontSize: '1.1em', lineHeight: 1 }}
-            onClick={() => setAddSectionTrigger(n => n + 1)}>+</button>
-          <button className="btn btn-ghost" onClick={() => setShowSettings(s => !s)}>⚙ Settings</button>
-          <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}>Sign out</button>
-        </div>
-      </div>
+/* ─── Inputs ─── */
+.input { background: var(--bg3); border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); border-radius: var(--radius-sm); padding: 0.38rem 0.7rem; color: var(--text); width: 100%; transition: border-color 0.15s; }
+.input:focus        { outline: none; border-color: var(--accent); }
+.input::placeholder { color: var(--text-muted); }
 
-      {/* Main layout */}
-      <div className="main-layout" style={{ gridTemplateColumns: `1fr ${notesWidth}px` }}>
-        <div className="main-col">
-          <Sections
-            sections={sections ?? []}
-            links={links ?? []}
-            userId={session.user.id}
-            workspaceId={activeWs}
-            onRefresh={handleRefresh}
-            openInNewTab={openInNewTab}
-            colCount={colCount}
-            triggerAdd={addSectionTrigger}
-            triggerImport={importSectionTrigger}
-            triggerCollapseAll={collapseAllTrigger}
-            triggerExpandAll={expandAllTrigger}
-            locked={locked}
-          />
-        </div>
-        <div className="side-col">
-          <Notes
-            notes={notes ?? []}
-            userId={session.user.id}
-            workspaceId={activeWs}
-            onRefresh={handleRefresh}
-          />
-        </div>
-      </div>
+/* ─────────────────────────────────────────
+   Sections grid
+───────────────────────────────────────── */
+.sections-grid { display: flex; flex-direction: row; align-items: flex-start; gap: var(--section-gap-h,0px); padding: var(--section-gap-h,0px); padding-bottom: 3rem; width: 100%; }
+.section-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--section-gap,0px); }
+.section-card { width: 100%; background: color-mix(in srgb, var(--card) calc(var(--card-opacity)*100%), transparent); outline: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); border: none; border-radius: var(--section-radius); overflow: hidden; }
+.section-header { display: flex; align-items: center; gap: 0.4rem; padding: 0.38rem var(--card-padding,0.75rem); cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: background 0.15s; }
+.section-header:hover { background: var(--bg3); }
+.section-card:not(.collapsed) .section-header { border-bottom-color: color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); }
+.section-card.locked .section-header { cursor: default; padding-left: 0.6rem; }
+.section-card.locked .section-header:hover { background: transparent; }
+.section-name { flex: 1; font-size: 0.74em; font-weight: 500; color: var(--title-color); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: center; }
+.section-actions { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
+.section-card:hover .section-actions { opacity: 1; }
+.section-delete-btn       { color: var(--text-muted) !important; }
+.section-delete-btn:hover { color: var(--danger) !important; background: transparent !important; }
 
-      {/* Settings panel */}
-      {showSettings && (
-        <Settings
-          theme={theme}
-          set={set}
-          workspaces={workspaces}
-          activeWs={activeWs}
-          onSwitchWs={switchWorkspace}
-          onDeleteWs={deleteWorkspace}
-          onSave={saveSettings}
-          onReset={resetSettings}
-          onClose={() => setShowSettings(false)}
-          onExport={exportSettings}
-          onImport={importSettings}
-          onImageUpload={handleImageUpload}
-          onExportBackup={exportSettings}
-          onImportBackup={(e) => {
-            const f = e.target.files?.[0]
-            if (!f) return
-            setImportingBackup(true)
-            const r = new FileReader()
-            r.onload = async (ev) => {
-              try {
-                const data = JSON.parse(ev.target.result)
-                if (data.workspaces) {
-                  for (const ws of data.workspaces) {
-                    const { data: newWs } = await supabase.from('workspaces').insert({ user_id: session.user.id, name: ws.name }).select().single()
-                    if (ws.sections?.length) await supabase.from('sections').insert(ws.sections.map(s => ({ ...s, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
-                    if (ws.links?.length)    await supabase.from('links').insert(ws.links.map(l => ({ ...l, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
-                    if (ws.notes?.length)   await supabase.from('notes').insert(ws.notes.map(n => ({ ...n, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
-                  }
-                }
-                handleRefresh()
-              } catch (err) { alert('Import failed: ' + err.message) }
-              finally { setImportingBackup(false) }
-            }
-            r.readAsText(f)
-          }}
-          fileRef={fileRef}
-          backupFileRef={backupFileRef}
-          onRefreshCache={() => caches.keys().then(ks => Promise.all(ks.map(k => caches.delete(k))).then(handleRefresh))}
-          themeSyncing={themeSyncing}
-          importingBackup={importingBackup}
-          onAddSection={() => setAddSectionTrigger(n => n + 1)}
-          onImportSection={() => setImportSectionTrigger(n => n + 1)}
-          onCollapseAll={() => { setCollapseAllTrigger(n => n + 1); setAllExpanded(false) }}
-          onExpandAll={()   => { setExpandAllTrigger(n => n + 1);   setAllExpanded(true)  }}
-        />
-      )}
-    </div>
-  )
+.drag-handle { color: var(--text); opacity: var(--handle-opacity); cursor: grab; padding: 0 0.6rem; margin: -0.38rem 0; align-self: stretch; font-size: 1em; transition: opacity 0.15s; user-select: none; display: flex; align-items: center; }
+.drag-handle:hover  { opacity: 0.75; }
+.drag-handle:active { cursor: grabbing; opacity: 1; }
+
+.section-drag-handle { display: flex; align-items: center; padding: 0.3rem 0.4rem; cursor: grab; color: var(--text-muted); opacity: var(--handle-opacity); flex-shrink: 0; font-size: 1.1em; transition: opacity 0.15s; user-select: none; }
+.section-drag-handle:hover  { opacity: 0.55 !important; }
+.section-drag-handle:active { cursor: grabbing !important; }
+
+.section-header-click { flex: 1; display: flex; align-items: center; gap: 0.4rem; cursor: pointer; padding: 0.3rem 0.4rem 0.3rem 0; min-width: 0; }
+
+/* ─── Add section ─── */
+.add-section-fixed { position: fixed; bottom: 0.75rem; left: 0.85rem; z-index: 50; display: flex; align-items: center; gap: 0.5rem; }
+
+/* ─────────────────────────────────────────
+   Links
+───────────────────────────────────────── */
+.links-list { padding: 0.25rem var(--card-padding,0.75rem); display: flex; flex-direction: column; gap: var(--link-gap); }
+.link-item { position: relative; display: flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.3rem; border-radius: var(--radius-sm); transition: background 0.15s; overflow: hidden; min-width: 0; }
+.link-item:hover { background: var(--bg3); }
+.link-favicon { width: var(--favicon-size,13px); height: var(--favicon-size,13px); border-radius: 2px; flex-shrink: 0; object-fit: contain; opacity: var(--favicon-opacity); filter: var(--favicon-filter); }
+.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
+.link-title:hover { color: var(--accent); }
+.link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 28%); }
+.link-item:hover .link-actions-overlay { opacity: 1; pointer-events: auto; }
+.link-act { display: flex; align-items: center; padding: 0 calc(0.45rem * var(--editbar-scale,1)); background: #1e1e2e; border: none; color: var(--text-dim); font-size: calc(0.75em * var(--editbar-scale,1)); cursor: pointer; transition: color 0.12s, background 0.12s; height: 100%; }
+.link-act:hover     { background: #2a2a3e; color: var(--text); }
+.link-act-del:hover { color: var(--danger); }
+
+/* ─────────────────────────────────────────
+   Notes — FIXED
+───────────────────────────────────────── */
+.notes-panel {
+  background: color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity)*100%), transparent);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 0.1rem 0 0.45rem;
+  flex-shrink: 0;
+}
+
+.notes-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0.35rem 0.5rem;
+}
+
+.note-new { margin-bottom: 0.5rem; flex-shrink: 0; }
+
+.notes-drop-zone { border: 1.5px dashed var(--accent); border-radius: var(--radius-sm); padding: 0.55rem 0.6rem; font-size: 0.78em; color: var(--accent); text-align: center; margin-bottom: 0.5rem; background: var(--accent-dim); pointer-events: none; flex-shrink: 0; }
+.notes-drag-over { outline: 1.5px dashed var(--accent) !important; outline-offset: -2px; }
+
+.note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.3rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+}
+.note-item:last-child { border-bottom: none; }
+
+.note-content {
+  flex: 1;
+  min-width: 0;
+  cursor: text;
+  font-size: var(--notes-font-size);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  padding: 0.1rem 0;
+  color: var(--text);
+  display: block;
+  overflow: hidden;
+  max-height: 15em;
+}
+.note-content:hover { opacity: 0.85; }
+
+.note-delete { flex-shrink: 0; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1em; line-height: 1; padding: 0.1rem 0.2rem; transition: color 0.15s; }
+.note-delete:hover { color: var(--danger); }
+
+.note-actions { display: flex; gap: 0.25rem; margin-top: 0.3rem; opacity: 0; transition: opacity 0.15s; }
+.note-item:hover .note-actions { opacity: 1; }
+
+.notes-count { display: inline-flex; align-items: center; justify-content: center; background: var(--accent-dim); color: var(--accent); border-radius: 99px; font-size: 0.7em; padding: 0 0.4em; min-width: 1.4em; margin-left: 0.3em; }
+
+/* ─────────────────────────────────────────
+   Modal
+───────────────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: #00000055; z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.modal-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 1rem; box-shadow: 0 24px 64px #00000077; }
+
+/* ─────────────────────────────────────────
+   Settings panel
+───────────────────────────────────────── */
+.settings-veil { position: fixed; inset: 0; z-index: 100; pointer-events: none; background: linear-gradient(to left,rgba(0,0,0,0.22) 0%,rgba(0,0,0,0.06) 30%,transparent 60%); }
+
+.settings-panel { position: fixed; top: 0; right: 0; bottom: 0; width: min(480px,75vw); background: var(--bg2); border-left: 1px solid var(--border); z-index: 101; overflow-y: auto; overflow-x: hidden; padding: 1.5rem 1.75rem 90px 1.75rem; animation: slide-in 0.2s ease; box-shadow: -20px 0 60px rgba(0,0,0,0.55),-4px 0 16px rgba(0,0,0,0.3); font-size: var(--settings-font-size,13px); }
+@keyframes slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.settings-panel[data-side="left"] { right: auto !important; left: 0 !important; border-left: none !important; border-right: 1px solid var(--border) !important; box-shadow: 20px 0 60px rgba(0,0,0,0.55) !important; animation: slide-in-left 0.2s ease !important; }
+@keyframes slide-in-left { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+.settings-header { position: sticky; top: -1.5rem; z-index: 10; background: var(--bg2); padding: 1rem 0 0.75rem 0; margin: -1.5rem 0 0 0; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+
+.settings-footer { position: fixed; bottom: 0; right: 0; width: min(480px,75vw); padding: 1rem 1.75rem; background: var(--bg2); border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent); display: flex; gap: 0.75rem; z-index: 102; }
+.settings-footer[data-side="left"] { right: auto !important; left: 0 !important; }
+
+.settings-section { display: flex; flex-direction: column; gap: 0.6rem; padding: 1rem 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent); }
+.settings-section:last-of-type { border-bottom: none; }
+.settings-title { font-size: 0.68em; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 0.1rem; }
+.settings-row { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; padding-right: 0.75rem; }
+.settings-row input[type='range'] { max-width: 100px; }
+.settings-label { font-size: 0.82em; color: var(--text-dim); white-space: nowrap; cursor: default; }
+
+.color-input { width: 38px; height: 28px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 2px; background: var(--bg3); cursor: pointer; }
+.preset-slots { display: flex; gap: 0.4rem; }
+.preset-slot { flex: 1; padding: 0.32rem 0.4rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg3); color: var(--text-dim); font-size: 0.75em; text-align: center; cursor: pointer; transition: all 0.15s; }
+.preset-slot:hover  { border-color: var(--accent); color: var(--accent); }
+.preset-slot.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+input[type='range'] { -webkit-appearance: none; appearance: none; height: 3px; border-radius: 2px; background: var(--border); outline: none; cursor: pointer; }
+input[type='range']::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 13px; height: 13px; border-radius: 50%; background: var(--accent); cursor: pointer; transition: transform 0.1s; }
+input[type='range']::-webkit-slider-thumb:hover { transform: scale(1.2); }
+input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; }
+
+/* ─── Toggle ─── */
+.toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 99px; transition: background 0.2s; cursor: pointer; }
+.toggle-slider::before { content: ''; position: absolute; width: 14px; height: 14px; left: 3px; top: 3px; background: var(--text-dim); border-radius: 50%; transition: transform 0.2s, background 0.2s; }
+.toggle input:checked + .toggle-slider         { background: var(--accent-dim); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(16px); background: var(--accent); }
+
+/* ─── Auth ─── */
+.auth-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+.auth-card { width: 100%; max-width: 380px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 2rem; display: flex; flex-direction: column; gap: 1rem; }
+.auth-title  { font-size: 1.1em; font-weight: 500; }
+.auth-switch { font-size: 0.8em; color: var(--text-dim); text-align: center; }
+.auth-switch button { background: none; border: none; color: var(--accent); cursor: pointer; text-decoration: underline; }
+.import-export { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+/* ─────────────────────────────────────────
+   Responsive
+───────────────────────────────────────── */
+@media (max-width: 768px) {
+  html { overflow: auto; }
+  body { overflow: auto; transform: none !important; width: 100% !important; height: auto !important; }
+  .main-layout { grid-template-columns: 1fr !important; padding: 0.5rem; gap: 0.5rem; overflow: visible; height: auto; }
+  .main-col, .side-col { overflow: visible; height: auto; }
+  .side-col { order: -1; }
+  .sections-grid { flex-direction: column; padding: 0; padding-bottom: 3rem; }
+  .section-col { width: 100%; flex: none; }
+  .topbar { padding: 0.45rem 0.75rem; gap: 0.5rem; flex-wrap: wrap; }
+  .topbar-widgets { display: none; }
+  .settings-panel, .settings-footer { width: 100vw; }
+  .add-section-fixed { bottom: 0.5rem; left: 0.5rem; }
 }

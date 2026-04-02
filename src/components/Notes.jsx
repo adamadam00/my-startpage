@@ -26,7 +26,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
 
   // All layout/text styles inline — immune to any CSS cascade issue
   const S = {
-    card:    { display:'flex', flexDirection:'column', height:'100%', minHeight:0, background:'color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent)', border:'1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)', borderRadius:'var(--radius)', overflow:'hidden' },
+    card:    { display:'flex', flexDirection:'column', flex:1, minHeight:0, background:'color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent)', border:'1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)', borderRadius:'var(--radius)', overflow:'hidden' },
     header:  { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.35rem 0.5rem 0.35rem 0.65rem', flexShrink:0, cursor:'pointer', userSelect:'none' },
     hLeft:   { display:'flex', alignItems:'center', gap:'0.3rem', flex:1, minWidth:0 },
     title:   { fontSize:'0.74em', fontWeight:500, color:'var(--title-color)', textTransform:'uppercase', letterSpacing:'0.06em' },
