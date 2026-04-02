@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import Auth      from './components/Auth'
 import Clock     from './components/Clock'
@@ -83,6 +83,16 @@ const DEFAULT_THEME = {
   openInNewTab:      'true',
   notesFontSize:     '13',
   notesWidth:        '240',
+  starfieldSpeed:    '1',
+  starfieldColor:    '#ffffff',
+  auroraSpeed:       '1',
+  auroraColor:       '#6c8fff',
+  meshSpeed:         '1',
+  meshColor:         '#6c8fff',
+  laserSpeed:        '1',
+  laserColor:        '#6c8fff',
+  laserColor2:       '#ff6bff',
+  editbarScale:      '1',
   searchUrl:         'https://google.com/search?q=',
   locked:            'false',
 }
@@ -140,9 +150,78 @@ function applyTheme(t) {
   r.setProperty('--plasma-blur-b',  (65 * _blr).toFixed(0) + 'px')
   r.setProperty('--notes-font-size',    t.notesFontSize + 'px')
   r.setProperty('--notes-width',        t.notesWidth    + 'px')
+  // animated bg speed/colour
+  const _sf = parseFloat(t.starfieldSpeed ?? 1)
+  r.setProperty('--starfield-speed-a', (80  / _sf).toFixed(1) + 's')
+  r.setProperty('--starfield-speed-b', (130 / _sf).toFixed(1) + 's')
+  r.setProperty('--starfield-color',   t.starfieldColor ?? '#ffffff')
+  r.setProperty('--aurora-speed',      (12 / parseFloat(t.auroraSpeed ?? 1)).toFixed(1) + 's')
+  r.setProperty('--aurora-color',      t.auroraColor ?? '#6c8fff')
+  r.setProperty('--mesh-color',        t.meshColor ?? t.accent ?? '#6c8fff')
+  r.setProperty('--laser-color',       t.laserColor  ?? '#6c8fff')
+  r.setProperty('--laser-color2',      t.laserColor2 ?? '#ff6bff')
+  r.setProperty('--laser-speed',       t.laserSpeed  ?? '1')
+  r.setProperty('--editbar-scale',     t.editbarScale ?? '1')
 }
 
 const lcKey = (id) => `ws_data_${id}`
+
+// ── Laser bounce canvas background ──────────────────────────────────────────
+function LaserCanvas({ color, color2, speed }) {
+  const ref = React.useRef()
+  React.useEffect(() => {
+    const canvas = ref.current; if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    let id
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight }
+    resize(); window.addEventListener('resize', resize)
+    const s = Math.max(0.2, parseFloat(speed) || 1)
+    const mk = (x, y, dx, dy, c) => ({ x, y, dx: dx*s, dy: dy*s, c, t: [] })
+    const beams = [
+      mk(200, 150,  2.2,  1.3, color  || '#6c8fff'),
+      mk(600, 400, -1.7,  1.9, color2 || '#ff6bff'),
+      mk(900, 200,  1.5, -2.1, color  || '#6c8fff'),
+      mk(400, 600, -2.4, -1.1, color2 || '#ff6bff'),
+    ]
+    ctx.fillStyle = '#05050f'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    const draw = () => {
+      ctx.fillStyle = 'rgba(5,5,15,0.18)'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      beams.forEach(b => {
+        b.x += b.dx; b.y += b.dy
+        if (b.x < 0 || b.x > canvas.width)  b.dx = -b.dx
+        if (b.y < 0 || b.y > canvas.height) b.dy = -b.dy
+        b.t.push({ x: b.x, y: b.y })
+        if (b.t.length > 80) b.t.shift()
+        ctx.save()
+        for (let i = 1; i < b.t.length; i++) {
+          const a   = i / b.t.length
+          const hex = Math.floor(a * 255).toString(16).padStart(2, '0')
+          ctx.beginPath()
+          ctx.moveTo(b.t[i-1].x, b.t[i-1].y)
+          ctx.lineTo(b.t[i].x,   b.t[i].y)
+          ctx.strokeStyle = b.c + hex
+          ctx.lineWidth   = 1 + a * 2.5
+          ctx.shadowColor = b.c
+          ctx.shadowBlur  = 18 * a
+          ctx.stroke()
+        }
+        // bright tip dot
+        ctx.beginPath(); ctx.arc(b.x, b.y, 2.5, 0, Math.PI * 2)
+        ctx.fillStyle   = '#ffffff'
+        ctx.shadowColor = b.c
+        ctx.shadowBlur  = 24
+        ctx.fill()
+        ctx.restore()
+      })
+      id = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => { cancelAnimationFrame(id); window.removeEventListener('resize', resize) }
+  }, [color, color2, speed])
+  return <canvas ref={ref} style={{ position:'absolute', inset:0, width:'100%', height:'100%' }} />
+}
 
 export default function App() {
   const [session,              setSession]              = useState(null)
@@ -487,7 +566,11 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className={`bg-layer ${theme.bgStyle}`} style={getBgStyle()} />
+      <div className={`bg-layer ${theme.bgStyle}`} style={getBgStyle()}>
+        {theme.bgStyle === 'bg-laser' && (
+          <LaserCanvas color={theme.laserColor} color2={theme.laserColor2} speed={theme.laserSpeed} />
+        )}
+      </div>
 
       {/* Topbar */}
       <div className="topbar">
