@@ -24,9 +24,9 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
   }
   const remove = async (id) => { await supabase.from('notes').delete().eq('id', id); onRefresh() }
 
-  // All layout/text styles inline — immune to any CSS cascade issue
+  // All layout/text styles inline â€” immune to any CSS cascade issue
   const S = {
-    card:    { display:'flex', flexDirection:'column', flex:1, minHeight:0, background:'color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent)', border:'1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)', borderRadius:'var(--radius)', overflow:'hidden' },
+    card:    { display:'flex', flexDirection:'column', height:'100%', minHeight:0, background:'color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent)', border:'1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)', borderRadius:'var(--radius)', overflow:'hidden' },
     header:  { display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0.35rem 0.5rem 0.35rem 0.65rem', flexShrink:0, cursor:'pointer', userSelect:'none' },
     hLeft:   { display:'flex', alignItems:'center', gap:'0.3rem', flex:1, minWidth:0 },
     title:   { fontSize:'0.74em', fontWeight:500, color:'var(--title-color)', textTransform:'uppercase', letterSpacing:'0.06em' },
@@ -35,7 +35,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
     chev:    { color:'var(--text-muted)', fontSize:'0.7em', marginLeft:'0.2rem', flexShrink:0 },
     body:    { flex:1, minHeight:0, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column', padding:'0.35rem 0.5rem' },
     empty:   { fontSize:'var(--font-size)', color:'var(--text-muted)', padding:'0.65rem 0.15rem', textAlign:'center' },
-    // ── FONT FIX: use var(--font-size) so notes match the rest of the UI ──
+    // â”€â”€ FONT FIX: use var(--font-size) so notes match the rest of the UI â”€â”€
     noteRow: (last) => ({ display:'flex', alignItems:'flex-start', gap:'0.3rem', padding:'0.3rem 0', borderBottom: last ? 'none' : '1px solid color-mix(in srgb, var(--border) 22%, transparent)' }),
     noteText:{ display:'block', flex:1, minWidth:0, color:'var(--text)', fontSize:'var(--font-size)', lineHeight:1.55, whiteSpace:'pre-wrap', wordBreak:'break-word', overflowWrap:'break-word', padding:'0.1rem 0', cursor:'text', maxHeight:'14em', overflow:'hidden' },
     delBtn:  { flexShrink:0, background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:'0.9em', lineHeight:1, padding:'0.15rem 0.2rem', opacity:0, transition:'color 0.15s, opacity 0.15s' },
@@ -54,7 +54,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
           {safeNotes.length > 0 && <span style={S.count}>{safeNotes.length}</span>}
         </div>
         <button style={S.addBtn} title="Add note" onClick={e => { e.stopPropagation(); setOpen(true); setAdding(true) }}>+</button>
-        <span style={S.chev}>{open ? '▾' : '▸'}</span>
+        <span style={S.chev}>{open ? 'â–¾' : 'â–¸'}</span>
       </div>
 
       {open && (
@@ -62,7 +62,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
           {adding && (
             <div style={{ marginBottom:'0.5rem' }}>
               <textarea style={S.ta} value={text} onChange={e => setText(e.target.value)}
-                placeholder="New note…" autoFocus
+                placeholder="New noteâ€¦" autoFocus
                 onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) add() }} />
               {err && <div style={S.errTxt}>{err}</div>}
               <div style={S.actRow}>
@@ -93,7 +93,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
                 <span style={S.noteText} onClick={() => { setEditing(n); setEditText(n.content) }} title="Click to edit">{n.content}</span>
                 <button data-del style={S.delBtn} onClick={() => remove(n.id)} title="Delete note"
                   onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
-                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>✕</button>
+                  onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>âœ•</button>
               </div>
             )
           })}
