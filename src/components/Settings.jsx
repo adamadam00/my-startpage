@@ -243,6 +243,7 @@ export default function Settings({
           <ColorRow label="Button"           value={theme.btnBg}        onChange={v => set('btnBg',v)} />
           <ColorRow label="Notes bg"         value={theme.notesBg}      onChange={v => set('notesBg',v)} />
           <ColorRow label="Notes input"      value={theme.notesInputBg} onChange={v => set('notesInputBg',v)} />
+          <ColorRow label="Note card bg"    value={theme.notesCardBg}  onChange={v => set('notesCardBg',v)} tip="Background of each individual note card" />
         </Sec>
 
         {/* ── 3. TYPOGRAPHY ── */}

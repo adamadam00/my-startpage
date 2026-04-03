@@ -51,6 +51,7 @@ const DEFAULT_THEME = {
   btnBg:             '#1e3a8a',
   notesBg:           '#13131a',
   notesInputBg:      '#0c0c0f',
+  notesCardBg:       '#1a1a26',
   bgStyle:           'bg-dots',
   plasmaSpeed:       '1',
   plasmaBlur:        '1',
@@ -125,6 +126,7 @@ function applyTheme(t) {
   r.setProperty('--btn-text',           '#ffffff')
   r.setProperty('--notes-bg',           t.notesBg      ?? t.card)
   r.setProperty('--notes-input-bg',     t.notesInputBg ?? t.bg)
+  r.setProperty('--notes-card-bg',      t.notesCardBg  ?? t.bg2)
   r.setProperty('--font',               `'${t.font}', monospace`)
   r.setProperty('--font-size',          t.workspaceFontSize  + 'px')
   r.setProperty('--topbar-font-size',   t.topbarFontSize     + 'px')
