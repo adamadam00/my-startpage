@@ -254,7 +254,6 @@ export default function App() {
   const sessionRef    = useRef(null)
   const syncTimer     = useRef(null)
   const topbarRef     = useRef(null)
-  const topbarRef     = useRef(null)
 
   useEffect(() => { sessionRef.current = session }, [session])
 
@@ -270,16 +269,6 @@ export default function App() {
 
 
   // Set --topbar-h CSS variable based on actual topbar height
-  useEffect(() => {
-    const el = topbarRef.current
-    if (!el) return
-    const update = () => document.documentElement.style.setProperty('--topbar-h', el.offsetHeight + 'px')
-    update()
-    const ro = new ResizeObserver(update)
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
