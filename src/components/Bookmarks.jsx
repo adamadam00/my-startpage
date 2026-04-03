@@ -37,7 +37,7 @@ export default function Bookmarks({ items = [], workspaceId, userId, onRefresh }
             {getFavicon(b.url) && <img src={getFavicon(b.url)} alt="" className="bookmark-favicon" />}
             <span className="bookmark-title">{b.title}</span>
           </a>
-          <button className="bookmark-remove" onClick={() => remove(b.id)} title="Remove">×</button>
+          <button className="bookmark-remove" onClick={() => remove(b.id)} title="Remove">✕</button>
         </div>
       ))}
       {adding ? (
