@@ -12,7 +12,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
   const [syncing, setSyncing]   = useState(false)
   const textRef                 = useRef(null)
 
-  // ── Auto-refresh every 30s (cross-browser sync) ─────────────────────────
+  // Auto-refresh every 30s — cross-browser sync
   useEffect(() => {
     const id = setInterval(() => {
       setSyncing(true)
@@ -60,6 +60,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
 
   return (
     <div className="notes-panel" style={{
+      height: 'auto',
       border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)',
       borderRadius: 'var(--radius)',
     }}>
@@ -67,72 +68,31 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
       {/* ── Header ── */}
       <div
         className="notes-header"
-        style={{ borderBottom: open ? '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)' : '1px solid transparent' }}
+        style={{ borderBottom: open
+          ? '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)'
+          : '1px solid transparent' }}
         onClick={() => setOpen(o => !o)}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: 1, minWidth: 0 }}>
-          <span style={{ fontSize: '0.74em', fontWeight: 500, color: 'var(--title-color)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:'0.3rem', flex:1, minWidth:0 }}>
+          <span style={{ fontSize:'0.74em', fontWeight:500, color:'var(--title-color)', textTransform:'uppercase', letterSpacing:'0.06em' }}>
             Notes
           </span>
-          {safeNotes.length > 0 && (
-            <span className="notes-count">{safeNotes.length}</span>
-          )}
-          {syncing && (
-            <span style={{ fontSize: '0.65em', color: 'var(--accent)', opacity: 0.7 }}>↻</span>
-          )}
+          {safeNotes.length > 0 && <span className="notes-count">{safeNotes.length}</span>}
+          {syncing && <span style={{ fontSize:'0.65em', color:'var(--accent)', opacity:0.7 }}>↻</span>}
         </div>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.2rem' }}>
+        <span style={{ color:'var(--text-muted)', fontSize:'0.7em', marginLeft:'0.2rem' }}>
           {open ? '▾' : '▸'}
         </span>
       </div>
 
       {/* ── Body ── */}
       {open && (
-        <div className="notes-body">
+        <div className="notes-body" style={{
+          padding: 'var(--notes-padding-v, 0.35rem) var(--notes-padding-h, 0.5rem)',
+          gap: 'var(--notes-gap, 0px)',
+        }}>
 
-          {/* Note rows */}
-          {safeNotes.map((n) => {
-            const value = noteValue(n)
-            return editing?.id === n.id ? (
-              <div key={n.id} className="note-item">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <textarea
-                    className="input"
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    autoFocus
-                    style={{ width: '100%', minHeight: 60, resize: 'vertical', lineHeight: 1.55 }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) update(n.id)
-                      if (e.key === 'Escape') { setEditing(null); setEditText('') }
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem' }}>
-                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => update(n.id)}>Save</button>
-                    <button className="btn" onClick={() => { setEditing(null); setEditText('') }}>Cancel</button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div key={n.id} className="note-item">
-                <span
-                  className="note-content"
-                  onClick={() => { setEditing(n); setEditText(value) }}
-                  title="Click to edit"
-                >{value}</span>
-                <div className="note-actions">
-                  <button className="icon-btn" style={{ fontSize: '0.9em' }}
-                    onClick={() => { setEditing(n); setEditText(value) }} title="Edit">✎</button>
-                  <button className="icon-btn" style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}
-                    onClick={() => remove(n.id)} title="Delete"
-                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
-                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}>✕</button>
-                </div>
-              </div>
-            )
-          })}
-
-          {/* ── New note inline form ── */}
+          {/* + New note — always at top */}
           {adding ? (
             <div className="note-new">
               <textarea
@@ -140,45 +100,82 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
                 className="input"
                 value={text}
                 onChange={e => setText(e.target.value)}
-                placeholder="Type a note… (Ctrl+Enter to save, Esc to cancel)"
-                style={{ width: '100%', minHeight: 64, resize: 'vertical', lineHeight: 1.55 }}
+                placeholder="Type a note… Ctrl+Enter saves, Esc cancels"
+                style={{ width:'100%', minHeight:64, resize:'vertical', lineHeight:1.55 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) add()
                   if (e.key === 'Escape') { setAdding(false); setText(''); setErr('') }
                 }}
               />
-              {err && <div style={{ fontSize: '0.8em', color: 'var(--danger)', marginTop: '0.2rem' }}>{err}</div>}
-              <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem' }}>
-                <button className="btn btn-primary" style={{ flex: 1 }} onClick={add}>Save</button>
+              {err && <div style={{ fontSize:'0.8em', color:'var(--danger)', marginTop:'0.2rem' }}>{err}</div>}
+              <div style={{ display:'flex', gap:'0.3rem', marginTop:'0.3rem' }}>
+                <button className="btn btn-primary" style={{ flex:1 }} onClick={add}>Save</button>
                 <button className="btn" onClick={() => { setAdding(false); setText(''); setErr('') }}>Cancel</button>
               </div>
             </div>
           ) : (
-            /* ── + New note button ── */
             <button
               onClick={startAdding}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                borderTop: safeNotes.length > 0 ? '1px solid color-mix(in srgb, var(--border) 20%, transparent)' : 'none',
-                padding: '0.45rem 0.1rem',
-                color: 'var(--text-muted)',
-                fontSize: 'var(--font-size)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'color 0.15s',
+                display:'flex', alignItems:'center', gap:'0.35rem',
+                width:'100%', background:'none', border:'none',
+                borderBottom: safeNotes.length > 0
+                  ? '1px solid color-mix(in srgb, var(--border) 20%, transparent)'
+                  : 'none',
+                padding:'0.3rem 0.1rem 0.45rem',
+                color:'var(--text-muted)',
+                fontSize:'var(--font-size)',
+                cursor:'pointer', textAlign:'left',
+                transition:'color 0.15s',
               }}
               onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
               onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}
             >
-              <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
+              <span style={{ fontSize:'1.1em', lineHeight:1 }}>+</span>
               <span>New note</span>
             </button>
           )}
+
+          {/* Note rows */}
+          {safeNotes.map((n) => {
+            const value = noteValue(n)
+            return editing?.id === n.id ? (
+              <div key={n.id} className="note-item">
+                <div style={{ flex:1, minWidth:0 }}>
+                  <textarea
+                    className="input"
+                    value={editText}
+                    onChange={e => setEditText(e.target.value)}
+                    autoFocus
+                    style={{ width:'100%', minHeight:60, resize:'vertical', lineHeight:1.55 }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) update(n.id)
+                      if (e.key === 'Escape') { setEditing(null); setEditText('') }
+                    }}
+                  />
+                  <div style={{ display:'flex', gap:'0.3rem', marginTop:'0.3rem' }}>
+                    <button className="btn btn-primary" style={{ flex:1 }} onClick={() => update(n.id)}>Save</button>
+                    <button className="btn" onClick={() => { setEditing(null); setEditText('') }}>Cancel</button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div key={n.id} className="note-item">
+                <span className="note-content"
+                  onClick={() => { setEditing(n); setEditText(value) }}
+                  title="Click to edit">{value}</span>
+                <div className="note-actions">
+                  <button className="icon-btn" style={{ fontSize:'0.9em' }}
+                    onClick={() => { setEditing(n); setEditText(value) }} title="Edit">✎</button>
+                  <button className="icon-btn"
+                    style={{ fontSize:'0.9em', color:'var(--text-muted)' }}
+                    onClick={() => remove(n.id)} title="Delete"
+                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}>✕</button>
+                </div>
+              </div>
+            )
+          })}
 
         </div>
       )}

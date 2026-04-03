@@ -83,6 +83,9 @@ const DEFAULT_THEME = {
   openInNewTab:      'true',
   notesFontSize:     '13',
   notesWidth:        '240',
+  notesPaddingV:     '0.35',
+  notesPaddingH:     '0.5',
+  notesGap:          '0',
   starfieldSpeed:    '1',
   starfieldColor:    '#ffffff',
   auroraSpeed:       '1',
@@ -150,6 +153,9 @@ function applyTheme(t) {
   r.setProperty('--plasma-blur-b',  (65 * _blr).toFixed(0) + 'px')
   r.setProperty('--notes-font-size',    t.notesFontSize + 'px')
   r.setProperty('--notes-width',        t.notesWidth    + 'px')
+  r.setProperty('--notes-padding-v',    (t.notesPaddingV ?? '0.35') + 'rem')
+  r.setProperty('--notes-padding-h',    (t.notesPaddingH ?? '0.5')  + 'rem')
+  r.setProperty('--notes-gap',          (t.notesGap      ?? '0')    + 'px')
   // animated bg speed/colour
   const _sf = parseFloat(t.starfieldSpeed ?? 1)
   r.setProperty('--starfield-speed-a', (80  / _sf).toFixed(1) + 's')
@@ -248,8 +254,20 @@ export default function App() {
   const sessionRef    = useRef(null)
   const syncTimer     = useRef(null)
   const topbarRef     = useRef(null)
+  const topbarRef     = useRef(null)
 
   useEffect(() => { sessionRef.current = session }, [session])
+
+  useEffect(() => {
+    const el = topbarRef.current
+    if (!el) return
+    const update = () => document.documentElement.style.setProperty('--topbar-h', el.offsetHeight + 'px')
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
 
   // Set --topbar-h CSS variable based on actual topbar height
   useEffect(() => {

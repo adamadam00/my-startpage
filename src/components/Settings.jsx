@@ -219,9 +219,16 @@ export default function Settings({
             <Slider value={theme.cardOpacity??1} min={0} max={1} step={0.05}
               onChange={v => set('cardOpacity',v)} />
           </Row>
-          <Row label="Card scale" tip="Zoom level for the entire page (0.6 = 60%, 1.4 = 140%)">
-            <Slider value={theme.pageScale??1} min={0.6} max={1.4} step={0.05}
-              onChange={v => set('pageScale',v)} />
+          <Row label="Page scale" tip="Zoom level — click a preset">
+            <div style={{ display:'flex', gap:'0.25rem', flexWrap:'wrap' }}>
+              {[0.7,0.8,0.85,0.9,0.95,1,1.1,1.2].map(v => (
+                <button key={v}
+                  className={`btn${parseFloat(theme.pageScale??1)===v?' btn-primary':' btn-ghost'}`}
+                  style={{ padding:'0.15rem 0.45rem', fontSize:'0.78em', minWidth:36 }}
+                  onClick={() => set('pageScale', String(v))}
+                >{Math.round(v*100)}%</button>
+              ))}
+            </div>
           </Row>
           <ColorRow label="Border"           value={theme.border}       onChange={v => set('border',v)} />
           <Row label="Border opacity">
@@ -293,6 +300,18 @@ export default function Settings({
           <Row label="Notes width">
             <Slider value={theme.notesWidth??240} min={160} max={420} step={10}
               onChange={v => set('notesWidth',v)} />
+          </Row>
+          <Row label="Notes pad V" tip="Top/bottom padding inside the notes panel">
+            <Slider value={parseFloat(theme.notesPaddingV??0.35)} min={0} max={2} step={0.05}
+              onChange={v => set('notesPaddingV', v)} />
+          </Row>
+          <Row label="Notes pad H" tip="Left/right padding inside the notes panel">
+            <Slider value={parseFloat(theme.notesPaddingH??0.5)} min={0} max={2} step={0.05}
+              onChange={v => set('notesPaddingH', v)} />
+          </Row>
+          <Row label="Note gap" tip="Space between individual note rows (px)">
+            <Slider value={parseFloat(theme.notesGap??0)} min={0} max={20} step={1}
+              onChange={v => set('notesGap', v)} />
           </Row>
         </Sec>
 
@@ -385,6 +404,18 @@ export default function Settings({
             onChange={e => { onImportBackup?.(e); onImageUpload?.(e) }} />
         </Sec>
 
+        {/* ── Reset ── */}
+        <Sec title="Reset">
+          <button
+            className="btn"
+            style={{ width:'100%', color:'var(--danger)', border:'1px solid color-mix(in srgb, var(--danger) 35%, transparent)' }}
+            onClick={onReset}
+          >↺ Reset all settings to defaults</button>
+          <p style={{ fontSize:'0.78em', color:'var(--text-muted)', marginTop:'0.4rem', lineHeight:1.5 }}>
+            Restores all colours, sizes and layout. Cannot be undone.
+          </p>
+        </Sec>
+
       </div>
 
 		<div className="settings-footer" data-side={theme.settingsSide||'right'} style={{ zIndex: 102 }}>
@@ -401,9 +432,6 @@ export default function Settings({
 			onClick={onSave}
 		  >
 			Save
-		  </button>
-		  <button className="btn btn-ghost" onClick={onReset}>
-			Reset defaults
 		  </button>
 		  <button className="btn btn-ghost" onClick={onClose}>
 			Close
