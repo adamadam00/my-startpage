@@ -387,7 +387,7 @@ export default function Settings({
 
       </div>
 
-		<div className="settings-footer" data-side={theme.settingsSide||'right'}>
+		<div className="settings-footer" data-side={theme.settingsSide||'right'} style={{ zIndex: 102 }}>
 		  <button
 			className="btn btn-primary"
 			style={{ flex:1 }}
