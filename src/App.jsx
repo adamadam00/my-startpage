@@ -247,8 +247,21 @@ export default function App() {
   const wsCache       = useRef({})
   const sessionRef    = useRef(null)
   const syncTimer     = useRef(null)
+  const topbarRef     = useRef(null)
 
   useEffect(() => { sessionRef.current = session }, [session])
+
+  // Set --topbar-h CSS variable based on actual topbar height
+  useEffect(() => {
+    const el = topbarRef.current
+    if (!el) return
+    const update = () => document.documentElement.style.setProperty('--topbar-h', el.offsetHeight + 'px')
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -573,7 +586,7 @@ export default function App() {
       </div>
 
       {/* Topbar */}
-      <div className="topbar">
+      <div className="topbar" ref={topbarRef}>
         <div className="workspace-tabs">
           {workspaces.map(ws => (
             <button key={ws.id}
@@ -629,8 +642,8 @@ export default function App() {
       </div>
 
       {/* Main layout */}
-      <div className="main-layout" style={{ gridTemplateColumns: `1fr ${notesWidth}px` }}>
-        <div className="main-col">
+      <div className="main-layout" style={{ gridTemplateColumns: `1fr` }}>
+        <div className="main-col" style={{ paddingRight: `${notesWidth + 12}px` }}>
           <Sections
             sections={sections ?? []}
             links={links ?? []}
@@ -646,14 +659,25 @@ export default function App() {
             locked={locked}
           />
         </div>
-        <div className="side-col">
-          <Notes
-            notes={notes ?? []}
-            userId={session.user.id}
-            workspaceId={activeWs}
-            onRefresh={handleRefresh}
-          />
-        </div>
+      </div>
+
+      {/* Notes — fixed panel, outside grid so overflow:hidden can't clip it */}
+      <div style={{
+        position: 'fixed',
+        top: 'var(--topbar-h, 40px)',
+        right: 0,
+        width: `${notesWidth}px`,
+        height: 'calc(100vh - var(--topbar-h, 40px))',
+        overflowY: 'auto',
+        zIndex: 10,
+        padding: '0.75rem 0.75rem 0.75rem 0',
+      }}>
+        <Notes
+          notes={notes ?? []}
+          userId={session.user.id}
+          workspaceId={activeWs}
+          onRefresh={handleRefresh}
+        />
       </div>
 
       {/* Settings panel */}
