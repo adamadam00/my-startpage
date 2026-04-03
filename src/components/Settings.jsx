@@ -387,13 +387,28 @@ export default function Settings({
 
       </div>
 
-      {/* Footer — z-index 102 so it sits ABOVE the panel (z-index 101) */}
-      <div className="settings-footer" data-side={theme.settingsSide||'right'}>
-        <button className="btn btn-primary" style={{ flex:1 }} onClick={() => { onSave(); onClose() }}>Save &amp; Exit</button>
-        <button className="btn btn-ghost" style={{ flex:1 }} onClick={onSave}>Save</button>
-        <button className="btn btn-ghost" onClick={onReset}>Reset defaults</button>
-        <button className="btn btn-ghost" onClick={onClose}>Close</button>
-      </div>
+		<div className="settings-footer" data-side={theme.settingsSide||'right'}>
+		  <button
+			className="btn btn-primary"
+			style={{ flex:1 }}
+			onClick={() => { onSave(); onClose() }}
+		  >
+			Save & Exit
+		  </button>
+		  <button
+			className="btn btn-ghost"
+			style={{ flex:1 }}
+			onClick={onSave}
+		  >
+			Save
+		  </button>
+		  <button className="btn btn-ghost" onClick={onReset}>
+			Reset defaults
+		  </button>
+		  <button className="btn btn-ghost" onClick={onClose}>
+			Close
+		  </button>
+		</div>
     </>
   )
 }
