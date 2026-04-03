@@ -671,10 +671,11 @@ export default function App() {
       {/* Notes — fixed panel, outside grid so overflow:hidden can't clip it */}
       <div style={{
         position: 'fixed',
-        top: 'var(--topbar-h, 40px)',
+        top: 'calc(var(--topbar-h, 42px) + var(--main-gap-top, 12px))',
         right: 0,
         width: `${notesWidth}px`,
-        height: 'calc(100vh - var(--topbar-h, 40px))',
+        maxHeight: 'calc(100vh - var(--topbar-h, 42px) - var(--main-gap-top, 12px))',
+        height: 'auto',
         overflowY: 'auto',
         zIndex: 10,
         padding: '0.75rem 0.75rem 0.75rem 0',

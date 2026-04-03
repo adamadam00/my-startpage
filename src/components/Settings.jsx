@@ -294,7 +294,7 @@ export default function Settings({
               onChange={v => set('linkGap',v)} />
           </Row>
           <Row label="Top gap">
-            <Slider value={theme.mainGapTop??12} min={0} max={48} step={1}
+            <Slider value={theme.mainGapTop??12} min={0} max={80} step={1}
               onChange={v => set('mainGapTop',v)} />
           </Row>
           <Row label="Notes width">

@@ -89,7 +89,6 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
       {open && (
         <div className="notes-body" style={{
           padding: 'var(--notes-padding-v, 0.35rem) var(--notes-padding-h, 0.5rem)',
-          gap: 'var(--notes-gap, 0px)',
         }}>
 
           {/* + New note — always at top */}
@@ -140,7 +139,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
           {safeNotes.map((n) => {
             const value = noteValue(n)
             return editing?.id === n.id ? (
-              <div key={n.id} className="note-item">
+              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)' }}>
                 <div style={{ flex:1, minWidth:0 }}>
                   <textarea
                     className="input"
@@ -160,7 +159,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
                 </div>
               </div>
             ) : (
-              <div key={n.id} className="note-item">
+              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)' }}>
                 <span className="note-content"
                   onClick={() => { setEditing(n); setEditText(value) }}
                   title="Click to edit">{value}</span>
