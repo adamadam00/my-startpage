@@ -60,14 +60,12 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
     card: {
       display: 'flex',
       flexDirection: 'column',
-      height: '100%',
       minHeight: 0,
       background:
         'color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent)',
       border:
         '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent)',
       borderRadius: 'var(--radius)',
-      overflow: 'hidden',
     },
     header: {
       display: 'flex',
@@ -126,8 +124,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
       flexShrink: 0,
     },
     body: {
-      flex: 1,
-      minHeight: 0,
+      maxHeight: 'calc(100vh - 80px)',
       overflowY: 'auto',
       overflowX: 'hidden',
       display: 'flex',
