@@ -34,9 +34,8 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
     chev:       { color:'var(--text-muted)', fontSize:'0.7em', marginLeft:'0.2rem', flexShrink:0 },
     body:       { flex:1, minHeight:0, overflowY:'auto', overflowX:'hidden', display:'flex', flexDirection:'column', padding:'0.35rem 0.5rem' },
     empty:      { fontSize:'var(--font-size)', color:'var(--text-muted)', padding:'0.65rem 0.15rem', textAlign:'center' },
-    noteRow:    (last) => ({ display:'flex', alignItems:'flex-start', gap:'0.3rem', padding:'0.3rem 0', borderBottom: last ? 'none' : '1px solid color-mix(in srgb, var(--border) 22%, transparent)' }),
-    noteText:   { display:'block', flex:1, minWidth:0, color:'var(--text)', fontSize:'var(--font-size)', lineHeight:1.55, whiteSpace:'pre-wrap', wordBreak:'break-word', overflowWrap:'break-word', padding:'0.1rem 0', cursor:'text', maxHeight:'14em', overflow:'hidden' },
-    // ── Action overlay: ✎ + ✕ pair, same pattern as link-actions-overlay ──
+    noteRow:    (last) => ({ display:'flex', alignItems:'flex-start', gap:'0.3rem', padding:'0.3rem 0', minWidth:0, borderBottom: last ? 'none' : '1px solid color-mix(in srgb, var(--border) 22%, transparent)' }),
+    noteText:   { display:'block', flex:1, minWidth:0, width:'100%', color:'var(--text, #e8e8f0)', fontSize:'var(--font-size, 14px)', lineHeight:1.55, whiteSpace:'pre-wrap', wordBreak:'break-word', overflowWrap:'anywhere', padding:'0.1rem 0', cursor:'text' },
     actOverlay: { display:'flex', gap:0, flexShrink:0, opacity:0, transition:'opacity 0.15s' },
     actBtn:     { flexShrink:0, background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:'0.88em', lineHeight:1, padding:0, width:20, height:20, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:3, transition:'color 0.15s' },
     ta:         { width:'100%', background:'var(--notes-input-bg)', border:'1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)', borderRadius:'var(--radius-sm)', padding:'0.4rem 0.6rem', color:'var(--text)', fontSize:'var(--font-size)', outline:'none', resize:'vertical', lineHeight:1.55, fontFamily:'var(--font)', minHeight:60 },
@@ -86,7 +85,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
             const last = i === safeNotes.length - 1
             return editing?.id === n.id ? (
               <div key={n.id} style={S.noteRow(last)}>
-                <div style={{ flex:1 }}>
+                <div style={{ flex:1, minWidth:0 }}>
                   <textarea
                     style={S.ta}
                     value={editText}
@@ -107,16 +106,20 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
                 onMouseEnter={e => { const ov = e.currentTarget.querySelector('[data-act]'); if (ov) ov.style.opacity = '1' }}
                 onMouseLeave={e => { const ov = e.currentTarget.querySelector('[data-act]'); if (ov) ov.style.opacity = '0' }}
               >
-                <span
-                  style={S.noteText}
-                  title="Click to edit"
-                  onClick={() => { setEditing(n); setEditText(n.content) }}
-                >{n.content}</span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div
+                    style={S.noteText}
+                    title="Click to edit"
+                    onClick={() => { setEditing(n); setEditText(n.content ?? '') }}
+                  >
+                    {n.content ?? ''}
+                  </div>
+                </div>
                 <div data-act style={S.actOverlay}>
                   <button
                     style={S.actBtn}
                     title="Edit note"
-                    onClick={() => { setEditing(n); setEditText(n.content) }}
+                    onClick={() => { setEditing(n); setEditText(n.content ?? '') }}
                     onMouseEnter={e => e.currentTarget.style.color = 'var(--text)'}
                     onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
                   >✎</button>
