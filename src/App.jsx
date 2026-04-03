@@ -126,7 +126,7 @@ function applyTheme(t) {
   r.setProperty('--btn-text',           '#ffffff')
   r.setProperty('--notes-bg',           t.notesBg      ?? t.card)
   r.setProperty('--notes-input-bg',     t.notesInputBg ?? t.bg)
-  r.setProperty('--notes-card-bg',      t.notesCardBg  ?? t.bg2)
+  r.setProperty('--notes-card-bg',      t.notesCardBg  ?? t.bg2 ?? '#1a1a26')
   r.setProperty('--font',               `'${t.font}', monospace`)
   r.setProperty('--font-size',          t.workspaceFontSize  + 'px')
   r.setProperty('--topbar-font-size',   t.topbarFontSize     + 'px')
