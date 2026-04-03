@@ -139,7 +139,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
           {safeNotes.map((n) => {
             const value = noteValue(n)
             return editing?.id === n.id ? (
-              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)' }}>
+              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)', background: 'color-mix(in srgb, var(--border) 8%, var(--notes-bg))', border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*60%), transparent)', borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.5rem', }}>
                 <div style={{ flex:1, minWidth:0 }}>
                   <textarea
                     className="input"
@@ -159,7 +159,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
                 </div>
               </div>
             ) : (
-              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)' }}>
+              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)', background: 'color-mix(in srgb, var(--border) 8%, var(--notes-bg))', border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*60%), transparent)', borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.5rem', }}>
                 <span className="note-content"
                   onClick={() => { setEditing(n); setEditText(value) }}
                   title="Click to edit">{value}</span>
