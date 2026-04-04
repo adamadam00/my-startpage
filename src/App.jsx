@@ -1,440 +1,710 @@
-import { useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Auth from './components/Auth'
+import Toolbar from './components/Toolbar'
+import WorkspaceTabs from './components/WorkspaceTabs'
+import Sections from './components/Sections'
+import Notes from './components/Notes'
+import Settings from './components/Settings'
+import { supabase } from './supabaseClient'
+import './index.css'
 
-const FONTS = ['DM Mono','JetBrains Mono','IBM Plex Sans','Inter','Outfit','Space Grotesk','Figtree','Geist']
-
-const BG_META = {
-  'bg-solid':    { label:'Solid',         tip:'Flat solid colour' },
-  'bg-noise':    { label:'Noise',         tip:'Subtle film-grain texture overlay' },
-  'bg-dots':     { label:'Dots',          tip:'Regular dot grid — colour & opacity adjustable' },
-  'bg-grid':     { label:'Grid',          tip:'Square grid lines — colour & opacity adjustable' },
-  'bg-lines':    { label:'Lines',         tip:'Diagonal ruled lines — colour & opacity adjustable' },
-  'bg-gradient': { label:'Gradient',      tip:'Directional gradient — configure type, angle & colours below' },
-  'bg-mesh':     { label:'* Blobs',       tip:'Animated soft coloured blob mesh' },
-  'bg-aurora':   { label:'* Aurora',      tip:'Animated northern-lights hue drift — speed & colour adjustable' },
-  'bg-starfield':{ label:'* Starfield',   tip:'Animated drifting star field — speed & colour adjustable' },
-  'bg-laser':    { label:'* Laser',       tip:'Animated laser beams bouncing around the screen' },
-  'bg-stars':    { label:'Stars',         tip:'Static scattered star pattern' },
-  'bg-nebula':   { label:'Nebula',        tip:'Deep-space nebula cloud with scattered stars' },
-  'bg-circuit':  { label:'Circuit',       tip:'Circuit-board trace grid' },
-  'bg-plasma':   { label:'* Plasma',      tip:'Animated liquid colour blobs — higher GPU use' },
-  'bg-inferno':  { label:'* Inferno',     tip:'Animated plasma — red/orange fire palette' },
-  'bg-mint':     { label:'* Mint',        tip:'Animated plasma — green/teal/cyan palette' },
-  'bg-dusk':     { label:'* Dusk',        tip:'Animated plasma — pink/violet/peach palette' },
-  'bg-mono':     { label:'* Mono',        tip:'Animated plasma — deep navy monochrome' },
-  'bg-image':    { label:'Image',         tip:'Upload a custom background image (max 2 MB)' },
-}
-const PATTERN_BG   = ['bg-dots','bg-grid','bg-lines','bg-circuit']
-const PLASMA_BG    = ['bg-plasma','bg-inferno','bg-mint','bg-dusk','bg-mono']
-const GRADIENT_BG  = ['bg-gradient']
-const IMAGE_BG     = ['bg-image']
-const STARFIELD_BG = ['bg-starfield']
-const AURORA_BG    = ['bg-aurora']
-const LASER_BG     = ['bg-laser']
-const MESH_BG      = ['bg-mesh']
-
-function Sec({ title, children }) {
-  return (
-    <div className="settings-section">
-      <div className="settings-title">{title}</div>
-      {children}
-    </div>
-  )
-}
-function Row({ label, tip, children }) {
-  return (
-    <div className="settings-row" title={tip||''}>
-      <span className="settings-label" title={tip||''}>{label}</span>
-      {children}
-    </div>
-  )
-}
-function Slider({ value, min, max, step=1, onChange }) {
-  return (
-    <div style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(e.target.value)} style={{ maxWidth:90 }} />
-      <span style={{ fontSize:'0.75em', color:'var(--text-muted)', minWidth:28, textAlign:'right' }}>{value}</span>
-    </div>
-  )
-}
-function Toggle({ checked, onChange, tip }) {
-  return (
-    <label className="toggle" title={tip||''}>
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
-      <span className="toggle-slider" />
-    </label>
-  )
-}
-function ColorRow({ label, tip, value, onChange }) {
-  return (
-    <Row label={label} tip={tip}>
-      <input type="color" className="color-input"
-        value={value||'#000000'} onChange={e => onChange(e.target.value)} />
-    </Row>
-  )
+const DEFAULT_THEME = {
+  bg: '#0b0f17',
+  text: '#e8eefc',
+  accent: '#7dd3fc',
+  card: '#111827cc',
+  line: '#1f2937',
+  cardRadius: 16,
+  cardBlur: 10,
+  pageWidth: 1400,
+  font: 'Inter, system-ui, sans-serif',
+  titleSize: 28,
+  sectionTitleSize: 18,
+  linkSize: 15,
+  noteSize: 15,
+  wallpaper: '',
+  wallpaperFit: 'cover',
+  wallpaperX: 50,
+  wallpaperY: 50,
+  wallpaperScale: 100,
+  wallpaperBlur: 0,
+  wallpaperDim: 35,
+  wallpaperOpacity: 100,
+  pageGap: 14,
+  cardGap: 12,
+  columns: 4,
+  linkStyle: 'solid',
+  sectionStyle: 'glass',
+  cardShadow: 25,
+  settingsSide: 'right',
 }
 
-export default function Settings({
-  theme, set,
-  workspaces, activeWs, onSwitchWs, onDeleteWs,
-  onSave, onReset, onClose,
-  onExport, onImport,
-  onImageUpload,
-  onExportBackup, onImportBackup,
-  fileRef, backupFileRef,
-  onRefreshCache,
-  themeSyncing, importingBackup,
-  onAddSection, onImportSection, onCollapseAll, onExpandAll,
-}) {
-  const importRef = fileRef       || useRef()
-  const bkupRef   = backupFileRef || useRef()
+function applyTheme(t) {
+  const root = document.documentElement
+  root.style.setProperty('--bg', t.bg)
+  root.style.setProperty('--text', t.text)
+  root.style.setProperty('--accent', t.accent)
+  root.style.setProperty('--card', t.card)
+  root.style.setProperty('--line', t.line)
+  root.style.setProperty('--card-radius', `${t.cardRadius}px`)
+  root.style.setProperty('--card-blur', `${t.cardBlur}px`)
+  root.style.setProperty('--page-width', `${t.pageWidth}px`)
+  root.style.setProperty('--font', t.font)
+  root.style.setProperty('--title-size', `${t.titleSize}px`)
+  root.style.setProperty('--section-title-size', `${t.sectionTitleSize}px`)
+  root.style.setProperty('--link-size', `${t.linkSize}px`)
+  root.style.setProperty('--note-size', `${t.noteSize}px`)
+  root.style.setProperty('--wallpaper-fit', t.wallpaperFit || 'cover')
+  root.style.setProperty('--wallpaper-x', `${t.wallpaperX ?? 50}%`)
+  root.style.setProperty('--wallpaper-y', `${t.wallpaperY ?? 50}%`)
+  root.style.setProperty('--wallpaper-scale', `${t.wallpaperScale ?? 100}%`)
+  root.style.setProperty('--wallpaper-blur', `${t.wallpaperBlur ?? 0}px`)
+  root.style.setProperty('--wallpaper-dim', `${(t.wallpaperDim ?? 35) / 100}`)
+  root.style.setProperty('--wallpaper-opacity', `${(t.wallpaperOpacity ?? 100) / 100}`)
+  root.style.setProperty('--page-gap', `${t.pageGap ?? 14}px`)
+  root.style.setProperty('--card-gap', `${t.cardGap ?? 12}px`)
+  root.style.setProperty('--columns', `${t.columns ?? 4}`)
+  root.style.setProperty('--card-shadow', `${t.cardShadow ?? 25}px`)
+  root.style.setProperty('--link-style', t.linkStyle || 'solid')
+  root.style.setProperty('--section-style', t.sectionStyle || 'glass')
+  document.body.style.fontFamily = t.font
+  document.body.style.backgroundColor = t.bg
+  document.body.style.color = t.text
+}
 
-  const isPattern  = PATTERN_BG.includes(theme.bgStyle)
-  const isPlasma   = PLASMA_BG.includes(theme.bgStyle)
-  const isGradient = GRADIENT_BG.includes(theme.bgStyle)
-  const isImage    = IMAGE_BG.includes(theme.bgStyle)
-  const isStarfield = STARFIELD_BG.includes(theme.bgStyle)
-  const isAurora   = AURORA_BG.includes(theme.bgStyle)
-  const isLaser    = LASER_BG.includes(theme.bgStyle)
-  const isMesh     = MESH_BG.includes(theme.bgStyle)
+export default function App() {
+  const [session, setSession] = useState(null)
+  const sessionRef = useRef(null)
+
+  const [workspaces, setWorkspaces] = useState([])
+  const [activeWs, setActiveWs] = useState(null)
+
+  const [sections, setSections] = useState([])
+  const [links, setLinks] = useState([])
+  const [notes, setNotes] = useState([])
+
+  const [theme, setTheme] = useState(() => {
+    try {
+      return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem('current_theme')) || {}) }
+    } catch {
+      return DEFAULT_THEME
+    }
+  })
+
+  const [search, setSearch] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [importingBackup, setImportingBackup] = useState(false)
+
+  const fileRef = useRef(null)
+  const backupFileRef = useRef(null)
+
+  // Single-key theme setter — required by Settings.jsx
+  const set = (key, val) => setTheme(prev => {
+    const next = { ...prev, [key]: val }
+    localStorage.setItem('current_theme', JSON.stringify(next))
+    applyTheme(next)
+    return next
+  })
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    document.documentElement.dataset.settingsSide = theme.settingsSide || 'right'
+  }, [theme.settingsSide])
+
+  useEffect(() => {
+    sessionRef.current = session
+  }, [session])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null)
+      setLoading(false)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess ?? null)
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+
+    const bootstrap = async () => {
+      await ensureWorkspace()
+      await handleRefresh()
+    }
+
+    bootstrap()
+  }, [session])
+
+  const ensureWorkspace = async () => {
+    const { data, error } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    if (!data || data.length === 0) {
+      const { data: created, error: createErr } = await supabase
+        .from('workspaces')
+        .insert({ user_id: session.user.id, name: 'Home' })
+        .select()
+        .single()
+
+      if (createErr) {
+        alert(createErr.message)
+        return
+      }
+
+      setWorkspaces([created])
+      setActiveWs(created.id)
+      return
+    }
+
+    setWorkspaces(data)
+    setActiveWs(prev => prev ?? data[0]?.id ?? null)
+  }
+
+  const handleRefresh = async () => {
+    if (!sessionRef.current?.user?.id) return
+
+    const { data: wsData, error: wsErr } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (wsErr) {
+      alert(wsErr.message)
+      return
+    }
+
+    setWorkspaces(wsData || [])
+
+    const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+    if (!currentWs) return
+    if (!activeWs) setActiveWs(currentWs)
+
+    const [{ data: secData, error: secErr }, { data: linkData, error: linkErr }, { data: noteData, error: noteErr }] =
+      await Promise.all([
+        supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: true }),
+      ])
+
+    if (secErr) return alert(secErr.message)
+    if (linkErr) return alert(linkErr.message)
+    if (noteErr) return alert(noteErr.message)
+
+    setSections(secData || [])
+    setLinks(linkData || [])
+    setNotes(noteData || [])
+  }
+
+  useEffect(() => {
+    if (!activeWs || !session) return
+    handleRefresh()
+  }, [activeWs])
+
+  const filteredLinks = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return links
+    return links.filter(l =>
+      (l.title || '').toLowerCase().includes(q) ||
+      (l.url || '').toLowerCase().includes(q)
+    )
+  }, [links, search])
+
+  const addWorkspace = async () => {
+    const name = prompt('Workspace name?')
+    if (!name) return
+
+    const { data, error } = await supabase
+      .from('workspaces')
+      .insert({ user_id: session.user.id, name })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setWorkspaces(prev => [...prev, data])
+    setActiveWs(data.id)
+  }
+
+  const renameWorkspace = async (id, name) => {
+    const { error } = await supabase.from('workspaces').update({ name }).eq('id', id)
+    if (error) return alert(error.message)
+    setWorkspaces(prev => prev.map(w => (w.id === id ? { ...w, name } : w)))
+  }
+
+  const deleteWorkspace = async (id) => {
+    if (!confirm('Delete this workspace?')) return
+    const { error } = await supabase.from('workspaces').delete().eq('id', id)
+    if (error) return alert(error.message)
+
+    const next = workspaces.filter(w => w.id !== id)
+    setWorkspaces(next)
+    setActiveWs(next[0]?.id ?? null)
+  }
+
+  const addSection = async () => {
+    const name = prompt('Section name?')
+    if (!name || !activeWs) return
+
+    const { data, error } = await supabase
+      .from('sections')
+      .insert({
+        user_id: session.user.id,
+        workspace_id: activeWs,
+        name,
+        position: sections.length,
+        collapsed: false,
+      })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setSections(prev => [...prev, data])
+  }
+
+  const updateSection = async (id, patch) => {
+    const { error } = await supabase.from('sections').update(patch).eq('id', id)
+    if (error) return alert(error.message)
+    setSections(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)))
+  }
+
+  const deleteSection = async (id) => {
+    if (!confirm('Delete this section and its links?')) return
+
+    const { error: linkErr } = await supabase.from('links').delete().eq('section_id', id)
+    if (linkErr) return alert(linkErr.message)
+
+    const { error } = await supabase.from('sections').delete().eq('id', id)
+    if (error) return alert(error.message)
+
+    setSections(prev => prev.filter(s => s.id !== id))
+    setLinks(prev => prev.filter(l => l.section_id !== id))
+  }
+
+  const addLink = async (sectionId) => {
+    const title = prompt('Link title?')
+    if (!title) return
+    const url = prompt('URL?')
+    if (!url) return
+
+    const sectionLinks = links.filter(l => l.section_id === sectionId)
+    const { data, error } = await supabase
+      .from('links')
+      .insert({
+        user_id: session.user.id,
+        workspace_id: activeWs,
+        section_id: sectionId,
+        title,
+        url,
+        position: sectionLinks.length,
+      })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setLinks(prev => [...prev, data])
+  }
+
+  const updateLink = async (id, patch) => {
+    const { error } = await supabase.from('links').update(patch).eq('id', id)
+    if (error) return alert(error.message)
+    setLinks(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l)))
+  }
+
+  const deleteLink = async (id) => {
+    const { error } = await supabase.from('links').delete().eq('id', id)
+    if (error) return alert(error.message)
+    setLinks(prev => prev.filter(l => l.id !== id))
+  }
+
+  const addNote = async () => {
+    if (!activeWs) return
+    const { data, error } = await supabase
+      .from('notes')
+      .insert({
+        user_id: session.user.id,
+        workspace_id: activeWs,
+        content: '',
+      })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setNotes(prev => [...prev, data])
+  }
+
+  const updateNote = async (id, content) => {
+    const { error } = await supabase.from('notes').update({ content }).eq('id', id)
+    if (error) return alert(error.message)
+    setNotes(prev => prev.map(n => (n.id === id ? { ...n, content } : n)))
+  }
+
+  const deleteNote = async (id) => {
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (error) return alert(error.message)
+    setNotes(prev => prev.filter(n => n.id !== id))
+  }
+
+  const handleImageUpload = async (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const next = { ...theme, wallpaper: e.target.result }
+      setTheme(next)
+      applyTheme(next)
+      localStorage.setItem('current_theme', JSON.stringify(next))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const exportFullBackup = async () => {
+    const backup = {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      theme,
+      workspaces: [],
+    }
+
+    const { data: wsData, error: wsErr } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (wsErr) return alert(wsErr.message)
+
+    for (const ws of wsData || []) {
+      const [{ data: secData, error: secErr }, { data: noteData, error: noteErr }] =
+        await Promise.all([
+          supabase.from('sections').select('*').eq('workspace_id', ws.id).order('position', { ascending: true }),
+          supabase.from('notes').select('*').eq('workspace_id', ws.id).order('created_at', { ascending: true }),
+        ])
+
+      if (secErr) return alert(secErr.message)
+      if (noteErr) return alert(noteErr.message)
+
+      const sectionsWithLinks = []
+      for (const sec of secData || []) {
+        const { data: secLinks, error: lErr } = await supabase
+          .from('links')
+          .select('*')
+          .eq('section_id', sec.id)
+          .order('position', { ascending: true })
+
+        if (lErr) return alert(lErr.message)
+
+        sectionsWithLinks.push({
+          name: sec.name,
+          position: sec.position,
+          collapsed: sec.collapsed,
+          links: (secLinks || []).map(l => ({
+            title: l.title,
+            url: l.url,
+            position: l.position,
+          })),
+        })
+      }
+
+      backup.workspaces.push({
+        name: ws.name,
+        sections: sectionsWithLinks,
+        notes: (noteData || []).map(n => ({ content: n.content })),
+      })
+    }
+
+    if (!backup.workspaces || !Array.isArray(backup.workspaces)) {
+      alert('Invalid backup file.')
+      return
+    }
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'startpage-backup.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Export theme as JSON
+  const exportTheme = () => {
+    const blob = new Blob([JSON.stringify(theme, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'startpage-theme.json'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Import theme from JSON file
+  const importTheme = (e) => {
+    const f = e.target.files?.[0]
+    if (!f) return
+    e.target.value = ''
+    const r = new FileReader()
+    r.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result)
+        const next = { ...DEFAULT_THEME, ...data }
+        setTheme(next)
+        applyTheme(next)
+        localStorage.setItem('current_theme', JSON.stringify(next))
+      } catch (err) {
+        alert('Theme import failed: ' + err.message)
+      }
+    }
+    r.readAsText(f)
+  }
+
+  // Reset theme to defaults
+  const resetTheme = () => {
+    if (!confirm('Reset all settings to defaults? Cannot be undone.')) return
+    setTheme(DEFAULT_THEME)
+    applyTheme(DEFAULT_THEME)
+    localStorage.setItem('current_theme', JSON.stringify(DEFAULT_THEME))
+  }
+
+  const saveTheme = () => {
+    localStorage.setItem('current_theme', JSON.stringify(theme))
+    applyTheme(theme)
+  }
+
+  const activeWorkspace = workspaces.find(w => w.id === activeWs)
+
+  if (loading) return <div className="center-fill">Loading…</div>
+  if (!session) return <Auth />
 
   return (
-    <>
-      <div className="settings-veil" />
-      <div className="settings-panel" data-side={theme.settingsSide||'right'}>
+    <div className="app-shell">
+      {theme.wallpaper ? (
+        <div
+          className="wallpaper-layer"
+          style={{
+            backgroundImage: `url(${theme.wallpaper})`,
+            backgroundSize: `${theme.wallpaperScale ?? 100}%`,
+            backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
+            filter: `blur(${theme.wallpaperBlur ?? 0}px)`,
+            opacity: (theme.wallpaperOpacity ?? 100) / 100,
+          }}
+        />
+      ) : null}
 
-        {/* Header */}
-        <div className="settings-header">
-          <span style={{ fontWeight:600, fontSize:'1em' }}>Settings</span>
-          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
-            {themeSyncing && <span style={{ fontSize:'0.72em', color:'var(--text-muted)' }}>saving…</span>}
-            <button className="icon-btn" onClick={onClose} title="Close settings">✕</button>
-          </div>
+      <div className="wallpaper-dim" />
+
+      <Toolbar
+        search={search}
+        setSearch={setSearch}
+        onAddSection={addSection}
+        onAddNote={addNote}
+        onRefresh={handleRefresh}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      <main className="page-wrap">
+        <WorkspaceTabs
+          workspaces={workspaces}
+          activeWs={activeWs}
+          setActiveWs={setActiveWs}
+          onAddWorkspace={addWorkspace}
+          onRenameWorkspace={renameWorkspace}
+          onDeleteWorkspace={deleteWorkspace}
+        />
+
+        <div className="page-title-row">
+          <h1 className="page-title">{activeWorkspace?.name || 'Workspace'}</h1>
         </div>
 
-        {/* ── 1. BACKGROUND ── */}
-        <Sec title="Background">
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0.3rem' }}>
-            {Object.entries(BG_META).map(([val,{label,tip}]) => (
-              <button key={val}
-                className={'btn btn-ghost'+(theme.bgStyle===val?' btn-primary':'')}
-                style={{ fontSize:'0.75em', padding:'0.28rem 0.3rem', textAlign:'center' }}
-                onClick={() => set('bgStyle',val)} title={tip}>{label}
-              </button>
-            ))}
-          </div>
+        <Sections
+          sections={sections}
+          links={filteredLinks}
+          onAddLink={addLink}
+          onUpdateLink={updateLink}
+          onDeleteLink={deleteLink}
+          onUpdateSection={updateSection}
+          onDeleteSection={deleteSection}
+        />
 
-          <ColorRow label="Background colour" tip="Main page background colour"
-            value={theme.bg} onChange={v => set('bg',v)} />
+        <Notes
+          notes={notes}
+          onUpdateNote={updateNote}
+          onDeleteNote={deleteNote}
+        />
+      </main>
 
-          {isPattern && <>
-            <ColorRow label="Pattern colour" value={theme.patternColor} onChange={v => set('patternColor',v)} />
-            <Row label="Pattern opacity">
-              <Slider value={theme.patternOpacity} min={0} max={1} step={0.05} onChange={v => set('patternOpacity',v)} />
-            </Row>
-          </>}
+      {settingsOpen && (
+        <Settings
+          theme={theme}
+          set={set}
+          onSave={saveTheme}
+          onReset={resetTheme}
+          onClose={() => setSettingsOpen(false)}
+          onExport={exportTheme}
+          onImport={importTheme}
+          onImageUpload={handleImageUpload}
+          onExportBackup={exportFullBackup}
+          onImportBackup={(e) => {
+            const f = e.target.files?.[0]
+            if (!f) return
+            e.target.value = ''
+            setImportingBackup(true)
+            const r = new FileReader()
+            r.onload = async (ev) => {
+              try {
+                const data = JSON.parse(ev.target.result)
+                const uid = sessionRef.current?.user?.id
+                if (!uid) throw new Error('Not logged in')
 
-          {isGradient && <>
-            <Row label="Type">
-              <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
-                value={theme.gradientType||'linear'} onChange={e => set('gradientType',e.target.value)}>
-                <option value="linear">Linear</option>
-                <option value="radial">Radial</option>
-              </select>
-            </Row>
-            {(theme.gradientType||'linear')==='linear' && (
-              <Row label="Angle">
-                <Slider value={theme.gradientAngle||135} min={0} max={360} step={5}
-                  onChange={v => set('gradientAngle',v)} />
-              </Row>
-            )}
-          </>}
+                // Format 1: simple [{name, bookmarks:[{name,url}]}] or [[{...}]]
+                if (Array.isArray(data)) {
+                  const rows = (Array.isArray(data[0]) ? data[0] : data)
+                    .filter(g => g && typeof g === 'object')
 
-          {isImage && <>
-            <Row label="Upload image" tip="JPG or PNG, max 2 MB">
-              <button className="btn" style={{ fontSize:'0.8em' }}
-                onClick={() => bkupRef.current?.click()}>Choose file</button>
-            </Row>
-            <Row label="Image opacity">
-              <Slider value={theme.bgImageOpacity??1} min={0} max={1} step={0.05}
-                onChange={v => set('bgImageOpacity',v)} />
-            </Row>
-          </>}
+                  for (let i = 0; i < rows.length; i++) {
+                    const grp = rows[i]
 
-          {isPlasma && <>
-            <Row label="Speed" tip="Animation speed — higher = faster">
-              <Slider value={theme.plasmaSpeed??1} min={0.2} max={3} step={0.1}
-                onChange={v => set('plasmaSpeed',v)} />
-            </Row>
-            <Row label="Blur" tip="Blur intensity — higher = softer blobs">
-              <Slider value={theme.plasmaBlur??1} min={0.2} max={3} step={0.1}
-                onChange={v => set('plasmaBlur',v)} />
-            </Row>
-          </>}
+                    const { data: sec, error: secErr } = await supabase
+                      .from('sections')
+                      .insert({
+                        user_id: uid,
+                        workspace_id: activeWs,
+                        name: grp.name ?? grp.title ?? 'Section',
+                        position: i,
+                        collapsed: false,
+                      })
+                      .select()
+                      .single()
 
-          {isStarfield && <>
-            <Row label="Speed" tip="Star drift speed (1 = default, 4 = very fast)">
-              <Slider value={theme.starfieldSpeed??1} min={0.1} max={4} step={0.1}
-                onChange={v => set('starfieldSpeed',v)} />
-            </Row>
-            <ColorRow label="Star colour" tip="Tint colour of the star dots"
-              value={theme.starfieldColor??'#ffffff'} onChange={v => set('starfieldColor',v)} />
-          </>}
+                    if (secErr) throw secErr
 
-          {isAurora && <>
-            <Row label="Speed" tip="Aurora hue-rotation speed (1 = default, 4 = very fast)">
-              <Slider value={theme.auroraSpeed??1} min={0.1} max={4} step={0.1}
-                onChange={v => set('auroraSpeed',v)} />
-            </Row>
-            <ColorRow label="Aurora colour" tip="Base hue tinting the aurora gradient"
-              value={theme.auroraColor??'#6c8fff'} onChange={v => set('auroraColor',v)} />
-          </>}
+                    const links = (grp.bookmarks ?? grp.links ?? []).map((b, j) => ({
+                      user_id: uid,
+                      workspace_id: activeWs,
+                      section_id: sec.id,
+                      title: b.name ?? b.title ?? 'Link',
+                      url: b.url,
+                      position: j,
+                    }))
 
-          {isMesh && <>
-            <Row label="Speed" tip="Blob drift speed (1 = default, 4 = very fast)">
-              <Slider value={theme.meshSpeed??1} min={0.1} max={4} step={0.1}
-                onChange={v => set('meshSpeed',v)} />
-            </Row>
-            <ColorRow label="Blob colour" tip="Primary colour of the animated blobs"
-              value={theme.meshColor??theme.accent??'#6c8fff'} onChange={v => set('meshColor',v)} />
-          </>}
+                    if (links.length) {
+                      const { error: lnkErr } = await supabase.from('links').insert(links)
+                      if (lnkErr) throw lnkErr
+                    }
+                  }
 
-          {isLaser && <>
-            <Row label="Speed" tip="Laser beam movement speed (1 = default, 5 = very fast)">
-              <Slider value={theme.laserSpeed??1} min={0.2} max={5} step={0.1}
-                onChange={v => set('laserSpeed',v)} />
-            </Row>
-            <ColorRow label="Beam colour 1" tip="Primary laser beam colour"
-              value={theme.laserColor??'#6c8fff'} onChange={v => set('laserColor',v)} />
-            <ColorRow label="Beam colour 2" tip="Secondary laser beam colour"
-              value={theme.laserColor2??'#ff6bff'} onChange={v => set('laserColor2',v)} />
-          </>}
-        </Sec>
+                  await handleRefresh()
+                  alert('Imported ' + rows.length + ' section(s) into current workspace.')
+                  return
+                }
 
-        {/* ── 2. COLOURS ── */}
-        <Sec title="Colours">
-          <ColorRow label="Card background"  value={theme.card}         onChange={v => set('card',v)}
-            tip="Background colour of section cards" />
-          <Row label="Card opacity" tip="How opaque cards are (0 = transparent, 1 = solid)">
-            <Slider value={theme.cardOpacity??1} min={0} max={1} step={0.05}
-              onChange={v => set('cardOpacity',v)} />
-          </Row>
-          <Row label="Page scale" tip="Zoom level — click a preset">
-            <div style={{ display:'flex', gap:'0.25rem', flexWrap:'wrap' }}>
-              {[0.7,0.8,0.85,0.9,0.95,1,1.1,1.2].map(v => (
-                <button key={v}
-                  className={`btn${parseFloat(theme.pageScale??1)===v?' btn-primary':' btn-ghost'}`}
-                  style={{ padding:'0.15rem 0.45rem', fontSize:'0.78em', minWidth:36 }}
-                  onClick={() => set('pageScale', String(v))}
-                >{Math.round(v*100)}%</button>
-              ))}
-            </div>
-          </Row>
-          <ColorRow label="Border"           value={theme.border}       onChange={v => set('border',v)} />
-          <Row label="Border opacity">
-            <Slider value={theme.borderOpacity??1} min={0} max={1} step={0.05}
-              onChange={v => set('borderOpacity',v)} />
-          </Row>
-          <ColorRow label="Accent"           value={theme.accent}       onChange={v => set('accent',v)}
-            tip="Highlight colour for active items and hover states" />
-          <ColorRow label="Text"             value={theme.text}         onChange={v => set('text',v)} />
-          <ColorRow label="Text dim"         value={theme.textDim}      onChange={v => set('textDim',v)} />
-          <ColorRow label="Section titles"   value={theme.titleColor}   onChange={v => set('titleColor',v)} />
-          <ColorRow label="Button"           value={theme.btnBg}        onChange={v => set('btnBg',v)} />
-          <ColorRow label="Notes bg"         value={theme.notesBg}      onChange={v => set('notesBg',v)} />
-          <ColorRow label="Note card bg"    value={theme.notesCardBg}  onChange={v => set('notesCardBg',v)} tip="Background colour of each note card" />
-          <ColorRow label="Notes input"      value={theme.notesInputBg} onChange={v => set('notesInputBg',v)} />
-        </Sec>
+                // Format 2: full backup {version, workspaces:[...]}
+                if (data.workspaces && Array.isArray(data.workspaces)) {
+                  if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) {
+                    setImportingBackup(false)
+                    return
+                  }
 
-        {/* ── 3. TYPOGRAPHY ── */}
-        <Sec title="Typography">
-          <Row label="Font">
-            <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
-              value={theme.font} onChange={e => set('font',e.target.value)}>
-              {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
-            </select>
-          </Row>
-          <Row label="Body size">
-            <Slider value={theme.workspaceFontSize} min={10} max={20} step={1}
-              onChange={v => set('workspaceFontSize',v)} />
-          </Row>
-          <Row label="Topbar size">
-            <Slider value={theme.topbarFontSize} min={9} max={16} step={1}
-              onChange={v => set('topbarFontSize',v)} />
-          </Row>
-          <Row label="Settings size">
-            <Slider value={theme.settingsFontSize??13} min={10} max={16} step={1}
-              onChange={v => set('settingsFontSize',v)} />
-          </Row>
-          <Row label="Clock scale">
-            <Slider value={theme.clockWidgetScale} min={0.6} max={3} step={0.1}
-              onChange={v => set('clockWidgetScale',v)} />
-          </Row>
-        </Sec>
+                  for (const ws of data.workspaces) {
+                    const { data: newWs, error: wsErr } = await supabase
+                      .from('workspaces')
+                      .insert({ user_id: uid, name: ws.name })
+                      .select()
+                      .single()
 
-        {/* ── 4. SPACING & LAYOUT ── */}
-        <Sec title="Spacing & Layout">
-          <Row label="Columns" tip="Number of section columns (1–6)">
-            <Slider value={theme.sectionsCols??2} min={1} max={6} step={1}
-              onChange={v => set('sectionsCols',v)} />
-          </Row>
-          <Row label="Column gap">
-            <Slider value={theme.sectionGapH??0} min={0} max={32} step={1}
-              onChange={v => set('sectionGapH',v)} />
-          </Row>
-          <Row label="Row gap">
-            <Slider value={theme.sectionGap??0} min={0} max={32} step={1}
-              onChange={v => set('sectionGap',v)} />
-          </Row>
-          <Row label="Card padding">
-            <Slider value={theme.cardPadding??0.75} min={0} max={2} step={0.05}
-              onChange={v => set('cardPadding',v)} />
-          </Row>
-          <Row label="Link gap">
-            <Slider value={theme.linkGap??0.5} min={0} max={1.5} step={0.05}
-              onChange={v => set('linkGap',v)} />
-          </Row>
-          <Row label="Top gap">
-            <Slider value={theme.mainGapTop??12} min={0} max={120} step={1}
-              onChange={v => set('mainGapTop',v)} />
-          </Row>
-          <Row label="Notes width">
-            <Slider value={theme.notesWidth??240} min={160} max={420} step={10}
-              onChange={v => set('notesWidth',v)} />
-          </Row>
-          <Row label="Notes pad V" tip="Top/bottom padding inside the notes panel">
-            <Slider value={parseFloat(theme.notesPaddingV??0.35)} min={0} max={2} step={0.05}
-              onChange={v => set('notesPaddingV', v)} />
-          </Row>
-          <Row label="Notes pad H" tip="Left/right padding inside the notes panel">
-            <Slider value={parseFloat(theme.notesPaddingH??0.5)} min={0} max={2} step={0.05}
-              onChange={v => set('notesPaddingH', v)} />
-          </Row>
-          <Row label="Note gap" tip="Space between individual note rows (px)">
-            <Slider value={parseFloat(theme.notesGap??0)} min={0} max={20} step={1}
-              onChange={v => set('notesGap', v)} />
-          </Row>
-        </Sec>
+                    if (wsErr) throw wsErr
 
-        {/* ── 5. SHAPE & SCALE ── */}
-        <Sec title="Shape & Scale">
-          <Row label="Card radius">
-            <Slider value={theme.radius??10} min={0} max={24} step={1}
-              onChange={v => set('radius',v)} />
-          </Row>
-          <Row label="Button radius">
-            <Slider value={theme.radiusSm??6} min={0} max={16} step={1}
-              onChange={v => set('radiusSm',v)} />
-          </Row>
-          <Row label="Section radius">
-            <Slider value={theme.sectionRadius??0} min={0} max={20} step={1}
-              onChange={v => set('sectionRadius',v)} />
-          </Row>
-          <Row label="Edit bar scale"
-            tip="Scale of edit/delete/drag buttons on links and section headers (1 = default, 0.5 = smaller)">
-            <Slider value={theme.editbarScale??1} min={0.5} max={1.5} step={0.05}
-              onChange={v => set('editbarScale',v)} />
-          </Row>
-          <Row label="Handle opacity">
-            <Slider value={theme.handleOpacity??0.15} min={0} max={1} step={0.05}
-              onChange={v => set('handleOpacity',v)} />
-          </Row>
-        </Sec>
+                    for (let si = 0; si < (ws.sections ?? []).length; si++) {
+                      const sec = ws.sections[si]
 
-        {/* ── 6. FAVICONS ── */}
-        <Sec title="Favicons">
-          <Row label="Size">
-            <Slider value={theme.faviconSize??13} min={8} max={24} step={1}
-              onChange={v => set('faviconSize',v)} />
-          </Row>
-          <Row label="Opacity">
-            <Slider value={theme.faviconOpacity??1} min={0} max={1} step={0.05}
-              onChange={v => set('faviconOpacity',v)} />
-          </Row>
-          <Row label="Filter">
-            <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
-              value={theme.faviconFilter??'none'} onChange={e => set('faviconFilter',e.target.value)}>
-              <option value="none">None</option>
-              <option value="grayscale(1)">Greyscale</option>
-              <option value="invert(1)">Invert</option>
-              <option value="grayscale(1) opacity(0.6)">Greyscale dim</option>
-            </select>
-          </Row>
-        </Sec>
+                      const { data: newSec, error: secErr } = await supabase
+                        .from('sections')
+                        .insert({
+                          user_id: uid,
+                          workspace_id: newWs.id,
+                          name: sec.name,
+                          position: sec.position ?? si,
+                          collapsed: sec.collapsed ?? false,
+                        })
+                        .select()
+                        .single()
 
-        {/* ── 7. BEHAVIOUR ── */}
-        <Sec title="Behaviour">
-          <Row label="Open in new tab">
-            <Toggle checked={theme.openInNewTab==='true'} onChange={v => set('openInNewTab',String(v))} />
-          </Row>
-          <Row label="Lock layout" tip="Prevents accidental section reordering">
-            <Toggle checked={theme.locked==='true'} onChange={v => set('locked',String(v))} />
-          </Row>
-          <Row label="Settings side">
-            <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
-              value={theme.settingsSide||'right'} onChange={e => set('settingsSide',e.target.value)}>
-              <option value="right">Right</option>
-              <option value="left">Left</option>
-            </select>
-          </Row>
-          <Row label="Search URL">
-            <input className="input" style={{ fontSize:'0.8em', maxWidth:180 }}
-              value={theme.searchUrl??''} onChange={e => set('searchUrl',e.target.value)} />
-          </Row>
-        </Sec>
+                      if (secErr) throw secErr
 
-        {/* ── 8. DATA ── */}
-        <Sec title="Data">
-          <div style={{ display:'flex', gap:'0.4rem', flexWrap:'wrap' }}>
-            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
-              onClick={onExportBackup}>Export backup</button>
-            <button
-                className="btn btn-ghost"
-                style={{ fontSize:'0.8em', display:'flex', alignItems:'center', gap:'0.3rem' }}
-                onClick={() => !importingBackup && bkupRef.current?.click()}
-                disabled={importingBackup}>
-                {importingBackup
-                  ? <><span style={{ display:'inline-block', animation:'spin 0.8s linear infinite' }}>⟳</span> Importing…</>
-                  : 'Import backup'}
-              </button>
-            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
-              onClick={onExport}>Export theme</button>
-            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
-              onClick={() => importRef.current?.click()}>Import theme</button>
-            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
-              onClick={onRefreshCache}>Refresh cache</button>
-          </div>
-          <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
-          <input ref={importRef} type="file" accept=".json" style={{ display:'none' }} onChange={onImport} />
-          <input ref={bkupRef}   type="file" accept=".json" style={{ display:'none' }} onChange={onImportBackup} />
-        </Sec>
+                      const links = (sec.links ?? []).map((l, j) => ({
+                        user_id: uid,
+                        workspace_id: newWs.id,
+                        section_id: newSec.id,
+                        title: l.title ?? l.name ?? 'Link',
+                        url: l.url,
+                        position: l.position ?? j,
+                      }))
 
-        {/* ── Reset ── */}
-        <Sec title="Reset">
-          <button
-            className="btn"
-            style={{ width:'100%', color:'var(--danger)', border:'1px solid color-mix(in srgb, var(--danger) 35%, transparent)' }}
-            onClick={onReset}
-          >↺ Reset all settings to defaults</button>
-          <p style={{ fontSize:'0.78em', color:'var(--text-muted)', marginTop:'0.4rem', lineHeight:1.5 }}>
-            Restores all colours, sizes and layout. Cannot be undone.
-          </p>
-        </Sec>
+                      if (links.length) {
+                        const { error: lnkErr } = await supabase.from('links').insert(links)
+                        if (lnkErr) throw lnkErr
+                      }
+                    }
 
-      </div>
+                    if (ws.notes?.length) {
+                      await supabase.from('notes').insert(
+                        ws.notes.map(n => ({
+                          user_id: uid,
+                          workspace_id: newWs.id,
+                          content: n.content ?? '',
+                        }))
+                      )
+                    }
+                  }
 
-		<div className="settings-footer" data-side={theme.settingsSide||'right'} style={{ zIndex: 102 }}>
-		  <button
-			className="btn btn-primary"
-			style={{ flex:1 }}
-			onClick={() => { onSave(); onClose() }}
-		  >
-			Save & Exit
-		  </button>
-		  <button className="btn btn-ghost" onClick={onClose}>
-			Close
-		  </button>
-		</div>
-    </>
+                  if (data.theme && Object.keys(data.theme).length > 0) {
+                    const t = { ...DEFAULT_THEME, ...data.theme }
+                    setTheme(t)
+                    applyTheme(t)
+                    localStorage.setItem('current_theme', JSON.stringify(t))
+                  }
+
+                  await handleRefresh()
+                  alert('Backup imported successfully!')
+                  return
+                }
+
+                // Format 3: theme-only
+                if (data.bg || data.text || data.accent) {
+                  const t = { ...DEFAULT_THEME, ...data }
+                  setTheme(t)
+                  applyTheme(t)
+                  localStorage.setItem('current_theme', JSON.stringify(t))
+                  alert('Theme imported.')
+                  return
+                }
+
+                alert('Unrecognised file format.')
+              } catch (err) {
+                alert('Import failed: ' + err.message)
+              } finally {
+                setImportingBackup(false)
+              }
+            }
+            r.readAsText(f)
+          }}
+          fileRef={fileRef}
+          backupFileRef={backupFileRef}
+          importingBackup={importingBackup}
+          onRefreshCache={() => window.location.reload()}
+        />
+      )}
+    </div>
   )
 }
