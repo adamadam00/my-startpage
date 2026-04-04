@@ -52,23 +52,22 @@ export default function App() {
     () => localStorage.getItem('active_workspace') ?? null
   )
   const [sections, setSections] = useState([])
-  const [links, setLinks] = useState([])
-  const [notes, setNotes] = useState([])
+  const [links, setLinks]       = useState([])
+  const [notes, setNotes]       = useState([])
   const [userSettings, setUserSettings] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
 
-  // FIX 1: track theme config in React state so colCount stays in sync
   const [themeConfig, setThemeConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem('current_theme')) || {} } catch { return {} }
   })
 
-  const clockFormat   = userSettings?.clock_format     ?? '12h'
-  const openNewTab    = userSettings?.open_in_new_tab  ?? true
-  const bgPreset      = userSettings?.bg_preset        ?? 'noise'
-  const weatherLat    = userSettings?.weather_lat      ?? -37.8136
-  const weatherLon    = userSettings?.weather_lon      ?? 144.9631
-  const weatherName   = userSettings?.weather_name     ?? 'Melbourne'
-  const bgImage       = localStorage.getItem('bg_image')
+  const clockFormat = userSettings?.clock_format     ?? '12h'
+  const openNewTab  = userSettings?.open_in_new_tab  ?? true
+  const bgPreset    = userSettings?.bg_preset        ?? 'noise'
+  const weatherLat  = userSettings?.weather_lat      ?? -37.8136
+  const weatherLon  = userSettings?.weather_lon      ?? 144.9631
+  const weatherName = userSettings?.weather_name     ?? 'Melbourne'
+  const bgImage     = localStorage.getItem('bg_image')
 
   const [showClock,   setShowClock]   = useState(() => localStorage.getItem('show_clock')   !== 'false')
   const [showWeather, setShowWeather] = useState(() => localStorage.getItem('show_weather') !== 'false')
@@ -76,7 +75,7 @@ export default function App() {
   const [showNotes,   setShowNotes]   = useState(() => localStorage.getItem('show_notes')   !== 'false')
   const [showPins,    setShowPins]    = useState(() => localStorage.getItem('show_pins')    !== 'false')
 
-  // ── Auth ─────────────────────────────────────────────────────
+  // ── Auth ──────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -94,7 +93,6 @@ export default function App() {
       .eq('user_id', session.user.id).single()
     if (data) setUserSettings(data)
   }, [session])
-
   useEffect(() => { fetchSettings() }, [fetchSettings])
 
   // ── Theme preset ──────────────────────────────────────────────
@@ -106,13 +104,12 @@ export default function App() {
         .eq('user_id', session.user.id).order('slot').limit(1)
       if (data?.[0]?.config) {
         applyTheme(data[0].config)
-        setThemeConfig(data[0].config)   // keep React state in sync
+        setThemeConfig(data[0].config)
       }
     }
     load()
   }, [session])
 
-  // helper: re-read theme from localStorage (called after Settings closes)
   const syncThemeFromStorage = () => {
     try {
       const t = JSON.parse(localStorage.getItem('current_theme'))
@@ -138,9 +135,7 @@ export default function App() {
       }
     }
   }, [session])
-
   useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
-
   useEffect(() => {
     if (activeWs) localStorage.setItem('active_workspace', activeWs)
   }, [activeWs])
@@ -157,21 +152,15 @@ export default function App() {
     if (lnk.data) setLinks(lnk.data)
     if (nt.data)  setNotes(nt.data)
   }, [session, activeWs])
-
   useEffect(() => { fetchData() }, [fetchData])
 
   // ── Workspace CRUD ────────────────────────────────────────────
   const addWorkspace = async (name) => {
     if (!name.trim() || workspaces.length >= 5) return
-    const { data } = await supabase.from('workspaces').insert({
-      user_id: session.user.id,
-      name: name.trim(),
-    }).select().single()
+    const { data } = await supabase.from('workspaces')
+      .insert({ user_id: session.user.id, name: name.trim() }).select().single()
     await fetchWorkspaces()
-    if (data) {
-      setActiveWs(data.id)
-      localStorage.setItem('active_workspace', data.id)
-    }
+    if (data) { setActiveWs(data.id); localStorage.setItem('active_workspace', data.id) }
   }
 
   const deleteWorkspace = async (id) => {
@@ -204,7 +193,7 @@ export default function App() {
     fetchData()
   }
 
-  // ── Export everything ─────────────────────────────────────────
+  // ── Export ────────────────────────────────────────────────────
   const exportEverything = async () => {
     const [{ data: allSections }, { data: allLinks }, { data: allNotes }, { data: presets }, { data: settings }] =
       await Promise.all([
@@ -222,9 +211,7 @@ export default function App() {
           .filter(s => s.workspace_id === ws.id)
           .sort((a, b) => a.position - b.position)
           .map(s => ({
-            name: s.name,
-            pinned: s.pinned,
-            collapsed: s.collapsed,
+            name: s.name, pinned: s.pinned, collapsed: s.collapsed,
             links: (allLinks ?? [])
               .filter(l => l.section_id === s.id)
               .sort((a, b) => a.position - b.position)
@@ -252,13 +239,10 @@ export default function App() {
     if (changes.showPins    !== undefined) { setShowPins(changes.showPins);       localStorage.setItem('show_pins',    changes.showPins) }
     setUserSettings(prev => ({ ...prev, ...changes }))
     fetchSettings()
-    // Re-sync theme config in case applyTheme was called inside Settings
     syncThemeFromStorage()
   }
 
-  const getBgClass = () => bgImage ? 'bg-layer bg-image' : `bg-layer bg-${bgPreset}`
-  const getBgStyle  = () => bgImage ? { backgroundImage: `url(${bgImage})` } : {}
-
+  // ── Render ────────────────────────────────────────────────────
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
       loading
@@ -266,11 +250,18 @@ export default function App() {
   )
   if (!session) return <Auth />
 
+  // Background class/style resolved separately from app content
+  const bgClass = bgImage ? 'bg-layer bg-image' : `bg-layer bg-${bgPreset}`
+  const bgStyle = bgImage ? { backgroundImage: `url(${bgImage})` } : {}
+
   return (
-    <div className={getBgClass()} style={getBgStyle()}>
+    <>
+      {/* ── Background layer — purely decorative, pointer-events:none ── */}
+      <div className={bgClass} style={bgStyle} />
+
+      {/* ── App content — sits above bg-layer, fully interactive ── */}
       <div className="app">
 
-        {/* Topbar */}
         <header className="topbar">
           <div className="workspace-tabs">
             {workspaces.map(ws => (
@@ -297,13 +288,17 @@ export default function App() {
             <button className="btn" onClick={() => setShowSettings(true)} title="Open settings">
               <span>Settings</span>
             </button>
-            <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()} title="Sign out" style={{ fontSize: '0.78em' }}>
+            <button
+              className="btn btn-ghost"
+              onClick={() => supabase.auth.signOut()}
+              title="Sign out"
+              style={{ fontSize: '0.78em' }}
+            >
               sign out
             </button>
           </div>
         </header>
 
-        {/* Main layout */}
         <main className="main-layout" style={{ gridTemplateColumns: showNotes ? '1fr 250px' : '1fr' }}>
           <div className="main-col">
             {activeWs ? (
@@ -326,7 +321,6 @@ export default function App() {
 
           {showNotes && activeWs && (
             <div className="side-col">
-              {/* FIX 2: was items={notes}, Notes component expects notes={notes} */}
               <Notes
                 notes={notes}
                 workspaceId={activeWs}
@@ -339,6 +333,7 @@ export default function App() {
 
       </div>
 
+      {/* ── Settings modal ── */}
       {showSettings && (
         <Settings
           session={session}
@@ -347,7 +342,7 @@ export default function App() {
           onClose={() => {
             setShowSettings(false)
             fetchData()
-            syncThemeFromStorage()   // pick up any column/theme changes made in Settings
+            syncThemeFromStorage()
           }}
           onResetLinks={resetLinks}
           onExportAll={exportEverything}
@@ -360,6 +355,6 @@ export default function App() {
           uiVisibility={{ showClock, showWeather, showSearch, showNotes, showPins }}
         />
       )}
-    </div>
+    </>
   )
 }
