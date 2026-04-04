@@ -1,69 +1,74 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from './lib/supabase'
-import Auth      from './components/Auth'
-import Clock     from './components/Clock'
-import Weather   from './components/Weather'
+import Auth from './components/Auth'
+import Clock from './components/Clock'
+import Weather from './components/Weather'
 import SearchBar from './components/SearchBar'
-import Sections  from './components/Sections'
-import Notes     from './components/Notes'
-import Settings  from './components/Settings'
+import Sections from './components/Sections'
+import Notes from './components/Notes'
+import Settings from './components/Settings'
 
 function applyTheme(cfg) {
   if (!cfg) return
   localStorage.setItem('current_theme', JSON.stringify(cfg))
   const r = document.documentElement.style
   const s = (k, v) => (v !== undefined && v !== null) && r.setProperty(k, String(v))
-  s('--bg',              cfg.bg)
-  s('--bg2',             cfg.bg2)
-  s('--bg3',             cfg.bg3)
-  s('--card',            cfg.card)
-  s('--card-opacity',    cfg.cardOpacity)
-  s('--border-opacity',  cfg.borderOpacity ?? 1)
-  s('--handle-opacity',  cfg.handleOpacity ?? 0.15)
-  s('--border',          cfg.border)
-  s('--border-hover',    cfg.borderHover)
-  s('--text',            cfg.text)
-  s('--text-dim',        cfg.textDim)
-  s('--accent',          cfg.accent)
-  s('--accent-dim',      cfg.accent ? cfg.accent + '33' : null)
-  s('--accent-glow',     cfg.accent ? cfg.accent + '22' : null)
-  s('--danger',          cfg.danger)
-  s('--success',         cfg.success)
-  s('--btn-bg',          cfg.btnBg)
-  s('--btn-text',        cfg.btnText)
-  s('--font',            cfg.font)
-  s('--font-size',       cfg.fontSize    ? cfg.fontSize    + 'px'  : null)
-  s('--clock-size',      cfg.clockSize   ? cfg.clockSize   + 'rem' : null)
-  s('--radius',          cfg.radius      ? cfg.radius      + 'px'  : null)
-  s('--radius-sm',       cfg.radius      ? Math.max(2, cfg.radius - 4) + 'px' : null)
-  s('--link-gap',        cfg.linkGap     ? cfg.linkGap     + 'rem' : null)
-  s('--card-padding',    cfg.cardPadding ? cfg.cardPadding + 'rem' : null)
-  s('--sections-cols',   cfg.sectionsCols)
+  s('--bg', cfg.bg)
+  s('--bg2', cfg.bg2)
+  s('--bg3', cfg.bg3)
+  s('--card', cfg.card)
+  s('--card-opacity', cfg.cardOpacity)
+  s('--border-opacity', cfg.borderOpacity ?? 1)
+  s('--handle-opacity', cfg.handleOpacity ?? 0.15)
+  s('--border', cfg.border)
+  s('--border-hover', cfg.borderHover)
+  s('--text', cfg.text)
+  s('--text-dim', cfg.textDim)
+  s('--accent', cfg.accent)
+  s('--accent-dim', cfg.accent ? cfg.accent + '33' : null)
+  s('--accent-glow', cfg.accent ? cfg.accent + '22' : null)
+  s('--danger', cfg.danger)
+  s('--success', cfg.success)
+  s('--btn-bg', cfg.btnBg)
+  s('--btn-text', cfg.btnText)
+  s('--font', cfg.font)
+  s('--font-size', cfg.fontSize ? cfg.fontSize + 'px' : null)
+  s('--clock-size', cfg.clockSize ? cfg.clockSize + 'rem' : null)
+  s('--radius', cfg.radius ? cfg.radius + 'px' : null)
+  s('--radius-sm', cfg.radius ? Math.max(2, cfg.radius - 4) + 'px' : null)
+  s('--link-gap', cfg.linkGap ? cfg.linkGap + 'rem' : null)
+  s('--card-padding', cfg.cardPadding ? cfg.cardPadding + 'rem' : null)
+  s('--sections-cols', cfg.sectionsCols)
   s('--favicon-opacity', cfg.faviconOpacity ?? 1)
-  s('--favicon-filter',  cfg.faviconGreyscale ? 'grayscale(1)' : 'none')
+  s('--favicon-filter', cfg.faviconGreyscale ? 'grayscale(1)' : 'none')
   if (cfg.pageScale) document.body.style.zoom = cfg.pageScale
 }
 
 export default function App() {
-  const [session,      setSession]      = useState(null)
-  const [loading,      setLoading]      = useState(true)
-  const [workspaces,   setWorkspaces]   = useState([])
-  const [activeWs,     setActiveWs]     = useState(
+  const [session, setSession] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [workspaces, setWorkspaces] = useState([])
+  const [activeWs, setActiveWs] = useState(
     () => localStorage.getItem('active_workspace') ?? null
   )
-  const [sections,     setSections]     = useState([])
-  const [links,        setLinks]        = useState([])
-  const [notes,        setNotes]        = useState([])
+  const [sections, setSections] = useState([])
+  const [links, setLinks] = useState([])
+  const [notes, setNotes] = useState([])
   const [userSettings, setUserSettings] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
 
-  const clockFormat = userSettings?.clock_format    ?? '12h'
-  const openNewTab  = userSettings?.open_in_new_tab ?? true
-  const bgPreset    = userSettings?.bg_preset       ?? 'noise'
-  const weatherLat  = userSettings?.weather_lat     ?? -37.8136
-  const weatherLon  = userSettings?.weather_lon     ?? 144.9631
-  const weatherName = userSettings?.weather_name    ?? 'Melbourne'
-  const bgImage     = localStorage.getItem('bg_image')
+  // FIX 1: track theme config in React state so colCount stays in sync
+  const [themeConfig, setThemeConfig] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('current_theme')) || {} } catch { return {} }
+  })
+
+  const clockFormat   = userSettings?.clock_format     ?? '12h'
+  const openNewTab    = userSettings?.open_in_new_tab  ?? true
+  const bgPreset      = userSettings?.bg_preset        ?? 'noise'
+  const weatherLat    = userSettings?.weather_lat      ?? -37.8136
+  const weatherLon    = userSettings?.weather_lon      ?? 144.9631
+  const weatherName   = userSettings?.weather_name     ?? 'Melbourne'
+  const bgImage       = localStorage.getItem('bg_image')
 
   const [showClock,   setShowClock]   = useState(() => localStorage.getItem('show_clock')   !== 'false')
   const [showWeather, setShowWeather] = useState(() => localStorage.getItem('show_weather') !== 'false')
@@ -81,7 +86,7 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // ── Settings ──────────────────────────────────────────────────
+  // ── User settings ─────────────────────────────────────────────
   const fetchSettings = useCallback(async () => {
     if (!session) return
     const { data } = await supabase
@@ -99,10 +104,21 @@ export default function App() {
       const { data } = await supabase
         .from('theme_presets').select('*')
         .eq('user_id', session.user.id).order('slot').limit(1)
-      if (data?.[0]?.config) applyTheme(data[0].config)
+      if (data?.[0]?.config) {
+        applyTheme(data[0].config)
+        setThemeConfig(data[0].config)   // keep React state in sync
+      }
     }
     load()
   }, [session])
+
+  // helper: re-read theme from localStorage (called after Settings closes)
+  const syncThemeFromStorage = () => {
+    try {
+      const t = JSON.parse(localStorage.getItem('current_theme'))
+      if (t) setThemeConfig(t)
+    } catch {}
+  }
 
   // ── Workspaces ────────────────────────────────────────────────
   const fetchWorkspaces = useCallback(async () => {
@@ -112,7 +128,6 @@ export default function App() {
       .eq('user_id', session.user.id).order('created_at')
     if (data) {
       setWorkspaces(data)
-      // Restore last active workspace from localStorage
       const saved = localStorage.getItem('active_workspace')
       const match = data.find(w => w.id === saved)
       if (match) {
@@ -126,7 +141,6 @@ export default function App() {
 
   useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
 
-  // Save active workspace to localStorage whenever it changes
   useEffect(() => {
     if (activeWs) localStorage.setItem('active_workspace', activeWs)
   }, [activeWs])
@@ -146,11 +160,12 @@ export default function App() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  // ── Workspace CRUD (used by Settings) ─────────────────────────
+  // ── Workspace CRUD ────────────────────────────────────────────
   const addWorkspace = async (name) => {
     if (!name.trim() || workspaces.length >= 5) return
     const { data } = await supabase.from('workspaces').insert({
-      user_id: session.user.id, name: name.trim(),
+      user_id: session.user.id,
+      name: name.trim(),
     }).select().single()
     await fetchWorkspaces()
     if (data) {
@@ -207,7 +222,9 @@ export default function App() {
           .filter(s => s.workspace_id === ws.id)
           .sort((a, b) => a.position - b.position)
           .map(s => ({
-            name: s.name, pinned: s.pinned, collapsed: s.collapsed,
+            name: s.name,
+            pinned: s.pinned,
+            collapsed: s.collapsed,
             links: (allLinks ?? [])
               .filter(l => l.section_id === s.id)
               .sort((a, b) => a.position - b.position)
@@ -235,77 +252,59 @@ export default function App() {
     if (changes.showPins    !== undefined) { setShowPins(changes.showPins);       localStorage.setItem('show_pins',    changes.showPins) }
     setUserSettings(prev => ({ ...prev, ...changes }))
     fetchSettings()
+    // Re-sync theme config in case applyTheme was called inside Settings
+    syncThemeFromStorage()
   }
 
   const getBgClass = () => bgImage ? 'bg-layer bg-image' : `bg-layer bg-${bgPreset}`
-  const getBgStyle = () => bgImage ? { backgroundImage: `url(${bgImage})` } : {}
+  const getBgStyle  = () => bgImage ? { backgroundImage: `url(${bgImage})` } : {}
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-      loading…
+      loading
     </div>
   )
-
   if (!session) return <Auth />
 
   return (
-    <>
-      <div className={getBgClass()} style={getBgStyle()} />
-
+    <div className={getBgClass()} style={getBgStyle()}>
       <div className="app">
 
-        {/* ── Topbar ── */}
+        {/* Topbar */}
         <header className="topbar">
-
-          {/* Workspace switcher tabs only — no add/delete here */}
           <div className="workspace-tabs">
             {workspaces.map(ws => (
               <button
                 key={ws.id}
                 className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
                 onClick={() => setActiveWs(ws.id)}
-                title={`Switch to: ${ws.name}`}
+                title={`Switch to ${ws.name}`}
               >
                 {ws.name}
               </button>
             ))}
           </div>
 
-          {/* Widgets */}
           <div className="topbar-widgets">
-            {showClock && (
-              <>
-                <Clock format={clockFormat} compact />
-                <div className="topbar-divider" />
-              </>
-            )}
-            {showWeather && (
-              <>
-                <Weather lat={weatherLat} lon={weatherLon} locationName={weatherName} />
-                <div className="topbar-divider" />
-              </>
-            )}
-            {showSearch && (
-              <SearchBar openInNewTab={openNewTab} compact />
-            )}
+            {showClock   && <Clock format={clockFormat} compact />}
+            <div className="topbar-divider" />
+            {showWeather && <Weather lat={weatherLat} lon={weatherLon} locationName={weatherName} />}
+            <div className="topbar-divider" />
+            {showSearch  && <SearchBar openInNewTab={openNewTab} compact />}
           </div>
 
-          {/* Actions */}
           <div className="topbar-actions">
             <button className="btn" onClick={() => setShowSettings(true)} title="Open settings">
-              ⚙ <span>Settings</span>
+              <span>Settings</span>
             </button>
-            <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()}
-              title="Sign out" style={{ fontSize: '0.78em' }}>
+            <button className="btn btn-ghost" onClick={() => supabase.auth.signOut()} title="Sign out" style={{ fontSize: '0.78em' }}>
               sign out
             </button>
           </div>
         </header>
 
-        {/* ── Main layout ── */}
-        <main className="main-layout" style={{
-          gridTemplateColumns: showNotes ? '1fr 250px' : '1fr'
-        }}>
+        {/* Main layout */}
+        <main className="main-layout" style={{ gridTemplateColumns: showNotes ? '1fr 250px' : '1fr' }}>
           <div className="main-col">
             {activeWs ? (
               <Sections
@@ -316,6 +315,7 @@ export default function App() {
                 onRefresh={fetchData}
                 openInNewTab={openNewTab}
                 showPins={showPins}
+                colCount={Number(themeConfig?.sectionsCols ?? 2)}
               />
             ) : (
               <div style={{ color: 'var(--text-muted)', fontSize: '0.85em', textAlign: 'center', padding: '2rem' }}>
@@ -326,8 +326,9 @@ export default function App() {
 
           {showNotes && activeWs && (
             <div className="side-col">
+              {/* FIX 2: was items={notes}, Notes component expects notes={notes} */}
               <Notes
-                items={notes}
+                notes={notes}
                 workspaceId={activeWs}
                 userId={session.user.id}
                 onRefresh={fetchData}
@@ -335,6 +336,7 @@ export default function App() {
             </div>
           )}
         </main>
+
       </div>
 
       {showSettings && (
@@ -342,7 +344,11 @@ export default function App() {
           session={session}
           userSettings={userSettings}
           onSettingsChange={handleSettingsChange}
-          onClose={() => { setShowSettings(false); fetchData() }}
+          onClose={() => {
+            setShowSettings(false)
+            fetchData()
+            syncThemeFromStorage()   // pick up any column/theme changes made in Settings
+          }}
           onResetLinks={resetLinks}
           onExportAll={exportEverything}
           activeWs={activeWs}
@@ -354,6 +360,6 @@ export default function App() {
           uiVisibility={{ showClock, showWeather, showSearch, showNotes, showPins }}
         />
       )}
-    </>
+    </div>
   )
 }
