@@ -709,20 +709,91 @@ export default function App() {
           onImportBackup={(e) => {
             const f = e.target.files?.[0]
             if (!f) return
+            e.target.value = ''
             setImportingBackup(true)
             const r = new FileReader()
             r.onload = async (ev) => {
               try {
                 const data = JSON.parse(ev.target.result)
-                if (data.workspaces) {
-                  for (const ws of data.workspaces) {
-                    const { data: newWs } = await supabase.from('workspaces').insert({ user_id: session.user.id, name: ws.name }).select().single()
-                    if (ws.sections?.length) await supabase.from('sections').insert(ws.sections.map(s => ({ ...s, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
-                    if (ws.links?.length)    await supabase.from('links').insert(ws.links.map(l => ({ ...l, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
-                    if (ws.notes?.length)   await supabase.from('notes').insert(ws.notes.map(n => ({ ...n, id: undefined, workspace_id: newWs.id, user_id: session.user.id })))
+                const uid  = sessionRef.current?.user?.id
+                if (!uid) throw new Error('Not logged in')
+
+                // ── Format 1: simple [{name, bookmarks:[{name,url}]}] ──
+                if (Array.isArray(data)) {
+                  for (let i = 0; i < data.length; i++) {
+                    const grp = data[i]
+                    const { data: sec, error: secErr } = await supabase
+                      .from('sections')
+                      .insert({ user_id: uid, workspace_id: activeWs, name: grp.name, position: i, collapsed: false })
+                      .select().single()
+                    if (secErr) throw secErr
+                    const links = (grp.bookmarks ?? grp.links ?? []).map((b, j) => ({
+                      user_id: uid, workspace_id: activeWs, section_id: sec.id,
+                      title: b.name ?? b.title ?? 'Link', url: b.url, position: j,
+                    }))
+                    if (links.length) {
+                      const { error: lnkErr } = await supabase.from('links').insert(links)
+                      if (lnkErr) throw lnkErr
+                    }
                   }
+                  await handleRefresh()
+                  alert('Imported ' + data.length + ' section(s) into current workspace.')
+                  return
                 }
-                handleRefresh()
+
+                // ── Format 2: v2 backup {version, workspaces:[...]} ──
+                if (data.workspaces && Array.isArray(data.workspaces)) {
+                  if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) {
+                    setImportingBackup(false); return
+                  }
+                  for (const ws of data.workspaces) {
+                    const { data: newWs, error: wsErr } = await supabase
+                      .from('workspaces')
+                      .insert({ user_id: uid, name: ws.name })
+                      .select().single()
+                    if (wsErr) throw wsErr
+                    for (let si = 0; si < (ws.sections ?? []).length; si++) {
+                      const sec = ws.sections[si]
+                      const { data: newSec, error: secErr } = await supabase
+                        .from('sections')
+                        .insert({ user_id: uid, workspace_id: newWs.id, name: sec.name, position: sec.position ?? si, collapsed: sec.collapsed ?? false })
+                        .select().single()
+                      if (secErr) throw secErr
+                      const links = (sec.links ?? []).map((l, j) => ({
+                        user_id: uid, workspace_id: newWs.id, section_id: newSec.id,
+                        title: l.title ?? l.name ?? 'Link', url: l.url, position: l.position ?? j,
+                      }))
+                      if (links.length) {
+                        const { error: lnkErr } = await supabase.from('links').insert(links)
+                        if (lnkErr) throw lnkErr
+                      }
+                    }
+                    if (ws.notes?.length) {
+                      await supabase.from('notes').insert(
+                        ws.notes.map(n => ({ user_id: uid, workspace_id: newWs.id, content: n.content ?? '' }))
+                      )
+                    }
+                  }
+                  if (data.theme && Object.keys(data.theme).length > 0) {
+                    const t = { ...DEFAULT_THEME, ...data.theme }
+                    setTheme(t); applyTheme(t)
+                    localStorage.setItem('current_theme', JSON.stringify(t))
+                  }
+                  await handleRefresh()
+                  alert('Backup imported successfully!')
+                  return
+                }
+
+                // ── Format 3: theme-only export ──
+                if (data.bg || data.text || data.accent) {
+                  const t = { ...DEFAULT_THEME, ...data }
+                  setTheme(t); applyTheme(t)
+                  localStorage.setItem('current_theme', JSON.stringify(t))
+                  alert('Theme imported.')
+                  return
+                }
+
+                alert('Unrecognised file format.')
               } catch (err) { alert('Import failed: ' + err.message) }
               finally { setImportingBackup(false) }
             }
