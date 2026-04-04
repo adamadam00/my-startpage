@@ -388,8 +388,15 @@ export default function Settings({
           <div style={{ display:'flex', gap:'0.4rem', flexWrap:'wrap' }}>
             <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
               onClick={onExportBackup}>Export backup</button>
-            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
-              onClick={() => bkupRef.current?.click()}>Import backup</button>
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize:'0.8em', display:'flex', alignItems:'center', gap:'0.3rem' }}
+              onClick={() => !importingBackup && bkupRef.current?.click()}
+              disabled={importingBackup}>
+              {importingBackup
+                ? <><span style={{ display:'inline-block', animation:'spin 0.8s linear infinite' }}>⟳</span> Importing…</>
+                : 'Import backup'}
+            </button>
             <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
               onClick={onExport}>Export theme</button>
             <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
@@ -397,9 +404,7 @@ export default function Settings({
             <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
               onClick={onRefreshCache}>Refresh cache</button>
           </div>
-          {importingBackup && (
-            <div style={{ fontSize:'0.78em', color:'var(--text-muted)', marginTop:'0.3rem' }}>Importing…</div>
-          )}
+          <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
           <input ref={importRef} type="file" accept=".json" style={{ display:'none' }} onChange={onImport} />
           <input ref={bkupRef}   type="file" accept=".json" style={{ display:'none' }} onChange={onImportBackup} />
         </Sec>
