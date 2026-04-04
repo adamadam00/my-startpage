@@ -705,7 +705,7 @@ export default function App() {
           onExport={exportSettings}
           onImport={importSettings}
           onImageUpload={handleImageUpload}
-          onExportBackup={exportSettings}
+          onExportBackup={exportFullBackup}
           onImportBackup={(e) => {
             const f = e.target.files?.[0]
             if (!f) return

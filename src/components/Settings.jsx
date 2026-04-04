@@ -401,8 +401,7 @@ export default function Settings({
             <div style={{ fontSize:'0.78em', color:'var(--text-muted)', marginTop:'0.3rem' }}>Importing…</div>
           )}
           <input ref={importRef} type="file" accept=".json" style={{ display:'none' }} onChange={onImport} />
-          <input ref={bkupRef}   type="file" accept=".json,.jpg,.png,.webp" style={{ display:'none' }}
-            onChange={e => { onImportBackup?.(e); onImageUpload?.(e) }} />
+          <input ref={bkupRef}   type="file" accept=".json" style={{ display:'none' }} onChange={onImportBackup} />
         </Sec>
 
         {/* ── Reset ── */}
@@ -426,13 +425,6 @@ export default function Settings({
 			onClick={() => { onSave(); onClose() }}
 		  >
 			Save & Exit
-		  </button>
-		  <button
-			className="btn btn-ghost"
-			style={{ flex:1 }}
-			onClick={onSave}
-		  >
-			Save
 		  </button>
 		  <button className="btn btn-ghost" onClick={onClose}>
 			Close
