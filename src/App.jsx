@@ -1,426 +1,440 @@
-import { useMemo } from 'react'
+import { useRef } from 'react'
 
-const fonts = [
-  'Inter, system-ui, sans-serif',
-  'Arial, sans-serif',
-  'Georgia, serif',
-  '"Times New Roman", serif',
-  'Verdana, sans-serif',
-  '"Trebuchet MS", sans-serif',
-  '"Courier New", monospace',
-  '"Fira Code", monospace',
-]
+const FONTS = ['DM Mono','JetBrains Mono','IBM Plex Sans','Inter','Outfit','Space Grotesk','Figtree','Geist']
 
-const wallpapers = [
-  { name: 'None', url: '' },
-  { name: 'Mountains', url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1600&auto=format&fit=crop' },
-  { name: 'Ocean', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=1600&auto=format&fit=crop' },
-  { name: 'Forest', url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=1600&auto=format&fit=crop' },
-  { name: 'City', url: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=1600&auto=format&fit=crop' },
-  { name: 'Space', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?q=80&w=1600&auto=format&fit=crop' },
-]
+const BG_META = {
+  'bg-solid':    { label:'Solid',         tip:'Flat solid colour' },
+  'bg-noise':    { label:'Noise',         tip:'Subtle film-grain texture overlay' },
+  'bg-dots':     { label:'Dots',          tip:'Regular dot grid — colour & opacity adjustable' },
+  'bg-grid':     { label:'Grid',          tip:'Square grid lines — colour & opacity adjustable' },
+  'bg-lines':    { label:'Lines',         tip:'Diagonal ruled lines — colour & opacity adjustable' },
+  'bg-gradient': { label:'Gradient',      tip:'Directional gradient — configure type, angle & colours below' },
+  'bg-mesh':     { label:'* Blobs',       tip:'Animated soft coloured blob mesh' },
+  'bg-aurora':   { label:'* Aurora',      tip:'Animated northern-lights hue drift — speed & colour adjustable' },
+  'bg-starfield':{ label:'* Starfield',   tip:'Animated drifting star field — speed & colour adjustable' },
+  'bg-laser':    { label:'* Laser',       tip:'Animated laser beams bouncing around the screen' },
+  'bg-stars':    { label:'Stars',         tip:'Static scattered star pattern' },
+  'bg-nebula':   { label:'Nebula',        tip:'Deep-space nebula cloud with scattered stars' },
+  'bg-circuit':  { label:'Circuit',       tip:'Circuit-board trace grid' },
+  'bg-plasma':   { label:'* Plasma',      tip:'Animated liquid colour blobs — higher GPU use' },
+  'bg-inferno':  { label:'* Inferno',     tip:'Animated plasma — red/orange fire palette' },
+  'bg-mint':     { label:'* Mint',        tip:'Animated plasma — green/teal/cyan palette' },
+  'bg-dusk':     { label:'* Dusk',        tip:'Animated plasma — pink/violet/peach palette' },
+  'bg-mono':     { label:'* Mono',        tip:'Animated plasma — deep navy monochrome' },
+  'bg-image':    { label:'Image',         tip:'Upload a custom background image (max 2 MB)' },
+}
+const PATTERN_BG   = ['bg-dots','bg-grid','bg-lines','bg-circuit']
+const PLASMA_BG    = ['bg-plasma','bg-inferno','bg-mint','bg-dusk','bg-mono']
+const GRADIENT_BG  = ['bg-gradient']
+const IMAGE_BG     = ['bg-image']
+const STARFIELD_BG = ['bg-starfield']
+const AURORA_BG    = ['bg-aurora']
+const LASER_BG     = ['bg-laser']
+const MESH_BG      = ['bg-mesh']
+
+function Sec({ title, children }) {
+  return (
+    <div className="settings-section">
+      <div className="settings-title">{title}</div>
+      {children}
+    </div>
+  )
+}
+function Row({ label, tip, children }) {
+  return (
+    <div className="settings-row" title={tip||''}>
+      <span className="settings-label" title={tip||''}>{label}</span>
+      {children}
+    </div>
+  )
+}
+function Slider({ value, min, max, step=1, onChange }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:'0.4rem' }}>
+      <input type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(e.target.value)} style={{ maxWidth:90 }} />
+      <span style={{ fontSize:'0.75em', color:'var(--text-muted)', minWidth:28, textAlign:'right' }}>{value}</span>
+    </div>
+  )
+}
+function Toggle({ checked, onChange, tip }) {
+  return (
+    <label className="toggle" title={tip||''}>
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+      <span className="toggle-slider" />
+    </label>
+  )
+}
+function ColorRow({ label, tip, value, onChange }) {
+  return (
+    <Row label={label} tip={tip}>
+      <input type="color" className="color-input"
+        value={value||'#000000'} onChange={e => onChange(e.target.value)} />
+    </Row>
+  )
+}
 
 export default function Settings({
-  theme,
-  setTheme,
-  onSave,
-  onClose,
+  theme, set,
+  workspaces, activeWs, onSwitchWs, onDeleteWs,
+  onSave, onReset, onClose,
+  onExport, onImport,
   onImageUpload,
-  onExportBackup,
-  onImportBackup,
-  fileRef,
-  backupFileRef,
-  importingBackup = false,
+  onExportBackup, onImportBackup,
+  fileRef, backupFileRef,
+  onRefreshCache,
+  themeSyncing, importingBackup,
+  onAddSection, onImportSection, onCollapseAll, onExpandAll,
 }) {
-  const previewStyle = useMemo(() => ({
-    '--bg': theme.bg,
-    '--text': theme.text,
-    '--accent': theme.accent,
-    '--card': theme.card,
-    '--line': theme.line,
-    '--card-radius': `${theme.cardRadius}px`,
-    '--font': theme.font,
-  }), [theme])
+  const importRef = fileRef       || useRef()
+  const bkupRef   = backupFileRef || useRef()
 
-  const set = (patch) => setTheme(prev => ({ ...prev, ...patch }))
+  const isPattern  = PATTERN_BG.includes(theme.bgStyle)
+  const isPlasma   = PLASMA_BG.includes(theme.bgStyle)
+  const isGradient = GRADIENT_BG.includes(theme.bgStyle)
+  const isImage    = IMAGE_BG.includes(theme.bgStyle)
+  const isStarfield = STARFIELD_BG.includes(theme.bgStyle)
+  const isAurora   = AURORA_BG.includes(theme.bgStyle)
+  const isLaser    = LASER_BG.includes(theme.bgStyle)
+  const isMesh     = MESH_BG.includes(theme.bgStyle)
 
   return (
     <>
-      <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
+      <div className="settings-veil" />
+      <div className="settings-panel" data-side={theme.settingsSide||'right'}>
 
-      <div className="settings-backdrop" onClick={onClose} />
-
-      <aside className="settings-panel" data-side={theme.settingsSide || 'right'}>
+        {/* Header */}
         <div className="settings-header">
-          <div>
-            <div className="settings-kicker">Appearance</div>
-            <h2>Settings</h2>
+          <span style={{ fontWeight:600, fontSize:'1em' }}>Settings</span>
+          <div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}>
+            {themeSyncing && <span style={{ fontSize:'0.72em', color:'var(--text-muted)' }}>saving…</span>}
+            <button className="icon-btn" onClick={onClose} title="Close settings">✕</button>
           </div>
-          <button className="icon-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
-        <div className="settings-body">
-          <section className="settings-section">
-            <h3>Colors</h3>
-            <div className="grid-2">
-              <label>
-                <span>Background</span>
-                <input type="color" value={theme.bg} onChange={(e) => set({ bg: e.target.value })} />
-              </label>
-
-              <label>
-                <span>Text</span>
-                <input type="color" value={theme.text} onChange={(e) => set({ text: e.target.value })} />
-              </label>
-
-              <label>
-                <span>Accent</span>
-                <input type="color" value={theme.accent} onChange={(e) => set({ accent: e.target.value })} />
-              </label>
-
-              <label>
-                <span>Card</span>
-                <input type="color" value={theme.card.slice(0, 7)} onChange={(e) => set({ card: e.target.value + 'cc' })} />
-              </label>
-
-              <label>
-                <span>Line</span>
-                <input type="color" value={theme.line} onChange={(e) => set({ line: e.target.value })} />
-              </label>
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>Typography</h3>
-            <div className="grid-2">
-              <label>
-                <span>Font</span>
-                <select value={theme.font} onChange={(e) => set({ font: e.target.value })}>
-                  {fonts.map(font => <option key={font} value={font}>{font}</option>)}
-                </select>
-              </label>
-
-              <label>
-                <span>Title size</span>
-                <input
-                  type="range"
-                  min="18"
-                  max="48"
-                  value={theme.titleSize}
-                  onChange={(e) => set({ titleSize: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Section title size</span>
-                <input
-                  type="range"
-                  min="14"
-                  max="28"
-                  value={theme.sectionTitleSize}
-                  onChange={(e) => set({ sectionTitleSize: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Link size</span>
-                <input
-                  type="range"
-                  min="12"
-                  max="22"
-                  value={theme.linkSize}
-                  onChange={(e) => set({ linkSize: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Note size</span>
-                <input
-                  type="range"
-                  min="12"
-                  max="22"
-                  value={theme.noteSize}
-                  onChange={(e) => set({ noteSize: Number(e.target.value) })}
-                />
-              </label>
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>Layout</h3>
-            <div className="grid-2">
-              <label>
-                <span>Page width</span>
-                <input
-                  type="range"
-                  min="900"
-                  max="1800"
-                  step="10"
-                  value={theme.pageWidth}
-                  onChange={(e) => set({ pageWidth: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Columns</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="6"
-                  value={theme.columns}
-                  onChange={(e) => set({ columns: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Page gap</span>
-                <input
-                  type="range"
-                  min="4"
-                  max="40"
-                  value={theme.pageGap}
-                  onChange={(e) => set({ pageGap: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Card gap</span>
-                <input
-                  type="range"
-                  min="4"
-                  max="32"
-                  value={theme.cardGap}
-                  onChange={(e) => set({ cardGap: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Card radius</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="32"
-                  value={theme.cardRadius}
-                  onChange={(e) => set({ cardRadius: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Card blur</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="30"
-                  value={theme.cardBlur}
-                  onChange={(e) => set({ cardBlur: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Shadow</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="60"
-                  value={theme.cardShadow}
-                  onChange={(e) => set({ cardShadow: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Settings side</span>
-                <select value={theme.settingsSide || 'right'} onChange={(e) => set({ settingsSide: e.target.value })}>
-                  <option value="right">Right</option>
-                  <option value="left">Left</option>
-                </select>
-              </label>
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>Styles</h3>
-            <div className="grid-2">
-              <label>
-                <span>Link style</span>
-                <select value={theme.linkStyle || 'solid'} onChange={(e) => set({ linkStyle: e.target.value })}>
-                  <option value="solid">Solid</option>
-                  <option value="soft">Soft</option>
-                  <option value="minimal">Minimal</option>
-                </select>
-              </label>
-
-              <label>
-                <span>Section style</span>
-                <select value={theme.sectionStyle || 'glass'} onChange={(e) => set({ sectionStyle: e.target.value })}>
-                  <option value="glass">Glass</option>
-                  <option value="solid">Solid</option>
-                  <option value="minimal">Minimal</option>
-                </select>
-              </label>
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>Wallpaper</h3>
-            <div className="grid-2">
-              <label>
-                <span>Preset</span>
-                <select
-                  value={theme.wallpaper}
-                  onChange={(e) => set({ wallpaper: e.target.value })}
-                >
-                  {wallpapers.map(w => (
-                    <option key={w.name} value={w.url}>{w.name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <label>
-                <span>Fit</span>
-                <select
-                  value={theme.wallpaperFit || 'cover'}
-                  onChange={(e) => set({ wallpaperFit: e.target.value })}
-                >
-                  <option value="cover">Cover</option>
-                  <option value="contain">Contain</option>
-                  <option value="auto">Auto</option>
-                </select>
-              </label>
-
-              <label>
-                <span>X position</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={theme.wallpaperX ?? 50}
-                  onChange={(e) => set({ wallpaperX: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Y position</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={theme.wallpaperY ?? 50}
-                  onChange={(e) => set({ wallpaperY: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Scale</span>
-                <input
-                  type="range"
-                  min="50"
-                  max="200"
-                  value={theme.wallpaperScale ?? 100}
-                  onChange={(e) => set({ wallpaperScale: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Blur</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="20"
-                  value={theme.wallpaperBlur ?? 0}
-                  onChange={(e) => set({ wallpaperBlur: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Dim</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={theme.wallpaperDim ?? 35}
-                  onChange={(e) => set({ wallpaperDim: Number(e.target.value) })}
-                />
-              </label>
-
-              <label>
-                <span>Opacity</span>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  value={theme.wallpaperOpacity ?? 100}
-                  onChange={(e) => set({ wallpaperOpacity: Number(e.target.value) })}
-                />
-              </label>
-            </div>
-
-            <div className="settings-row">
-              <button className="btn btn-ghost" onClick={() => fileRef.current?.click()}>
-                Upload image
+        {/* ── 1. BACKGROUND ── */}
+        <Sec title="Background">
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:'0.3rem' }}>
+            {Object.entries(BG_META).map(([val,{label,tip}]) => (
+              <button key={val}
+                className={'btn btn-ghost'+(theme.bgStyle===val?' btn-primary':'')}
+                style={{ fontSize:'0.75em', padding:'0.28rem 0.3rem', textAlign:'center' }}
+                onClick={() => set('bgStyle',val)} title={tip}>{label}
               </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={(e) => onImageUpload(e.target.files?.[0])}
-              />
+            ))}
+          </div>
+
+          <ColorRow label="Background colour" tip="Main page background colour"
+            value={theme.bg} onChange={v => set('bg',v)} />
+
+          {isPattern && <>
+            <ColorRow label="Pattern colour" value={theme.patternColor} onChange={v => set('patternColor',v)} />
+            <Row label="Pattern opacity">
+              <Slider value={theme.patternOpacity} min={0} max={1} step={0.05} onChange={v => set('patternOpacity',v)} />
+            </Row>
+          </>}
+
+          {isGradient && <>
+            <Row label="Type">
+              <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
+                value={theme.gradientType||'linear'} onChange={e => set('gradientType',e.target.value)}>
+                <option value="linear">Linear</option>
+                <option value="radial">Radial</option>
+              </select>
+            </Row>
+            {(theme.gradientType||'linear')==='linear' && (
+              <Row label="Angle">
+                <Slider value={theme.gradientAngle||135} min={0} max={360} step={5}
+                  onChange={v => set('gradientAngle',v)} />
+              </Row>
+            )}
+          </>}
+
+          {isImage && <>
+            <Row label="Upload image" tip="JPG or PNG, max 2 MB">
+              <button className="btn" style={{ fontSize:'0.8em' }}
+                onClick={() => bkupRef.current?.click()}>Choose file</button>
+            </Row>
+            <Row label="Image opacity">
+              <Slider value={theme.bgImageOpacity??1} min={0} max={1} step={0.05}
+                onChange={v => set('bgImageOpacity',v)} />
+            </Row>
+          </>}
+
+          {isPlasma && <>
+            <Row label="Speed" tip="Animation speed — higher = faster">
+              <Slider value={theme.plasmaSpeed??1} min={0.2} max={3} step={0.1}
+                onChange={v => set('plasmaSpeed',v)} />
+            </Row>
+            <Row label="Blur" tip="Blur intensity — higher = softer blobs">
+              <Slider value={theme.plasmaBlur??1} min={0.2} max={3} step={0.1}
+                onChange={v => set('plasmaBlur',v)} />
+            </Row>
+          </>}
+
+          {isStarfield && <>
+            <Row label="Speed" tip="Star drift speed (1 = default, 4 = very fast)">
+              <Slider value={theme.starfieldSpeed??1} min={0.1} max={4} step={0.1}
+                onChange={v => set('starfieldSpeed',v)} />
+            </Row>
+            <ColorRow label="Star colour" tip="Tint colour of the star dots"
+              value={theme.starfieldColor??'#ffffff'} onChange={v => set('starfieldColor',v)} />
+          </>}
+
+          {isAurora && <>
+            <Row label="Speed" tip="Aurora hue-rotation speed (1 = default, 4 = very fast)">
+              <Slider value={theme.auroraSpeed??1} min={0.1} max={4} step={0.1}
+                onChange={v => set('auroraSpeed',v)} />
+            </Row>
+            <ColorRow label="Aurora colour" tip="Base hue tinting the aurora gradient"
+              value={theme.auroraColor??'#6c8fff'} onChange={v => set('auroraColor',v)} />
+          </>}
+
+          {isMesh && <>
+            <Row label="Speed" tip="Blob drift speed (1 = default, 4 = very fast)">
+              <Slider value={theme.meshSpeed??1} min={0.1} max={4} step={0.1}
+                onChange={v => set('meshSpeed',v)} />
+            </Row>
+            <ColorRow label="Blob colour" tip="Primary colour of the animated blobs"
+              value={theme.meshColor??theme.accent??'#6c8fff'} onChange={v => set('meshColor',v)} />
+          </>}
+
+          {isLaser && <>
+            <Row label="Speed" tip="Laser beam movement speed (1 = default, 5 = very fast)">
+              <Slider value={theme.laserSpeed??1} min={0.2} max={5} step={0.1}
+                onChange={v => set('laserSpeed',v)} />
+            </Row>
+            <ColorRow label="Beam colour 1" tip="Primary laser beam colour"
+              value={theme.laserColor??'#6c8fff'} onChange={v => set('laserColor',v)} />
+            <ColorRow label="Beam colour 2" tip="Secondary laser beam colour"
+              value={theme.laserColor2??'#ff6bff'} onChange={v => set('laserColor2',v)} />
+          </>}
+        </Sec>
+
+        {/* ── 2. COLOURS ── */}
+        <Sec title="Colours">
+          <ColorRow label="Card background"  value={theme.card}         onChange={v => set('card',v)}
+            tip="Background colour of section cards" />
+          <Row label="Card opacity" tip="How opaque cards are (0 = transparent, 1 = solid)">
+            <Slider value={theme.cardOpacity??1} min={0} max={1} step={0.05}
+              onChange={v => set('cardOpacity',v)} />
+          </Row>
+          <Row label="Page scale" tip="Zoom level — click a preset">
+            <div style={{ display:'flex', gap:'0.25rem', flexWrap:'wrap' }}>
+              {[0.7,0.8,0.85,0.9,0.95,1,1.1,1.2].map(v => (
+                <button key={v}
+                  className={`btn${parseFloat(theme.pageScale??1)===v?' btn-primary':' btn-ghost'}`}
+                  style={{ padding:'0.15rem 0.45rem', fontSize:'0.78em', minWidth:36 }}
+                  onClick={() => set('pageScale', String(v))}
+                >{Math.round(v*100)}%</button>
+              ))}
             </div>
-          </section>
+          </Row>
+          <ColorRow label="Border"           value={theme.border}       onChange={v => set('border',v)} />
+          <Row label="Border opacity">
+            <Slider value={theme.borderOpacity??1} min={0} max={1} step={0.05}
+              onChange={v => set('borderOpacity',v)} />
+          </Row>
+          <ColorRow label="Accent"           value={theme.accent}       onChange={v => set('accent',v)}
+            tip="Highlight colour for active items and hover states" />
+          <ColorRow label="Text"             value={theme.text}         onChange={v => set('text',v)} />
+          <ColorRow label="Text dim"         value={theme.textDim}      onChange={v => set('textDim',v)} />
+          <ColorRow label="Section titles"   value={theme.titleColor}   onChange={v => set('titleColor',v)} />
+          <ColorRow label="Button"           value={theme.btnBg}        onChange={v => set('btnBg',v)} />
+          <ColorRow label="Notes bg"         value={theme.notesBg}      onChange={v => set('notesBg',v)} />
+          <ColorRow label="Note card bg"    value={theme.notesCardBg}  onChange={v => set('notesCardBg',v)} tip="Background colour of each note card" />
+          <ColorRow label="Notes input"      value={theme.notesInputBg} onChange={v => set('notesInputBg',v)} />
+        </Sec>
 
-          <section className="settings-section">
-            <h3>Backup</h3>
-            <div className="settings-row" style={{ display:'flex', gap:'0.5rem', flexWrap:'wrap' }}>
-              <button className="btn btn-ghost" style={{ fontSize:'0.8em' }} onClick={onExportBackup}>
-                Export backup
-              </button>
+        {/* ── 3. TYPOGRAPHY ── */}
+        <Sec title="Typography">
+          <Row label="Font">
+            <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
+              value={theme.font} onChange={e => set('font',e.target.value)}>
+              {FONTS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </Row>
+          <Row label="Body size">
+            <Slider value={theme.workspaceFontSize} min={10} max={20} step={1}
+              onChange={v => set('workspaceFontSize',v)} />
+          </Row>
+          <Row label="Topbar size">
+            <Slider value={theme.topbarFontSize} min={9} max={16} step={1}
+              onChange={v => set('topbarFontSize',v)} />
+          </Row>
+          <Row label="Settings size">
+            <Slider value={theme.settingsFontSize??13} min={10} max={16} step={1}
+              onChange={v => set('settingsFontSize',v)} />
+          </Row>
+          <Row label="Clock scale">
+            <Slider value={theme.clockWidgetScale} min={0.6} max={3} step={0.1}
+              onChange={v => set('clockWidgetScale',v)} />
+          </Row>
+        </Sec>
 
-              <button
+        {/* ── 4. SPACING & LAYOUT ── */}
+        <Sec title="Spacing & Layout">
+          <Row label="Columns" tip="Number of section columns (1–6)">
+            <Slider value={theme.sectionsCols??2} min={1} max={6} step={1}
+              onChange={v => set('sectionsCols',v)} />
+          </Row>
+          <Row label="Column gap">
+            <Slider value={theme.sectionGapH??0} min={0} max={32} step={1}
+              onChange={v => set('sectionGapH',v)} />
+          </Row>
+          <Row label="Row gap">
+            <Slider value={theme.sectionGap??0} min={0} max={32} step={1}
+              onChange={v => set('sectionGap',v)} />
+          </Row>
+          <Row label="Card padding">
+            <Slider value={theme.cardPadding??0.75} min={0} max={2} step={0.05}
+              onChange={v => set('cardPadding',v)} />
+          </Row>
+          <Row label="Link gap">
+            <Slider value={theme.linkGap??0.5} min={0} max={1.5} step={0.05}
+              onChange={v => set('linkGap',v)} />
+          </Row>
+          <Row label="Top gap">
+            <Slider value={theme.mainGapTop??12} min={0} max={120} step={1}
+              onChange={v => set('mainGapTop',v)} />
+          </Row>
+          <Row label="Notes width">
+            <Slider value={theme.notesWidth??240} min={160} max={420} step={10}
+              onChange={v => set('notesWidth',v)} />
+          </Row>
+          <Row label="Notes pad V" tip="Top/bottom padding inside the notes panel">
+            <Slider value={parseFloat(theme.notesPaddingV??0.35)} min={0} max={2} step={0.05}
+              onChange={v => set('notesPaddingV', v)} />
+          </Row>
+          <Row label="Notes pad H" tip="Left/right padding inside the notes panel">
+            <Slider value={parseFloat(theme.notesPaddingH??0.5)} min={0} max={2} step={0.05}
+              onChange={v => set('notesPaddingH', v)} />
+          </Row>
+          <Row label="Note gap" tip="Space between individual note rows (px)">
+            <Slider value={parseFloat(theme.notesGap??0)} min={0} max={20} step={1}
+              onChange={v => set('notesGap', v)} />
+          </Row>
+        </Sec>
+
+        {/* ── 5. SHAPE & SCALE ── */}
+        <Sec title="Shape & Scale">
+          <Row label="Card radius">
+            <Slider value={theme.radius??10} min={0} max={24} step={1}
+              onChange={v => set('radius',v)} />
+          </Row>
+          <Row label="Button radius">
+            <Slider value={theme.radiusSm??6} min={0} max={16} step={1}
+              onChange={v => set('radiusSm',v)} />
+          </Row>
+          <Row label="Section radius">
+            <Slider value={theme.sectionRadius??0} min={0} max={20} step={1}
+              onChange={v => set('sectionRadius',v)} />
+          </Row>
+          <Row label="Edit bar scale"
+            tip="Scale of edit/delete/drag buttons on links and section headers (1 = default, 0.5 = smaller)">
+            <Slider value={theme.editbarScale??1} min={0.5} max={1.5} step={0.05}
+              onChange={v => set('editbarScale',v)} />
+          </Row>
+          <Row label="Handle opacity">
+            <Slider value={theme.handleOpacity??0.15} min={0} max={1} step={0.05}
+              onChange={v => set('handleOpacity',v)} />
+          </Row>
+        </Sec>
+
+        {/* ── 6. FAVICONS ── */}
+        <Sec title="Favicons">
+          <Row label="Size">
+            <Slider value={theme.faviconSize??13} min={8} max={24} step={1}
+              onChange={v => set('faviconSize',v)} />
+          </Row>
+          <Row label="Opacity">
+            <Slider value={theme.faviconOpacity??1} min={0} max={1} step={0.05}
+              onChange={v => set('faviconOpacity',v)} />
+          </Row>
+          <Row label="Filter">
+            <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
+              value={theme.faviconFilter??'none'} onChange={e => set('faviconFilter',e.target.value)}>
+              <option value="none">None</option>
+              <option value="grayscale(1)">Greyscale</option>
+              <option value="invert(1)">Invert</option>
+              <option value="grayscale(1) opacity(0.6)">Greyscale dim</option>
+            </select>
+          </Row>
+        </Sec>
+
+        {/* ── 7. BEHAVIOUR ── */}
+        <Sec title="Behaviour">
+          <Row label="Open in new tab">
+            <Toggle checked={theme.openInNewTab==='true'} onChange={v => set('openInNewTab',String(v))} />
+          </Row>
+          <Row label="Lock layout" tip="Prevents accidental section reordering">
+            <Toggle checked={theme.locked==='true'} onChange={v => set('locked',String(v))} />
+          </Row>
+          <Row label="Settings side">
+            <select className="input" style={{ width:'auto', fontSize:'0.82em' }}
+              value={theme.settingsSide||'right'} onChange={e => set('settingsSide',e.target.value)}>
+              <option value="right">Right</option>
+              <option value="left">Left</option>
+            </select>
+          </Row>
+          <Row label="Search URL">
+            <input className="input" style={{ fontSize:'0.8em', maxWidth:180 }}
+              value={theme.searchUrl??''} onChange={e => set('searchUrl',e.target.value)} />
+          </Row>
+        </Sec>
+
+        {/* ── 8. DATA ── */}
+        <Sec title="Data">
+          <div style={{ display:'flex', gap:'0.4rem', flexWrap:'wrap' }}>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
+              onClick={onExportBackup}>Export backup</button>
+            <button
                 className="btn btn-ghost"
                 style={{ fontSize:'0.8em', display:'flex', alignItems:'center', gap:'0.3rem' }}
-                onClick={() => !importingBackup && backupFileRef.current?.click()}
-                disabled={importingBackup}
-              >
+                onClick={() => !importingBackup && bkupRef.current?.click()}
+                disabled={importingBackup}>
                 {importingBackup
                   ? <><span style={{ display:'inline-block', animation:'spin 0.8s linear infinite' }}>⟳</span> Importing…</>
                   : 'Import backup'}
               </button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
+              onClick={onExport}>Export theme</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
+              onClick={() => importRef.current?.click()}>Import theme</button>
+            <button className="btn btn-ghost" style={{ fontSize:'0.8em' }}
+              onClick={onRefreshCache}>Refresh cache</button>
+          </div>
+          <style>{`@keyframes spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }`}</style>
+          <input ref={importRef} type="file" accept=".json" style={{ display:'none' }} onChange={onImport} />
+          <input ref={bkupRef}   type="file" accept=".json" style={{ display:'none' }} onChange={onImportBackup} />
+        </Sec>
 
-              <input
-                ref={backupFileRef}
-                type="file"
-                accept=".json"
-                style={{ display:'none' }}
-                onChange={onImportBackup}
-              />
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>Preview</h3>
-            <div className="settings-preview" style={previewStyle}>
-              <div className="preview-card">
-                <div className="preview-title">Section</div>
-                <div className="preview-link">Example link</div>
-                <div className="preview-link">Another item</div>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div className="settings-footer" data-side={theme.settingsSide || 'right'} style={{ zIndex: 102 }}>
+        {/* ── Reset ── */}
+        <Sec title="Reset">
           <button
-            className="btn btn-primary"
-            style={{ flex:1 }}
-            onClick={() => { onSave(); onClose() }}
-          >
-            Save & Exit
-          </button>
-          <button className="btn btn-ghost" onClick={onClose}>
-            Close
-          </button>
-        </div>
-      </aside>
+            className="btn"
+            style={{ width:'100%', color:'var(--danger)', border:'1px solid color-mix(in srgb, var(--danger) 35%, transparent)' }}
+            onClick={onReset}
+          >↺ Reset all settings to defaults</button>
+          <p style={{ fontSize:'0.78em', color:'var(--text-muted)', marginTop:'0.4rem', lineHeight:1.5 }}>
+            Restores all colours, sizes and layout. Cannot be undone.
+          </p>
+        </Sec>
+
+      </div>
+
+		<div className="settings-footer" data-side={theme.settingsSide||'right'} style={{ zIndex: 102 }}>
+		  <button
+			className="btn btn-primary"
+			style={{ flex:1 }}
+			onClick={() => { onSave(); onClose() }}
+		  >
+			Save & Exit
+		  </button>
+		  <button className="btn btn-ghost" onClick={onClose}>
+			Close
+		  </button>
+		</div>
     </>
   )
 }
