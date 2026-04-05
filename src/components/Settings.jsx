@@ -1,582 +1,485 @@
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
-import ImportExport from './ImportExport'
-
 const FONTS = [
+  { label: 'Inter',          value: 'Inter, system-ui, sans-serif' },
   { label: 'DM Mono',        value: "'DM Mono', monospace" },
   { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
-  { label: 'Geist',          value: "'Geist', sans-serif" },
-  { label: 'Inter',          value: "'Inter', sans-serif" },
-  { label: 'IBM Plex Sans',  value: "'IBM Plex Sans', sans-serif" },
-  { label: 'Outfit',         value: "'Outfit', sans-serif" },
-  { label: 'Space Grotesk',  value: "'Space Grotesk', sans-serif" },
-  { label: 'Figtree',        value: "'Figtree', sans-serif" },
+  { label: 'IBM Plex Mono',  value: "'IBM Plex Mono', monospace" },
+  { label: 'Geist',          value: "'Geist', system-ui, sans-serif" },
+  { label: 'Outfit',         value: "'Outfit', system-ui, sans-serif" },
+  { label: 'Space Grotesk',  value: "'Space Grotesk', system-ui, sans-serif" },
+  { label: 'Figtree',        value: "'Figtree', system-ui, sans-serif" },
 ]
 
-const BG_PRESETS = ['noise', 'dots', 'grid', 'mesh', 'aurora', 'solid']
+/* ─── small building blocks ──────────────────────────────── */
 
-// btnBg is now dark navy — also applied as migration below
-const DEFAULT_THEME = {
-  bg:               '#0c0c0f',
-  bg2:              '#13131a',
-  bg3:              '#1a1a24',
-  card:             '#13131a',
-  cardOpacity:      1,
-  borderOpacity:    1,
-  handleOpacity:    0.15,
-  border:           '#2a2a3a',
-  borderHover:      '#3d3d55',
-  text:             '#e8e8f0',
-  textDim:          '#7878a0',
-  accent:           '#6c8fff',
-  danger:           '#ff6b6b',
-  success:          '#6bffb8',
-  btnBg:            '#1e3a8a',
-  btnText:          '#ffffff',
-  font:             "'DM Mono', monospace",
-  fontSize:         14,
-  clockSize:        1.0,
-  radius:           10,
-  linkGap:          0.5,
-  cardPadding:      1,
-  sectionsCols:     2,
-  pageScale:        1,
-  faviconOpacity:   1,
-  faviconGreyscale: false,
-}
-
-// Values that were old defaults and need forced migration
-const MIGRATE = { btnBg: ['#6c8fff', '#2d4fd4'] }
-
-function Toggle({ checked, onChange, title }) {
+function SectionHeader({ title }) {
   return (
-    <label className="toggle" title={title}>
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
-      <span className="toggle-slider" />
-    </label>
-  )
-}
-
-function Row({ label, children, tip }) {
-  return (
-    <div className="settings-row" title={tip}>
-      <span className="settings-label">{label}</span>
-      {children}
+    <div style={{
+      fontSize: '0.68em', fontWeight: 600, textTransform: 'uppercase',
+      letterSpacing: '0.1em', color: 'var(--text-muted)',
+      margin: '1.1rem 0 0.5rem',
+      paddingBottom: '0.3rem',
+      borderBottom: '1px solid color-mix(in srgb, var(--border) 50%, transparent)',
+    }}>
+      {title}
     </div>
   )
 }
 
-function SettingsSection({ title, children }) {
+function Row({ label, children }) {
   return (
-    <div className="settings-section">
-      <div className="settings-title">{title}</div>
-      {children}
+    <div style={{
+      display: 'flex', alignItems: 'center',
+      justifyContent: 'space-between', gap: '0.5rem',
+      marginBottom: '0.55rem',
+    }}>
+      <span style={{ fontSize: '0.82em', color: 'var(--text-dim)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+        {label}
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+        {children}
+      </div>
     </div>
   )
 }
+
+function Slider({ value, min, max, step = 1, onChange, unit = '', width = 90 }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+      <input
+        type="range" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(Number(e.target.value))}
+        style={{ width, accentColor: 'var(--accent)' }}
+      />
+      <span style={{ fontSize: '0.75em', color: 'var(--text-dim)', minWidth: '2.8rem', textAlign: 'right' }}>
+        {value}{unit}
+      </span>
+    </div>
+  )
+}
+
+function ColorSwatch({ value, onChange }) {
+  return (
+    <input
+      type="color"
+      value={(value || '#000000').slice(0, 7)}
+      onChange={e => onChange(e.target.value)}
+      style={{
+        width: 34, height: 24,
+        border: '1px solid var(--border)',
+        borderRadius: 4,
+        background: 'none',
+        cursor: 'pointer',
+        padding: 1,
+      }}
+    />
+  )
+}
+
+function TabToggle({ options, value, onChange }) {
+  return (
+    <div style={{
+      display: 'flex',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-sm)',
+      overflow: 'hidden',
+    }}>
+      {options.map(o => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          style={{
+            padding: '0.2rem 0.65rem',
+            fontSize: '0.78em',
+            background: value === o.value ? 'var(--accent-dim)' : 'transparent',
+            color: value === o.value ? 'var(--accent)' : 'var(--text-dim)',
+            border: 'none',
+            borderLeft: '1px solid var(--border)',
+            cursor: 'pointer',
+            transition: 'all 0.12s',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function ResetBtn({ onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Reset to default"
+      style={{
+        fontSize: '0.7em', color: 'var(--text-muted)',
+        background: 'none',
+        border: '1px solid var(--border)',
+        borderRadius: 3,
+        padding: '0.1rem 0.3rem',
+        cursor: 'pointer',
+        lineHeight: 1,
+      }}
+    >
+      ↺
+    </button>
+  )
+}
+
+/* ─── Main Settings component ────────────────────────────── */
 
 export default function Settings({
-  session, userSettings, onSettingsChange, onClose,
-  onResetLinks, onExportAll,
-  activeWs, workspaces,
-  onAddWorkspace, onDeleteWorkspace, onRenameWorkspace, onSwitchWorkspace,
-  uiVisibility,
+  theme, setTheme,
+  onSave, onClose,
+  onImageUpload,
+  onExportBackup, onImportBackup,
+  fileRef, backupFileRef,
+  importingBackup,
 }) {
-  const [theme, setTheme] = useState(() => {
-    try {
-      const saved = localStorage.getItem('current_theme')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        // Migrate old bad button colours to dark navy
-        for (const [key, oldVals] of Object.entries(MIGRATE)) {
-          if (oldVals.includes(parsed[key])) parsed[key] = DEFAULT_THEME[key]
-        }
-        return { ...DEFAULT_THEME, ...parsed }
-      }
-      return DEFAULT_THEME
-    } catch { return DEFAULT_THEME }
-  })
+  const up = patch => setTheme(prev => ({ ...prev, ...patch }))
+  const side = theme.settingsSide || 'right'
 
-  const [activeSlot,   setActiveSlot]   = useState(null)
-  const [slotNames,    setSlotNames]    = useState({ 1: 'Preset 1', 2: 'Preset 2', 3: 'Preset 3', 4: 'Preset 4' })
-  const [presets,      setPresets]      = useState({})
-  const [clockFormat,  setClockFormat]  = useState(userSettings?.clock_format    ?? '12h')
-  const [openNewTab,   setOpenNewTab]   = useState(userSettings?.open_in_new_tab ?? true)
-  const [bgPreset,     setBgPreset]     = useState(userSettings?.bg_preset       ?? 'noise')
-  const [bgImage,      setBgImage]      = useState(localStorage.getItem('bg_image') ?? null)
-  const [weatherName,  setWeatherName]  = useState(userSettings?.weather_name ?? 'Melbourne')
-  const [weatherLat,   setWeatherLat]   = useState(userSettings?.weather_lat  ?? -37.8136)
-  const [weatherLon,   setWeatherLon]   = useState(userSettings?.weather_lon  ?? 144.9631)
-  const [showClock,    setShowClock]    = useState(uiVisibility?.showClock   ?? true)
-  const [showWeather,  setShowWeather]  = useState(uiVisibility?.showWeather ?? true)
-  const [showSearch,   setShowSearch]   = useState(uiVisibility?.showSearch  ?? true)
-  const [showNotes,    setShowNotes]    = useState(uiVisibility?.showNotes   ?? true)
-  const [saving,       setSaving]       = useState(false)
-  const [newWsName,    setNewWsName]    = useState('')
-  const [addingWs,     setAddingWs]     = useState(false)
-  const [renamingWs,   setRenamingWs]   = useState(null)
-  const [renameVal,    setRenameVal]    = useState('')
-  const fileRef = useRef()
-
-  useEffect(() => {
-    const handler = (e) => { if (e.key === 'Escape') handleClose() }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
-
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('theme_presets').select('*')
-        .eq('user_id', session.user.id)
-      if (data) {
-        const map = {}
-        const names = { ...slotNames }
-        data.forEach(p => { map[p.slot] = p.config; names[p.slot] = p.name })
-        setPresets(map)
-        setSlotNames(names)
-      }
-    }
-    load()
-  }, [session])
-
-  useEffect(() => {
-    localStorage.setItem('current_theme', JSON.stringify(theme))
-    window.dispatchEvent(new Event('theme_cols_changed'))
-
-    const r = document.documentElement.style
-    r.setProperty('--bg',               theme.bg)
-    r.setProperty('--bg2',              theme.bg2)
-    r.setProperty('--bg3',              theme.bg3)
-    r.setProperty('--card',             theme.card)
-    r.setProperty('--card-opacity',     theme.cardOpacity)
-    r.setProperty('--border-opacity',   theme.borderOpacity)
-    r.setProperty('--handle-opacity',   theme.handleOpacity ?? 0.15)
-    r.setProperty('--border',           theme.border)
-    r.setProperty('--border-hover',     theme.borderHover)
-    r.setProperty('--text',             theme.text)
-    r.setProperty('--text-dim',         theme.textDim)
-    r.setProperty('--accent',           theme.accent)
-    r.setProperty('--accent-dim',       theme.accent + '33')
-    r.setProperty('--accent-glow',      theme.accent + '22')
-    r.setProperty('--danger',           theme.danger)
-    r.setProperty('--success',          theme.success)
-    r.setProperty('--btn-bg',           theme.btnBg)
-    r.setProperty('--btn-text',         theme.btnText)
-    r.setProperty('--font',             theme.font)
-    r.setProperty('--font-size',        theme.fontSize + 'px')
-    r.setProperty('--clock-size',       theme.clockSize + 'rem')
-    r.setProperty('--radius',           theme.radius + 'px')
-    r.setProperty('--radius-sm',        Math.max(2, theme.radius - 4) + 'px')
-    r.setProperty('--link-gap',         theme.linkGap + 'rem')
-    r.setProperty('--card-padding',     theme.cardPadding + 'rem')
-    r.setProperty('--sections-cols',    theme.sectionsCols)
-    r.setProperty('--favicon-opacity',  theme.faviconOpacity)
-    r.setProperty('--favicon-filter',   theme.faviconGreyscale ? 'grayscale(1)' : 'none')
-    document.body.style.zoom = theme.pageScale
-  }, [theme])
-
-  const set = (key, val) => setTheme(t => ({ ...t, [key]: val }))
-
-  const loadSlot = (slot) => {
-    setActiveSlot(slot)
-    if (presets[slot]) setTheme({ ...DEFAULT_THEME, ...presets[slot] })
+  const panelStyle = {
+    position: 'fixed',
+    top: 0,
+    bottom: 0,
+    [side]: 0,
+    width: 'min(460px, 78vw)',
+    background: 'var(--bg2, #13131a)',
+    borderLeft: side === 'right' ? '1px solid var(--border)' : 'none',
+    borderRight: side === 'left'  ? '1px solid var(--border)' : 'none',
+    boxShadow: side === 'right'
+      ? '-20px 0 60px rgba(0,0,0,0.55)'
+      : '20px 0 60px rgba(0,0,0,0.55)',
+    zIndex: 101,
+    display: 'flex',
+    flexDirection: 'column',
+    fontFamily: 'var(--font)',
+    fontSize: 'var(--settings-font-size, 13px)',
+    animation: side === 'right' ? 'slide-in 0.2s ease' : 'slide-in-left 0.2s ease',
   }
 
-  const saveSlot = async (slot) => {
-    if (!slot) return
-    await supabase.from('theme_presets').upsert({
-      user_id: session.user.id, slot, name: slotNames[slot], config: theme,
-    }, { onConflict: 'user_id,slot' })
-    setPresets(p => ({ ...p, [slot]: theme }))
-  }
-
-  const handleBgImage = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      localStorage.setItem('bg_image', ev.target.result)
-      setBgImage(ev.target.result)
-      setBgPreset('image')
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const clearBgImage = () => {
-    localStorage.removeItem('bg_image')
-    setBgImage(null)
-    setBgPreset('noise')
-  }
-
-  const resetTheme = () => {
-    if (!confirm('⚠ Reset ALL theme settings to defaults?\n\nSaved presets will not be affected.')) return
-    setTheme(DEFAULT_THEME)
-  }
-
-  const handleClose = async () => {
-    setSaving(true)
-    try {
-      await supabase.from('user_settings').upsert({
-        user_id:         session.user.id,
-        clock_format:    clockFormat,
-        open_in_new_tab: openNewTab,
-        bg_preset:       bgPreset,
-        weather_name:    weatherName,
-        weather_lat:     parseFloat(weatherLat),
-        weather_lon:     parseFloat(weatherLon),
-      }, { onConflict: 'user_id' })
-
-      if (activeSlot) await saveSlot(activeSlot)
-
-      onSettingsChange({
-        clock_format:    clockFormat,
-        open_in_new_tab: openNewTab,
-        bg_preset:       bgPreset,
-        weather_name:    weatherName,
-        weather_lat:     parseFloat(weatherLat),
-        weather_lon:     parseFloat(weatherLon),
-        showClock, showWeather, showSearch, showNotes,
-      })
-    } finally {
-      setSaving(false)
-      onClose()
-    }
-  }
-
-  const handleAddWs = async (e) => {
-    e.preventDefault()
-    if (!newWsName.trim()) return
-    await onAddWorkspace(newWsName.trim())
-    setNewWsName('')
-    setAddingWs(false)
-  }
-
-  const startRename = (ws) => { setRenamingWs(ws.id); setRenameVal(ws.name) }
-
-  const submitRename = async (e, id) => {
-    e.preventDefault()
-    await onRenameWorkspace(id, renameVal)
-    setRenamingWs(null)
+  const footerStyle = {
+    position: 'sticky',
+    bottom: 0,
+    [side]: 0,
+    padding: '0.85rem 1.5rem',
+    background: 'var(--bg2, #13131a)',
+    borderTop: '1px solid color-mix(in srgb, var(--border) 50%, transparent)',
+    display: 'flex',
+    gap: '0.6rem',
+    flexShrink: 0,
   }
 
   return (
-    <div className="settings-panel">
+    <>
+      {/* veil */}
+      <div
+        onClick={onClose}
+        style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.25)' }}
+      />
 
-      <div className="settings-header">
-        <span style={{ fontWeight: 500 }}>Settings</span>
-        <span style={{ fontSize: '0.72em', color: 'var(--text-muted)' }}>Changes apply live</span>
-      </div>
+      <div style={panelStyle} data-side={side}>
 
-      {/* ── Workspaces ── */}
-      <SettingsSection title="Workspaces">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-          {workspaces.map(ws => (
-            <div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {renamingWs === ws.id ? (
-                <form onSubmit={e => submitRename(e, ws.id)}
-                  style={{ flex: 1, display: 'flex', gap: '0.4rem' }}>
-                  <input className="input" value={renameVal}
-                    onChange={e => setRenameVal(e.target.value)} autoFocus style={{ flex: 1 }} />
-                  <button className="btn btn-primary" type="submit">Save</button>
-                  <button className="btn" type="button" onClick={() => setRenamingWs(null)}>✕</button>
-                </form>
-              ) : (
-                <>
-                  <button
-                    className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-                    style={{ flex: 1, textAlign: 'left' }}
-                    onClick={() => onSwitchWorkspace(ws.id)}>
-                    {ws.name} {activeWs === ws.id && '✓'}
-                  </button>
-                  <button className="icon-btn" onClick={() => startRename(ws)} title="Rename">✎</button>
-                  {workspaces.length > 1 && (
-                    <button className="icon-btn" onClick={() => onDeleteWorkspace(ws.id)}
-                      title="Delete workspace" style={{ color: 'var(--danger)' }}>✕</button>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
+        {/* ── Header ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '1rem 1.5rem 0.75rem',
+          borderBottom: '1px solid color-mix(in srgb, var(--border) 50%, transparent)',
+          flexShrink: 0,
+        }}>
+          <span style={{ fontWeight: 600, fontSize: '0.92em' }}>Settings</span>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none', color: 'var(--text-dim)',
+              fontSize: '1.1em', cursor: 'pointer',
+              padding: '0.15rem 0.4rem', borderRadius: 4,
+            }}
+          >✕</button>
         </div>
-        {workspaces.length < 5 && (
-          addingWs ? (
-            <form onSubmit={handleAddWs} style={{ display: 'flex', gap: '0.5rem' }}>
-              <input className="input" value={newWsName}
-                onChange={e => setNewWsName(e.target.value)}
-                placeholder="Workspace name" autoFocus style={{ flex: 1 }} />
-              <button className="btn btn-primary" type="submit">Add</button>
-              <button className="btn" type="button" onClick={() => setAddingWs(false)}>✕</button>
-            </form>
-          ) : (
-            <button className="btn btn-ghost" onClick={() => setAddingWs(true)}
-              style={{ fontSize: '0.82em', alignSelf: 'flex-start' }}>
-              + add workspace
-            </button>
-          )
-        )}
-        <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          Max 5 workspaces. Active workspace remembered per device.
-        </div>
-      </SettingsSection>
 
-      {/* ── Theme Presets ── */}
-      <SettingsSection title="Theme Presets">
-        <div className="preset-slots">
-          {[1,2,3,4].map(slot => (
-            <button key={slot}
-              className={`preset-slot${activeSlot === slot ? ' active' : ''}`}
-              onClick={() => loadSlot(slot)}>
-              {slotNames[slot]}
-            </button>
-          ))}
-        </div>
-        {activeSlot && (
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input className="input" value={slotNames[activeSlot]}
-              onChange={e => setSlotNames(n => ({ ...n, [activeSlot]: e.target.value }))}
-              placeholder="Preset name" style={{ flex: 1 }} />
-            <button className="btn btn-primary" onClick={() => saveSlot(activeSlot)}>
-              Save to {activeSlot}
-            </button>
-          </div>
-        )}
-      </SettingsSection>
+        {/* ── Scrollable body ── */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 1.5rem 1rem' }}>
 
-      {/* ── Colors ── */}
-      <SettingsSection title="Colors">
-        {[
-          ['Background',    'bg'],
-          ['Surface',       'bg2'],
-          ['Input / Hover', 'bg3'],
-          ['Card color',    'card'],
-          ['Border',        'border'],
-          ['Border hover',  'borderHover'],
-          ['Text',          'text'],
-          ['Text dim',      'textDim'],
-          ['Accent',        'accent'],
-          ['Danger',        'danger'],
-          ['Success',       'success'],
-          ['Button BG',     'btnBg'],
-          ['Button text',   'btnText'],
-        ].map(([label, key]) => (
-          <Row key={key} label={label}>
-            <input type="color" className="color-input"
-              value={theme[key]} onChange={e => set(key, e.target.value)} />
+          {/* PANEL */}
+          <SectionHeader title="Panel" />
+          <Row label="Position">
+            <TabToggle
+              options={[{ label: '← Left', value: 'left' }, { label: 'Right →', value: 'right' }]}
+              value={side}
+              onChange={v => up({ settingsSide: v })}
+            />
           </Row>
-        ))}
-      </SettingsSection>
 
-      {/* ── Transparency ── */}
-      <SettingsSection title="Transparency & Handles">
-        <Row label={`Card opacity: ${Math.round(theme.cardOpacity * 100)}%`}>
-          <input type="range" min="0.05" max="1" step="0.05"
-            value={theme.cardOpacity}
-            onChange={e => set('cardOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Border opacity: ${Math.round(theme.borderOpacity * 100)}%`}>
-          <input type="range" min="0" max="1" step="0.05"
-            value={theme.borderOpacity}
-            onChange={e => set('borderOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Handle opacity: ${Math.round((theme.handleOpacity ?? 0.15) * 100)}%`}>
-          <input type="range" min="0" max="1" step="0.05"
-            value={theme.handleOpacity ?? 0.15}
-            onChange={e => set('handleOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-      </SettingsSection>
+          {/* COLORS */}
+          <SectionHeader title="Colors" />
+          <Row label="Background">
+            <ColorSwatch value={theme.bg} onChange={v => up({ bg: v })} />
+          </Row>
+          <Row label="Text">
+            <ColorSwatch value={theme.text} onChange={v => up({ text: v })} />
+          </Row>
+          <Row label="Accent">
+            <ColorSwatch value={theme.accent} onChange={v => up({ accent: v })} />
+          </Row>
+          <Row label="Card">
+            <ColorSwatch
+              value={(theme.card || '#111827').slice(0, 7)}
+              onChange={v => {
+                const alpha = (theme.card || '#111827cc').slice(7) || 'cc'
+                up({ card: v + alpha })
+              }}
+            />
+          </Row>
+          <Row label="Line / border">
+            <ColorSwatch value={theme.line} onChange={v => up({ line: v })} />
+          </Row>
 
-      {/* ── Typography ── */}
-      <SettingsSection title="Typography">
-        <Row label="Font family">
-          <select className="input" style={{ width: 'auto', flex: 1 }}
-            value={theme.font} onChange={e => set('font', e.target.value)}>
-            {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-          </select>
-        </Row>
-        <Row label={`Base size: ${theme.fontSize}px`}>
-          <input type="range" min="11" max="20" step="1"
-            value={theme.fontSize}
-            onChange={e => set('fontSize', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Clock size: ${theme.clockSize}rem`}>
-          <input type="range" min="0.7" max="2" step="0.05"
-            value={theme.clockSize}
-            onChange={e => set('clockSize', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-      </SettingsSection>
+          {/* LAYOUT */}
+          <SectionHeader title="Layout" />
+          <Row label="Columns">
+            <Slider value={theme.columns ?? 4} min={1} max={8} onChange={v => up({ columns: v })} />
+          </Row>
+          <Row label="Page width">
+            <Slider value={theme.pageWidth ?? 1400} min={800} max={2400} step={50} onChange={v => up({ pageWidth: v })} unit="px" width={80} />
+          </Row>
+          <Row label="Top gap">
+            <Slider value={theme.mainGapTop ?? 12} min={0} max={120} onChange={v => up({ mainGapTop: v })} unit="px" />
+          </Row>
+          <Row label="Page gap">
+            <Slider value={theme.pageGap ?? 14} min={0} max={60} onChange={v => up({ pageGap: v })} unit="px" />
+          </Row>
+          <Row label="Card gap">
+            <Slider value={theme.cardGap ?? 12} min={0} max={40} onChange={v => up({ cardGap: v })} unit="px" />
+          </Row>
 
-      {/* ── Layout ── */}
-      <SettingsSection title="Layout">
-        <Row label={`Page scale: ${Math.round(theme.pageScale * 100)}%`}>
-          <input type="range" min="0.5" max="1.5" step="0.05"
-            value={theme.pageScale}
-            onChange={e => set('pageScale', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Section columns: ${theme.sectionsCols}`}>
-          <input type="range" min="1" max="5" step="1"
-            value={theme.sectionsCols}
-            onChange={e => set('sectionsCols', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Card padding: ${theme.cardPadding}rem`}>
-          <input type="range" min="0.1" max="2" step="0.1"
-            value={theme.cardPadding}
-            onChange={e => set('cardPadding', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Link spacing: ${theme.linkGap}rem`}>
-          <input type="range" min="0" max="1.5" step="0.05"
-            value={theme.linkGap}
-            onChange={e => set('linkGap', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label={`Border radius: ${theme.radius}px`}>
-          <input type="range" min="0" max="24" step="1"
-            value={theme.radius}
-            onChange={e => set('radius', parseInt(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-      </SettingsSection>
+          {/* CARDS */}
+          <SectionHeader title="Cards" />
+          <Row label="Corner radius">
+            <Slider value={theme.cardRadius ?? 16} min={0} max={32} onChange={v => up({ cardRadius: v })} unit="px" />
+          </Row>
+          <Row label="Blur">
+            <Slider value={theme.cardBlur ?? 10} min={0} max={40} onChange={v => up({ cardBlur: v })} unit="px" />
+          </Row>
+          <Row label="Shadow">
+            <Slider value={theme.cardShadow ?? 25} min={0} max={60} onChange={v => up({ cardShadow: v })} unit="px" />
+          </Row>
+          <Row label="Link style">
+            <TabToggle
+              options={[{ label: 'Solid', value: 'solid' }, { label: 'Glass', value: 'glass' }]}
+              value={theme.linkStyle || 'solid'}
+              onChange={v => up({ linkStyle: v })}
+            />
+          </Row>
+          <Row label="Section style">
+            <TabToggle
+              options={[{ label: 'Glass', value: 'glass' }, { label: 'Flat', value: 'flat' }]}
+              value={theme.sectionStyle || 'glass'}
+              onChange={v => up({ sectionStyle: v })}
+            />
+          </Row>
 
-      {/* ── Favicons ── */}
-      <SettingsSection title="Link Icons (Favicons)">
-        <Row label={`Opacity: ${Math.round(theme.faviconOpacity * 100)}%`}>
-          <input type="range" min="0" max="1" step="0.05"
-            value={theme.faviconOpacity}
-            onChange={e => set('faviconOpacity', parseFloat(e.target.value))}
-            style={{ flex: 1 }} />
-        </Row>
-        <Row label="Greyscale icons">
-          <Toggle checked={theme.faviconGreyscale}
-            onChange={v => set('faviconGreyscale', v)} />
-        </Row>
-      </SettingsSection>
+          {/* TYPOGRAPHY */}
+          <SectionHeader title="Typography" />
+          <Row label="Font">
+            <select
+              value={theme.font}
+              onChange={e => up({ font: e.target.value })}
+              style={{
+                fontSize: '0.8em',
+                background: 'var(--bg3, #1a1a24)',
+                color: 'var(--text)',
+                border: '1px solid var(--border)',
+                borderRadius: 4,
+                padding: '0.22rem 0.5rem',
+                cursor: 'pointer',
+                maxWidth: 160,
+              }}
+            >
+              {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
+            </select>
+          </Row>
+          <Row label="Title size">
+            <Slider value={theme.titleSize ?? 28} min={16} max={48} onChange={v => up({ titleSize: v })} unit="px" />
+          </Row>
+          <Row label="Section title">
+            <Slider value={theme.sectionTitleSize ?? 18} min={10} max={28} onChange={v => up({ sectionTitleSize: v })} unit="px" />
+          </Row>
+          <Row label="Link size">
+            <Slider value={theme.linkSize ?? 15} min={10} max={22} onChange={v => up({ linkSize: v })} unit="px" />
+          </Row>
 
-      {/* ── Background ── */}
-      <SettingsSection title="Background">
-        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {BG_PRESETS.map(p => (
-            <button key={p}
-              className={`preset-slot${bgPreset === p ? ' active' : ''}`}
-              onClick={() => { setBgPreset(p); onSettingsChange({ bg_preset: p }) }}
-              style={{ flex: 'none' }}>
-              {p}
+          {/* SECTIONS */}
+          <SectionHeader title="Sections" />
+          <Row label="Handle opacity">
+            <Slider
+              value={Math.round((theme.handleOpacity ?? 0.15) * 100)}
+              min={0} max={100}
+              onChange={v => up({ handleOpacity: v / 100 })}
+              unit="%"
+            />
+          </Row>
+
+          {/* NOTES */}
+          <SectionHeader title="Notes" />
+          <Row label="Font size">
+            <Slider value={theme.noteSize ?? 15} min={10} max={22} onChange={v => up({ noteSize: v })} unit="px" />
+          </Row>
+          <Row label="Gap between notes">
+            <Slider value={theme.notesGap ?? 8} min={0} max={40} onChange={v => up({ notesGap: v })} unit="px" />
+          </Row>
+          <Row label="Card color">
+            <ColorSwatch
+              value={theme.notesCard || theme.card?.slice(0, 7) || '#111827'}
+              onChange={v => up({ notesCard: v })}
+            />
+            <ResetBtn onClick={() => up({ notesCard: '' })} />
+          </Row>
+          <Row label="Text color">
+            <ColorSwatch
+              value={theme.notesText || theme.text || '#e8eefc'}
+              onChange={v => up({ notesText: v })}
+            />
+            <ResetBtn onClick={() => up({ notesText: '' })} />
+          </Row>
+          <Row label="Background color">
+            <ColorSwatch
+              value={theme.notesBg || theme.bg || '#0b0f17'}
+              onChange={v => up({ notesBg: v })}
+            />
+            <ResetBtn onClick={() => up({ notesBg: '' })} />
+          </Row>
+
+          {/* WALLPAPER */}
+          <SectionHeader title="Wallpaper" />
+          <Row label="Image">
+            <button
+              onClick={() => fileRef.current?.click()}
+              style={{
+                fontSize: '0.8em', padding: '0.25rem 0.65rem',
+                background: 'var(--bg3, #1a1a24)', border: '1px solid var(--border)',
+                borderRadius: 4, color: 'var(--text)', cursor: 'pointer',
+              }}
+            >
+              Upload
             </button>
-          ))}
-        </div>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <button className="btn" onClick={() => fileRef.current.click()}>
-            📁 Upload image
-          </button>
-          {bgImage && (
-            <button className="btn btn-danger" onClick={clearBgImage}>Remove image</button>
-          )}
-          <input ref={fileRef} type="file" accept="image/*"
-            style={{ display: 'none' }} onChange={handleBgImage} />
-        </div>
-        {bgImage && (
-          <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-            ✓ Saved locally on this device only
-          </div>
-        )}
-      </SettingsSection>
-
-      {/* ── Show / Hide ── */}
-      <SettingsSection title="Show / Hide Elements">
-        <Row label="Clock in topbar">
-          <Toggle checked={showClock}
-            onChange={v => { setShowClock(v); onSettingsChange({ showClock: v }) }} />
-        </Row>
-        <Row label="Weather in topbar">
-          <Toggle checked={showWeather}
-            onChange={v => { setShowWeather(v); onSettingsChange({ showWeather: v }) }} />
-        </Row>
-        <Row label="Search bar">
-          <Toggle checked={showSearch}
-            onChange={v => { setShowSearch(v); onSettingsChange({ showSearch: v }) }} />
-        </Row>
-        <Row label="Notes panel">
-          <Toggle checked={showNotes}
-            onChange={v => { setShowNotes(v); onSettingsChange({ showNotes: v }) }} />
-        </Row>
-      </SettingsSection>
-
-      {/* ── Clock & Search ── */}
-      <SettingsSection title="Clock & Search">
-        <Row label="Clock format">
-          <div style={{ display: 'flex', gap: '0.4rem' }}>
-            {['12h','24h'].map(f => (
-              <button key={f}
-                className={`engine-tab${clockFormat === f ? ' active' : ''}`}
-                onClick={() => setClockFormat(f)}>{f}
+            {theme.wallpaper && (
+              <button
+                onClick={() => setTheme(p => ({ ...p, wallpaper: '' }))}
+                style={{
+                  fontSize: '0.78em', padding: '0.25rem 0.5rem',
+                  background: 'none', border: '1px solid var(--danger)',
+                  borderRadius: 4, color: 'var(--danger)', cursor: 'pointer',
+                }}
+              >
+                ✕ Remove
               </button>
-            ))}
+            )}
+            <input
+              ref={fileRef} type="file" accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => { onImageUpload(e.target.files?.[0]); e.target.value = '' }}
+            />
+          </Row>
+          {theme.wallpaper && (
+            <>
+              <Row label="Fit">
+                <TabToggle
+                  options={[
+                    { label: 'Cover', value: 'cover' },
+                    { label: 'Contain', value: 'contain' },
+                    { label: 'Fill', value: 'fill' },
+                  ]}
+                  value={theme.wallpaperFit || 'cover'}
+                  onChange={v => up({ wallpaperFit: v })}
+                />
+              </Row>
+              <Row label="Blur">
+                <Slider value={theme.wallpaperBlur ?? 0} min={0} max={40} onChange={v => up({ wallpaperBlur: v })} unit="px" />
+              </Row>
+              <Row label="Dim">
+                <Slider value={theme.wallpaperDim ?? 35} min={0} max={100} onChange={v => up({ wallpaperDim: v })} unit="%" />
+              </Row>
+              <Row label="Opacity">
+                <Slider value={theme.wallpaperOpacity ?? 100} min={0} max={100} onChange={v => up({ wallpaperOpacity: v })} unit="%" />
+              </Row>
+              <Row label="Scale">
+                <Slider value={theme.wallpaperScale ?? 100} min={50} max={200} onChange={v => up({ wallpaperScale: v })} unit="%" />
+              </Row>
+              <Row label="X position">
+                <Slider value={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => up({ wallpaperX: v })} unit="%" />
+              </Row>
+              <Row label="Y position">
+                <Slider value={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => up({ wallpaperY: v })} unit="%" />
+              </Row>
+            </>
+          )}
+
+          {/* BACKUP */}
+          <SectionHeader title="Backup" />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+            <button
+              onClick={onExportBackup}
+              style={{
+                padding: '0.38rem 0.75rem', fontSize: '0.82em', textAlign: 'left',
+                background: 'var(--bg3, #1a1a24)', border: '1px solid var(--border)',
+                borderRadius: 4, color: 'var(--text)', cursor: 'pointer',
+              }}
+            >
+              ⬇ Export backup
+            </button>
+            <button
+              onClick={() => backupFileRef.current?.click()}
+              disabled={importingBackup}
+              style={{
+                padding: '0.38rem 0.75rem', fontSize: '0.82em', textAlign: 'left',
+                background: 'var(--bg3, #1a1a24)', border: '1px solid var(--border)',
+                borderRadius: 4,
+                color: importingBackup ? 'var(--text-muted)' : 'var(--text)',
+                cursor: importingBackup ? 'default' : 'pointer',
+                opacity: importingBackup ? 0.6 : 1,
+              }}
+            >
+              {importingBackup ? '⟳ Importing…' : '⬆ Import backup'}
+            </button>
+            <input
+              ref={backupFileRef} type="file" accept=".json"
+              style={{ display: 'none' }}
+              onChange={onImportBackup}
+            />
           </div>
-        </Row>
-        <Row label="Open links in new tab">
-          <Toggle checked={openNewTab} onChange={setOpenNewTab} />
-        </Row>
-        <Row label="Search engine URL">
-          <input
-            className="input"
-            style={{ flex: 1, fontSize: '0.78em' }}
-            defaultValue={localStorage.getItem('search_url') || 'https://www.google.com.au/search?q='}
-            placeholder="https://www.google.com.au/search?q="
-            onBlur={e => {
-              localStorage.setItem('search_url', e.target.value)
-              window.dispatchEvent(new Event('search_url_changed'))
-            }} />
-        </Row>
-      </SettingsSection>
 
-      {/* ── Weather ── */}
-      <SettingsSection title="Weather Location">
-        <input className="input" placeholder="City name"
-          value={weatherName} onChange={e => setWeatherName(e.target.value)} />
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <input className="input" placeholder="Latitude e.g. -37.8136"
-            value={weatherLat} onChange={e => setWeatherLat(e.target.value)} />
-          <input className="input" placeholder="Longitude e.g. 144.9631"
-            value={weatherLon} onChange={e => setWeatherLon(e.target.value)} />
         </div>
-        <div style={{ fontSize: '0.75em', color: 'var(--text-muted)' }}>
-          Find at{' '}
-          <a href="https://latlong.net" target="_blank" rel="noreferrer"
-            style={{ color: 'var(--accent)' }}>latlong.net</a>
+
+        {/* ── Footer ── */}
+        <div style={footerStyle}>
+          <button
+            onClick={onSave}
+            style={{
+              flex: 1, padding: '0.45rem',
+              fontSize: '0.84em', fontWeight: 600,
+              background: 'var(--accent)', color: '#000',
+              border: 'none', borderRadius: 'var(--radius-sm)',
+              cursor: 'pointer',
+            }}
+          >
+            Save theme
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              padding: '0.45rem 1rem', fontSize: '0.84em',
+              background: 'none', border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)', color: 'var(--text-dim)',
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
         </div>
-      </SettingsSection>
 
-      {/* ── Import / Export ── */}
-      <SettingsSection title="Import / Export">
-        <ImportExport session={session} workspaceId={activeWs} onRefresh={() => {}} />
-        <button className="btn btn-primary" onClick={onExportAll} style={{ width: '100%' }}>
-          ⬇ Export everything (full backup)
-        </button>
-      </SettingsSection>
-
-      {/* ── Danger Zone ── */}
-      <SettingsSection title="⚠ Danger Zone">
-        <button className="btn btn-danger" onClick={resetTheme} style={{ width: '100%' }}>
-          ↺ Reset theme to defaults
-        </button>
-        <button className="btn btn-danger" onClick={onResetLinks} style={{ width: '100%' }}>
-          ✕ Clear all links in this workspace
-        </button>
-      </SettingsSection>
-
-      <div className="settings-footer">
-        <button className="btn btn-primary" onClick={handleClose} disabled={saving} style={{ flex: 1 }}>
-          {saving ? 'Saving…' : '✓ Save & Close'}
-        </button>
       </div>
-
-    </div>
+    </>
   )
 }

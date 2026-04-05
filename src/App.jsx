@@ -1,360 +1,687 @@
-import { useState, useEffect, useCallback } from 'react'
-import { supabase } from './lib/supabase'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Auth from './components/Auth'
-import Clock from './components/Clock'
-import Weather from './components/Weather'
-import SearchBar from './components/SearchBar'
+import Toolbar from './components/Toolbar'
+import WorkspaceTabs from './components/WorkspaceTabs'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
 import Settings from './components/Settings'
+import { supabase } from './supabaseClient'
+import './index.css'
 
-function applyTheme(cfg) {
-  if (!cfg) return
-  localStorage.setItem('current_theme', JSON.stringify(cfg))
-  const r = document.documentElement.style
-  const s = (k, v) => (v !== undefined && v !== null) && r.setProperty(k, String(v))
-  s('--bg', cfg.bg)
-  s('--bg2', cfg.bg2)
-  s('--bg3', cfg.bg3)
-  s('--card', cfg.card)
-  s('--card-opacity', cfg.cardOpacity)
-  s('--border-opacity', cfg.borderOpacity ?? 1)
-  s('--handle-opacity', cfg.handleOpacity ?? 0.15)
-  s('--border', cfg.border)
-  s('--border-hover', cfg.borderHover)
-  s('--text', cfg.text)
-  s('--text-dim', cfg.textDim)
-  s('--accent', cfg.accent)
-  s('--accent-dim', cfg.accent ? cfg.accent + '33' : null)
-  s('--accent-glow', cfg.accent ? cfg.accent + '22' : null)
-  s('--danger', cfg.danger)
-  s('--success', cfg.success)
-  s('--btn-bg', cfg.btnBg)
-  s('--btn-text', cfg.btnText)
-  s('--font', cfg.font)
-  s('--font-size', cfg.fontSize ? cfg.fontSize + 'px' : null)
-  s('--clock-size', cfg.clockSize ? cfg.clockSize + 'rem' : null)
-  s('--radius', cfg.radius ? cfg.radius + 'px' : null)
-  s('--radius-sm', cfg.radius ? Math.max(2, cfg.radius - 4) + 'px' : null)
-  s('--link-gap', cfg.linkGap ? cfg.linkGap + 'rem' : null)
-  s('--card-padding', cfg.cardPadding ? cfg.cardPadding + 'rem' : null)
-  s('--sections-cols', cfg.sectionsCols)
-  s('--favicon-opacity', cfg.faviconOpacity ?? 1)
-  s('--favicon-filter', cfg.faviconGreyscale ? 'grayscale(1)' : 'none')
-  if (cfg.pageScale) document.body.style.zoom = cfg.pageScale
+const DEFAULT_THEME = {
+  bg: '#0b0f17',
+  text: '#e8eefc',
+  accent: '#7dd3fc',
+  card: '#111827cc',
+  line: '#1f2937',
+  cardRadius: 16,
+  cardBlur: 10,
+  pageWidth: 1400,
+  font: 'Inter, system-ui, sans-serif',
+  titleSize: 28,
+  sectionTitleSize: 18,
+  linkSize: 15,
+  noteSize: 15,
+  wallpaper: '',
+  wallpaperFit: 'cover',
+  wallpaperX: 50,
+  wallpaperY: 50,
+  wallpaperScale: 100,
+  wallpaperBlur: 0,
+  wallpaperDim: 35,
+  wallpaperOpacity: 100,
+  pageGap: 14,
+  cardGap: 12,
+  columns: 4,
+  linkStyle: 'solid',
+  sectionStyle: 'glass',
+  cardShadow: 25,
+  settingsSide: 'right',
+  // NEW
+  handleOpacity: 0.15,
+  mainGapTop: 12,
+  notesGap: 8,
+  notesCard: '',
+  notesText: '',
+  notesBg: '',
+}
+
+function applyTheme(t) {
+  const root = document.documentElement
+  root.style.setProperty('--bg', t.bg)
+  root.style.setProperty('--text', t.text)
+  root.style.setProperty('--accent', t.accent)
+  root.style.setProperty('--card', t.card)
+  root.style.setProperty('--line', t.line)
+  root.style.setProperty('--card-radius', `${t.cardRadius}px`)
+  root.style.setProperty('--card-blur', `${t.cardBlur}px`)
+  root.style.setProperty('--page-width', `${t.pageWidth}px`)
+  root.style.setProperty('--font', t.font)
+  root.style.setProperty('--title-size', `${t.titleSize}px`)
+  root.style.setProperty('--section-title-size', `${t.sectionTitleSize}px`)
+  root.style.setProperty('--link-size', `${t.linkSize}px`)
+  // Fix: set BOTH variable names so notes font works regardless of which CSS uses
+  root.style.setProperty('--note-size', `${t.noteSize ?? 15}px`)
+  root.style.setProperty('--notes-font-size', `${t.noteSize ?? 15}px`)
+  root.style.setProperty('--wallpaper-fit', t.wallpaperFit || 'cover')
+  root.style.setProperty('--wallpaper-x', `${t.wallpaperX ?? 50}%`)
+  root.style.setProperty('--wallpaper-y', `${t.wallpaperY ?? 50}%`)
+  root.style.setProperty('--wallpaper-scale', `${t.wallpaperScale ?? 100}%`)
+  root.style.setProperty('--wallpaper-blur', `${t.wallpaperBlur ?? 0}px`)
+  root.style.setProperty('--wallpaper-dim', `${(t.wallpaperDim ?? 35) / 100}`)
+  root.style.setProperty('--wallpaper-opacity', `${(t.wallpaperOpacity ?? 100) / 100}`)
+  root.style.setProperty('--page-gap', `${t.pageGap ?? 14}px`)
+  root.style.setProperty('--card-gap', `${t.cardGap ?? 12}px`)
+  root.style.setProperty('--columns', `${t.columns ?? 4}`)
+  root.style.setProperty('--card-shadow', `${t.cardShadow ?? 25}px`)
+  root.style.setProperty('--link-style', t.linkStyle || 'solid')
+  root.style.setProperty('--section-style', t.sectionStyle || 'glass')
+  // NEW variables
+  root.style.setProperty('--handle-opacity', `${t.handleOpacity ?? 0.15}`)
+  root.style.setProperty('--main-gap-top', `${t.mainGapTop ?? 12}px`)
+  root.style.setProperty('--notes-gap', `${t.notesGap ?? 8}px`)
+  if (t.notesCard) root.style.setProperty('--notes-card-bg', t.notesCard)
+  else root.style.removeProperty('--notes-card-bg')
+  if (t.notesText) root.style.setProperty('--notes-text-color', t.notesText)
+  else root.style.removeProperty('--notes-text-color')
+  if (t.notesBg) root.style.setProperty('--notes-bg', t.notesBg)
+  else root.style.removeProperty('--notes-bg')
+  document.body.style.fontFamily = t.font
+  document.body.style.backgroundColor = t.bg
+  document.body.style.color = t.text
 }
 
 export default function App() {
   const [session, setSession] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [workspaces, setWorkspaces] = useState([])
-  const [activeWs, setActiveWs] = useState(
-    () => localStorage.getItem('active_workspace') ?? null
-  )
-  const [sections, setSections] = useState([])
-  const [links, setLinks]       = useState([])
-  const [notes, setNotes]       = useState([])
-  const [userSettings, setUserSettings] = useState(null)
-  const [showSettings, setShowSettings] = useState(false)
+  const sessionRef = useRef(null)
 
-  const [themeConfig, setThemeConfig] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('current_theme')) || {} } catch { return {} }
+  const [workspaces, setWorkspaces] = useState([])
+  const [activeWs, setActiveWs] = useState(null)
+
+  const [sections, setSections] = useState([])
+  const [links, setLinks] = useState([])
+  const [notes, setNotes] = useState([])
+
+  const [theme, setTheme] = useState(() => {
+    try {
+      return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem('current_theme')) || {}) }
+    } catch {
+      return DEFAULT_THEME
+    }
   })
 
-  const clockFormat = userSettings?.clock_format     ?? '12h'
-  const openNewTab  = userSettings?.open_in_new_tab  ?? true
-  const bgPreset    = userSettings?.bg_preset        ?? 'noise'
-  const weatherLat  = userSettings?.weather_lat      ?? -37.8136
-  const weatherLon  = userSettings?.weather_lon      ?? 144.9631
-  const weatherName = userSettings?.weather_name     ?? 'Melbourne'
-  const bgImage     = localStorage.getItem('bg_image')
+  const [search, setSearch] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [importingBackup, setImportingBackup] = useState(false)
 
-  const [showClock,   setShowClock]   = useState(() => localStorage.getItem('show_clock')   !== 'false')
-  const [showWeather, setShowWeather] = useState(() => localStorage.getItem('show_weather') !== 'false')
-  const [showSearch,  setShowSearch]  = useState(() => localStorage.getItem('show_search')  !== 'false')
-  const [showNotes,   setShowNotes]   = useState(() => localStorage.getItem('show_notes')   !== 'false')
-  const [showPins,    setShowPins]    = useState(() => localStorage.getItem('show_pins')    !== 'false')
+  const fileRef = useRef(null)
+  const backupFileRef = useRef(null)
 
-  // ── Auth ──────────────────────────────────────────────────────
+  // Inject CSS fixes for handle texture + notes gap/colors (runs once)
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setLoading(false)
-    })
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => subscription.unsubscribe()
+    const id = 'sp-css-fixes'
+    if (!document.getElementById(id)) {
+      const s = document.createElement('style')
+      s.id = id
+      s.textContent = `
+        .drag-handle::before { content: '⣿'; }
+        .section-drag-handle::before { content: '⠿'; }
+        .notes-body { gap: var(--notes-gap, 8px) !important; }
+        .note-item { background: var(--notes-card-bg, transparent) !important; }
+        .note-content { color: var(--notes-text-color, var(--text)) !important; }
+      `
+      document.head.appendChild(s)
+    }
   }, [])
 
-  // ── User settings ─────────────────────────────────────────────
-  const fetchSettings = useCallback(async () => {
-    if (!session) return
-    const { data } = await supabase
-      .from('user_settings').select('*')
-      .eq('user_id', session.user.id).single()
-    if (data) setUserSettings(data)
-  }, [session])
-  useEffect(() => { fetchSettings() }, [fetchSettings])
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
 
-  // ── Theme preset ──────────────────────────────────────────────
+  useEffect(() => {
+    document.documentElement.dataset.settingsSide = theme.settingsSide || 'right'
+  }, [theme.settingsSide])
+
+  useEffect(() => {
+    sessionRef.current = session
+  }, [session])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null)
+      setLoading(false)
+    })
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, sess) => {
+      setSession(sess ?? null)
+    })
+
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
   useEffect(() => {
     if (!session) return
-    const load = async () => {
-      const { data } = await supabase
-        .from('theme_presets').select('*')
-        .eq('user_id', session.user.id).order('slot').limit(1)
-      if (data?.[0]?.config) {
-        applyTheme(data[0].config)
-        setThemeConfig(data[0].config)
-      }
+
+    const bootstrap = async () => {
+      await ensureWorkspace()
+      await handleRefresh()
     }
-    load()
+
+    bootstrap()
   }, [session])
 
-  const syncThemeFromStorage = () => {
-    try {
-      const t = JSON.parse(localStorage.getItem('current_theme'))
-      if (t) setThemeConfig(t)
-    } catch {}
+  const ensureWorkspace = async () => {
+    const { data, error } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      alert(error.message)
+      return
+    }
+
+    if (!data || data.length === 0) {
+      const { data: created, error: createErr } = await supabase
+        .from('workspaces')
+        .insert({ user_id: session.user.id, name: 'Home' })
+        .select()
+        .single()
+
+      if (createErr) {
+        alert(createErr.message)
+        return
+      }
+
+      setWorkspaces([created])
+      setActiveWs(created.id)
+      return
+    }
+
+    setWorkspaces(data)
+    setActiveWs(prev => prev ?? data[0]?.id ?? null)
   }
 
-  // ── Workspaces ────────────────────────────────────────────────
-  const fetchWorkspaces = useCallback(async () => {
-    if (!session) return
-    const { data } = await supabase
-      .from('workspaces').select('*')
-      .eq('user_id', session.user.id).order('created_at')
-    if (data) {
-      setWorkspaces(data)
-      const saved = localStorage.getItem('active_workspace')
-      const match = data.find(w => w.id === saved)
-      if (match) {
-        setActiveWs(match.id)
-      } else if (data.length > 0) {
-        setActiveWs(data[0].id)
-        localStorage.setItem('active_workspace', data[0].id)
-      }
+  const handleRefresh = async () => {
+    if (!sessionRef.current?.user?.id) return
+
+    const { data: wsData, error: wsErr } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (wsErr) {
+      alert(wsErr.message)
+      return
     }
-  }, [session])
-  useEffect(() => { fetchWorkspaces() }, [fetchWorkspaces])
+
+    setWorkspaces(wsData || [])
+
+    const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+    if (!currentWs) return
+    if (!activeWs) setActiveWs(currentWs)
+
+    const [{ data: secData, error: secErr }, { data: linkData, error: linkErr }, { data: noteData, error: noteErr }] =
+      await Promise.all([
+        supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: true }),
+      ])
+
+    if (secErr) return alert(secErr.message)
+    if (linkErr) return alert(linkErr.message)
+    if (noteErr) return alert(noteErr.message)
+
+    setSections(secData || [])
+    setLinks(linkData || [])
+    setNotes(noteData || [])
+  }
+
   useEffect(() => {
-    if (activeWs) localStorage.setItem('active_workspace', activeWs)
+    if (!activeWs || !session) return
+    handleRefresh()
   }, [activeWs])
 
-  // ── Data ──────────────────────────────────────────────────────
-  const fetchData = useCallback(async () => {
-    if (!session || !activeWs) return
-    const [sec, lnk, nt] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
-      supabase.from('links').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('position'),
-      supabase.from('notes').select('*').eq('workspace_id', activeWs).eq('user_id', session.user.id).order('created_at', { ascending: false }),
-    ])
-    if (sec.data) setSections(sec.data)
-    if (lnk.data) setLinks(lnk.data)
-    if (nt.data)  setNotes(nt.data)
-  }, [session, activeWs])
-  useEffect(() => { fetchData() }, [fetchData])
+  const filteredLinks = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return links
+    return links.filter(l =>
+      (l.title || '').toLowerCase().includes(q) ||
+      (l.url || '').toLowerCase().includes(q)
+    )
+  }, [links, search])
 
-  // ── Workspace CRUD ────────────────────────────────────────────
-  const addWorkspace = async (name) => {
-    if (!name.trim() || workspaces.length >= 5) return
-    const { data } = await supabase.from('workspaces')
-      .insert({ user_id: session.user.id, name: name.trim() }).select().single()
-    await fetchWorkspaces()
-    if (data) { setActiveWs(data.id); localStorage.setItem('active_workspace', data.id) }
-  }
+  const addWorkspace = async () => {
+    const name = prompt('Workspace name?')
+    if (!name) return
 
-  const deleteWorkspace = async (id) => {
-    if (!confirm('Delete this workspace and ALL its data? This cannot be undone.')) return
-    await Promise.all([
-      supabase.from('links').delete().eq('workspace_id', id),
-      supabase.from('sections').delete().eq('workspace_id', id),
-      supabase.from('notes').delete().eq('workspace_id', id),
-    ])
-    await supabase.from('workspaces').delete().eq('id', id)
-    const remaining = workspaces.filter(w => w.id !== id)
-    setWorkspaces(remaining)
-    const next = remaining[0]?.id ?? null
-    setActiveWs(next)
-    if (next) localStorage.setItem('active_workspace', next)
+    const { data, error } = await supabase
+      .from('workspaces')
+      .insert({ user_id: session.user.id, name })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setWorkspaces(prev => [...prev, data])
+    setActiveWs(data.id)
   }
 
   const renameWorkspace = async (id, name) => {
-    if (!name.trim()) return
-    await supabase.from('workspaces').update({ name: name.trim() }).eq('id', id)
-    await fetchWorkspaces()
+    const { error } = await supabase.from('workspaces').update({ name }).eq('id', id)
+    if (error) return alert(error.message)
+    setWorkspaces(prev => prev.map(w => (w.id === id ? { ...w, name } : w)))
   }
 
-  // ── Reset links ───────────────────────────────────────────────
-  const resetLinks = async () => {
+  const deleteWorkspace = async (id) => {
+    if (!confirm('Delete this workspace?')) return
+    const { error } = await supabase.from('workspaces').delete().eq('id', id)
+    if (error) return alert(error.message)
+
+    const next = workspaces.filter(w => w.id !== id)
+    setWorkspaces(next)
+    setActiveWs(next[0]?.id ?? null)
+  }
+
+  const addSection = async () => {
+    const name = prompt('Section name?')
+    if (!name || !activeWs) return
+
+    const { data, error } = await supabase
+      .from('sections')
+      .insert({
+        user_id: session.user.id,
+        workspace_id: activeWs,
+        name,
+        position: sections.length,
+        collapsed: false,
+      })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setSections(prev => [...prev, data])
+  }
+
+  const updateSection = async (id, patch) => {
+    const { error } = await supabase.from('sections').update(patch).eq('id', id)
+    if (error) return alert(error.message)
+    setSections(prev => prev.map(s => (s.id === id ? { ...s, ...patch } : s)))
+  }
+
+  const deleteSection = async (id) => {
+    if (!confirm('Delete this section and its links?')) return
+
+    const { error: linkErr } = await supabase.from('links').delete().eq('section_id', id)
+    if (linkErr) return alert(linkErr.message)
+
+    const { error } = await supabase.from('sections').delete().eq('id', id)
+    if (error) return alert(error.message)
+
+    setSections(prev => prev.filter(s => s.id !== id))
+    setLinks(prev => prev.filter(l => l.section_id !== id))
+  }
+
+  const addLink = async (sectionId) => {
+    const title = prompt('Link title?')
+    if (!title) return
+    const url = prompt('URL?')
+    if (!url) return
+
+    const sectionLinks = links.filter(l => l.section_id === sectionId)
+    const { data, error } = await supabase
+      .from('links')
+      .insert({
+        user_id: session.user.id,
+        workspace_id: activeWs,
+        section_id: sectionId,
+        title,
+        url,
+        position: sectionLinks.length,
+      })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setLinks(prev => [...prev, data])
+  }
+
+  const updateLink = async (id, patch) => {
+    const { error } = await supabase.from('links').update(patch).eq('id', id)
+    if (error) return alert(error.message)
+    setLinks(prev => prev.map(l => (l.id === id ? { ...l, ...patch } : l)))
+  }
+
+  const deleteLink = async (id) => {
+    const { error } = await supabase.from('links').delete().eq('id', id)
+    if (error) return alert(error.message)
+    setLinks(prev => prev.filter(l => l.id !== id))
+  }
+
+  const addNote = async () => {
     if (!activeWs) return
-    if (!confirm('⚠ DELETE all sections and links in this workspace?\n\nNotes will be kept. This cannot be undone.')) return
-    await supabase.from('links').delete().eq('workspace_id', activeWs)
-    await supabase.from('sections').delete().eq('workspace_id', activeWs)
-    fetchData()
+    const { data, error } = await supabase
+      .from('notes')
+      .insert({
+        user_id: session.user.id,
+        workspace_id: activeWs,
+        content: '',
+      })
+      .select()
+      .single()
+
+    if (error) return alert(error.message)
+    setNotes(prev => [...prev, data])
   }
 
-  // ── Export ────────────────────────────────────────────────────
-  const exportEverything = async () => {
-    const [{ data: allSections }, { data: allLinks }, { data: allNotes }, { data: presets }, { data: settings }] =
-      await Promise.all([
-        supabase.from('sections').select('*').eq('user_id', session.user.id),
-        supabase.from('links').select('*').eq('user_id', session.user.id),
-        supabase.from('notes').select('*').eq('user_id', session.user.id),
-        supabase.from('theme_presets').select('*').eq('user_id', session.user.id),
-        supabase.from('user_settings').select('*').eq('user_id', session.user.id).single(),
-      ])
-    const payload = {
-      exported_at: new Date().toISOString(),
-      workspaces: workspaces.map(ws => ({
-        name: ws.name,
-        sections: (allSections ?? [])
-          .filter(s => s.workspace_id === ws.id)
-          .sort((a, b) => a.position - b.position)
-          .map(s => ({
-            name: s.name, pinned: s.pinned, collapsed: s.collapsed,
-            links: (allLinks ?? [])
-              .filter(l => l.section_id === s.id)
-              .sort((a, b) => a.position - b.position)
-              .map(l => ({ title: l.title, url: l.url })),
-          })),
-        notes: (allNotes ?? [])
-          .filter(n => n.workspace_id === ws.id)
-          .map(n => ({ content: n.content, reminder_at: n.reminder_at })),
-      })),
-      theme_presets: presets ?? [],
-      user_settings: settings ?? {},
+  const updateNote = async (id, content) => {
+    const { error } = await supabase.from('notes').update({ content }).eq('id', id)
+    if (error) return alert(error.message)
+    setNotes(prev => prev.map(n => (n.id === id ? { ...n, content } : n)))
+  }
+
+  const deleteNote = async (id) => {
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (error) return alert(error.message)
+    setNotes(prev => prev.filter(n => n.id !== id))
+  }
+
+  const handleImageUpload = async (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const next = { ...theme, wallpaper: e.target.result }
+      setTheme(next)
+      applyTheme(next)
+      localStorage.setItem('current_theme', JSON.stringify(next))
     }
+    reader.readAsDataURL(file)
+  }
+
+  const exportFullBackup = async () => {
+    const backup = {
+      version: 2,
+      exportedAt: new Date().toISOString(),
+      theme,
+      workspaces: [],
+    }
+
+    const { data: wsData, error: wsErr } = await supabase
+      .from('workspaces')
+      .select('*')
+      .order('created_at', { ascending: true })
+
+    if (wsErr) return alert(wsErr.message)
+
+    for (const ws of wsData || []) {
+      const [{ data: secData, error: secErr }, { data: noteData, error: noteErr }] =
+        await Promise.all([
+          supabase.from('sections').select('*').eq('workspace_id', ws.id).order('position', { ascending: true }),
+          supabase.from('notes').select('*').eq('workspace_id', ws.id).order('created_at', { ascending: true }),
+        ])
+
+      if (secErr) return alert(secErr.message)
+      if (noteErr) return alert(noteErr.message)
+
+      const sectionsWithLinks = []
+      for (const sec of secData || []) {
+        const { data: secLinks, error: lErr } = await supabase
+          .from('links')
+          .select('*')
+          .eq('section_id', sec.id)
+          .order('position', { ascending: true })
+
+        if (lErr) return alert(lErr.message)
+
+        sectionsWithLinks.push({
+          name: sec.name,
+          position: sec.position,
+          collapsed: sec.collapsed,
+          links: (secLinks || []).map(l => ({
+            title: l.title,
+            url: l.url,
+            position: l.position,
+          })),
+        })
+      }
+
+      backup.workspaces.push({
+        name: ws.name,
+        sections: sectionsWithLinks,
+        notes: (noteData || []).map(n => ({ content: n.content })),
+      })
+    }
+
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }))
-    a.download = `startpage-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.href = url
+    a.download = 'startpage-backup.json'
     a.click()
+    URL.revokeObjectURL(url)
   }
 
-  // ── Settings changes ──────────────────────────────────────────
-  const handleSettingsChange = (changes) => {
-    if (changes.showClock   !== undefined) { setShowClock(changes.showClock);     localStorage.setItem('show_clock',   changes.showClock) }
-    if (changes.showWeather !== undefined) { setShowWeather(changes.showWeather); localStorage.setItem('show_weather', changes.showWeather) }
-    if (changes.showSearch  !== undefined) { setShowSearch(changes.showSearch);   localStorage.setItem('show_search',  changes.showSearch) }
-    if (changes.showNotes   !== undefined) { setShowNotes(changes.showNotes);     localStorage.setItem('show_notes',   changes.showNotes) }
-    if (changes.showPins    !== undefined) { setShowPins(changes.showPins);       localStorage.setItem('show_pins',    changes.showPins) }
-    setUserSettings(prev => ({ ...prev, ...changes }))
-    fetchSettings()
-    syncThemeFromStorage()
+  const saveTheme = () => {
+    localStorage.setItem('current_theme', JSON.stringify(theme))
+    applyTheme(theme)
   }
 
-  // ── Render ────────────────────────────────────────────────────
-  if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-      loading
-    </div>
-  )
+  const activeWorkspace = workspaces.find(w => w.id === activeWs)
+
+  if (loading) return <div className="center-fill">Loading…</div>
   if (!session) return <Auth />
 
-  // Background class/style resolved separately from app content
-  const bgClass = bgImage ? 'bg-layer bg-image' : `bg-layer bg-${bgPreset}`
-  const bgStyle = bgImage ? { backgroundImage: `url(${bgImage})` } : {}
-
   return (
-    <>
-      {/* ── Background layer — purely decorative, pointer-events:none ── */}
-      <div className={bgClass} style={bgStyle} />
-
-      {/* ── App content — sits above bg-layer, fully interactive ── */}
-      <div className="app">
-
-        <header className="topbar">
-          <div className="workspace-tabs">
-            {workspaces.map(ws => (
-              <button
-                key={ws.id}
-                className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-                onClick={() => setActiveWs(ws.id)}
-                title={`Switch to ${ws.name}`}
-              >
-                {ws.name}
-              </button>
-            ))}
-          </div>
-
-          <div className="topbar-widgets">
-            {showClock   && <Clock format={clockFormat} compact />}
-            <div className="topbar-divider" />
-            {showWeather && <Weather lat={weatherLat} lon={weatherLon} locationName={weatherName} />}
-            <div className="topbar-divider" />
-            {showSearch  && <SearchBar openInNewTab={openNewTab} compact />}
-          </div>
-
-          <div className="topbar-actions">
-            <button className="btn" onClick={() => setShowSettings(true)} title="Open settings">
-              <span>Settings</span>
-            </button>
-            <button
-              className="btn btn-ghost"
-              onClick={() => supabase.auth.signOut()}
-              title="Sign out"
-              style={{ fontSize: '0.78em' }}
-            >
-              sign out
-            </button>
-          </div>
-        </header>
-
-        <main className="main-layout" style={{ gridTemplateColumns: showNotes ? '1fr 250px' : '1fr' }}>
-          <div className="main-col">
-            {activeWs ? (
-              <Sections
-                sections={sections}
-                links={links}
-                userId={session.user.id}
-                workspaceId={activeWs}
-                onRefresh={fetchData}
-                openInNewTab={openNewTab}
-                showPins={showPins}
-                colCount={Number(themeConfig?.sectionsCols ?? 2)}
-              />
-            ) : (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.85em', textAlign: 'center', padding: '2rem' }}>
-                Add a workspace in Settings to get started
-              </div>
-            )}
-          </div>
-
-          {showNotes && activeWs && (
-            <div className="side-col">
-              <Notes
-                notes={notes}
-                workspaceId={activeWs}
-                userId={session.user.id}
-                onRefresh={fetchData}
-              />
-            </div>
-          )}
-        </main>
-
-      </div>
-
-      {/* ── Settings modal ── */}
-      {showSettings && (
-        <Settings
-          session={session}
-          userSettings={userSettings}
-          onSettingsChange={handleSettingsChange}
-          onClose={() => {
-            setShowSettings(false)
-            fetchData()
-            syncThemeFromStorage()
+    <div className="app-shell">
+      {theme.wallpaper ? (
+        <div
+          className="wallpaper-layer"
+          style={{
+            backgroundImage: `url(${theme.wallpaper})`,
+            backgroundSize: `${theme.wallpaperScale ?? 100}%`,
+            backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
+            filter: `blur(${theme.wallpaperBlur ?? 0}px)`,
+            opacity: (theme.wallpaperOpacity ?? 100) / 100,
           }}
-          onResetLinks={resetLinks}
-          onExportAll={exportEverything}
-          activeWs={activeWs}
+        />
+      ) : null}
+
+      <div className="wallpaper-dim" />
+
+      <Toolbar
+        search={search}
+        setSearch={setSearch}
+        onAddSection={addSection}
+        onAddNote={addNote}
+        onRefresh={handleRefresh}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      <main className="page-wrap">
+        <WorkspaceTabs
           workspaces={workspaces}
+          activeWs={activeWs}
+          setActiveWs={setActiveWs}
           onAddWorkspace={addWorkspace}
-          onDeleteWorkspace={deleteWorkspace}
           onRenameWorkspace={renameWorkspace}
-          onSwitchWorkspace={(id) => { setActiveWs(id); localStorage.setItem('active_workspace', id) }}
-          uiVisibility={{ showClock, showWeather, showSearch, showNotes, showPins }}
+          onDeleteWorkspace={deleteWorkspace}
+        />
+
+        <div className="page-title-row">
+          <h1 className="page-title">{activeWorkspace?.name || 'Workspace'}</h1>
+        </div>
+
+        <Sections
+          sections={sections}
+          links={filteredLinks}
+          onAddLink={addLink}
+          onUpdateLink={updateLink}
+          onDeleteLink={deleteLink}
+          onUpdateSection={updateSection}
+          onDeleteSection={deleteSection}
+        />
+
+        <Notes
+          notes={notes}
+          onUpdateNote={updateNote}
+          onDeleteNote={deleteNote}
+        />
+      </main>
+
+      {settingsOpen && (
+        <Settings
+          theme={theme}
+          setTheme={setTheme}
+          onSave={saveTheme}
+          onClose={() => setSettingsOpen(false)}
+          onImageUpload={handleImageUpload}
+          onExportBackup={exportFullBackup}
+          onImportBackup={(e) => {
+            const f = e.target.files?.[0]
+            if (!f) return
+            e.target.value = ''
+            setImportingBackup(true)
+            const r = new FileReader()
+            r.onload = async (ev) => {
+              try {
+                const data = JSON.parse(ev.target.result)
+                const uid = sessionRef.current?.user?.id
+                if (!uid) throw new Error('Not logged in')
+
+                if (Array.isArray(data)) {
+                  const rows = (Array.isArray(data[0]) ? data[0] : data)
+                    .filter(g => g && typeof g === 'object')
+
+                  for (let i = 0; i < rows.length; i++) {
+                    const grp = rows[i]
+
+                    const { data: sec, error: secErr } = await supabase
+                      .from('sections')
+                      .insert({
+                        user_id: uid,
+                        workspace_id: activeWs,
+                        name: grp.name ?? grp.title ?? 'Section',
+                        position: i,
+                        collapsed: false,
+                      })
+                      .select()
+                      .single()
+
+                    if (secErr) throw secErr
+
+                    const lnks = (grp.bookmarks ?? grp.links ?? []).map((b, j) => ({
+                      user_id: uid,
+                      workspace_id: activeWs,
+                      section_id: sec.id,
+                      title: b.name ?? b.title ?? 'Link',
+                      url: b.url,
+                      position: j,
+                    }))
+
+                    if (lnks.length) {
+                      const { error: lnkErr } = await supabase.from('links').insert(lnks)
+                      if (lnkErr) throw lnkErr
+                    }
+                  }
+
+                  await handleRefresh()
+                  alert('Imported ' + rows.length + ' section(s) into current workspace.')
+                  return
+                }
+
+                if (data.workspaces && Array.isArray(data.workspaces)) {
+                  if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) {
+                    setImportingBackup(false)
+                    return
+                  }
+
+                  for (const ws of data.workspaces) {
+                    const { data: newWs, error: wsErr } = await supabase
+                      .from('workspaces')
+                      .insert({ user_id: uid, name: ws.name })
+                      .select()
+                      .single()
+
+                    if (wsErr) throw wsErr
+
+                    for (let si = 0; si < (ws.sections ?? []).length; si++) {
+                      const sec = ws.sections[si]
+
+                      const { data: newSec, error: secErr } = await supabase
+                        .from('sections')
+                        .insert({
+                          user_id: uid,
+                          workspace_id: newWs.id,
+                          name: sec.name,
+                          position: sec.position ?? si,
+                          collapsed: sec.collapsed ?? false,
+                        })
+                        .select()
+                        .single()
+
+                      if (secErr) throw secErr
+
+                      const lnks = (sec.links ?? []).map((l, j) => ({
+                        user_id: uid,
+                        workspace_id: newWs.id,
+                        section_id: newSec.id,
+                        title: l.title ?? l.name ?? 'Link',
+                        url: l.url,
+                        position: l.position ?? j,
+                      }))
+
+                      if (lnks.length) {
+                        const { error: lnkErr } = await supabase.from('links').insert(lnks)
+                        if (lnkErr) throw lnkErr
+                      }
+                    }
+
+                    if (ws.notes?.length) {
+                      await supabase.from('notes').insert(
+                        ws.notes.map(n => ({
+                          user_id: uid,
+                          workspace_id: newWs.id,
+                          content: n.content ?? '',
+                        }))
+                      )
+                    }
+                  }
+
+                  if (data.theme && Object.keys(data.theme).length > 0) {
+                    const t = { ...DEFAULT_THEME, ...data.theme }
+                    setTheme(t)
+                    applyTheme(t)
+                    localStorage.setItem('current_theme', JSON.stringify(t))
+                  }
+
+                  await handleRefresh()
+                  alert('Backup imported successfully!')
+                  return
+                }
+
+                if (data.bg || data.text || data.accent) {
+                  const t = { ...DEFAULT_THEME, ...data }
+                  setTheme(t)
+                  applyTheme(t)
+                  localStorage.setItem('current_theme', JSON.stringify(t))
+                  alert('Theme imported.')
+                  return
+                }
+
+                alert('Unrecognised file format.')
+              } catch (err) {
+                alert('Import failed: ' + err.message)
+              } finally {
+                setImportingBackup(false)
+              }
+            }
+            r.readAsText(f)
+          }}
+          fileRef={fileRef}
+          backupFileRef={backupFileRef}
+          importingBackup={importingBackup}
         />
       )}
-    </>
+    </div>
   )
-}
+} 
