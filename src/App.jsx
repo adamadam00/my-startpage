@@ -996,64 +996,6 @@ export default function App() {
       )}
     </div>
   )
-  /* ── App shell (new wrapper classes) ── */
-.app-shell {
-  position: relative;
-  z-index: 1;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.wallpaper-layer {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background-repeat: no-repeat;
-}
-
-.wallpaper-dim {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background: rgba(0,0,0,var(--wallpaper-dim,0.35));
-}
-
-.center-fill {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--bg);
-  opacity: 0.6;
-}
-
-.page-wrap {
-  position: relative;
-  z-index: 1;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: var(--main-gap-top,12px) 0.75rem 0.75rem;
-}
-
-.page-title-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.page-title {
-  font-size: var(--title-size, 28px);
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.2;
-}
+ 
 
 }
