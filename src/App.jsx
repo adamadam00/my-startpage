@@ -5,7 +5,7 @@ import WorkspaceTabs from './components/WorkspaceTabs'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
 import Settings from './components/Settings'
-import { supabase } from './lib/supabaseClient'
+import { supabase } from './lib/supabase'
 import './index.css'
 
 // ─────────────────────────────────────────────────────────────────────────────
