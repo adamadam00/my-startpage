@@ -1436,3 +1436,57 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
   justify-content: center;
   color: var(--text-dim);
 }
+/* ─── Paste these at the very bottom of src/index.css ─── */
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.wallpaper-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-repeat: no-repeat;
+}
+
+.wallpaper-dim {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, var(--wallpaper-dim, 0.35));
+}
+
+/* topbar must sit above fixed wallpaper layers */
+.topbar {
+  position: relative;
+  z-index: 2;
+}
+
+.page-title-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
+}
+
+.page-title {
+  font-size: var(--title-size, 28px);
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+.center-fill {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+}
