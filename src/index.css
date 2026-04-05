@@ -1384,39 +1384,55 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
 }
 /* ─── App shell ─── */
 .app-shell {
-  position: relative; z-index: 1; height: 100%;
-  display: flex; flex-direction: column; overflow: hidden;
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ─── Wallpaper ─── */
 .wallpaper-layer {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background-repeat: no-repeat;
 }
 .wallpaper-dim {
-  position: fixed; inset: 0; z-index: 0; pointer-events: none;
-  background: rgba(0,0,0,var(--wallpaper-dim, 0.35));
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: rgba(0, 0, 0, var(--wallpaper-dim, 0.35));
 }
 
-/* ─── Page wrap ─── */
-.page-wrap {
-  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
-  padding: var(--main-gap-top,12px) 0.75rem 0.75rem 0.75rem;
+/* ─── Fix topbar above wallpaper layers ─── */
+.topbar {
+  position: relative;
+  z-index: 2;
 }
 
 /* ─── Page title ─── */
 .page-title-row {
-  display: flex; align-items: center;
-  margin-bottom: 0.75rem; padding: 0 0.25rem;
+  display: flex;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0 0.25rem;
 }
 .page-title {
   font-size: var(--title-size, 28px);
-  font-weight: 500; color: var(--text); line-height: 1.2;
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.2;
 }
 
 /* ─── Loading ─── */
 .center-fill {
-  height: 100%; display: flex;
-  align-items: center; justify-content: center;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-dim);
 }
