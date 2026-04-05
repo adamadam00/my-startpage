@@ -297,7 +297,7 @@ export default function App() {
     const { data: lnks } = await supabase.from('links').select('*').eq('workspace_id', activeWs).order('position')
     const rows = [['Section', 'Title', 'URL']]
     secs?.forEach(s => lnks?.filter(l => l.section_id === s.id).forEach(l => rows.push([s.name, l.title, l.url])))
-    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, \'\'\'\'')}"`).join(',')).join('\n')
+    const dq = '""'; const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, dq) + '"').join(",")).join("\n")
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
     a.download = 'startpage-links.csv'; a.click()
