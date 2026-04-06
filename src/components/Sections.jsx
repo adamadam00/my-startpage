@@ -112,10 +112,15 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
   return (
     <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}>
-      <div className="section-header" onClick={toggleCollapse}>
+      <div
+        className="section-header"
+        onClick={toggleCollapse}
+        {...(!locked ? attributes : {})}
+        {...(!locked ? listeners : {})}
+      >
 
         {!locked && (
-          <span className="drag-handle" {...attributes} {...listeners}
+          <span className="drag-handle"
             onClick={e => e.stopPropagation()} title="Drag to reorder" />
         )}
         <span style={{ width: '0.4rem', flexShrink: 0 }} />
@@ -209,12 +214,9 @@ export default function Sections({
   const safeLinks = Array.isArray(links) ? links : []
   const colsRef = useRef(cols)
   useEffect(() => { colsRef.current = cols }, [cols])
-  const skipRebuildRef = useRef(false)
 
   useEffect(() => {
-    if (dragging) return
-    if (skipRebuildRef.current) { skipRebuildRef.current = false; return }
-    setCols(buildColumns(sections, colCount))
+    if (!dragging) setCols(buildColumns(sections, colCount))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, colCount])
 
@@ -278,7 +280,6 @@ export default function Sections({
       const to = finalCols[activeCol].findIndex(s => s.id === over.id)
       if (from !== -1 && to !== -1 && from !== to) finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
     }
-    skipRebuildRef.current = true
     setCols(finalCols)
     const updates = []
     finalCols.forEach((col, ci) => col.forEach((s, i) => updates.push(
