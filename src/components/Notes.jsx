@@ -61,6 +61,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh }) {
   return (
     <div className="notes-panel" style={{
       height: 'auto',
+      marginTop: 'var(--section-gap-h, 0px)',
       border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)',
       borderRadius: 'var(--radius)',
     }}>
