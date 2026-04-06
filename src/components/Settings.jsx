@@ -60,16 +60,21 @@ const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
 function Row({ label, children, dimLabel = false }) {
   return (
     <div style={{
-      display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', gap: '0.4rem',
-      padding: '0.08rem 0', minHeight: '1.5rem',
+      display: 'grid',
+      gridTemplateColumns: '110px 1fr',
+      alignItems: 'center',
+      gap: '0.35rem',
+      padding: '0.1rem 0',
+      minHeight: '1.5rem',
     }}>
       <span style={{
         fontSize: '0.82em',
         color: dimLabel ? 'var(--text-muted)' : 'var(--text-dim)',
-        whiteSpace: 'nowrap', flexShrink: 0,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
       }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
         {children}
       </div>
     </div>
@@ -114,7 +119,12 @@ function Toggle({ checked, onChange }) {
 /** Sub-heading inside a group — centred + bold */
 function SectionTitle({ children }) {
   return (
-    <div className="settings-title" style={{ textAlign: 'center', fontWeight: 700, marginTop: '0.3rem' }}>
+    <div className="settings-title" style={{
+      textAlign: 'center',
+      fontWeight: 700,
+      marginTop: '0.3rem',
+      color: 'var(--settings-title-color, #7878a0)',
+    }}>
       {children}
     </div>
   )
@@ -139,9 +149,14 @@ function Group({ title, children, defaultOpen = true, signal }) {
       <div
         className="settings-title"
         style={{
-          cursor: 'pointer', userSelect: 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          fontWeight: 700, textAlign: 'center',
+          cursor: 'pointer',
+          userSelect: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontWeight: 700,
+          textAlign: 'center',
+          color: 'var(--settings-title-color, #7878a0)',
         }}
         onClick={() => setOpen(v => !v)}
       >
@@ -185,7 +200,7 @@ export default function Settings({
       <div className="settings-veil" onClick={onClose} />
 
       {/* Panel */}
-      <div className="settings-panel" data-side={side}>
+      <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)' }}>
 
         {/* ── Fixed header ──────────────────────────── */}
         <div className="settings-header">
@@ -366,6 +381,11 @@ export default function Settings({
           <Row label="Button bg">   <ColorPick value={theme.btnBg}   onChange={v => set('btnBg', v)} /></Row>
           <Row label="Button text"> <ColorPick value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
 
+          <SectionTitle>Settings panel</SectionTitle>
+          <Row label="Section title colour">
+            <ColorPick value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} />
+          </Row>
+
         </Group>
 
         {/* ══════════════════════════════════════════
@@ -406,16 +426,12 @@ export default function Settings({
           <Row label="Section gap (h)">
             <Slider val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" />
           </Row>
-          <Row label="Card padding">
-            <Slider val={Math.round((theme.cardPadding ?? 0.75) * 100)} min={0} max={200} step={5}
-              onChange={v => set('cardPadding', v / 100)} unit="%" />
-          </Row>
           <Row label="Link gap">
             <Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5}
               onChange={v => set('linkGap', v / 100)} unit="%" />
           </Row>
           <Row label="Link left padding">
-            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={0} max={150} step={5}
+            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
           </Row>
           <Row label="Handle opacity">
@@ -578,7 +594,15 @@ export default function Settings({
       </div>
 
       {/* ── Footer — z-index above panel so it's always visible ── */}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 102 }}>
+      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
+        <button
+          className="btn"
+          title={allOpen ? 'Collapse all sections' : 'Expand all sections'}
+          onClick={toggleAllGroups}
+          style={{ flexShrink: 0, padding: '0 0.5rem' }}
+        >
+          {allOpen ? '▲' : '▼'}
+        </button>
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>
           Save &amp; Close

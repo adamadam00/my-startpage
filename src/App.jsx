@@ -67,6 +67,7 @@ const DEFAULT_THEME = {
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
   bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
+  settingsTitleColor: '#7878a0',
   bgGrassSky: '#020609', bgGrassGround: '#071a05',
   bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
@@ -111,10 +112,16 @@ function applyTheme(t) {
   s('--pattern-color',   t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
   s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
   if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
+  if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
   // Dynamic CSS override for link list horizontal padding
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
-  styleEl.textContent = `.links-list { padding-left: ${t.linksPaddingH ?? 0.75}rem !important; padding-right: ${t.linksPaddingH ?? 0.75}rem !important; }`
+  const lph = t.linksPaddingH ?? 0.75
+  if (lph >= 0) {
+    styleEl.textContent = `.links-list { padding-left: ${lph}rem !important; padding-right: ${lph}rem !important; margin-left: 0 !important; width: 100% !important; }`
+  } else {
+    styleEl.textContent = `.links-list { padding-left: 0 !important; padding-right: 0 !important; margin-left: ${lph}rem !important; width: calc(100% - ${lph * 2 * -1}rem) !important; }`
+  }
 
   // ── Plasma speed (already CSS vars) + custom plasma colours
   const speed = t.bgAnimSpeed ?? 1
