@@ -621,7 +621,7 @@ export default function App() {
               colCount={theme.sectionsCols ?? 4}
             />
           </div>
-          <div className="side-col" style={{ paddingTop: 'var(--main-gap-top, 12px)' }}>
+          <div className="side-col" style={{ paddingTop: 'calc(var(--section-gap-h, 0px) + 0.38rem)' }}>
             <Notes
               notes={notes}
               workspaceId={activeWs}
