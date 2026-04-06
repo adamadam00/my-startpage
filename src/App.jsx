@@ -496,14 +496,28 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
-          const rows = (Array.isArray(data[0]) ? data[0] : data).filter(g => g && typeof g === 'object')
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
+          const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
+          let imported = 0
           for (let i = 0; i < rows.length; i++) {
             const grp = rows[i]
-            const { data: sec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false }).select().single()
-            const lnks = (grp.bookmarks ?? grp.links ?? []).map((b, j) => ({ user_id: uid, workspace_id: activeWs, section_id: sec.id, title: b.name ?? b.title ?? 'Link', url: b.url, position: j }))
+            const { data: sec, error: secErr } = await supabase
+              .from('sections')
+              .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false })
+              .select().single()
+            if (secErr || !sec) continue  // skip bad section, don't abort
+            const lnks = (grp.bookmarks ?? grp.links ?? [])
+              .filter(b => b && (b.url || b.href))
+              .map((b, j) => ({
+                user_id: uid, workspace_id: activeWs, section_id: sec.id,
+                title: b.name ?? b.title ?? 'Link',
+                url: (b.url ?? b.href ?? '').trim(),
+                position: j,
+              }))
             if (lnks.length) await supabase.from('links').insert(lnks)
+            imported++
           }
-          await handleRefresh(); alert('Imported ' + rows.length + ' section(s).'); return
+          await handleRefresh(); alert('Imported ' + imported + ' of ' + rows.length + ' section(s).'); return
         }
         if (data.workspaces && Array.isArray(data.workspaces)) {
           if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
