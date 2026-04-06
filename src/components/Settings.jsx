@@ -548,13 +548,41 @@ export default function Settings({
         </Group>
 
         {/* ══════════════════════════════════════════
-            LINKS
+            SEARCH
         ══════════════════════════════════════════ */}
-        <Group title="Links" defaultOpen={false} signal={groupSignal}>
-          <Row label="Open in new tab">
-            <Toggle checked={theme.openInNewTab ?? true} onChange={v => set('openInNewTab', v)} />
+        <Group title="Search" defaultOpen={false} signal={groupSignal}>
+          <SectionTitle>Search engine</SectionTitle>
+          <Row label="Engine URL">
+            <input
+              className="input"
+              style={{ fontSize: '0.78em' }}
+              value={theme.searchEngineUrl || 'https://www.google.com/search?q='}
+              onChange={e => set('searchEngineUrl', e.target.value)}
+              placeholder="https://www.google.com/search?q="
+            />
+          </Row>
+          <SectionTitle>Presets</SectionTitle>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.4rem' }}>
+            <button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.google.com/search?q=')}>Google</button>
+            <button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.bing.com/search?q=')}>Bing</button>
+            <button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://duckduckgo.com/?q=')}>DuckDuckGo</button>
+            <button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://search.brave.com/search?q=')}>Brave</button>
+            <button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.perplexity.ai/search?q=')}>Perplexity</button>
+          </div>
+          <Row label="Open results">
+            <select
+              className="input"
+              style={{ fontSize: '0.78em' }}
+              value={theme.openInNewTab ?? true ? 'new' : 'same'}
+              onChange={e => set('openInNewTab', e.target.value === 'new')}
+            >
+              <option value="new">New tab</option>
+              <option value="same">Same tab</option>
+            </select>
           </Row>
         </Group>
+
+
 
         {/* ══════════════════════════════════════════
             FAVICONS
