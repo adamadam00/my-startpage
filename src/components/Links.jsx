@@ -37,7 +37,7 @@ const LinkItem = memo(function LinkItem({ link, onEdit, onDelete, openInNewTab }
       </div>
     </div>
   )
-}
+})
 
 export default function Links({
   links = [],
