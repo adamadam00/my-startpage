@@ -212,7 +212,7 @@ export default function Settings({
               title={allOpen ? 'Collapse all sections' : 'Expand all sections'}
               onClick={toggleAllGroups}
             >
-              {allOpen ? '▲ All' : '▼ All'}
+              {allOpen ? '▲ Close' : '▼ Expand'}
             </button>
             <button
               className="btn-xs"
@@ -596,21 +596,12 @@ export default function Settings({
 
       {/* ── Footer — z-index above panel so it's always visible ── */}
       <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
-        <button
-          className="btn"
-          title={allOpen ? 'Collapse all sections' : 'Expand all sections'}
-          onClick={toggleAllGroups}
-          style={{ flexShrink: 0, padding: '0 0.5rem' }}
-        >
-          {allOpen ? '▲' : '▼'}
-        </button>
+       
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>
           Save &amp; Close
         </button>
-        <button className="btn" onClick={onSave} title="Save without closing">
-          Save
-        </button>
+       
         <button className="btn" onClick={onClose}>
           Close
         </button>
