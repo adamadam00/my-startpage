@@ -454,19 +454,6 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus URL bar on new tab load ──────────────────────────
-  // Blur the page after mount so Chrome/Edge/Brave return focus
-  // to the URL bar instead of keeping it on the page content.
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (document.activeElement && document.activeElement !== document.body) {
-        document.activeElement.blur()
-      }
-      window.blur()
-    }, 50)
-    return () => clearTimeout(timer)
-  }, [])
-
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
