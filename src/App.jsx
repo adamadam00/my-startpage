@@ -565,7 +565,14 @@ export default function App() {
     } catch (e) { console.error('[settings] load exception:', e) }
   }
 
-    // ── Workspace bootstrap ───────────────────────────────────────────────────
+    // ── Sign out ─────────────────────────────────────────────────────────────
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    setSession(null)
+    setSettingsOpen(false)
+  }
+
+  // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
