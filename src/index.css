@@ -663,3 +663,21 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
   .settings-panel, .settings-footer { width: 100vw; }
   .add-section-fixed { bottom: 0.5rem; left: 0.5rem; }
 }
+
+/* ─── Background ease-in ───────────────────────────────────────────────────── */
+.bg-layer {
+  opacity: 0;
+  transition: opacity var(--bg-fade-in-dur, 3.5s) cubic-bezier(0.4, 0, 0.2, 1);
+}
+.bg-layer.bg-visible {
+  opacity: 1;
+}
+
+/* ─── Favicon deferred fade-in ─────────────────────────────────────────────── */
+.link-favicon {
+  opacity: 0;
+  transition: opacity var(--favicon-fade-dur, 1.2s) ease;
+}
+.favicons-loaded .link-favicon {
+  opacity: var(--favicon-opacity, 1);
+}

@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
-import Settings from './components/Settings'
+const Settings = lazy(() => import('./components/Settings'))
 import { supabase } from './lib/supabase'
 import './index.css'
 
-// â”€â”€â”€ CLOCK WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
@@ -23,34 +23,54 @@ function ClockWidget() {
   )
 }
 
-// â”€â”€â”€ WEATHER WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function WeatherWidget() {
-  const [wx, setWx] = useState(null)
+// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+const WEATHER_CACHE_KEY = 'cache_weather'
+const WEATHER_TTL = 30 * 60 * 1000
+
+function WeatherWidget({ delay = 5000 }) {
+  const [wx,      setWx]      = useState(null)
+  const [visible, setVisible] = useState(false)
+
   useEffect(() => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-      try {
-        const r = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
-        )
-        const d = await r.json()
-        setWx(d.current_weather)
-      } catch {}
-    }, () => {})
-  }, [])
+    try {
+      const hit = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null')
+      if (hit && Date.now() - hit.ts < WEATHER_TTL) {
+        setWx(hit.data)
+        setVisible(true)
+        return
+      }
+    } catch {}
+    const t = setTimeout(() => {
+      if (!navigator.geolocation) return
+      navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+        try {
+          const r = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+          )
+          const d = await r.json()
+          setWx(d.current_weather)
+          setVisible(true)
+          localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
+        } catch {}
+      }, () => {})
+    }, delay)
+    return () => clearTimeout(t)
+  }, [delay])
   if (!wx) return null
-  const icons = { 0:'â˜€ï¸',1:'ðŸŒ¤',2:'â›…',3:'â˜ï¸',45:'ðŸŒ«',48:'ðŸŒ«',51:'ðŸŒ¦',53:'ðŸŒ¦',55:'ðŸŒ¦',61:'ðŸŒ§',63:'ðŸŒ§',65:'ðŸŒ§',71:'ðŸŒ¨',73:'ðŸŒ¨',75:'ðŸŒ¨',80:'ðŸŒ¦',81:'ðŸŒ¦',82:'ðŸŒ¦',95:'â›ˆ',96:'â›ˆ',99:'â›ˆ' }
+  const wDur = getComputedStyle(document.documentElement).getPropertyValue('--weather-fade-dur').trim() || '1.4s'
+  const fadeStyle = { opacity: visible ? 1 : 0, transition: `opacity ${wDur} ease` }
+  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
   const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
-    <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || 'ðŸŒ¡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}Â°</span>
+    <div className="weather-wrap" style={fadeStyle}>
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
 
-// â”€â”€â”€ DEFAULT THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
   bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
   card: '#13131a', cardOpacity: 1,
@@ -64,7 +84,11 @@ const DEFAULT_THEME = {
   radius: 10, sectionRadius: 0,
   linkGap: 0.5, cardPadding: 0.75,
   sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
-  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13,
+  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13, faviconDelay: 3,
+  weatherDelay: 5,
+  bgFadeIn: 3.5,
+  faviconFadeDuration: 1.2,
+  weatherFadeDuration: 1.4,
   patternColor: '#2a2a3a', patternOpacity: 1,
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
@@ -79,7 +103,7 @@ const DEFAULT_THEME = {
   settingsSide: 'right',
 }
 
-// â”€â”€â”€ APPLY THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── APPLY THEME ─────────────────────────────────────────────────────────────
 function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
@@ -267,6 +291,9 @@ function applyTheme(t) {
       100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
     }
   `
+  s('--bg-fade-in-dur', (t.bgFadeIn ?? 3.5) + 's')
+  s('--favicon-fade-dur', (t.faviconFadeDuration ?? 1.2) + 's')
+  s('--weather-fade-dur',  (t.weatherFadeDuration ?? 1.4) + 's')
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap',       (t.notesGap ?? 0) + 'px')
   if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
@@ -279,7 +306,7 @@ function applyTheme(t) {
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [session,  setSession]  = useState(null)
   const sessionRef              = useRef(null)
@@ -308,7 +335,7 @@ export default function App() {
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
-  // â”€â”€ Collapse / Expand all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Collapse / Expand all ─────────────────────────────────────────────────
   const [allCollapsed,    setAllCollapsed]    = useState(false)
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand,   setTriggerExpand]   = useState(0)
@@ -332,7 +359,37 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Favicon deferred fade-in ───────────────────────────────────────────────
+  useEffect(() => {
+    document.body.classList.remove('favicons-loaded')
+    const t = setTimeout(() => {
+      document.body.classList.add('favicons-loaded')
+    }, (theme.faviconDelay ?? 3) * 1000)
+    return () => clearTimeout(t)
+  }, [theme.faviconDelay])
+
+  // ── Background ease-in on first paint ─────────────────────────────────────
+  useEffect(() => {
+    const t = setTimeout(() => {
+      document.querySelectorAll('.bg-layer').forEach(el => el.classList.add('bg-visible'))
+    }, 80)
+    return () => clearTimeout(t)
+  }, [])
+
+  // ── Page Visibility — pause bg animations when tab is hidden ──────────────
+  useEffect(() => {
+    const handleVis = () => {
+      const state = document.hidden ? 'paused' : 'running'
+      document.querySelectorAll('.bg-layer').forEach(el => {
+        el.style.animationPlayState = state
+      })
+    }
+    document.addEventListener('visibilitychange', handleVis)
+    return () => document.removeEventListener('visibilitychange', handleVis)
+  }, [])
+
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null); setLoading(false)
@@ -346,7 +403,7 @@ export default function App() {
     ensureWorkspace().then(() => handleRefresh())
   }, [session])
 
-  // â”€â”€ Workspace bootstrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
@@ -360,7 +417,7 @@ export default function App() {
     setActiveWs(prev => prev ?? data[0]?.id ?? null)
   }
 
-  // â”€â”€ Data refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Data refresh ──────────────────────────────────────────────────────────
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
     const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -379,14 +436,14 @@ export default function App() {
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
 
-  // â”€â”€ Search filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Search filter ─────────────────────────────────────────────────────────
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
     return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
   }, [links, search])
 
-  // â”€â”€ Workspace CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Workspace CRUD ────────────────────────────────────────────────────────
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
@@ -410,7 +467,7 @@ export default function App() {
     setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
   }
 
-  // â”€â”€ Image uploads â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Image uploads ─────────────────────────────────────────────────────────
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -429,7 +486,7 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  // â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Export ────────────────────────────────────────────────────────────────
   const exportFullBackup = async () => {
     const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
     const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -469,7 +526,7 @@ export default function App() {
     handleRefresh()
   }
 
-  // â”€â”€ Import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Import ────────────────────────────────────────────────────────────────
   const handleImportBackup = (e) => {
     const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
     setImportingBackup(true)
@@ -496,7 +553,7 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
-          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] â†’ [sec,sec,sec,...]
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
           const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
           for (let i = 0; i < rows.length; i++) {
@@ -544,11 +601,11 @@ export default function App() {
     r.readAsText(f)
   }
 
-  // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Background ────────────────────────────────────────────────────────────
   const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
   const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
-  if (loading) return <div className="center-fill">Loadingâ€¦</div>
+  if (loading) return <div className="center-fill">Loading…</div>
   if (!session) return <Auth />
 
   return (
@@ -574,7 +631,7 @@ export default function App() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
-        {/* â”€â”€ TOPBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── TOPBAR ──────────────────────────────────────── */}
         <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
           {/* Workspace tabs */}
@@ -590,7 +647,7 @@ export default function App() {
                   <span
                     className="del-ws"
                     onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-                  >âœ•</span>
+                  >✕</span>
                 )}
               </button>
             ))}
@@ -608,17 +665,17 @@ export default function App() {
           <div className="topbar-widgets">
             <ClockWidget />
             <div className="topbar-divider" />
-            <WeatherWidget />
+            <WeatherWidget delay={(theme.weatherDelay ?? 5) * 1000} />
             <div className="search-compact" style={{ flex: 1 }}>
               <input
                 className="input search-compact-input"
-                placeholder="Search linksâ€¦"
+                placeholder="Search links…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Escape' && setSearch('')}
               />
               {search && (
-                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">âœ•</button>
+                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">✕</button>
               )}
             </div>
           </div>
@@ -632,12 +689,12 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>â†»</button>
+            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>↻</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
 
-        {/* â”€â”€ MAIN LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
         <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
           <div className="main-col">
             <Sections
@@ -662,8 +719,9 @@ export default function App() {
           </div>
         </main>
 
-        {/* â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
+          <Suspense fallback={null}>
           <Settings
             theme={theme}
             setTheme={setTheme}
