@@ -162,7 +162,7 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
         )}
 
         {!locked && (
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
+          <span className="section-collapse-arrow" style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
             {collapsed ? '▸' : '▾'}
           </span>
         )}

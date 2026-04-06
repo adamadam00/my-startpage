@@ -555,6 +555,8 @@ a { color: inherit; text-decoration: none; }
 .section-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--section-gap,0px); }
 .section-card { width: 100%; background: color-mix(in srgb, var(--card) calc(var(--card-opacity)*100%), transparent); outline: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); border: none; border-radius: var(--section-radius); overflow: hidden; }
 .section-header { display: flex; align-items: center; gap: 0.4rem; padding: 0.38rem var(--card-padding,0.75rem); cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: background 0.15s; }
+.section-collapse-arrow { opacity: 0; transition: opacity 0.15s; }
+.section-header:hover .section-collapse-arrow { opacity: 1; }
 .section-header:hover { background: var(--bg3); }
 .section-card:not(.collapsed) .section-header { border-bottom-color: color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); }
 .section-card.locked .section-header { cursor: default; padding-left: 0.6rem; }
@@ -1213,6 +1215,8 @@ a { color: inherit; text-decoration: none; }
 .section-col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--section-gap,0px); }
 .section-card { width: 100%; background: color-mix(in srgb, var(--card) calc(var(--card-opacity)*100%), transparent); outline: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); border: none; border-radius: var(--section-radius); overflow: hidden; }
 .section-header { display: flex; align-items: center; gap: 0.4rem; padding: 0.38rem var(--card-padding,0.75rem); cursor: pointer; user-select: none; border-bottom: 1px solid transparent; transition: background 0.15s; }
+.section-collapse-arrow { opacity: 0; transition: opacity 0.15s; }
+.section-header:hover .section-collapse-arrow { opacity: 1; }
 .section-header:hover { background: var(--bg3); }
 .section-card:not(.collapsed) .section-header { border-bottom-color: color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent); }
 .section-card.locked .section-header { cursor: default; padding-left: 0.6rem; }
