@@ -112,10 +112,15 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
 
   return (
     <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}>
-      <div className="section-header" onClick={toggleCollapse}>
+      <div
+        className="section-header"
+        onClick={toggleCollapse}
+        {...(!locked ? attributes : {})}
+        {...(!locked ? listeners : {})}
+      >
 
         {!locked && (
-          <span className="drag-handle" {...attributes} {...listeners}
+          <span className="drag-handle"
             onClick={e => e.stopPropagation()} title="Drag to reorder" />
         )}
         <span style={{ width: '0.4rem', flexShrink: 0 }} />
