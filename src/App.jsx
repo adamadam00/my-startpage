@@ -1,4 +1,58 @@
+import { useEffect, useRef, useState, useMemo } from 'react'
+import Auth from './components/Auth'
+import Sections from './components/Sections'
+import Notes from './components/Notes'
+import Settings from './components/Settings'
+import { supabase } from './lib/supabase'
+import './index.css'
 
+// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
+function ClockWidget() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const hm   = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  return (
+    <div className="clock-compact">
+      <span className="clock-compact-time">{hm}</span>
+      <span className="clock-compact-date">{date}</span>
+    </div>
+  )
+}
+
+// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+function WeatherWidget() {
+  const [wx, setWx] = useState(null)
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+      } catch {}
+    }, () => {})
+  }, [])
+  if (!wx) return null
+  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  return (
+    <div className="weather-wrap">
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+    </div>
+  )
+}
+
+// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
+const DEFAULT_THEME = {
+  bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
+  card: '#13131a', cardOpacity: 1,
+  border: '#2a2a3a', borderHover: '#3d3d55', borderOpacity: 1,
   handleOpacity: 15,
   text: '#e8e8f0', textDim: '#7878a0', titleColor: '#7878a0',
   accent: '#6c8fff', danger: '#ff6b6b', success: '#6bffb8',
