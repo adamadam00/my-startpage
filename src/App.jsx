@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, useMemo, lazy, Suspense, Component } from 'react'
+import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
-const Settings = lazy(() => import('./components/Settings'))
 import { supabase } from './lib/supabase'
 import './index.css'
+
+const Settings = lazy(() => import('./components/Settings'))
 
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
@@ -71,21 +72,6 @@ function WeatherWidget({ delay = 5000 }) {
 }
 
 
-// ─── SETTINGS ERROR BOUNDARY ─────────────────────────────────────────────────
-class SettingsErrorBoundary extends Component {
-  constructor(props) { super(props); this.state = { error: null } }
-  static getDerivedStateFromError(e) { return { error: e } }
-  render() {
-    if (this.state.error) return (
-      <div style={{ position:'fixed',bottom:'1rem',right:'1rem',background:'var(--bg2)',
-        border:'1px solid var(--danger)',borderRadius:'var(--radius)',padding:'0.75rem 1rem',
-        color:'var(--danger)',fontSize:'0.82em',zIndex:200,maxWidth:320 }}>
-        Settings failed to load: {String(this.state.error.message)}
-      </div>
-    )
-    return this.props.children
-  }
-}
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -738,7 +724,6 @@ export default function App() {
 
         {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
-          <SettingsErrorBoundary>
           <Suspense fallback={null}>
           <Settings
             theme={theme}
@@ -762,6 +747,7 @@ export default function App() {
             onDeleteWorkspace={deleteWorkspace}
             onSetActiveWs={setActiveWs}
           />
+          </Suspense>
         )}
 
       </div>
