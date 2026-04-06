@@ -6,7 +6,7 @@ import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
 
-// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ CLOCK WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
@@ -23,7 +23,7 @@ function ClockWidget() {
   )
 }
 
-// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+// â”€â”€â”€ WEATHER WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function WeatherWidget() {
   const [wx, setWx] = useState(null)
   useEffect(() => {
@@ -39,18 +39,18 @@ function WeatherWidget() {
     }, () => {})
   }, [])
   if (!wx) return null
-  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  const icons = { 0:'â˜€ï¸',1:'ðŸŒ¤',2:'â›…',3:'â˜ï¸',45:'ðŸŒ«',48:'ðŸŒ«',51:'ðŸŒ¦',53:'ðŸŒ¦',55:'ðŸŒ¦',61:'ðŸŒ§',63:'ðŸŒ§',65:'ðŸŒ§',71:'ðŸŒ¨',73:'ðŸŒ¨',75:'ðŸŒ¨',80:'ðŸŒ¦',81:'ðŸŒ¦',82:'ðŸŒ¦',95:'â›ˆ',96:'â›ˆ',99:'â›ˆ' }
   const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
     <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-icon">{icons[wx.weathercode] || 'ðŸŒ¡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}Â°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
 
-// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ DEFAULT THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DEFAULT_THEME = {
   bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
   card: '#13131a', cardOpacity: 1,
@@ -79,7 +79,7 @@ const DEFAULT_THEME = {
   settingsSide: 'right',
 }
 
-// ─── APPLY THEME ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ APPLY THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
@@ -279,7 +279,7 @@ function applyTheme(t) {
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function App() {
   const [session,  setSession]  = useState(null)
   const sessionRef              = useRef(null)
@@ -308,7 +308,7 @@ export default function App() {
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
-  // ── Collapse / Expand all ─────────────────────────────────────────────────
+  // â”€â”€ Collapse / Expand all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [allCollapsed,    setAllCollapsed]    = useState(false)
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand,   setTriggerExpand]   = useState(0)
@@ -332,7 +332,7 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null); setLoading(false)
@@ -346,7 +346,7 @@ export default function App() {
     ensureWorkspace().then(() => handleRefresh())
   }, [session])
 
-  // ── Workspace bootstrap ───────────────────────────────────────────────────
+  // â”€â”€ Workspace bootstrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
@@ -360,7 +360,7 @@ export default function App() {
     setActiveWs(prev => prev ?? data[0]?.id ?? null)
   }
 
-  // ── Data refresh ──────────────────────────────────────────────────────────
+  // â”€â”€ Data refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
     const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -379,14 +379,14 @@ export default function App() {
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
 
-  // ── Search filter ─────────────────────────────────────────────────────────
+  // â”€â”€ Search filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
     return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
   }, [links, search])
 
-  // ── Workspace CRUD ────────────────────────────────────────────────────────
+  // â”€â”€ Workspace CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
@@ -410,7 +410,7 @@ export default function App() {
     setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
   }
 
-  // ── Image uploads ─────────────────────────────────────────────────────────
+  // â”€â”€ Image uploads â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -429,7 +429,7 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  // ── Export ────────────────────────────────────────────────────────────────
+  // â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const exportFullBackup = async () => {
     const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
     const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -469,7 +469,7 @@ export default function App() {
     handleRefresh()
   }
 
-  // ── Import ────────────────────────────────────────────────────────────────
+  // â”€â”€ Import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleImportBackup = (e) => {
     const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
     setImportingBackup(true)
@@ -496,7 +496,7 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
-          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] â†’ [sec,sec,sec,...]
           const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
           for (let i = 0; i < rows.length; i++) {
@@ -544,11 +544,11 @@ export default function App() {
     r.readAsText(f)
   }
 
-  // ── Background ────────────────────────────────────────────────────────────
+  // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
   const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
-  if (loading) return <div className="center-fill">Loading…</div>
+  if (loading) return <div className="center-fill">Loadingâ€¦</div>
   if (!session) return <Auth />
 
   return (
@@ -574,7 +574,7 @@ export default function App() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
-        {/* ── TOPBAR ──────────────────────────────────────── */}
+        {/* â”€â”€ TOPBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
           {/* Workspace tabs */}
@@ -590,7 +590,7 @@ export default function App() {
                   <span
                     className="del-ws"
                     onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-                  >✕</span>
+                  >âœ•</span>
                 )}
               </button>
             ))}
@@ -612,13 +612,13 @@ export default function App() {
             <div className="search-compact" style={{ flex: 1 }}>
               <input
                 className="input search-compact-input"
-                placeholder="Search links…"
+                placeholder="Search linksâ€¦"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Escape' && setSearch('')}
               />
               {search && (
-                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">✕</button>
+                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">âœ•</button>
               )}
             </div>
           </div>
@@ -632,12 +632,12 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>↻</button>
+            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>â†»</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
 
-        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
+        {/* â”€â”€ MAIN LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
           <div className="main-col">
             <Sections
@@ -662,7 +662,7 @@ export default function App() {
           </div>
         </main>
 
-        {/* ── SETTINGS ────────────────────────────────────── */}
+        {/* â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {settingsOpen && (
           <Settings
             theme={theme}

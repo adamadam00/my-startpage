@@ -30,10 +30,10 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab }) {
           onError={e => e.target.style.display = 'none'} />
       )}
       <span className="link-title" onClick={open} title={link.url}>{link.title}</span>
-      {/* Compact action overlay — visible on hover only */}
+      {/* Compact action overlay â€” visible on hover only */}
       <div className="link-actions-overlay">
-        <button className="link-act" onClick={e => { e.stopPropagation(); onEdit(link) }} title="Edit">✎</button>
-        <button className="link-act link-act-del" onClick={e => { e.stopPropagation(); onDelete(link.id) }} title="Delete">✕</button>
+        <button className="link-act" onClick={e => { e.stopPropagation(); onEdit(link) }} title="Edit">âœŽ</button>
+        <button className="link-act link-act-del" onClick={e => { e.stopPropagation(); onDelete(link.id) }} title="Delete">âœ•</button>
       </div>
     </div>
   )
@@ -143,7 +143,7 @@ export default function Links({
           <input className="input" value={title} onChange={e => setTitle(e.target.value)}
             placeholder="Title" autoFocus style={{ fontSize: '0.82em' }} />
           <input className="input" value={url} onChange={e => setUrl(e.target.value)}
-            placeholder="https://…" style={{ fontSize: '0.82em' }} />
+            placeholder="https://â€¦" style={{ fontSize: '0.82em' }} />
           <div style={{ display: 'flex', gap: '0.3rem' }}>
             <button className="btn btn-primary" type="submit" style={{ flex: 1, fontSize: '0.75em' }}>Add</button>
             <button className="btn" type="button" style={{ fontSize: '0.75em' }} onClick={closeForm}>Cancel</button>
