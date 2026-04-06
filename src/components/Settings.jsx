@@ -20,22 +20,22 @@ const BG_PRESETS = [
   { label: 'Noise',        value: 'noise'         },
   { label: 'Solid',        value: 'solid'         },
   { label: 'Dots',         value: 'dots'          },
-  { label: '◈ Gradient',  value: 'gradient'      },
-  { label: '◈ Mesh',      value: 'mesh'          },
-  { label: '◈ Aurora',    value: 'aurora'        },
-  { label: '◈ Nebula',    value: 'nebula'        },
-  { label: '◈ Starfield', value: 'starfield'     },
-  { label: '◈ Fog',       value: 'fog'           },
-  { label: '◈ Scan',      value: 'scan'          },
-  { label: '◈ Vortex',    value: 'vortex'        },
-  { label: '◈ Plasma',    value: 'plasma'        },
-  { label: '◈ Inferno',   value: 'inferno'       },
-  { label: '◈ Forest',    value: 'mint'          },
-  { label: '◈ Dusk',      value: 'dusk'          },
-  { label: '◈ Mono',      value: 'mono'          },
-  { label: '◈ Drift',     value: 'drift'         },
-  { label: '◈ Pulse',     value: 'pulse'         },
-  { label: '◈ Tide',      value: 'tide'          },
+  { label: '* Gradient',   value: 'gradient'      },
+  { label: '* Mesh',       value: 'mesh'          },
+  { label: '* Aurora',     value: 'aurora'        },
+  { label: '* Nebula',     value: 'nebula'        },
+  { label: '* Starfield',  value: 'starfield'     },
+  { label: '* Fog',        value: 'fog'           },
+  { label: '* Scan',       value: 'scan'          },
+  { label: '* Vortex',     value: 'vortex'        },
+  { label: '* Plasma',     value: 'plasma'        },
+  { label: '* Inferno',    value: 'inferno'       },
+  { label: '* Forest',     value: 'mint'          },
+  { label: '* Dusk',       value: 'dusk'          },
+  { label: '* Mono',       value: 'mono'          },
+  { label: '* Drift',      value: 'drift'         },
+  { label: '* Pulse',      value: 'pulse'         },
+  { label: '* Tide',       value: 'tide'          },
   { label: 'Silver',       value: 'silver-radial' },
   { label: 'Wall',         value: 'wall-texture'  },
 ]
@@ -247,7 +247,6 @@ export default function Settings({
             })
             return (
               <>
-                {/* ── Animation speed ── */}
                 {ANIMATED_PRESETS.includes(theme.bgPreset) && (
                   <>
                     <SectionTitle>Animation</SectionTitle>
@@ -258,7 +257,6 @@ export default function Settings({
                   </>
                 )}
 
-                {/* ── Plasma colours ── */}
                 {PLASMA_PRESETS.includes(theme.bgPreset) && (
                   <>
                     <SectionTitle>Plasma colours</SectionTitle>
@@ -271,7 +269,6 @@ export default function Settings({
                   </>
                 )}
 
-                {/* ── Fog ── */}
                 {theme.bgPreset === 'fog' && (
                   <>
                     <SectionTitle>Fog colour</SectionTitle>
@@ -283,7 +280,6 @@ export default function Settings({
                   </>
                 )}
 
-                {/* ── Scan ── */}
                 {theme.bgPreset === 'scan' && (
                   <>
                     <SectionTitle>Scan line</SectionTitle>
@@ -295,7 +291,6 @@ export default function Settings({
                   </>
                 )}
 
-                {/* ── Starfield ── */}
                 {theme.bgPreset === 'starfield' && (
                   <>
                     <SectionTitle>Starfield gradient</SectionTitle>
@@ -308,10 +303,24 @@ export default function Settings({
                         <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
                       </>
                     )}
+                    <SectionTitle>Stars</SectionTitle>
+                    <Row label="Star density">
+                      <Slider val={gp('density', 3)} min={1} max={5} step={1}
+                        onChange={v => sp('density', v)} unit="" />
+                    </Row>
+                    <SectionTitle>Planets</SectionTitle>
+                    <Row label="Show planets">
+                      <Toggle checked={gp('planets', false)} onChange={v => sp('planets', v)} />
+                    </Row>
+                    {gp('planets', false) && (
+                      <Row label="Planet count">
+                        <Slider val={gp('planetCount', 2)} min={1} max={3} step={1}
+                          onChange={v => sp('planetCount', v)} unit="" />
+                      </Row>
+                    )}
                   </>
                 )}
 
-                {/* ── Drift ── */}
                 {theme.bgPreset === 'drift' && (
                   <>
                     <SectionTitle>Drift colours</SectionTitle>
@@ -320,7 +329,6 @@ export default function Settings({
                   </>
                 )}
 
-                {/* ── Pulse ── */}
                 {theme.bgPreset === 'pulse' && (
                   <>
                     <SectionTitle>Pulse colour</SectionTitle>
@@ -328,7 +336,6 @@ export default function Settings({
                   </>
                 )}
 
-                {/* ── Tide ── */}
                 {theme.bgPreset === 'tide' && (
                   <>
                     <SectionTitle>Tide colours</SectionTitle>
@@ -339,7 +346,6 @@ export default function Settings({
               </>
             )
           })()}
-
           <Row label="Pattern colour">
             <ColorPick value={theme.patternColor} onChange={v => set('patternColor', v)} />
           </Row>
@@ -407,7 +413,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             COLOURS
         ══════════════════════════════════════════ */}
-        <Group title="Colours" defaultOpen signal={groupSignal}>
+        <Group title="Colours" defaultOpen={false} signal={groupSignal}>
 
           <SectionTitle>Surfaces</SectionTitle>
           <Row label="Background"><ColorPick value={theme.bg}  onChange={v => set('bg', v)} /></Row>
@@ -472,7 +478,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             LAYOUT & SPACING
         ══════════════════════════════════════════ */}
-        <Group title="Layout &amp; spacing" defaultOpen signal={groupSignal}>
+        <Group title="Layout &amp; spacing" defaultOpen={false} signal={groupSignal}>
 
           <Row label="Columns">
             <Slider val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
@@ -493,6 +499,9 @@ export default function Settings({
           <Row label="Link left padding">
             <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
+          </Row>
+          <Row label="Handle opacity">
+            <Slider val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
           </Row>
 
           <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
@@ -548,6 +557,48 @@ export default function Settings({
         </Group>
 
         {/* ══════════════════════════════════════════
+            FAVICONS
+        ══════════════════════════════════════════ */}
+        <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
+          <Row label="Show favicons">
+            <Toggle checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} />
+          </Row>
+          <Row label="Favicon size">
+            <Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
+          </Row>
+          <Row label="Favicon opacity">
+            <Slider val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100}
+              onChange={v => set('faviconOpacity', v / 100)} unit="%" />
+          </Row>
+          <Row label="Greyscale">
+            <Toggle checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} />
+          </Row>
+          <Row label="Load delay">
+            <Slider val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5}
+              onChange={v => set('faviconDelay', v)} unit="s" />
+          </Row>
+          <Row label="Fade-in duration">
+            <Slider val={theme.faviconFade ?? 0.3} min={0} max={2} step={0.1}
+              onChange={v => set('faviconFade', v)} unit="s" />
+          </Row>
+        </Group>
+
+        {/* ══════════════════════════════════════════
+            NOTES
+        ══════════════════════════════════════════ */}
+        <Group title="Notes" defaultOpen={false} signal={groupSignal}>
+          <Row label="Font size">
+            <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
+          </Row>
+          <Row label="Gap between notes">
+            <Slider val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" />
+          </Row>
+          <Row label="Note card background"> <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} /></Row>
+          <Row label="Note text colour">     <ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
+          <Row label="Note text background"> <ColorPick value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row>
+        </Group>
+
+        {/* ══════════════════════════════════════════
             SEARCH
         ══════════════════════════════════════════ */}
         <Group title="Search" defaultOpen={false} signal={groupSignal}>
@@ -573,57 +624,13 @@ export default function Settings({
             <select
               className="input"
               style={{ fontSize: '0.78em' }}
-              value={theme.openInNewTab ?? true ? 'new' : 'same'}
+              value={(theme.openInNewTab ?? true) ? 'new' : 'same'}
               onChange={e => set('openInNewTab', e.target.value === 'new')}
             >
               <option value="new">New tab</option>
               <option value="same">Same tab</option>
             </select>
           </Row>
-        </Group>
-
-
-
-        {/* ══════════════════════════════════════════
-            FAVICONS
-        ══════════════════════════════════════════ */}
-        <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
-          <Row label="Show favicons">
-            <Toggle checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} />
-          </Row>
-          <Row label="Size">
-            <Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
-          </Row>
-          <Row label="Opacity">
-            <Slider val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100}
-              onChange={v => set('faviconOpacity', v / 100)} unit="%" />
-          </Row>
-          <Row label="Load delay">
-            <Slider val={theme.faviconDelay ?? 0} min={0} max={15} step={0.5}
-              onChange={v => set('faviconDelay', v)} unit="s" />
-          </Row>
-          <Row label="Fade in">
-            <Slider val={theme.faviconFade ?? 0.3} min={0} max={3} step={0.1}
-              onChange={v => set('faviconFade', v)} unit="s" />
-          </Row>
-          <Row label="Greyscale">
-            <Toggle checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} />
-          </Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            NOTES
-        ══════════════════════════════════════════ */}
-        <Group title="Notes" defaultOpen signal={groupSignal}>
-          <Row label="Font size">
-            <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
-          </Row>
-          <Row label="Gap between notes">
-            <Slider val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" />
-          </Row>
-          <Row label="Note card background"> <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} /></Row>
-          <Row label="Note text colour">     <ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
-          <Row label="Note text background"> <ColorPick value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row>
         </Group>
 
         {/* ══════════════════════════════════════════

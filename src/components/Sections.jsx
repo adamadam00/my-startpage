@@ -64,7 +64,7 @@ function findColIndex(cols, id) {
 }
 
 /* ── Section card ── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, faviconEnabled = true, ghost, locked, forceCollapsed }) {
+function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, ghost, locked, forceCollapsed }) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section.name ?? '')
@@ -176,7 +176,6 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
           userId={userId}
           onRefresh={onRefresh}
           openInNewTab={openInNewTab}
-          faviconEnabled={faviconEnabled}
           externalAdding={addingLink}
           onExternalAddingDone={() => setAddingLink(false)}
         />
@@ -193,7 +192,6 @@ export default function Sections({
   workspaceId,
   onRefresh,
   openInNewTab = true,
-  faviconEnabled = true,
   colCount = 2,
   triggerAdd = 0,
   triggerImport = 0,
@@ -352,7 +350,7 @@ export default function Sections({
                 {col.map(section => (
                   <SectionCard key={section.id} section={section} links={safeLinks}
                     userId={userId} workspaceId={workspaceId} onRefresh={onRefresh}
-                    openInNewTab={openInNewTab} faviconEnabled={faviconEnabled} ghost={activeSection?.id === section.id}
+                    openInNewTab={openInNewTab} ghost={activeSection?.id === section.id}
                     locked={locked} forceCollapsed={forceCollapsed} />
                 ))}
               </SortableContext>

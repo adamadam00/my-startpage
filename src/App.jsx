@@ -6,7 +6,7 @@ import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
 
-// â”€â”€â”€ CLOCK WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
@@ -23,7 +23,7 @@ function ClockWidget() {
   )
 }
 
-// â”€â”€â”€ WEATHER WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
 function WeatherWidget() {
   const [wx, setWx] = useState(null)
   useEffect(() => {
@@ -39,18 +39,18 @@ function WeatherWidget() {
     }, () => {})
   }, [])
   if (!wx) return null
-  const icons = { 0:'â˜€ï¸',1:'ðŸŒ¤',2:'â›…',3:'â˜ï¸',45:'ðŸŒ«',48:'ðŸŒ«',51:'ðŸŒ¦',53:'ðŸŒ¦',55:'ðŸŒ¦',61:'ðŸŒ§',63:'ðŸŒ§',65:'ðŸŒ§',71:'ðŸŒ¨',73:'ðŸŒ¨',75:'ðŸŒ¨',80:'ðŸŒ¦',81:'ðŸŒ¦',82:'ðŸŒ¦',95:'â›ˆ',96:'â›ˆ',99:'â›ˆ' }
+  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
   const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
     <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || 'ðŸŒ¡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}Â°</span>
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
 
-// â”€â”€â”€ DEFAULT THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
   bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
   card: '#13131a', cardOpacity: 1,
@@ -69,6 +69,8 @@ const DEFAULT_THEME = {
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
   bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
+  bgSt: {},
+  searchEngineUrl: 'https://www.google.com/search?q=',
   settingsTitleColor: '#7878a0',
   bgGrassSky: '#020609', bgGrassGround: '#071a05',
   bgOceanSky: '#000814', bgOceanWater: '#001428',
@@ -79,7 +81,7 @@ const DEFAULT_THEME = {
   settingsSide: 'right',
 }
 
-// â”€â”€â”€ APPLY THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── APPLY THEME ─────────────────────────────────────────────────────────────
 function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
@@ -111,6 +113,9 @@ function applyTheme(t) {
   s('--sections-cols',  t.sectionsCols ?? 4)
   s('--favicon-opacity', t.faviconOpacity ?? 1)
   s('--favicon-filter',  t.faviconGreyscale ? 'grayscale(1)' : 'none')
+  s('--favicon-display', (t.faviconEnabled ?? true) ? 'block' : 'none')
+  s('--favicon-delay',   (t.faviconDelay ?? 0) + 's')
+  s('--favicon-fade',    (t.faviconFade  ?? 0.3) + 's')
   s('--pattern-color',   t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
   s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
   if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
@@ -135,20 +140,79 @@ function applyTheme(t) {
       '}',
     ].join(' ')
   }
-  const speed = t.bgAnimSpeed ?? 1
-  const dur = (b) => `${(b / speed).toFixed(1)}s`
+  const rgba = (hex, aa) => {
+    const h = (hex || '#000000').replace('#', '')
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + aa + ')'
+  }
+  const hexRgb = (hex) => {
+    const h = (hex || '#000000').replace('#', '')
+    return parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16)
+  }
+  const ps    = (t.bgSt ?? {})[t.bgPreset] ?? {}
+  const speed = ps.speed ?? 1
+  const dur   = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
+  const c1    = ps.c1 || null
+  const c2    = ps.c2 || null
+  const c3    = ps.c3 || null
+  const blur  = ps.blur ?? null
+
   s('--plasma-speed-a', dur(20))
   s('--plasma-speed-b', dur(28))
-  if (t.bgBlur != null) { s('--plasma-blur-a', `${t.bgBlur}px`); s('--plasma-blur-b', `${t.bgBlur + 20}px`) }
-  if (t.bgC1) {
-    const rgba = (hex, a) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})` }
-    s('--plasma-c1', rgba(t.bgC1, 0.28)); s('--plasma-c2', rgba(t.bgC2||t.bgC1, 0.25)); s('--plasma-c3', rgba(t.bgC3||t.bgC1, 0.18))
-    s('--plasma-c4', rgba(t.bgC1, 0.14)); s('--plasma-c5', rgba(t.bgC2||t.bgC1, 0.14)); s('--plasma-c6', rgba(t.bgC1, 0.16))
+  if (blur != null) { s('--plasma-blur-a', blur + 'px'); s('--plasma-blur-b', (blur + 20) + 'px') }
+
+  if (c1) {
+    s('--plasma-c1', rgba(c1, 0.28)); s('--plasma-c2', rgba(c2||c1, 0.25)); s('--plasma-c3', rgba(c3||c1, 0.18))
+    s('--plasma-c4', rgba(c1, 0.14)); s('--plasma-c5', rgba(c2||c1, 0.14)); s('--plasma-c6', rgba(c1, 0.16))
+    s('--drift-c1',  rgba(c1, 0.20))
+    s('--drift-c2',  rgba(c2||c1, 0.16))
+    s('--pulse-c',   rgba(c1, 0.22))
+    s('--tide-c1',   rgba(c1, 0.24))
+    s('--tide-c2',   rgba(c2||c1, 0.20))
+  }
+
+  const sfGrad = ps.sfGrad ?? false
+  if (sfGrad && c1) {
+    s('--starfield-bg-image',
+      'radial-gradient(ellipse 80% 70% at 25% 45%, ' + rgba(c1,0.22) + ' 0%, transparent 65%),' +
+      'radial-gradient(ellipse 70% 80% at 75% 60%, ' + rgba(c2||c1,0.16) + ' 0%, transparent 65%)')
+  } else {
+    s('--starfield-bg-image', 'none')
+  }
+
+  const fogColor   = ps.fogColor   || t.patternColor || null
+  const fogOpacity = ps.fogOpacity ?? 1
+  if (fogColor) {
+    const rgb = hexRgb(fogColor)
+    s('--fog-c1', 'rgba(' + rgb + ',' + (0.22*fogOpacity).toFixed(3) + ')')
+    s('--fog-c2', 'rgba(' + rgb + ',' + (0.18*fogOpacity).toFixed(3) + ')')
+    s('--fog-c3', 'rgba(' + rgb + ',' + (0.15*fogOpacity).toFixed(3) + ')')
+    s('--fog-c4', 'rgba(' + rgb + ',' + (0.16*fogOpacity).toFixed(3) + ')')
+    s('--fog-c5', 'rgba(' + rgb + ',' + (0.14*fogOpacity).toFixed(3) + ')')
+    s('--fog-c6', 'rgba(' + rgb + ',' + (0.10*fogOpacity).toFixed(3) + ')')
+  }
+
+  const scanColor   = ps.scanColor   || t.patternColor || null
+  const scanOpacity = ps.scanOpacity ?? 1
+  if (scanColor) {
+    const rgb = hexRgb(scanColor)
+    s('--scan-line-c',  'rgba(' + rgb + ',' + (0.90*scanOpacity).toFixed(3) + ')')
+    s('--scan-mid-c',   'rgba(' + rgb + ',' + (0.55*scanOpacity).toFixed(3) + ')')
+    s('--scan-glow-c',  'rgba(' + rgb + ',' + (0.20*scanOpacity).toFixed(3) + ')')
+    s('--scan-glow2-c', 'rgba(' + rgb + ',' + (0.08*scanOpacity).toFixed(3) + ')')
+    s('--scan-glow3-c', 'rgba(' + rgb + ',' + (0.04*scanOpacity).toFixed(3) + ')')
   }
   const gSky = t.bgGrassSky || '#020609'
   const gGnd = t.bgGrassGround || '#071a05'
   const oSky = t.bgOceanSky || '#000814'
   const oWtr = t.bgOceanWater || '#001428'
+  // ── Starfield density CSS vars ────────────────────────────────
+  var sfDensity = ps.density ?? 3
+  var sfTileA   = ([1200, 900, 700, 500, 350][sfDensity - 1] || 700) + 'px'
+  var sfTileB   = ([750,  600, 450, 320, 220][sfDensity - 1] || 450) + 'px'
+  s('--sf-tile-a', sfTileA + ' ' + sfTileA)
+  s('--sf-tile-b', sfTileB + ' ' + sfTileB)
+
   let bgEl = document.getElementById('sp-bg')
   if (!bgEl) { bgEl = document.createElement('style'); bgEl.id = 'sp-bg'; document.head.appendChild(bgEl) }
   bgEl.textContent = `
@@ -160,6 +224,17 @@ function applyTheme(t) {
     .bg-layer.bg-scan::before      { animation-duration: ${dur(7)} !important; }
     .bg-layer.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
     .bg-layer.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
+    .bg-gradient                   { animation-duration: ${dur(20)} !important; }
+    .bg-mesh                       { animation-duration: ${dur(22)} !important; }
+    .bg-nebula                     { animation-duration: ${dur(30)} !important; }
+    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before { animation-duration: ${dur(20)} !important; }
+    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after  { animation-duration: ${dur(28)} !important; }
+    .bg-layer.bg-drift::before     { animation-duration: ${dur(35)} !important; }
+    .bg-layer.bg-drift::after      { animation-duration: ${dur(50)} !important; }
+    .bg-layer.bg-pulse::before     { animation-duration: ${dur(8)} !important; }
+    .bg-layer.bg-pulse::after      { animation-duration: ${dur(12)} !important; }
+    .bg-layer.bg-tide::before      { animation-duration: ${dur(20)} !important; }
+    .bg-layer.bg-tide::after       { animation-duration: ${dur(30)} !important; }
 
     .bg-layer.bg-grass {
       overflow: hidden;
@@ -267,6 +342,51 @@ function applyTheme(t) {
       100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
     }
   `
+  // ── Starfield planet injection ────────────────────────────────
+  var oldPlanets = document.getElementById('sf-planets')
+  if (oldPlanets) oldPlanets.remove()
+  if (t.bgPreset === 'starfield' && ps.planets) {
+    var sfLayer = document.querySelector('.bg-layer.bg-starfield')
+    if (sfLayer) {
+      var planetCount = ps.planetCount ?? 2
+      var planetDefs = [
+        {
+          size: 220, left: '-5%', top: '52%',
+          gradient: 'radial-gradient(circle at 35% 35%, #5a7fb5 0%, #2a4a7a 40%, #0f1d3a 100%)',
+          glow: '0 0 80px rgba(60,100,200,0.15)', ring: true, ringColor: 'rgba(140,170,220,0.32)'
+        },
+        {
+          size: 80, left: '83%', top: '10%',
+          gradient: 'radial-gradient(circle at 40% 38%, #c8936a 0%, #7a4a22 45%, #3a1f0a 100%)',
+          glow: '0 0 40px rgba(180,100,40,0.12)', ring: false
+        },
+        {
+          size: 140, left: '8%', top: '8%',
+          gradient: 'radial-gradient(circle at 42% 38%, #8a6ab5 0%, #4a3070 45%, #1a0f30 100%)',
+          glow: '0 0 60px rgba(120,80,200,0.12)', ring: false
+        },
+      ]
+      var container = document.createElement('div')
+      container.id = 'sf-planets'
+      container.style.cssText = 'position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1;'
+      planetDefs.slice(0, planetCount).forEach(function(p) {
+        var planet = document.createElement('div')
+        var inset = 'inset -' + Math.round(p.size*0.12) + 'px -' + Math.round(p.size*0.06) + 'px ' + Math.round(p.size*0.22) + 'px rgba(0,0,0,0.65)'
+        planet.style.cssText = 'position:absolute;width:' + p.size + 'px;height:' + p.size + 'px;left:' + p.left + ';top:' + p.top + ';border-radius:50%;background:' + p.gradient + ';box-shadow:' + inset + ',' + p.glow + ';pointer-events:none;'
+        if (p.ring) {
+          var ring = document.createElement('div')
+          var rW = Math.round(p.size * 1.85)
+          var rH = Math.round(p.size * 0.38)
+          var rB = Math.round(p.size * 0.065)
+          ring.style.cssText = 'position:absolute;width:' + rW + 'px;height:' + rH + 'px;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-18deg);border-radius:50%;border:' + rB + 'px solid ' + p.ringColor + ';box-shadow:0 0 ' + Math.round(p.size*0.1) + 'px ' + p.ringColor + ';pointer-events:none;'
+          planet.appendChild(ring)
+        }
+        container.appendChild(planet)
+      })
+      sfLayer.appendChild(container)
+    }
+  }
+
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap',       (t.notesGap ?? 0) + 'px')
   if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
@@ -279,7 +399,7 @@ function applyTheme(t) {
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
   const [session,  setSession]  = useState(null)
   const sessionRef              = useRef(null)
@@ -304,11 +424,13 @@ export default function App() {
 
   const [bgImage,         setBgImage]         = useState(() => localStorage.getItem('bg_image') || '')
   const [search,          setSearch]          = useState('')
+  const [webSearch,       setWebSearch]       = useState('')
+  const [searchMode,      setSearchMode]      = useState('web')
   const [settingsOpen,    setSettingsOpen]    = useState(false)
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
-  // â”€â”€ Collapse / Expand all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Collapse / Expand all ─────────────────────────────────────────────────
   const [allCollapsed,    setAllCollapsed]    = useState(false)
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand,   setTriggerExpand]   = useState(0)
@@ -332,7 +454,7 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null); setLoading(false)
@@ -341,12 +463,29 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
+  // ── Re-auth on tab focus / network restore (fixes long-idle NetworkError) ──
+  useEffect(() => {
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (data?.session) { setSession(data.session); handleRefresh() }
+      } catch (_e) { /* still offline, ignore */ }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onVisible)
+    }
+  }, [])
+
   useEffect(() => {
     if (!session) return
     ensureWorkspace().then(() => handleRefresh())
   }, [session])
 
-  // â”€â”€ Workspace bootstrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
@@ -360,33 +499,37 @@ export default function App() {
     setActiveWs(prev => prev ?? data[0]?.id ?? null)
   }
 
-  // â”€â”€ Data refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Data refresh ──────────────────────────────────────────────────────────
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
-    const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
-    if (wsErr) { alert(wsErr.message); return }
-    setWorkspaces(wsData || [])
-    const currentWs = activeWs ?? wsData?.[0]?.id ?? null
-    if (!currentWs) return
-    if (!activeWs) setActiveWs(currentWs)
-    const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-      supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
-    ])
-    setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
+    try {
+      const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
+      if (wsErr) { console.error('Refresh error:', wsErr.message); return }
+      setWorkspaces(wsData || [])
+      const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+      if (!currentWs) return
+      if (!activeWs) setActiveWs(currentWs)
+      const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
+        supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+      ])
+      setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
+    } catch (err) {
+      console.error('Refresh network error:', err.message)
+    }
   }
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
 
-  // â”€â”€ Search filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Search filter ─────────────────────────────────────────────────────────
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
     return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
   }, [links, search])
 
-  // â”€â”€ Workspace CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Workspace CRUD ────────────────────────────────────────────────────────
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
@@ -410,7 +553,7 @@ export default function App() {
     setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
   }
 
-  // â”€â”€ Image uploads â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Image uploads ─────────────────────────────────────────────────────────
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -429,7 +572,7 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  // â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Export ────────────────────────────────────────────────────────────────
   const exportFullBackup = async () => {
     const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
     const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -469,7 +612,7 @@ export default function App() {
     handleRefresh()
   }
 
-  // â”€â”€ Import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Import ────────────────────────────────────────────────────────────────
   const handleImportBackup = (e) => {
     const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
     setImportingBackup(true)
@@ -496,7 +639,7 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
-          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] â†’ [sec,sec,sec,...]
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
           const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
           for (let i = 0; i < rows.length; i++) {
@@ -544,11 +687,11 @@ export default function App() {
     r.readAsText(f)
   }
 
-  // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Background ────────────────────────────────────────────────────────────
   const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
   const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
-  if (loading) return <div className="center-fill">Loadingâ€¦</div>
+  if (loading) return <div className="center-fill">Loading…</div>
   if (!session) return <Auth />
 
   return (
@@ -574,7 +717,7 @@ export default function App() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
-        {/* â”€â”€ TOPBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── TOPBAR ──────────────────────────────────────── */}
         <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
           {/* Workspace tabs */}
@@ -590,7 +733,7 @@ export default function App() {
                   <span
                     className="del-ws"
                     onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-                  >âœ•</span>
+                  >✕</span>
                 )}
               </button>
             ))}
@@ -610,15 +753,31 @@ export default function App() {
             <div className="topbar-divider" />
             <WeatherWidget />
             <div className="search-compact" style={{ flex: 1 }}>
+              <button
+                className="btn-xs"
+                title={searchMode === 'web' ? 'Switch to link search' : 'Switch to web search'}
+                style={{ flexShrink: 0, fontSize: '0.72em', whiteSpace: 'nowrap' }}
+                onClick={() => { setSearchMode(m => m === 'web' ? 'links' : 'web'); setSearch(''); setWebSearch('') }}
+              >
+                {searchMode === 'web' ? 'Web' : 'Links'}
+              </button>
               <input
                 className="input search-compact-input"
-                placeholder="Search linksâ€¦"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                onKeyDown={e => e.key === 'Escape' && setSearch('')}
+                placeholder={searchMode === 'web' ? 'Search the web...' : 'Filter links...'}
+                value={searchMode === 'web' ? webSearch : search}
+                onChange={e => searchMode === 'web' ? setWebSearch(e.target.value) : setSearch(e.target.value)}
+                onKeyDown={e => {
+                  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
+                    const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
+                    if (theme.openInNewTab ?? true) { window.open(url, '_blank', 'noopener,noreferrer') } else { window.location.href = url }
+                    setWebSearch('')
+                  }
+                  if (e.key === 'Escape') { setSearch(''); setWebSearch('') }
+                }}
               />
-              {search && (
-                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">âœ•</button>
+              {(searchMode === 'web' ? webSearch : search) && (
+                <button className="icon-btn search-btn" title="Clear"
+                  onClick={() => searchMode === 'web' ? setWebSearch('') : setSearch('')}>x</button>
               )}
             </div>
           </div>
@@ -632,23 +791,25 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>â†»</button>
+            <button className="icon-btn" title="Refresh" onClick={() => { applyTheme(theme); handleRefresh() }}>↻</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
 
-        {/* â”€â”€ MAIN LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
         <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
           <div className="main-col">
             <Sections
               sections={sections}
-              links={filteredLinks}
+              links={searchMode === 'links' ? filteredLinks : links}
               userId={session.user.id}
               workspaceId={activeWs}
               onRefresh={handleRefresh}
               colCount={theme.sectionsCols ?? 4}
               triggerCollapseAll={triggerCollapse}
               triggerExpandAll={triggerExpand}
+              openInNewTab={theme.openInNewTab ?? true}
+              faviconEnabled={theme.faviconEnabled ?? true}
             />
           </div>
           <div className="side-col">
@@ -662,7 +823,7 @@ export default function App() {
           </div>
         </main>
 
-        {/* â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+        {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
           <Settings
             theme={theme}
