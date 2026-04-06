@@ -1,75 +1,87 @@
-const CACHE = 'startpage-v2'
+// ─── Service Worker — Cache-first for assets, stale-while-revalidate for shell ───
+const STATIC_CACHE = 'sp-static-v1'
+const FONT_CACHE   = 'sp-fonts-v1'
 
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(['/', '/manifest.json']))
-  )
+// On install: take control immediately
+self.addEventListener('install', (event) => {
   self.skipWaiting()
 })
 
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
+// On activate: delete old cache versions, claim all clients
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k !== STATIC_CACHE && k !== FONT_CACHE)
+          .map((k) => caches.delete(k))
+      )
+    ).then(() => self.clients.claim())
   )
-  self.clients.claim()
 })
 
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url)
+self.addEventListener('fetch', (event) => {
+  const req = event.request
+  const url = new URL(req.url)
 
-  // Skip Supabase API calls — always live
-  if (url.hostname.includes('supabase')) return
+  // Never intercept Supabase API calls — always go to network
+  if (url.hostname.includes('supabase.co')) return
 
-  // Navigation (HTML) — network first, fall back to cache
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()))
-          return res
+  // Never intercept non-GET requests
+  if (req.method !== 'GET') return
+
+  // Google Fonts — cache first (they never change)
+  if (
+    url.hostname === 'fonts.googleapis.com' ||
+    url.hostname === 'fonts.gstatic.com'
+  ) {
+    event.respondWith(
+      caches.open(FONT_CACHE).then((cache) =>
+        cache.match(req).then((cached) => {
+          if (cached) return cached
+          return fetch(req).then((response) => {
+            cache.put(req, response.clone())
+            return response
+          })
         })
-        .catch(() => caches.match('/'))
+      )
     )
     return
   }
 
-  // Hashed assets (/assets/...) — cache first forever
+  // Vite hashed assets (/assets/*.js, /assets/*.css) — cache first forever
   if (url.pathname.startsWith('/assets/')) {
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        if (cached) return cached
-        return fetch(e.request).then(res => {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()))
-          return res
+    event.respondWith(
+      caches.open(STATIC_CACHE).then((cache) =>
+        cache.match(req).then((cached) => {
+          if (cached) return cached
+          return fetch(req).then((response) => {
+            cache.put(req, response.clone())
+            return response
+          })
         })
-      })
+      )
     )
     return
   }
 
-  // Google Fonts — cache first
-  if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
-    e.respondWith(
-      caches.match(e.request).then(cached => {
-        if (cached) return cached
-        return fetch(e.request).then(res => {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()))
-          return res
+  // App shell (index.html and navigation requests) — stale-while-revalidate
+  // Serve the cached version instantly, then update cache in the background
+  if (req.mode === 'navigate' || url.pathname === '/') {
+    event.respondWith(
+      caches.open(STATIC_CACHE).then((cache) =>
+        cache.match(req).then((cached) => {
+          const networkFetch = fetch(req)
+            .then((response) => {
+              cache.put(req, response.clone())
+              return response
+            })
+            .catch(() => cached)
+          // Return cached immediately if available, otherwise wait for network
+          return cached || networkFetch
         })
-      })
+      )
     )
     return
   }
-
-  // Everything else — network with cache fallback
-  e.respondWith(
-    fetch(e.request)
-      .then(res => {
-        if (res.ok) caches.open(CACHE).then(c => c.put(e.request, res.clone()))
-        return res
-      })
-      .catch(() => caches.match(e.request))
-  )
 })
