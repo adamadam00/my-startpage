@@ -143,6 +143,7 @@ function SectionCard({
         onClick={toggleCollapse}
         onMouseEnter={() => setHeaderHovered(true)}
         onMouseLeave={() => setHeaderHovered(false)}
+        style={{ paddingRight: '0.5rem' }}
       >
         {/* Drag handle */}
         <span

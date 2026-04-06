@@ -117,7 +117,25 @@ function applyTheme(t) {
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
   const lph = t.linksPaddingH ?? 0.75
-  styleEl.textContent = `.links-list { padding-left: ${lph}rem !important; padding-right: ${lph}rem !important; }`
+  if (lph >= 0) {
+    styleEl.textContent = [
+      '.links-list {',
+      '  padding-left: ' + lph + 'rem !important;',
+      '  padding-right: ' + lph + 'rem !important;',
+      '  margin-left: 0 !important;',
+      '}',
+    ].join(' ')
+  } else {
+    // Negative: shift list left via margin-left only — right edge unchanged,
+    // so absolutely-positioned action buttons remain at the card's right side
+    styleEl.textContent = [
+      '.links-list {',
+      '  padding-left: 0 !important;',
+      '  padding-right: var(--card-padding, 0.75rem) !important;',
+      '  margin-left: ' + lph + 'rem !important;',
+      '}',
+    ].join(' ')
+  }
 
   // ── Plasma speed (already CSS vars) + custom plasma colours
   const speed = t.bgAnimSpeed ?? 1
@@ -603,7 +621,7 @@ export default function App() {
               colCount={theme.sectionsCols ?? 4}
             />
           </div>
-          <div className="side-col">
+          <div className="side-col" style={{ paddingTop: 'var(--main-gap-top, 12px)' }}>
             <Notes
               notes={notes}
               workspaceId={activeWs}

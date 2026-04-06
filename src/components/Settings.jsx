@@ -63,9 +63,9 @@ function Row({ label, children, dimLabel = false }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
-      gap: '0.75rem',
-      padding: '0.12rem 0',
-      minHeight: '1.6rem',
+      gap: '1.5rem',
+      padding: '0.28rem 0',
+      minHeight: '1.8rem',
     }}>
       <span style={{
         fontSize: '0.82em',
@@ -417,7 +417,7 @@ export default function Settings({
             <Slider val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
           </Row>
           <Row label="Topbar → cards gap">
-            <Slider val={theme.mainGapTop ?? 12} min={0} max={120} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
+            <Slider val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
           </Row>
           <Row label="Section gap (v)">
             <Slider val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" />
@@ -430,7 +430,7 @@ export default function Settings({
               onChange={v => set('linkGap', v / 100)} unit="%" />
           </Row>
           <Row label="Link left padding">
-            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={0} max={200} step={5}
+            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
           </Row>
           <Row label="Handle opacity">
