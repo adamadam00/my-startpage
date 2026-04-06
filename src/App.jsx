@@ -40,10 +40,12 @@ function WeatherWidget() {
   }, [])
   if (!wx) return null
   const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
     <div className="weather-wrap">
       <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
       <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
@@ -56,7 +58,7 @@ const DEFAULT_THEME = {
   handleOpacity: 15,
   text: '#e8e8f0', textDim: '#7878a0', titleColor: '#7878a0',
   accent: '#6c8fff', danger: '#ff6b6b', success: '#6bffb8',
-  btnBg: '#3a3a4a', btnText: '#e8e8f0',          // grey by default
+  btnBg: '#3a3a4a', btnText: '#e8e8f0',
   font: "'DM Mono', monospace",
   fontSize: 14, topbarFontSize: 12, clockWidgetSize: 1, notesFontSize: 13, settingsFontSize: 13,
   radius: 10, sectionRadius: 0,
@@ -113,7 +115,6 @@ function applyTheme(t) {
   s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
   if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
   if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
-  // Dynamic CSS override for link list horizontal padding
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
   const lph = t.linksPaddingH ?? 0.75
@@ -126,8 +127,6 @@ function applyTheme(t) {
       '}',
     ].join(' ')
   } else {
-    // Negative: shift list left via margin-left only — right edge unchanged,
-    // so absolutely-positioned action buttons remain at the card's right side
     styleEl.textContent = [
       '.links-list {',
       '  padding-left: 0 !important;',
@@ -136,8 +135,6 @@ function applyTheme(t) {
       '}',
     ].join(' ')
   }
-
-  // ── Plasma speed (already CSS vars) + custom plasma colours
   const speed = t.bgAnimSpeed ?? 1
   const dur = (b) => `${(b / speed).toFixed(1)}s`
   s('--plasma-speed-a', dur(20))
@@ -148,8 +145,6 @@ function applyTheme(t) {
     s('--plasma-c1', rgba(t.bgC1, 0.28)); s('--plasma-c2', rgba(t.bgC2||t.bgC1, 0.25)); s('--plasma-c3', rgba(t.bgC3||t.bgC1, 0.18))
     s('--plasma-c4', rgba(t.bgC1, 0.14)); s('--plasma-c5', rgba(t.bgC2||t.bgC1, 0.14)); s('--plasma-c6', rgba(t.bgC1, 0.16))
   }
-
-  // ── Inject CSS for animation speed overrides + new grass/ocean backgrounds
   const gSky = t.bgGrassSky || '#020609'
   const gGnd = t.bgGrassGround || '#071a05'
   const oSky = t.bgOceanSky || '#000814'
@@ -166,7 +161,6 @@ function applyTheme(t) {
     .bg-layer.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
     .bg-layer.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
 
-    /* ── GRASS AT NIGHT ── */
     .bg-layer.bg-grass {
       overflow: hidden;
       background-color: ${gSky};
@@ -193,17 +187,17 @@ function applyTheme(t) {
       clip-path: polygon(
         0% 100%, 0% 52%,
         1% 30%, 2% 50%, 3% 22%, 4% 46%, 5% 10%, 6% 40%, 7% 18%, 8% 44%,
-        9% 6%,  10% 38%, 11% 20%, 12% 46%, 13% 8%,  14% 36%, 15% 16%, 16% 42%,
-        17% 4%, 18% 34%, 19% 14%, 20% 40%, 21% 4%,  22% 30%, 23% 14%, 24% 42%,
-        25% 6%, 26% 37%, 27% 18%, 28% 44%, 29% 8%,  30% 38%, 31% 16%, 32% 42%,
-        33% 5%, 34% 34%, 35% 12%, 36% 42%, 37% 4%,  38% 32%, 39% 14%, 40% 40%,
-        41% 6%, 42% 36%, 43% 18%, 44% 44%, 45% 8%,  46% 38%, 47% 16%, 48% 42%,
-        49% 4%, 50% 32%, 51% 12%, 52% 42%, 53% 4%,  54% 30%, 55% 14%, 56% 40%,
-        57% 6%, 58% 36%, 59% 18%, 60% 44%, 61% 8%,  62% 38%, 63% 16%, 64% 42%,
-        65% 4%, 66% 32%, 67% 12%, 68% 42%, 69% 4%,  70% 30%, 71% 14%, 72% 40%,
-        73% 6%, 74% 36%, 75% 18%, 76% 44%, 77% 8%,  78% 38%, 79% 16%, 80% 42%,
-        81% 4%, 82% 32%, 83% 12%, 84% 42%, 85% 4%,  86% 30%, 87% 14%, 88% 40%,
-        89% 6%, 90% 36%, 91% 18%, 92% 44%, 93% 8%,  94% 38%, 95% 16%, 96% 42%,
+        9% 6%, 10% 38%, 11% 20%, 12% 46%, 13% 8%, 14% 36%, 15% 16%, 16% 42%,
+        17% 4%, 18% 34%, 19% 14%, 20% 40%, 21% 4%, 22% 30%, 23% 14%, 24% 42%,
+        25% 6%, 26% 37%, 27% 18%, 28% 44%, 29% 8%, 30% 38%, 31% 16%, 32% 42%,
+        33% 5%, 34% 34%, 35% 12%, 36% 42%, 37% 4%, 38% 32%, 39% 14%, 40% 40%,
+        41% 6%, 42% 36%, 43% 18%, 44% 44%, 45% 8%, 46% 38%, 47% 16%, 48% 42%,
+        49% 4%, 50% 32%, 51% 12%, 52% 42%, 53% 4%, 54% 30%, 55% 14%, 56% 40%,
+        57% 6%, 58% 36%, 59% 18%, 60% 44%, 61% 8%, 62% 38%, 63% 16%, 64% 42%,
+        65% 4%, 66% 32%, 67% 12%, 68% 42%, 69% 4%, 70% 30%, 71% 14%, 72% 40%,
+        73% 6%, 74% 36%, 75% 18%, 76% 44%, 77% 8%, 78% 38%, 79% 16%, 80% 42%,
+        81% 4%, 82% 32%, 83% 12%, 84% 42%, 85% 4%, 86% 30%, 87% 14%, 88% 40%,
+        89% 6%, 90% 36%, 91% 18%, 92% 44%, 93% 8%, 94% 38%, 95% 16%, 96% 42%,
         97% 4%, 98% 32%, 99% 50%, 100% 52%, 100% 100%
       );
       animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
@@ -214,21 +208,20 @@ function applyTheme(t) {
       position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
       background-image:
         radial-gradient(2.5px 2.5px at 12% 40%, rgba(180,255,80,.7) 0, transparent 100%),
-        radial-gradient(2px 2px   at 28% 55%, rgba(200,255,100,.55) 0, transparent 100%),
+        radial-gradient(2px 2px at 28% 55%, rgba(200,255,100,.55) 0, transparent 100%),
         radial-gradient(2.5px 2.5px at 45% 35%, rgba(180,255,80,.65) 0, transparent 100%),
-        radial-gradient(2px 2px   at 62% 50%, rgba(200,255,100,.6) 0, transparent 100%),
+        radial-gradient(2px 2px at 62% 50%, rgba(200,255,100,.6) 0, transparent 100%),
         radial-gradient(2.5px 2.5px at 78% 42%, rgba(180,255,80,.55) 0, transparent 100%),
-        radial-gradient(2px 2px   at 18% 62%, rgba(200,255,100,.5) 0, transparent 100%),
-        radial-gradient(2px 2px   at 52% 68%, rgba(180,255,80,.6) 0, transparent 100%),
+        radial-gradient(2px 2px at 18% 62%, rgba(200,255,100,.5) 0, transparent 100%),
+        radial-gradient(2px 2px at 52% 68%, rgba(180,255,80,.6) 0, transparent 100%),
         radial-gradient(2.5px 2.5px at 88% 48%, rgba(200,255,100,.55) 0, transparent 100%),
         linear-gradient(to top, rgba(2,6,2,.7) 0%, transparent 100%);
       animation: firefly-blink ${dur(3)} ease-in-out infinite alternate;
       pointer-events: none;
     }
     @keyframes grass-sway   { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
-    @keyframes firefly-blink { 0% { opacity: .3; }              100% { opacity: 1; } }
+    @keyframes firefly-blink { 0% { opacity: .3; } 100% { opacity: 1; } }
 
-    /* ── OCEAN AT NIGHT ── */
     .bg-layer.bg-ocean {
       overflow: hidden;
       background-color: ${oSky};
@@ -301,7 +294,6 @@ export default function App() {
     catch { return DEFAULT_THEME }
   })
 
-  // Wrap setTheme so every change auto-saves to localStorage
   const setTheme = (updater) => {
     setThemeState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater
@@ -316,10 +308,27 @@ export default function App() {
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
+  // ── Collapse / Expand all ─────────────────────────────────────────────────
+  const [allCollapsed,    setAllCollapsed]    = useState(false)
+  const [triggerCollapse, setTriggerCollapse] = useState(0)
+  const [triggerExpand,   setTriggerExpand]   = useState(0)
+  const [notesTrigger,    setNotesTrigger]    = useState(undefined)
+
+  const toggleAll = () => {
+    if (allCollapsed) {
+      setTriggerExpand(t => t + 1)
+      setNotesTrigger(true)
+      setAllCollapsed(false)
+    } else {
+      setTriggerCollapse(t => t + 1)
+      setNotesTrigger(false)
+      setAllCollapsed(true)
+    }
+  }
+
   const fileRef       = useRef(null)
   const backupFileRef = useRef(null)
 
-  // Apply theme on every change (auto-saved via setTheme wrapper)
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
@@ -363,7 +372,7 @@ export default function App() {
     const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
       supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
       supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }), // newest first
+      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
     ])
     setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
   }
@@ -525,14 +534,12 @@ export default function App() {
   const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
   const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
-  const activeWorkspace = workspaces.find(w => w.id === activeWs)
-
   if (loading) return <div className="center-fill">Loading…</div>
   if (!session) return <Auth />
 
   return (
     <>
-      {/* Background — self-closing so bg animations never trap fixed children */}
+      {/* Background */}
       <div className={bgClass} style={bgStyle} />
 
       <div className="app">
@@ -604,8 +611,15 @@ export default function App() {
 
           {/* Action buttons */}
           <div className="topbar-actions">
+            <button
+              className="btn"
+              title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+              onClick={toggleAll}
+            >
+              {allCollapsed ? 'Expand' : 'Collapse'}
+            </button>
             <button className="icon-btn" title="Refresh" onClick={handleRefresh}>↻</button>
-            <button className="icon-btn" title="Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
+            <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
 
@@ -619,6 +633,8 @@ export default function App() {
               workspaceId={activeWs}
               onRefresh={handleRefresh}
               colCount={theme.sectionsCols ?? 4}
+              triggerCollapseAll={triggerCollapse}
+              triggerExpandAll={triggerExpand}
             />
           </div>
           <div className="side-col">
@@ -627,6 +643,7 @@ export default function App() {
               workspaceId={activeWs}
               userId={session.user.id}
               onRefresh={handleRefresh}
+              forceOpen={notesTrigger}
             />
           </div>
         </main>
