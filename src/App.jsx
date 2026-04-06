@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react'
+import { useEffect, useRef, useState, useMemo, lazy, Suspense, Component } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
@@ -64,7 +64,7 @@ function WeatherWidget({ delay = 5000 }) {
   return (
     <div className="weather-wrap" style={fadeStyle}>
       <span className="weather-icon">{icons[wx.weathercode] || '🌡️'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}{'°'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
@@ -72,8 +72,7 @@ function WeatherWidget({ delay = 5000 }) {
 
 
 // ─── SETTINGS ERROR BOUNDARY ─────────────────────────────────────────────────
-import React from 'react'
-class SettingsErrorBoundary extends React.Component {
+class SettingsErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
   static getDerivedStateFromError(e) { return { error: e } }
   render() {

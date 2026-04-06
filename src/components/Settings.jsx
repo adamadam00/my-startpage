@@ -352,7 +352,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             COLOURS
         ══════════════════════════════════════════ */}
-        <Group title="Colours" defaultOpen signal={groupSignal}>
+        <Group title="Colours" defaultOpen={false} signal={groupSignal}>
 
           <SectionTitle>Surfaces</SectionTitle>
           <Row label="Background"><ColorPick value={theme.bg}  onChange={v => set('bg', v)} /></Row>
@@ -417,7 +417,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             LAYOUT & SPACING
         ══════════════════════════════════════════ */}
-        <Group title="Layout &amp; spacing" defaultOpen signal={groupSignal}>
+        <Group title="Layout &amp; spacing" defaultOpen={false} signal={groupSignal}>
 
           <Row label="Columns">
             <Slider val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
@@ -536,7 +536,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             NOTES
         ══════════════════════════════════════════ */}
-        <Group title="Notes" defaultOpen signal={groupSignal}>
+        <Group title="Notes" defaultOpen={false} signal={groupSignal}>
           <Row label="Font size">
             <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
           </Row>
