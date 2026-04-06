@@ -513,7 +513,7 @@ export default function App() {
   }, [session])
 
   // ── Load theme from Supabase ──────────────────────────────────────────────
-  const loadUserSettings = async () => {
+  const loadUserSettings = async (force = false) => {
     const uid = sessionRef.current?.user?.id ?? session?.user?.id
     if (!uid) return
     try {
@@ -523,26 +523,24 @@ export default function App() {
         .eq('user_id', uid)
         .maybeSingle()
       if (error) { console.error('loadUserSettings:', error.message); return }
-      // Pick the newer source using _savedAt timestamps
+
       const localTheme = (() => {
         try { return JSON.parse(localStorage.getItem('current_theme') || '{}') } catch { return {} }
       })()
-      const localTs = localTheme._savedAt || 0
-      const remoteTs = data?.theme?._savedAt || 0
       const hasRemote = data?.theme && Object.keys(data.theme).length > 0
 
-      if (hasRemote && remoteTs > localTs) {
-        // Supabase is newer (e.g. changed on another browser) — pull it down
+      if (hasRemote && (force || (data.theme._savedAt || 0) > (localTheme._savedAt || 0))) {
+        // Pull from Supabase — either forced (manual refresh) or remote is newer
         const wallpaper = localTheme.wallpaper || null
         const merged = { ...DEFAULT_THEME, ...data.theme, ...(wallpaper ? { wallpaper } : {}) }
         setThemeState(merged)
         localStorage.setItem('current_theme', JSON.stringify(merged))
-        console.log('Loaded theme from Supabase (remote is newer)')
+        console.log(force ? '[settings] Force-loaded from Supabase' : '[settings] Supabase is newer — pulled')
       } else {
-        // localStorage is newer or same — push it up to Supabase
+        // Push local up to Supabase (bootstrap or local is newer)
         if (Object.keys(localTheme).length > 0) {
           persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
-          console.log('Pushed theme to Supabase (local is newer)')
+          console.log('[settings] Pushed local theme to Supabase')
         }
       }
     } catch (err) {
@@ -864,7 +862,7 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={() => { loadUserSettings(); applyTheme(theme); handleRefresh() }}>↻</button>
+            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); applyTheme(theme); handleRefresh() }}>↻</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
