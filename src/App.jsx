@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState, useMemo, lazy, Suspense } from 'react'
+import { useEffect, useRef, useState, useMemo } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
+import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
-
-const Settings = lazy(() => import('./components/Settings'))
 
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
@@ -25,53 +24,31 @@ function ClockWidget() {
 }
 
 // ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
-const WEATHER_CACHE_KEY = 'cache_weather'
-const WEATHER_TTL = 30 * 60 * 1000
-
-function WeatherWidget({ delay = 5000 }) {
-  const [wx,      setWx]      = useState(null)
-  const [visible, setVisible] = useState(false)
-
+function WeatherWidget() {
+  const [wx, setWx] = useState(null)
   useEffect(() => {
-    try {
-      const hit = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null')
-      if (hit && Date.now() - hit.ts < WEATHER_TTL) {
-        setWx(hit.data)
-        setVisible(true)
-        return
-      }
-    } catch {}
-    const t = setTimeout(() => {
-      if (!navigator.geolocation) return
-      navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-        try {
-          const r = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
-          )
-          const d = await r.json()
-          setWx(d.current_weather)
-          setVisible(true)
-          localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
-        } catch {}
-      }, () => {})
-    }, delay)
-    return () => clearTimeout(t)
-  }, [delay])
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+      } catch {}
+    }, () => {})
+  }, [])
   if (!wx) return null
-  const wDur = getComputedStyle(document.documentElement).getPropertyValue('--weather-fade-dur').trim() || '1.4s'
-  const fadeStyle = { opacity: visible ? 1 : 0, transition: `opacity ${wDur} ease` }
-  const icons = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌦️',82:'🌦️',95:'⛈️',96:'⛈️',99:'⛈️' }
+  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
   const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
-    <div className="weather-wrap" style={fadeStyle}>
-      <span className="weather-icon">{icons[wx.weathercode] || '🌡️'}</span>
+    <div className="weather-wrap">
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
       <span className="weather-temp">{Math.round(wx.temperature)}°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
-
-
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -87,11 +64,7 @@ const DEFAULT_THEME = {
   radius: 10, sectionRadius: 0,
   linkGap: 0.5, cardPadding: 0.75,
   sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
-  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13, faviconDelay: 3,
-  weatherDelay: 5,
-  bgFadeIn: 3.5,
-  faviconFadeDuration: 1.2,
-  weatherFadeDuration: 1.4,
+  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13,
   patternColor: '#2a2a3a', patternOpacity: 1,
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
@@ -163,140 +136,78 @@ function applyTheme(t) {
     ].join(' ')
   }
   const speed = t.bgAnimSpeed ?? 1
-  const dur = (b) => `${(b / speed).toFixed(1)}s`
+  const dur = (b) => speed <= 0 ? '9999s' : `${(b / speed).toFixed(1)}s`
   s('--plasma-speed-a', dur(20))
   s('--plasma-speed-b', dur(28))
   if (t.bgBlur != null) { s('--plasma-blur-a', `${t.bgBlur}px`); s('--plasma-blur-b', `${t.bgBlur + 20}px`) }
+
+  const rgba = (hex, a) => {
+    const h = (hex || '#000000').replace('#', '')
+    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
+    return `rgba(${r},${g},${b},${a})`
+  }
+  const hexRgb = (hex) => {
+    const h = (hex || '#000000').replace('#', '')
+    return `${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)}`
+  }
+
   if (t.bgC1) {
-    const rgba = (hex, a) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})` }
     s('--plasma-c1', rgba(t.bgC1, 0.28)); s('--plasma-c2', rgba(t.bgC2||t.bgC1, 0.25)); s('--plasma-c3', rgba(t.bgC3||t.bgC1, 0.18))
     s('--plasma-c4', rgba(t.bgC1, 0.14)); s('--plasma-c5', rgba(t.bgC2||t.bgC1, 0.14)); s('--plasma-c6', rgba(t.bgC1, 0.16))
+    s('--drift-c1', rgba(t.bgC1, 0.20))
+    s('--drift-c2', rgba(t.bgC2||t.bgC1, 0.16))
+    s('--pulse-c',  rgba(t.bgC1, 0.22))
+    s('--tide-c1',  rgba(t.bgC1, 0.24))
+    s('--tide-c2',  rgba(t.bgC2||t.bgC1, 0.20))
   }
-  const gSky = t.bgGrassSky || '#020609'
-  const gGnd = t.bgGrassGround || '#071a05'
-  const oSky = t.bgOceanSky || '#000814'
-  const oWtr = t.bgOceanWater || '#001428'
+
+  if (t.starfieldGradient && t.bgC1) {
+    s('--starfield-bg-image',
+      `radial-gradient(ellipse 80% 70% at 25% 45%, ${rgba(t.bgC1,0.22)} 0%, transparent 65%),` +
+      `radial-gradient(ellipse 70% 80% at 75% 60%, ${rgba(t.bgC2||t.bgC1,0.16)} 0%, transparent 65%)`)
+  } else {
+    s('--starfield-bg-image', 'none')
+  }
+
+  if (t.patternColor) {
+    const op = t.patternOpacity ?? 1
+    const rgb = hexRgb(t.patternColor)
+    s('--fog-c1', `rgba(${rgb},${(0.22*op).toFixed(3)})`)
+    s('--fog-c2', `rgba(${rgb},${(0.18*op).toFixed(3)})`)
+    s('--fog-c3', `rgba(${rgb},${(0.15*op).toFixed(3)})`)
+    s('--fog-c4', `rgba(${rgb},${(0.16*op).toFixed(3)})`)
+    s('--fog-c5', `rgba(${rgb},${(0.14*op).toFixed(3)})`)
+    s('--fog-c6', `rgba(${rgb},${(0.10*op).toFixed(3)})`)
+    s('--scan-line-c',  `rgba(${rgb},${(0.90*op).toFixed(3)})`)
+    s('--scan-mid-c',   `rgba(${rgb},${(0.55*op).toFixed(3)})`)
+    s('--scan-glow-c',  `rgba(${rgb},${(0.20*op).toFixed(3)})`)
+    s('--scan-glow2-c', `rgba(${rgb},${(0.08*op).toFixed(3)})`)
+    s('--scan-glow3-c', `rgba(${rgb},${(0.04*op).toFixed(3)})`)
+  }
+
   let bgEl = document.getElementById('sp-bg')
   if (!bgEl) { bgEl = document.createElement('style'); bgEl.id = 'sp-bg'; document.head.appendChild(bgEl) }
   bgEl.textContent = `
-    .bg-aurora { animation-duration: ${dur(12)} !important; }
-    .bg-layer.bg-starfield::before { animation-duration: ${dur(80)} !important; }
-    .bg-layer.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
-    .bg-layer.bg-fog::before       { animation-duration: ${dur(42)} !important; }
-    .bg-layer.bg-fog::after        { animation-duration: ${dur(58)} !important; }
-    .bg-layer.bg-scan::before      { animation-duration: ${dur(7)} !important; }
-    .bg-layer.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
-    .bg-layer.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
-
-    .bg-layer.bg-grass {
-      overflow: hidden;
-      background-color: ${gSky};
-      background-image:
-        radial-gradient(6px 6px at 72% 12%, rgba(255,248,220,.95) 0, transparent 100%),
-        radial-gradient(45px 45px at 72% 12%, rgba(255,240,180,.22) 0, transparent 100%),
-        radial-gradient(100px 100px at 72% 12%, rgba(255,240,180,.06) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.9) 0, transparent 100%),
-        radial-gradient(1px 1px at 14% 4%, rgba(255,255,255,.7) 0, transparent 100%),
-        radial-gradient(1px 1px at 23% 11%, rgba(255,255,255,.6) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 38% 6%, rgba(255,255,255,.8) 0, transparent 100%),
-        radial-gradient(1px 1px at 50% 3%, rgba(255,255,255,.5) 0, transparent 100%),
-        radial-gradient(1px 1px at 58% 14%, rgba(255,255,255,.65) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 80% 7%, rgba(255,255,255,.75) 0, transparent 100%),
-        radial-gradient(1px 1px at 93% 4%, rgba(255,255,255,.8) 0, transparent 100%),
-        radial-gradient(1px 1px at 33% 16%, rgba(255,255,255,.45) 0, transparent 100%),
-        radial-gradient(1px 1px at 65% 10%, rgba(255,255,255,.55) 0, transparent 100%),
-        linear-gradient(to bottom, ${gSky} 0%, ${gSky}bb 55%, ${gGnd}aa 66%, ${gGnd} 100%);
-    }
-    .bg-layer.bg-grass::before {
-      content: '';
-      position: absolute; bottom: 0; left: -5%; width: 110%; height: 42%;
-      background: ${gGnd};
-      clip-path: polygon(
-        0% 100%, 0% 52%,
-        1% 30%, 2% 50%, 3% 22%, 4% 46%, 5% 10%, 6% 40%, 7% 18%, 8% 44%,
-        9% 6%, 10% 38%, 11% 20%, 12% 46%, 13% 8%, 14% 36%, 15% 16%, 16% 42%,
-        17% 4%, 18% 34%, 19% 14%, 20% 40%, 21% 4%, 22% 30%, 23% 14%, 24% 42%,
-        25% 6%, 26% 37%, 27% 18%, 28% 44%, 29% 8%, 30% 38%, 31% 16%, 32% 42%,
-        33% 5%, 34% 34%, 35% 12%, 36% 42%, 37% 4%, 38% 32%, 39% 14%, 40% 40%,
-        41% 6%, 42% 36%, 43% 18%, 44% 44%, 45% 8%, 46% 38%, 47% 16%, 48% 42%,
-        49% 4%, 50% 32%, 51% 12%, 52% 42%, 53% 4%, 54% 30%, 55% 14%, 56% 40%,
-        57% 6%, 58% 36%, 59% 18%, 60% 44%, 61% 8%, 62% 38%, 63% 16%, 64% 42%,
-        65% 4%, 66% 32%, 67% 12%, 68% 42%, 69% 4%, 70% 30%, 71% 14%, 72% 40%,
-        73% 6%, 74% 36%, 75% 18%, 76% 44%, 77% 8%, 78% 38%, 79% 16%, 80% 42%,
-        81% 4%, 82% 32%, 83% 12%, 84% 42%, 85% 4%, 86% 30%, 87% 14%, 88% 40%,
-        89% 6%, 90% 36%, 91% 18%, 92% 44%, 93% 8%, 94% 38%, 95% 16%, 96% 42%,
-        97% 4%, 98% 32%, 99% 50%, 100% 52%, 100% 100%
-      );
-      animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
-      transform-origin: bottom center;
-    }
-    .bg-layer.bg-grass::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
-      background-image:
-        radial-gradient(2.5px 2.5px at 12% 40%, rgba(180,255,80,.7) 0, transparent 100%),
-        radial-gradient(2px 2px at 28% 55%, rgba(200,255,100,.55) 0, transparent 100%),
-        radial-gradient(2.5px 2.5px at 45% 35%, rgba(180,255,80,.65) 0, transparent 100%),
-        radial-gradient(2px 2px at 62% 50%, rgba(200,255,100,.6) 0, transparent 100%),
-        radial-gradient(2.5px 2.5px at 78% 42%, rgba(180,255,80,.55) 0, transparent 100%),
-        radial-gradient(2px 2px at 18% 62%, rgba(200,255,100,.5) 0, transparent 100%),
-        radial-gradient(2px 2px at 52% 68%, rgba(180,255,80,.6) 0, transparent 100%),
-        radial-gradient(2.5px 2.5px at 88% 48%, rgba(200,255,100,.55) 0, transparent 100%),
-        linear-gradient(to top, rgba(2,6,2,.7) 0%, transparent 100%);
-      animation: firefly-blink ${dur(3)} ease-in-out infinite alternate;
-      pointer-events: none;
-    }
-    @keyframes grass-sway   { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
-    @keyframes firefly-blink { 0% { opacity: .3; } 100% { opacity: 1; } }
-
-    .bg-layer.bg-ocean {
-      overflow: hidden;
-      background-color: ${oSky};
-      background-image:
-        radial-gradient(7px 7px at 30% 18%, rgba(255,248,220,.95) 0, transparent 100%),
-        radial-gradient(55px 55px at 30% 18%, rgba(255,240,180,.22) 0, transparent 100%),
-        radial-gradient(120px 120px at 30% 18%, rgba(255,240,180,.06) 0, transparent 100%),
-        linear-gradient(to right, transparent 28%, rgba(255,248,200,.04) 29.5%, rgba(255,248,200,.07) 30.5%, rgba(255,248,200,.04) 31.5%, transparent 33%),
-        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.85) 0, transparent 100%),
-        radial-gradient(1px 1px at 12% 4%, rgba(255,255,255,.65) 0, transparent 100%),
-        radial-gradient(1px 1px at 20% 12%, rgba(255,255,255,.55) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 42% 6%, rgba(255,255,255,.75) 0, transparent 100%),
-        radial-gradient(1px 1px at 55% 14%, rgba(255,255,255,.6) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 63% 4%, rgba(255,255,255,.8) 0, transparent 100%),
-        radial-gradient(1px 1px at 76% 10%, rgba(255,255,255,.55) 0, transparent 100%),
-        radial-gradient(1px 1px at 86% 5%, rgba(255,255,255,.7) 0, transparent 100%),
-        radial-gradient(1px 1px at 94% 15%, rgba(255,255,255,.6) 0, transparent 100%),
-        radial-gradient(1px 1px at 18% 17%, rgba(255,255,255,.45) 0, transparent 100%),
-        linear-gradient(to bottom, ${oSky} 0%, ${oSky}cc 36%, ${oWtr}cc 52%, ${oWtr} 100%);
-    }
-    .bg-layer.bg-ocean::before {
-      content: '';
-      position: absolute; bottom: -22%; left: -30%; width: 160%; height: 75%;
-      background: ${oWtr};
-      border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%;
-      opacity: .88;
-      animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
-    }
-    .bg-layer.bg-ocean::after {
-      content: '';
-      position: absolute; bottom: -18%; left: -40%; width: 180%; height: 60%;
-      background: color-mix(in srgb, ${oWtr} 85%, #000020);
-      border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%;
-      opacity: .75;
-      animation: ocean-wave-b ${dur(15)} ease-in-out infinite alternate-reverse;
-    }
-    @keyframes ocean-wave-a {
-      0%   { transform: translateX(-6%) rotate(-1.5deg); border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%; }
-      100% { transform: translateX(6%)  rotate(1.5deg);  border-radius: 60% 40% 45% 55% / 25% 35% 28% 45%; }
-    }
-    @keyframes ocean-wave-b {
-      0%   { transform: translateX(8%)  rotate(2deg);    border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%; }
-      100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
-    }
+    .bg-aurora                               { animation-duration: ${dur(12)}  !important; }
+    .bg-gradient                             { animation-duration: ${dur(20)}  !important; }
+    .bg-mesh                                 { animation-duration: ${dur(22)}  !important; }
+    .bg-nebula                               { animation-duration: ${dur(30)}  !important; }
+    .bg-layer.bg-starfield::before           { animation-duration: ${dur(80)}  !important; }
+    .bg-layer.bg-starfield::after            { animation-duration: ${dur(130)} !important; }
+    .bg-layer.bg-fog::before                 { animation-duration: ${dur(42)}  !important; }
+    .bg-layer.bg-fog::after                  { animation-duration: ${dur(58)}  !important; }
+    .bg-layer.bg-scan::before                { animation-duration: ${dur(7)}   !important; }
+    .bg-layer.bg-vortex::before              { animation-duration: ${dur(70)}  !important; }
+    .bg-layer.bg-vortex::after               { animation-duration: ${dur(110)} !important; }
+    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before { animation-duration: ${dur(20)} !important; }
+    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after  { animation-duration: ${dur(28)} !important; }
+    .bg-layer.bg-drift::before               { animation-duration: ${dur(35)}  !important; }
+    .bg-layer.bg-drift::after                { animation-duration: ${dur(50)}  !important; }
+    .bg-layer.bg-pulse::before               { animation-duration: ${dur(8)}   !important; }
+    .bg-layer.bg-pulse::after                { animation-duration: ${dur(12)}  !important; }
+    .bg-layer.bg-tide::before                { animation-duration: ${dur(20)}  !important; }
+    .bg-layer.bg-tide::after                 { animation-duration: ${dur(30)}  !important; }
   `
-  s('--bg-fade-in-dur', (t.bgFadeIn ?? 3.5) + 's')
-  s('--favicon-fade-dur', (t.faviconFadeDuration ?? 1.2) + 's')
-  s('--weather-fade-dur',  (t.weatherFadeDuration ?? 1.4) + 's')
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap',       (t.notesGap ?? 0) + 'px')
   if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
@@ -361,36 +272,6 @@ export default function App() {
 
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
-
-  // ── Favicon deferred fade-in ───────────────────────────────────────────────
-  useEffect(() => {
-    document.body.classList.remove('favicons-loaded')
-    const t = setTimeout(() => {
-      document.body.classList.add('favicons-loaded')
-    }, (theme.faviconDelay ?? 3) * 1000)
-    return () => clearTimeout(t)
-  }, [theme.faviconDelay])
-
-  // ── Background ease-in on first paint ─────────────────────────────────────
-  useEffect(() => {
-    const t = setTimeout(() => {
-      document.querySelectorAll('.bg-layer').forEach(el => el.classList.add('bg-visible'))
-    }, 80)
-    return () => clearTimeout(t)
-  }, [])
-
-  // ── Page Visibility — pause bg animations when tab is hidden ──────────────
-  useEffect(() => {
-    const handleVis = () => {
-      const state = document.hidden ? 'paused' : 'running'
-      document.querySelectorAll('.bg-layer').forEach(el => {
-        el.style.animationPlayState = state
-      })
-    }
-    document.addEventListener('visibilitychange', handleVis)
-    return () => document.removeEventListener('visibilitychange', handleVis)
-  }, [])
-
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -668,7 +549,7 @@ export default function App() {
           <div className="topbar-widgets">
             <ClockWidget />
             <div className="topbar-divider" />
-            <WeatherWidget delay={(theme.weatherDelay ?? 5) * 1000} />
+            <WeatherWidget />
             <div className="search-compact" style={{ flex: 1 }}>
               <input
                 className="input search-compact-input"
@@ -724,7 +605,6 @@ export default function App() {
 
         {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
-          <Suspense fallback={null}>
           <Settings
             theme={theme}
             setTheme={setTheme}
@@ -747,7 +627,6 @@ export default function App() {
             onDeleteWorkspace={deleteWorkspace}
             onSetActiveWs={setActiveWs}
           />
-          </Suspense>
         )}
 
       </div>

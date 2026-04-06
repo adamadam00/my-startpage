@@ -17,36 +17,34 @@ const FONTS = [
 ]
 
 const BG_PRESETS = [
-  { label: 'Noise',    value: 'noise'         },
-  { label: 'Solid',    value: 'solid'         },
-  { label: 'Dots',     value: 'dots'          },
-  { label: 'Grid',     value: 'grid'          },
-  { label: 'Gradient', value: 'gradient'      },
-  { label: 'Mesh',     value: 'mesh'          },
-  { label: 'Aurora',   value: 'aurora'        },
-  { label: 'Stars',    value: 'stars'         },
-  { label: 'Nebula',   value: 'nebula'        },
-  { label: 'Starfield',value: 'starfield'     },
-  { label: 'Fog',      value: 'fog'           },
-  { label: 'Scan',     value: 'scan'          },
-  { label: 'Vortex',   value: 'vortex'        },
-  { label: 'Plasma',   value: 'plasma'        },
-  { label: 'Inferno',  value: 'inferno'       },
-  { label: 'Mint',     value: 'mint'          },
-  { label: 'Dusk',     value: 'dusk'          },
-  { label: 'Mono',     value: 'mono'          },
-  { label: 'Bokeh',    value: 'light-bokeh'   },
-  { label: 'Silver',   value: 'silver-radial' },
-  { label: 'Wall',     value: 'wall-texture'  },
-  // New animated backgrounds
-  { label: '🌿 Grass', value: 'grass'         },
-  { label: '🌊 Ocean', value: 'ocean'         },
+  { label: 'Noise',        value: 'noise'         },
+  { label: 'Solid',        value: 'solid'         },
+  { label: 'Dots',         value: 'dots'          },
+  { label: '◈ Gradient',  value: 'gradient'      },
+  { label: '◈ Mesh',      value: 'mesh'          },
+  { label: '◈ Aurora',    value: 'aurora'        },
+  { label: '◈ Nebula',    value: 'nebula'        },
+  { label: '◈ Starfield', value: 'starfield'     },
+  { label: '◈ Fog',       value: 'fog'           },
+  { label: '◈ Scan',      value: 'scan'          },
+  { label: '◈ Vortex',    value: 'vortex'        },
+  { label: '◈ Plasma',    value: 'plasma'        },
+  { label: '◈ Inferno',   value: 'inferno'       },
+  { label: '◈ Forest',    value: 'mint'          },
+  { label: '◈ Dusk',      value: 'dusk'          },
+  { label: '◈ Mono',      value: 'mono'          },
+  { label: '◈ Drift',     value: 'drift'         },
+  { label: '◈ Pulse',     value: 'pulse'         },
+  { label: '◈ Tide',      value: 'tide'          },
+  { label: 'Silver',       value: 'silver-radial' },
+  { label: 'Wall',         value: 'wall-texture'  },
 ]
 
 const ANIMATED_PRESETS = [
-  'aurora','starfield','fog','scan','vortex',
+  'aurora','gradient','mesh','nebula',
+  'starfield','fog','scan','vortex',
   'plasma','inferno','mint','dusk','mono',
-  'grass','ocean',
+  'drift','pulse','tide',
 ]
 const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
@@ -241,17 +239,11 @@ export default function Settings({
           </div>
 
           {/* ── Dynamic controls per preset ── */}
-          {/* ── Background fade-in duration — always shown ── */}
-          <Row label="Fade-in duration">
-            <Slider val={theme.bgFadeIn ?? 3.5} min={0} max={8} step={0.5}
-              onChange={v => set('bgFadeIn', v)} unit="s" />
-          </Row>
-
           {ANIMATED_PRESETS.includes(theme.bgPreset) && (
             <>
               <SectionTitle>Animation</SectionTitle>
               <Row label="Speed">
-                <Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={25} max={400} step={25}
+                <Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={800} step={25}
                   onChange={v => set('bgAnimSpeed', v / 100)} unit="%" />
               </Row>
             </>
@@ -269,19 +261,63 @@ export default function Settings({
             </>
           )}
 
-          {theme.bgPreset === 'grass' && (
+          {theme.bgPreset === 'fog' && (
             <>
-              <SectionTitle>Grass colours</SectionTitle>
-              <Row label="Sky colour">    <ColorPick value={theme.bgGrassSky    || '#020609'} onChange={v => set('bgGrassSky', v)} /></Row>
-              <Row label="Ground colour"> <ColorPick value={theme.bgGrassGround || '#071a05'} onChange={v => set('bgGrassGround', v)} /></Row>
+              <SectionTitle>Fog colour</SectionTitle>
+              <Row label="Fog colour"><ColorPick value={theme.patternColor || '#323c6e'} onChange={v => set('patternColor', v)} /></Row>
+              <Row label="Fog density">
+                <Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
+                  onChange={v => set('patternOpacity', v / 100)} unit="%" />
+              </Row>
             </>
           )}
 
-          {theme.bgPreset === 'ocean' && (
+          {theme.bgPreset === 'scan' && (
             <>
-              <SectionTitle>Ocean colours</SectionTitle>
-              <Row label="Sky colour">   <ColorPick value={theme.bgOceanSky   || '#000814'} onChange={v => set('bgOceanSky', v)} /></Row>
-              <Row label="Water colour"> <ColorPick value={theme.bgOceanWater || '#001428'} onChange={v => set('bgOceanWater', v)} /></Row>
+              <SectionTitle>Scan line</SectionTitle>
+              <Row label="Line colour"><ColorPick value={theme.patternColor || '#6c8fff'} onChange={v => set('patternColor', v)} /></Row>
+              <Row label="Brightness">
+                <Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
+                  onChange={v => set('patternOpacity', v / 100)} unit="%" />
+              </Row>
+            </>
+          )}
+
+          {theme.bgPreset === 'starfield' && (
+            <>
+              <SectionTitle>Starfield gradient</SectionTitle>
+              <Row label="Gradient overlay">
+                <Toggle checked={theme.starfieldGradient ?? false} onChange={v => set('starfieldGradient', v)} />
+              </Row>
+              {(theme.starfieldGradient ?? false) && (
+                <>
+                  <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
+                  <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
+                </>
+              )}
+            </>
+          )}
+
+          {theme.bgPreset === 'drift' && (
+            <>
+              <SectionTitle>Drift colours</SectionTitle>
+              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
+              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
+            </>
+          )}
+
+          {theme.bgPreset === 'pulse' && (
+            <>
+              <SectionTitle>Pulse colour</SectionTitle>
+              <Row label="Colour"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
+            </>
+          )}
+
+          {theme.bgPreset === 'tide' && (
+            <>
+              <SectionTitle>Tide colours</SectionTitle>
+              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#005080'} onChange={v => set('bgC1', v)} /></Row>
+              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#0078c8'} onChange={v => set('bgC2', v)} /></Row>
             </>
           )}
 
@@ -352,7 +388,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             COLOURS
         ══════════════════════════════════════════ */}
-        <Group title="Colours" defaultOpen={false} signal={groupSignal}>
+        <Group title="Colours" defaultOpen signal={groupSignal}>
 
           <SectionTitle>Surfaces</SectionTitle>
           <Row label="Background"><ColorPick value={theme.bg}  onChange={v => set('bg', v)} /></Row>
@@ -417,7 +453,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             LAYOUT & SPACING
         ══════════════════════════════════════════ */}
-        <Group title="Layout &amp; spacing" defaultOpen={false} signal={groupSignal}>
+        <Group title="Layout &amp; spacing" defaultOpen signal={groupSignal}>
 
           <Row label="Columns">
             <Slider val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
@@ -438,9 +474,6 @@ export default function Settings({
           <Row label="Link left padding">
             <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
-          </Row>
-          <Row label="Handle opacity">
-            <Slider val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
           </Row>
 
           <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
@@ -486,20 +519,6 @@ export default function Settings({
         </Group>
 
         {/* ══════════════════════════════════════════
-            WEATHER
-        ══════════════════════════════════════════ */}
-        <Group title="Weather" defaultOpen={false} signal={groupSignal}>
-          <Row label="Weather delay">
-            <Slider val={theme.weatherDelay ?? 5} min={0} max={30} step={1}
-              onChange={v => set('weatherDelay', v)} unit="s" />
-          </Row>
-          <Row label="Fade-in duration">
-            <Slider val={theme.weatherFadeDuration ?? 1.4} min={0.2} max={5} step={0.2}
-              onChange={v => set('weatherFadeDuration', v)} unit="s" />
-          </Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
             CLOCK
         ══════════════════════════════════════════ */}
         <Group title="Clock" defaultOpen={false} signal={groupSignal}>
@@ -513,14 +532,6 @@ export default function Settings({
             FAVICONS
         ══════════════════════════════════════════ */}
         <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
-          <Row label="Favicon delay">
-            <Slider val={theme.faviconDelay ?? 3} min={0} max={15} step={0.5}
-              onChange={v => set('faviconDelay', v)} unit="s" />
-          </Row>
-          <Row label="Fade-in duration">
-            <Slider val={theme.faviconFadeDuration ?? 1.2} min={0.2} max={5} step={0.2}
-              onChange={v => set('faviconFadeDuration', v)} unit="s" />
-          </Row>
           <Row label="Favicon size">
             <Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
           </Row>
@@ -536,7 +547,7 @@ export default function Settings({
         {/* ══════════════════════════════════════════
             NOTES
         ══════════════════════════════════════════ */}
-        <Group title="Notes" defaultOpen={false} signal={groupSignal}>
+        <Group title="Notes" defaultOpen signal={groupSignal}>
           <Row label="Font size">
             <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
           </Row>
