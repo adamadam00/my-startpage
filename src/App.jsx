@@ -76,7 +76,7 @@ const DEFAULT_THEME = {
   bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
-  sectionsCols: 4,
+  sectionsCols: 3,
   notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
   settingsSide: 'right',
 }
@@ -415,25 +415,38 @@ export default function App() {
     catch { return DEFAULT_THEME }
   })
 
-  // Save theme to Supabase (debounced 1.5s). Wallpaper stripped — too large for DB.
+  // ── Supabase theme persistence ───────────────────────────────
   const saveThemeRef = useRef(null)
+
   const persistTheme = (t, immediate = false) => {
     clearTimeout(saveThemeRef.current)
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
       if (!uid) return
-      const { wallpaper, ...rest } = t   // keep wallpaper localStorage-only
-      const { error } = await supabase
+      const { wallpaper, ...themeData } = t  // wallpaper stays local-only
+      // Try update first; if no row exists yet, insert
+      const { data: updated, error: upErr } = await supabase
         .from('user_settings')
-        .upsert({ user_id: uid, theme: rest, updated_at: new Date().toISOString() },
-                 { onConflict: 'user_id' })
-      if (error) console.error('persistTheme error:', error.message)
+        .update({ theme: themeData, updated_at: new Date().toISOString() })
+        .eq('user_id', uid)
+        .select('id')
+      if (upErr) { console.error('[settings] update error:', upErr.message); return }
+      if (!updated?.length) {
+        // Row doesn't exist yet — insert it
+        const { error: insErr } = await supabase
+          .from('user_settings')
+          .insert({ user_id: uid, theme: themeData })
+        if (insErr) console.error('[settings] insert error:', insErr.message)
+        else console.log('[settings] created row in Supabase')
+      } else {
+        console.log('[settings] updated Supabase row')
+      }
     }
     if (immediate) doSave()
     else saveThemeRef.current = setTimeout(doSave, 1500)
   }
 
-  const setTheme = (updater) => {
+    const setTheme = (updater) => {
     setThemeState(prev => {
       const base = typeof updater === 'function' ? updater(prev) : updater
       const next = { ...base, _savedAt: Date.now() }
@@ -515,47 +528,44 @@ export default function App() {
   // ── Load theme from Supabase ──────────────────────────────────────────────
   const loadUserSettings = async (force = false) => {
     const uid = sessionRef.current?.user?.id ?? session?.user?.id
-    if (!uid) return
+    if (!uid) { console.log('[settings] no uid, skipping load'); return }
     try {
       const { data, error } = await supabase
-        .from('user_settings')
-        .select('theme')
-        .eq('user_id', uid)
-        .maybeSingle()
-      if (error) { console.error('loadUserSettings:', error.message); return }
+        .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
+      if (error) { console.error('[settings] load error:', error.message); return }
 
-      const localTheme = (() => {
-        try { return JSON.parse(localStorage.getItem('current_theme') || '{}') } catch { return {} }
-      })()
-      const hasRemote = data?.theme && Object.keys(data.theme).length > 0
+      const localRaw  = localStorage.getItem('current_theme')
+      const localTheme  = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
+      const remoteTheme = data?.theme ?? {}
+      const hasLocal  = Object.keys(localTheme).length  > 3
+      const hasRemote = Object.keys(remoteTheme).length > 3
+      console.log('[settings] load | force:', force, '| hasLocal:', hasLocal, '| hasRemote:', hasRemote)
 
-      if (hasRemote && (force || (data.theme._savedAt || 0) > (localTheme._savedAt || 0))) {
-        // Pull from Supabase — either forced (manual refresh) or remote is newer
-        const wallpaper = localTheme.wallpaper || null
-        const merged = { ...DEFAULT_THEME, ...data.theme, ...(wallpaper ? { wallpaper } : {}) }
+      if (force && hasRemote) {
+        // Manual refresh — always apply Supabase
+        const wallpaper = localTheme.wallpaper ?? null
+        const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wallpaper ? { wallpaper } : {}) }
         setThemeState(merged)
         localStorage.setItem('current_theme', JSON.stringify(merged))
-        console.log(force ? '[settings] Force-loaded from Supabase' : '[settings] Supabase is newer — pulled')
+        console.log('[settings] force-applied Supabase theme')
+      } else if (!hasRemote && hasLocal) {
+        // Supabase empty — push local up (bootstrap)
+        console.log('[settings] bootstrapping Supabase from local')
+        persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
+      } else if (hasRemote && !hasLocal) {
+        // Local empty — pull from Supabase
+        const merged = { ...DEFAULT_THEME, ...remoteTheme }
+        setThemeState(merged)
+        localStorage.setItem('current_theme', JSON.stringify(merged))
+        console.log('[settings] pulled Supabase theme (no local)')
       } else {
-        // Push local up to Supabase (bootstrap or local is newer)
-        if (Object.keys(localTheme).length > 0) {
-          persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
-          console.log('[settings] Pushed local theme to Supabase')
-        }
+        console.log('[settings] both exist, keeping local, syncing to Supabase')
+        persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
       }
-    } catch (err) {
-      console.error('loadUserSettings error:', err.message)
-    }
+    } catch (e) { console.error('[settings] load exception:', e) }
   }
 
-  // ── Sign out ─────────────────────────────────────────────────────────────
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    setSession(null)
-    setSettingsOpen(false)
-  }
-
-  // ── Workspace bootstrap ───────────────────────────────────────────────────
+    // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
@@ -862,7 +872,7 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); applyTheme(theme); handleRefresh() }}>↻</button>
+            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
@@ -899,7 +909,7 @@ export default function App() {
           <Settings
             theme={theme}
             setTheme={setTheme}
-            onSave={() => { applyTheme(theme); localStorage.setItem('current_theme', JSON.stringify(theme)) }}
+            onSave={() => { persistTheme(theme, true) }}
             onClose={() => setSettingsOpen(false)}
             onSignOut={handleSignOut}
             userEmail={session?.user?.email ?? ''}
