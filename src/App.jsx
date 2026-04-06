@@ -408,22 +408,30 @@ export default function App() {
   if (!session) return <Auth />
 
   return (
-    <div className={bgClass} style={bgStyle}>
-      <div className="app-shell">
+    <>
+      {/* Background layer — purely visual, no children so bg animations can't trap fixed panels */}
+      <div className={bgClass} style={bgStyle} />
 
+      {/* App shell — uses the .app class already defined in index.css */}
+      <div className="app">
+
+        {/* Wallpaper overlay — absolute so it's scoped to .app and unaffected by bg animations */}
         {theme.wallpaper ? (
           <div
-            className="wallpaper-layer"
             style={{
+              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
               backgroundImage:    `url(${theme.wallpaper})`,
               backgroundSize:     `${theme.wallpaperScale ?? 100}%`,
               backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
+              backgroundRepeat:   'no-repeat',
               filter:             `blur(${theme.wallpaperBlur ?? 0}px)`,
               opacity:            (theme.wallpaperOpacity ?? 100) / 100,
             }}
           />
         ) : null}
-        <div className="wallpaper-dim" />
+        {theme.wallpaperDim > 0 && theme.wallpaper ? (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
+        ) : null}
 
         <Toolbar
           search={search}
@@ -445,7 +453,7 @@ export default function App() {
 
         <main
           className="main-layout"
-          style={{ gridTemplateColumns: \`1fr var(--notes-width, 240px)\` }}
+          style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}
         >
           <div className="main-col">
             <div className="page-title-row">
@@ -495,6 +503,6 @@ export default function App() {
         )}
 
       </div>
-    </div>
+    </>
   )
 }
