@@ -38,15 +38,11 @@ const BG_PRESETS = [
   { label: 'Bokeh',    value: 'light-bokeh'   },
   { label: 'Silver',   value: 'silver-radial' },
   { label: 'Wall',     value: 'wall-texture'  },
-  // New animated backgrounds
-  { label: '🌿 Grass', value: 'grass'         },
-  { label: '🌊 Ocean', value: 'ocean'         },
 ]
 
 const ANIMATED_PRESETS = [
   'aurora','starfield','fog','scan','vortex',
   'plasma','inferno','mint','dusk','mono',
-  'grass','ocean',
 ]
 const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
@@ -263,22 +259,6 @@ export default function Settings({
             </>
           )}
 
-          {theme.bgPreset === 'grass' && (
-            <>
-              <SectionTitle>Grass colours</SectionTitle>
-              <Row label="Sky colour">    <ColorPick value={theme.bgGrassSky    || '#020609'} onChange={v => set('bgGrassSky', v)} /></Row>
-              <Row label="Ground colour"> <ColorPick value={theme.bgGrassGround || '#071a05'} onChange={v => set('bgGrassGround', v)} /></Row>
-            </>
-          )}
-
-          {theme.bgPreset === 'ocean' && (
-            <>
-              <SectionTitle>Ocean colours</SectionTitle>
-              <Row label="Sky colour">   <ColorPick value={theme.bgOceanSky   || '#000814'} onChange={v => set('bgOceanSky', v)} /></Row>
-              <Row label="Water colour"> <ColorPick value={theme.bgOceanWater || '#001428'} onChange={v => set('bgOceanWater', v)} /></Row>
-            </>
-          )}
-
           <Row label="Pattern colour">
             <ColorPick value={theme.patternColor} onChange={v => set('patternColor', v)} />
           </Row>
@@ -400,6 +380,12 @@ export default function Settings({
           <Row label="Body font size">
             <Slider val={theme.fontSize ?? 14} min={10} max={20} onChange={v => set('fontSize', v)} unit="px" />
           </Row>
+          <Row label="Card title font size">
+            <Slider val={theme.sectionTitleFontSize ?? 11} min={9} max={18} onChange={v => set('sectionTitleFontSize', v)} unit="px" />
+          </Row>
+          <Row label="Link font size">
+            <Slider val={theme.linkFontSize ?? 12} min={10} max={20} onChange={v => set('linkFontSize', v)} unit="px" />
+          </Row>
           <Row label="Topbar font size">
             <Slider val={theme.topbarFontSize ?? 12} min={9} max={16} onChange={v => set('topbarFontSize', v)} unit="px" />
           </Row>
@@ -433,7 +419,7 @@ export default function Settings({
             <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
           </Row>
-          <Row label="Handle opacity">
+          <Row label="Drag handle opacity">
             <Slider val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
           </Row>
 
@@ -511,6 +497,9 @@ export default function Settings({
         <Group title="Notes" defaultOpen signal={groupSignal}>
           <Row label="Font size">
             <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
+          </Row>
+          <Row label="New note font size">
+            <Slider val={theme.newNoteFontSize ?? 13} min={10} max={20} onChange={v => set('newNoteFontSize', v)} unit="px" />
           </Row>
           <Row label="Gap between notes">
             <Slider val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" />
