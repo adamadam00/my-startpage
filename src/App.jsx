@@ -415,10 +415,25 @@ export default function App() {
     catch { return DEFAULT_THEME }
   })
 
+  // Save theme to Supabase (debounced 1.5s). Wallpaper stripped — too large for DB.
+  const saveThemeRef = useRef(null)
+  const persistTheme = (t) => {
+    clearTimeout(saveThemeRef.current)
+    saveThemeRef.current = setTimeout(async () => {
+      const uid = sessionRef.current?.user?.id
+      if (!uid) return
+      const { wallpaper, ...rest } = t   // keep wallpaper localStorage-only
+      await supabase.from('user_settings')
+        .upsert({ user_id: uid, theme: rest, updated_at: new Date().toISOString() },
+                 { onConflict: 'user_id' })
+    }, 1500)
+  }
+
   const setTheme = (updater) => {
     setThemeState(prev => {
       const next = typeof updater === 'function' ? updater(prev) : updater
       localStorage.setItem('current_theme', JSON.stringify(next))
+      persistTheme(next)
       return next
     })
   }
@@ -489,8 +504,33 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return
-    ensureWorkspace().then(() => handleRefresh())
+    loadUserSettings().then(() => ensureWorkspace()).then(() => handleRefresh())
   }, [session])
+
+  // ── Load theme from Supabase ──────────────────────────────────────────────
+  const loadUserSettings = async () => {
+    const uid = session?.user?.id
+    if (!uid) return
+    try {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('theme')
+        .eq('user_id', uid)
+        .maybeSingle()
+      if (error) { console.error('loadUserSettings:', error.message); return }
+      if (data?.theme && Object.keys(data.theme).length > 0) {
+        // Merge: Supabase wins, but preserve wallpaper from localStorage
+        const localWallpaper = (() => {
+          try { return JSON.parse(localStorage.getItem('current_theme') || '{}').wallpaper } catch { return null }
+        })()
+        const merged = { ...DEFAULT_THEME, ...data.theme, ...(localWallpaper ? { wallpaper: localWallpaper } : {}) }
+        setThemeState(merged)
+        localStorage.setItem('current_theme', JSON.stringify(merged))
+      }
+    } catch (err) {
+      console.error('loadUserSettings error:', err.message)
+    }
+  }
 
   // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
