@@ -403,6 +403,7 @@ function applyTheme(t) {
 export default function App() {
   const [session,  setSession]  = useState(null)
   const sessionRef              = useRef(null)
+  const searchInputRef          = useRef(null)
   const [workspaces, setWorkspaces] = useState([])
   const [activeWs,   setActiveWs]   = useState(null)
   const [sections,   setSections]   = useState([])
@@ -454,16 +455,9 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus URL bar on new tab load ──────────────────────────
-  // Blur the page after mount so Chrome/Edge/Brave return focus
-  // to the URL bar instead of keeping it on the page content.
+  // ── Focus search bar on new tab load ──────────────────────
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (document.activeElement && document.activeElement !== document.body) {
-        document.activeElement.blur()
-      }
-      window.blur()
-    }, 50)
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 80)
     return () => clearTimeout(timer)
   }, [])
 
@@ -777,6 +771,7 @@ export default function App() {
               <input
                 className="input search-compact-input"
                 placeholder={searchMode === 'web' ? 'Search the web...' : 'Filter links...'}
+                ref={searchInputRef}
                 value={searchMode === 'web' ? webSearch : search}
                 onChange={e => searchMode === 'web' ? setWebSearch(e.target.value) : setSearch(e.target.value)}
                 onKeyDown={e => {
