@@ -11,49 +11,65 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
+// ─── A Fine Start importer ─────────────────────────────────────────────────
 function parseAFineStart(raw) {
   let data
-  try { data = JSON.parse(raw) } catch { throw new Error('Not valid JSON — paste the export code exactly.') }
-  const extractBookmarks = (bms) => bms
-    .map(b => ({ title: b.name || b.title || 'Link', url: b.url || b.href }))
-    .filter(b => b.url)
+  try { data = JSON.parse(raw) }
+  catch { throw new Error('Not valid JSON — paste the export code exactly.') }
+
+  const extractBookmarks = (bms) =>
+    bms.map(b => ({ title: b.name || b.title || 'Link', url: b.url || b.href })).filter(b => b.url)
+
   const groups = []
+
   if (Array.isArray(data) && data.every(i => Array.isArray(i))) {
-    data.forEach(col => col.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) }))
+    data.forEach(col => col.forEach(g => {
+      if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) })
+    }))
     if (groups.length) return groups
   }
+
   if (Array.isArray(data) && data[0]?.name) {
-    data.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links || []) }) })
-    if (groups.length) return groups
-  }
-  const root = data.columns || data.groups || data.data || null
-  if (Array.isArray(root)) {
-    root.forEach(item => {
-      if (Array.isArray(item)) item.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) })
-      else if (item?.name) groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links || []) })
+    data.forEach(g => {
+      if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links || []) })
     })
     if (groups.length) return groups
   }
+
+  const root = data.columns || data.groups || data.data || null
+  if (Array.isArray(root)) {
+    root.forEach(item => {
+      if (Array.isArray(item))
+        item.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) })
+      else if (item?.name)
+        groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links || []) })
+    })
+    if (groups.length) return groups
+  }
+
   const walk = (node) => {
     if (!node || typeof node !== 'object') return
     const bms = node.bookmarks || node.links || node.items
     if ((node.name || node.title) && Array.isArray(bms)) {
       groups.push({ name: node.name || node.title, links: extractBookmarks(bms) }); return
     }
-    (Array.isArray(node) ? node : Object.values(node)).forEach(walk)
+    ;(Array.isArray(node) ? node : Object.values(node)).forEach(walk)
   }
   walk(data)
   if (groups.length) return groups
   throw new Error(`No groups found. Keys: ${Object.keys(data).join(', ')}`)
 }
 
+// ─── Column layout helpers ─────────────────────────────────────────────────
 function buildColumns(sections = [], colCount = 2) {
-  const cols = Math.max(colCount, 1)
+  const cols   = Math.max(colCount, 1)
   const result = Array.from({ length: cols }, () => [])
   const sorted = [...sections.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))]
   const allZero = sorted.length > 0 && sorted.every(s => (s.colindex ?? 0) === 0)
   sorted.forEach((s, i) => {
-    const ci = allZero ? i % cols : Math.min(Math.max(s.colindex ?? 0, 0), cols - 1)
+    const ci = allZero
+      ? i % cols
+      : Math.min(Math.max(s.colindex ?? 0, 0), cols - 1)
     result[ci].push(s)
   })
   return result
@@ -63,22 +79,29 @@ function findColIndex(cols, id) {
   return cols.findIndex(col => col.some(s => s.id === id))
 }
 
-/* ── Section card ── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, ghost, locked, forceCollapsed }) {
-  const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
-  const [renaming, setRenaming] = useState(false)
-  const [name, setName] = useState(section.name ?? '')
-  const [addingLink, setAddingLink] = useState(false)
-  // ── Title hover tracked in React state — no CSS dependency ──
-  const [titleHovered, setTitleHovered] = useState(false)
+// ─── Section card ──────────────────────────────────────────────────────────
+function SectionCard({
+  section, links, userId, workspaceId, onRefresh,
+  openInNewTab, ghost, locked, forceCollapsed,
+}) {
+  const [collapsed,   setCollapsed]   = useState(section.collapsed ?? false)
+  const [renaming,    setRenaming]    = useState(false)
+  const [name,        setName]        = useState(section.name ?? '')
+  const [addingLink,  setAddingLink]  = useState(false)
+  // Hover states: titleHovered gates the edit/delete/add buttons,
+  // headerHovered gates the collapse arrow
+  const [titleHovered,  setTitleHovered]  = useState(false)
+  const [headerHovered, setHeaderHovered] = useState(false)
 
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: section.id, disabled: locked,
-  })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: section.id, disabled: locked })
+
   const style = {
-    transform: CSS.Transform.toString(transform), transition,
-    opacity: isDragging || ghost ? 0.3 : 1,
-    position: 'relative', zIndex: isDragging ? 20 : 'auto',
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity:  isDragging || ghost ? 0.3 : 1,
+    position: 'relative',
+    zIndex:   isDragging ? 20 : 'auto',
   }
 
   useEffect(() => {
@@ -111,58 +134,89 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   }
 
   return (
-    <div ref={setNodeRef} style={style} className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}>
-      <div className="section-header" onClick={toggleCollapse}>
+    <div ref={setNodeRef} style={style}
+      className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}>
 
-        {!locked && (
-          <span className="drag-handle" {...attributes} {...listeners}
-            onClick={e => e.stopPropagation()} title="Drag to reorder" />
-        )}
+      {/* ── Header ─────────────────────────────────── */}
+      <div
+        className="section-header"
+        onClick={toggleCollapse}
+        onMouseEnter={() => setHeaderHovered(true)}
+        onMouseLeave={() => setHeaderHovered(false)}
+      >
+        {/* Drag handle */}
+        <span
+          className="drag-handle"
+          {...attributes} {...listeners}
+          onClick={e => e.stopPropagation()}
+          title="Drag to reorder"
+        >≡</span>
+
         <span style={{ width: '0.4rem', flexShrink: 0 }} />
 
         {renaming ? (
           <form onSubmit={rename} onClick={e => e.stopPropagation()}
             style={{ flex: 1, display: 'flex', gap: '0.35rem' }}>
-            <input className="input" value={name} onChange={e => setName(e.target.value)}
-              autoFocus style={{ flex: 1, fontSize: '0.82em' }} />
+            <input
+              className="input" value={name} autoFocus
+              onChange={e => setName(e.target.value)}
+              style={{ flex: 1, fontSize: '0.82em' }}
+            />
             <button className="btn btn-primary" type="submit" style={{ fontSize: '0.75em' }}>Save</button>
-            <button className="btn" type="button" style={{ fontSize: '0.75em' }} onClick={() => setRenaming(false)}>Cancel</button>
+            <button className="btn" type="button" style={{ fontSize: '0.75em' }}
+              onClick={() => setRenaming(false)}>Cancel</button>
           </form>
         ) : (
-          /* Title area — actions fade in only when THIS area is hovered */
+          /* Title + action buttons — fade in on name-area hover */
           <div
             className="section-name-area"
             onMouseEnter={() => setTitleHovered(true)}
             onMouseLeave={() => setTitleHovered(false)}
-            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.1rem', minWidth: 0, overflow: 'visible' }}
+            style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: '0.1rem', minWidth: 0, overflow: 'visible' }}
           >
             <span className="section-name">{section.name}</span>
+
             {!locked && (
               <div
                 className="section-actions"
-                style={{ opacity: titleHovered ? 1 : 0, transition: 'opacity 0.15s', display: 'flex', gap: 0, flexShrink: 0 }}
+                style={{ opacity: titleHovered ? 1 : 0, transition: 'opacity 0.15s',
+                  display: 'flex', gap: 0, flexShrink: 0 }}
               >
-                <button className="icon-btn" title="Add link"
+                <button
+                  className="icon-btn" title="Add link"
                   style={{ padding: 0, width: 18, height: 18, fontSize: '0.68em', borderRadius: 3 }}
-                  onClick={e => { e.stopPropagation(); setCollapsed(false); setAddingLink(true) }}>+</button>
-                <button className="icon-btn" title="Rename"
+                  onClick={e => { e.stopPropagation(); setCollapsed(false); setAddingLink(true) }}
+                >+</button>
+                <button
+                  className="icon-btn" title="Rename"
                   style={{ padding: 0, width: 18, height: 18, fontSize: '0.68em', borderRadius: 3 }}
-                  onClick={e => { e.stopPropagation(); setRenaming(true) }}>✎</button>
-                <button className="icon-btn section-delete-btn" title="Delete"
+                  onClick={e => { e.stopPropagation(); setRenaming(true) }}
+                >✎</button>
+                <button
+                  className="icon-btn section-delete-btn" title="Delete"
                   style={{ padding: 0, width: 18, height: 18, fontSize: '0.68em', borderRadius: 3 }}
-                  onClick={deleteSection}>✕</button>
+                  onClick={deleteSection}
+                >✕</button>
               </div>
             )}
           </div>
         )}
 
+        {/* Collapse arrow — only visible on header hover */}
         {!locked && (
-          <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem', flexShrink: 0 }}>
-            {collapsed ? '▸' : '▾'}
+          <span style={{
+            color: 'var(--text-muted)', fontSize: '0.7em',
+            marginLeft: '0.15rem', flexShrink: 0,
+            opacity: headerHovered ? 1 : 0,
+            transition: 'opacity 0.15s',
+          }}>
+            {collapsed ? '▶' : '▼'}
           </span>
         )}
       </div>
 
+      {/* ── Links ──────────────────────────────────── */}
       {!collapsed && !ghost && (
         <Links
           links={sectionLinks}
@@ -179,35 +233,29 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   )
 }
 
-/* ── Main Sections component ── */
+// ─── Main Sections component ───────────────────────────────────────────────
 export default function Sections({
-  sections = [],
-  links = [],
-  userId,
-  workspaceId,
-  onRefresh,
-  openInNewTab = true,
-  colCount = 2,
-  triggerAdd = 0,
-  triggerImport = 0,
-  triggerCollapseAll = 0,
-  triggerExpandAll = 0,
+  sections = [], links = [], userId, workspaceId, onRefresh,
+  openInNewTab = true, colCount = 2,
+  triggerAdd = 0, triggerImport = 0,
+  triggerCollapseAll = 0, triggerExpandAll = 0,
   locked = false,
 }) {
-  const [cols, setCols] = useState(() => buildColumns(sections, colCount))
+  const [cols,          setCols]          = useState(() => buildColumns(sections, colCount))
   const [activeSection, setActiveSection] = useState(null)
-  const [dragging, setDragging] = useState(false)
+  const [dragging,      setDragging]      = useState(false)
   const [addingSection, setAddingSection] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [showImport, setShowImport] = useState(false)
-  const [importText, setImportText] = useState('')
-  const [importError, setImportError] = useState('')
+  const [newName,       setNewName]       = useState('')
+  const [showImport,    setShowImport]    = useState(false)
+  const [importText,    setImportText]    = useState('')
+  const [importError,   setImportError]   = useState('')
   const [importLoading, setImportLoading] = useState(false)
-  const [importDone, setImportDone] = useState(false)
+  const [importDone,    setImportDone]    = useState(false)
   const [forceCollapsed, setForceCollapsed] = useState(undefined)
 
   const safeLinks = Array.isArray(links) ? links : []
-  const colsRef = useRef(cols)
+  const colsRef   = useRef(cols)
+
   useEffect(() => { colsRef.current = cols }, [cols])
 
   useEffect(() => {
@@ -215,24 +263,27 @@ export default function Sections({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, colCount])
 
-  useEffect(() => { if (triggerAdd > 0) setAddingSection(true) }, [triggerAdd])
+  useEffect(() => { if (triggerAdd    > 0) setAddingSection(true) }, [triggerAdd])
   useEffect(() => {
     if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
+
   useEffect(() => {
     if (!triggerCollapseAll) return
     setForceCollapsed(true)
     setTimeout(() => setForceCollapsed(undefined), 100)
   }, [triggerCollapseAll])
+
   useEffect(() => {
     if (!triggerExpandAll) return
     setForceCollapsed(false)
     setTimeout(() => setForceCollapsed(undefined), 100)
   }, [triggerExpandAll])
 
+  // ── DnD ────────────────────────────────────────────────────────────────
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(PointerSensor,    { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor,   { coordinateGetter: sortableKeyboardCoordinates }),
   )
 
   const handleDragStart = ({ active }) => {
@@ -245,16 +296,16 @@ export default function Sections({
 
   const handleDragOver = ({ active, over }) => {
     if (locked || !over || active.id === over.id) return
-    const current = colsRef.current
+    const current  = colsRef.current
     const activeCol = findColIndex(current, active.id)
-    const overCol = findColIndex(current, over.id)
+    const overCol   = findColIndex(current, over.id)
     if (activeCol === -1 || overCol === -1 || activeCol === overCol) return
     setCols(prev => {
       const next = prev.map(col => [...col])
       const activeItem = next[activeCol].find(s => s.id === active.id)
       if (!activeItem) return prev
       next[activeCol] = next[activeCol].filter(s => s.id !== active.id)
-      const overIndex = next[overCol].findIndex(s => s.id === over.id)
+      const overIndex  = next[overCol].findIndex(s => s.id === over.id)
       if (overIndex === -1) next[overCol].push(activeItem)
       else next[overCol].splice(overIndex, 0, activeItem)
       return next
@@ -265,29 +316,33 @@ export default function Sections({
     if (locked) return
     setDragging(false); setActiveSection(null)
     if (!over) { setCols(buildColumns(sections, colCount)); return }
-    const current = colsRef.current
+    const current   = colsRef.current
     const activeCol = findColIndex(current, active.id)
-    const overCol = findColIndex(current, over.id)
+    const overCol   = findColIndex(current, over.id)
     if (activeCol === -1) return
     let finalCols = current.map(col => [...col])
     if (activeCol === overCol) {
       const from = finalCols[activeCol].findIndex(s => s.id === active.id)
-      const to = finalCols[activeCol].findIndex(s => s.id === over.id)
-      if (from !== -1 && to !== -1 && from !== to) finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
+      const to   = finalCols[activeCol].findIndex(s => s.id === over.id)
+      if (from !== -1 && to !== -1 && from !== to)
+        finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
     }
     setCols(finalCols)
     const updates = []
-    finalCols.forEach((col, ci) => col.forEach((s, i) => updates.push(
-      supabase.from('sections').update({ position: i, colindex: ci }).eq('id', s.id)
-    )))
+    finalCols.forEach((col, ci) =>
+      col.forEach((s, i) =>
+        updates.push(supabase.from('sections').update({ position: i, colindex: ci }).eq('id', s.id))
+      )
+    )
     await Promise.all(updates)
     onRefresh()
   }
 
+  // ── Section CRUD ───────────────────────────────────────────────────────
   const addSection = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
-    const current = buildColumns(sections, colCount)
+    const current  = buildColumns(sections, colCount)
     const shortest = current.reduce((best, col, i) => col.length < current[best].length ? i : best, 0)
     await supabase.from('sections').insert({
       user_id: userId, workspace_id: workspaceId,
@@ -304,17 +359,18 @@ export default function Sections({
       for (const g of groups) {
         const current = buildColumns(sections, colCount)
         const ci = current.reduce((best, col, i) => col.length < current[best].length ? i : best, 0)
-        const { data: sec, error: secErr } = await supabase.from('sections').insert({
-          user_id: userId, workspace_id: workspaceId,
-          name: g.name, position: current[ci].length, colindex: ci,
-        }).select().single()
+        const { data: sec, error: secErr } = await supabase
+          .from('sections')
+          .insert({ user_id: userId, workspace_id: workspaceId, name: g.name, position: current[ci].length, colindex: ci })
+          .select().single()
         if (secErr) throw new Error(secErr.message)
-        if (g.links.length) await supabase.from('links').insert(
-          g.links.map((lnk, li) => ({
-            user_id: userId, workspace_id: workspaceId, section_id: sec.id,
-            title: lnk.title, url: lnk.url, position: li,
-          }))
-        )
+        if (g.links.length)
+          await supabase.from('links').insert(
+            g.links.map((lnk, li) => ({
+              user_id: userId, workspace_id: workspaceId,
+              section_id: sec.id, title: lnk.title, url: lnk.url, position: li,
+            }))
+          )
       }
       setImportDone(true); onRefresh()
       setTimeout(() => { setShowImport(false); setImportText(''); setImportDone(false) }, 1800)
@@ -322,42 +378,62 @@ export default function Sections({
     finally { setImportLoading(false) }
   }
 
+  // ── Render ─────────────────────────────────────────────────────────────
   return (
     <div style={{ width: '100%' }}>
-      <DndContext sensors={sensors} collisionDetection={closestCenter}
-        onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+      >
         <div className="sections-grid">
           {cols.map((col, ci) => (
             <div key={ci} className="section-col">
               <SortableContext items={col.map(s => s.id)} strategy={verticalListSortingStrategy}>
                 {col.map(section => (
-                  <SectionCard key={section.id} section={section} links={safeLinks}
-                    userId={userId} workspaceId={workspaceId} onRefresh={onRefresh}
-                    openInNewTab={openInNewTab} ghost={activeSection?.id === section.id}
-                    locked={locked} forceCollapsed={forceCollapsed} />
+                  <SectionCard
+                    key={section.id}
+                    section={section}
+                    links={safeLinks}
+                    userId={userId}
+                    workspaceId={workspaceId}
+                    onRefresh={onRefresh}
+                    openInNewTab={openInNewTab}
+                    ghost={activeSection?.id === section.id}
+                    locked={locked}
+                    forceCollapsed={forceCollapsed}
+                  />
                 ))}
               </SortableContext>
             </div>
           ))}
         </div>
+
         <DragOverlay>
           {activeSection && (
-            <div className="section-card" style={{ opacity: 0.92, boxShadow: '0 8px 32px #0008', cursor: 'grabbing', pointerEvents: 'none' }}>
+            <div className="section-card"
+              style={{ opacity: 0.92, boxShadow: '0 8px 32px #0008', cursor: 'grabbing', pointerEvents: 'none' }}>
               <div className="section-header" style={{ cursor: 'grabbing' }}>
-                <span className="drag-handle" style={{ opacity: 0.5 }} />
+                <span className="drag-handle" style={{ opacity: 0.5 }}>≡</span>
                 <span className="section-name">{activeSection.name}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>▾</span>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>▼</span>
               </div>
             </div>
           )}
         </DragOverlay>
       </DndContext>
 
+      {/* ── Add section form ─────────────────────── */}
       {addingSection && (
         <div className="add-section-fixed">
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
-            <input className="input" value={newName} onChange={e => setNewName(e.target.value)}
-              placeholder="Section name" autoFocus style={{ width: 150, fontSize: '0.82em' }} />
+            <input
+              className="input" value={newName} placeholder="Section name" autoFocus
+              onChange={e => setNewName(e.target.value)}
+              style={{ width: 150, fontSize: '0.82em' }}
+            />
             <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>Add</button>
             <button className="btn" type="button" style={{ fontSize: '0.82em' }}
               onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
@@ -365,6 +441,7 @@ export default function Sections({
         </div>
       )}
 
+      {/* ── Import modal ─────────────────────────── */}
       {showImport && (
         <div className="modal-overlay" onClick={() => setShowImport(false)}>
           <div className="modal-box" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
@@ -373,9 +450,12 @@ export default function Sections({
               <button className="icon-btn" onClick={() => setShowImport(false)}>✕</button>
             </div>
             <div style={{ fontSize: '0.8em', color: 'var(--text-dim)', lineHeight: 1.55 }}>
-              In A Fine Start go to <strong>Settings → Export bookmarks</strong>, copy the entire code block, then paste it below.
+              In A Fine Start go to <strong>Settings → Export bookmarks</strong>, copy the entire
+              code block, then paste it below.
             </div>
-            <textarea value={importText} onChange={e => { setImportText(e.target.value); setImportError('') }}
+            <textarea
+              value={importText}
+              onChange={e => { setImportText(e.target.value); setImportError('') }}
               placeholder="Paste A Fine Start export code here…"
               style={{
                 width: '100%', minHeight: 140, resize: 'vertical',
@@ -383,12 +463,13 @@ export default function Sections({
                 border: `1px solid ${importError ? 'var(--danger)' : 'var(--border)'}`,
                 borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.65rem',
                 fontSize: '0.78em', fontFamily: 'var(--font)', outline: 'none', lineHeight: 1.5,
-              }} />
+              }}
+            />
             {importError && (
               <div style={{
                 fontSize: '0.78em', color: 'var(--danger)', lineHeight: 1.6,
                 background: 'color-mix(in srgb, var(--danger) 10%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)',
+                border:     '1px solid color-mix(in srgb, var(--danger) 30%, transparent)',
                 borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.65rem', whiteSpace: 'pre-wrap',
               }}>{importError}</div>
             )}
@@ -396,7 +477,7 @@ export default function Sections({
               <div style={{
                 fontSize: '0.82em', color: 'var(--success)',
                 background: 'color-mix(in srgb, var(--success) 10%, transparent)',
-                border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)',
+                border:     '1px solid color-mix(in srgb, var(--success) 30%, transparent)',
                 borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.65rem',
               }}>✓ Import successful!</div>
             )}
