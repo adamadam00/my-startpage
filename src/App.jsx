@@ -417,16 +417,20 @@ export default function App() {
 
   // Save theme to Supabase (debounced 1.5s). Wallpaper stripped — too large for DB.
   const saveThemeRef = useRef(null)
-  const persistTheme = (t) => {
+  const persistTheme = (t, immediate = false) => {
     clearTimeout(saveThemeRef.current)
-    saveThemeRef.current = setTimeout(async () => {
+    const doSave = async () => {
       const uid = sessionRef.current?.user?.id
       if (!uid) return
       const { wallpaper, ...rest } = t   // keep wallpaper localStorage-only
-      await supabase.from('user_settings')
+      const { error } = await supabase
+        .from('user_settings')
         .upsert({ user_id: uid, theme: rest, updated_at: new Date().toISOString() },
                  { onConflict: 'user_id' })
-    }, 1500)
+      if (error) console.error('persistTheme error:', error.message)
+    }
+    if (immediate) doSave()
+    else saveThemeRef.current = setTimeout(doSave, 1500)
   }
 
   const setTheme = (updater) => {
@@ -509,7 +513,7 @@ export default function App() {
 
   // ── Load theme from Supabase ──────────────────────────────────────────────
   const loadUserSettings = async () => {
-    const uid = session?.user?.id
+    const uid = sessionRef.current?.user?.id ?? session?.user?.id
     if (!uid) return
     try {
       const { data, error } = await supabase
@@ -518,14 +522,23 @@ export default function App() {
         .eq('user_id', uid)
         .maybeSingle()
       if (error) { console.error('loadUserSettings:', error.message); return }
+      const localWallpaper = (() => {
+        try { return JSON.parse(localStorage.getItem('current_theme') || '{}').wallpaper } catch { return null }
+      })()
       if (data?.theme && Object.keys(data.theme).length > 0) {
-        // Merge: Supabase wins, but preserve wallpaper from localStorage
-        const localWallpaper = (() => {
-          try { return JSON.parse(localStorage.getItem('current_theme') || '{}').wallpaper } catch { return null }
-        })()
+        // Supabase has data — apply it, preserving local wallpaper
         const merged = { ...DEFAULT_THEME, ...data.theme, ...(localWallpaper ? { wallpaper: localWallpaper } : {}) }
         setThemeState(merged)
         localStorage.setItem('current_theme', JSON.stringify(merged))
+      } else {
+        // Supabase row is empty — bootstrap it from localStorage immediately
+        const localTheme = (() => {
+          try { return JSON.parse(localStorage.getItem('current_theme') || '{}') } catch { return {} }
+        })()
+        if (Object.keys(localTheme).length > 0) {
+          console.log('Bootstrapping user_settings from localStorage...')
+          persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
+        }
       }
     } catch (err) {
       console.error('loadUserSettings error:', err.message)
@@ -839,7 +852,7 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={() => { applyTheme(theme); handleRefresh() }}>↻</button>
+            <button className="icon-btn" title="Refresh" onClick={() => { loadUserSettings(); applyTheme(theme); handleRefresh() }}>↻</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
