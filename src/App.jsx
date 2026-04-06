@@ -117,11 +117,7 @@ function applyTheme(t) {
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
   const lph = t.linksPaddingH ?? 0.75
-  if (lph >= 0) {
-    styleEl.textContent = `.links-list { padding-left: ${lph}rem !important; padding-right: ${lph}rem !important; margin-left: 0 !important; width: 100% !important; }`
-  } else {
-    styleEl.textContent = `.links-list { padding-left: 0 !important; padding-right: 0 !important; margin-left: ${lph}rem !important; width: calc(100% - ${lph * 2 * -1}rem) !important; }`
-  }
+  styleEl.textContent = `.links-list { padding-left: ${lph}rem !important; padding-right: ${lph}rem !important; }`
 
   // ── Plasma speed (already CSS vars) + custom plasma colours
   const speed = t.bgAnimSpeed ?? 1

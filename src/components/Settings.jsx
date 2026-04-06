@@ -60,21 +60,20 @@ const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
 function Row({ label, children, dimLabel = false }) {
   return (
     <div style={{
-      display: 'grid',
-      gridTemplateColumns: '110px 1fr',
+      display: 'flex',
       alignItems: 'center',
-      gap: '0.35rem',
-      padding: '0.1rem 0',
-      minHeight: '1.5rem',
+      justifyContent: 'space-between',
+      gap: '0.75rem',
+      padding: '0.12rem 0',
+      minHeight: '1.6rem',
     }}>
       <span style={{
         fontSize: '0.82em',
         color: dimLabel ? 'var(--text-muted)' : 'var(--text-dim)',
         whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
+        flexShrink: 0,
       }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
         {children}
       </div>
     </div>
@@ -431,24 +430,26 @@ export default function Settings({
               onChange={v => set('linkGap', v / 100)} unit="%" />
           </Row>
           <Row label="Link left padding">
-            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
+            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={0} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
           </Row>
           <Row label="Handle opacity">
             <Slider val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
           </Row>
 
-          <SectionTitle>Page scale</SectionTitle>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.15rem' }}>
-            {PAGE_SCALES.map(v => (
-              <button
-                key={v}
-                className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`}
-                onClick={() => set('pageScale', v)}
-              >
-                {Math.round(v * 100)}%
-              </button>
-            ))}
+          <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
+            <SectionTitle>Page scale</SectionTitle>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
+              {PAGE_SCALES.map(v => (
+                <button
+                  key={v}
+                  className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`}
+                  onClick={() => set('pageScale', v)}
+                >
+                  {Math.round(v * 100)}%
+                </button>
+              ))}
+            </div>
           </div>
 
         </Group>
