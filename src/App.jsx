@@ -435,7 +435,8 @@ export default function App() {
 
   const setTheme = (updater) => {
     setThemeState(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
+      const base = typeof updater === 'function' ? updater(prev) : updater
+      const next = { ...base, _savedAt: Date.now() }
       localStorage.setItem('current_theme', JSON.stringify(next))
       persistTheme(next)
       return next
@@ -522,27 +523,38 @@ export default function App() {
         .eq('user_id', uid)
         .maybeSingle()
       if (error) { console.error('loadUserSettings:', error.message); return }
-      const localWallpaper = (() => {
-        try { return JSON.parse(localStorage.getItem('current_theme') || '{}').wallpaper } catch { return null }
+      // Pick the newer source using _savedAt timestamps
+      const localTheme = (() => {
+        try { return JSON.parse(localStorage.getItem('current_theme') || '{}') } catch { return {} }
       })()
-      if (data?.theme && Object.keys(data.theme).length > 0) {
-        // Supabase has data — apply it, preserving local wallpaper
-        const merged = { ...DEFAULT_THEME, ...data.theme, ...(localWallpaper ? { wallpaper: localWallpaper } : {}) }
+      const localTs = localTheme._savedAt || 0
+      const remoteTs = data?.theme?._savedAt || 0
+      const hasRemote = data?.theme && Object.keys(data.theme).length > 0
+
+      if (hasRemote && remoteTs > localTs) {
+        // Supabase is newer (e.g. changed on another browser) — pull it down
+        const wallpaper = localTheme.wallpaper || null
+        const merged = { ...DEFAULT_THEME, ...data.theme, ...(wallpaper ? { wallpaper } : {}) }
         setThemeState(merged)
         localStorage.setItem('current_theme', JSON.stringify(merged))
+        console.log('Loaded theme from Supabase (remote is newer)')
       } else {
-        // Supabase row is empty — bootstrap it from localStorage immediately
-        const localTheme = (() => {
-          try { return JSON.parse(localStorage.getItem('current_theme') || '{}') } catch { return {} }
-        })()
+        // localStorage is newer or same — push it up to Supabase
         if (Object.keys(localTheme).length > 0) {
-          console.log('Bootstrapping user_settings from localStorage...')
           persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
+          console.log('Pushed theme to Supabase (local is newer)')
         }
       }
     } catch (err) {
       console.error('loadUserSettings error:', err.message)
     }
+  }
+
+  // ── Sign out ─────────────────────────────────────────────────────────────
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
+    setSession(null)
+    setSettingsOpen(false)
   }
 
   // ── Workspace bootstrap ───────────────────────────────────────────────────
@@ -891,6 +903,8 @@ export default function App() {
             setTheme={setTheme}
             onSave={() => { applyTheme(theme); localStorage.setItem('current_theme', JSON.stringify(theme)) }}
             onClose={() => setSettingsOpen(false)}
+            onSignOut={handleSignOut}
+            userEmail={session?.user?.email ?? ''}
             onImageUpload={handleImageUpload}
             onBgImageUpload={handleBgImageUpload}
             onExportBackup={exportFullBackup}

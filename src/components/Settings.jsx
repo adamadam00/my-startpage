@@ -179,6 +179,7 @@ export default function Settings({
   fileRef, backupFileRef, importingBackup,
   workspaces, activeWs,
   onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs,
+  onSignOut, userEmail,
 }) {
   const [newWsName, setNewWsName]   = useState('')
   const [groupSignal, setGroupSignal] = useState(null)   // bulk open/close signal
@@ -708,7 +709,18 @@ export default function Settings({
       </div>
 
       {/* ── Footer — z-index above panel so it's always visible ── */}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
+      {onSignOut && (
+        <div style={{ padding: '0.45rem 0.75rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.78em', color: 'var(--text-muted)' }}>
+          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {userEmail || 'Signed in'}
+          </span>
+          <button className="btn" style={{ flexShrink: 0, fontSize: '0.85em', padding: '0.2rem 0.6rem' }}
+            onClick={onSignOut}>
+            Sign out
+          </button>
+        </div>
+      )}
+            <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
        
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>
