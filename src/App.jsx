@@ -59,15 +59,33 @@ function WeatherWidget({ delay = 5000 }) {
   if (!wx) return null
   const wDur = getComputedStyle(document.documentElement).getPropertyValue('--weather-fade-dur').trim() || '1.4s'
   const fadeStyle = { opacity: visible ? 1 : 0, transition: `opacity ${wDur} ease` }
-  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  const icons = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌦️',82:'🌦️',95:'⛈️',96:'⛈️',99:'⛈️' }
   const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
     <div className="weather-wrap" style={fadeStyle}>
-      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡️'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}{'°'}</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
+}
+
+
+// ─── SETTINGS ERROR BOUNDARY ─────────────────────────────────────────────────
+import React from 'react'
+class SettingsErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) return (
+      <div style={{ position:'fixed',bottom:'1rem',right:'1rem',background:'var(--bg2)',
+        border:'1px solid var(--danger)',borderRadius:'var(--radius)',padding:'0.75rem 1rem',
+        color:'var(--danger)',fontSize:'0.82em',zIndex:200,maxWidth:320 }}>
+        Settings failed to load: {String(this.state.error.message)}
+      </div>
+    )
+    return this.props.children
+  }
 }
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
@@ -721,6 +739,7 @@ export default function App() {
 
         {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
+          <SettingsErrorBoundary>
           <Suspense fallback={null}>
           <Settings
             theme={theme}
