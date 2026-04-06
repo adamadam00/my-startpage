@@ -1,80 +1,76 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import Auth from './components/Auth'
-import Toolbar from './components/Toolbar'
-import WorkspaceTabs from './components/WorkspaceTabs'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
 
-// ─── DEFAULT THEME ────────────────────────────────────────────────────────────
-// Keys match exactly what Settings.jsx reads/writes
+// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
+function ClockWidget() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const hm   = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  return (
+    <div className="clock-compact">
+      <span className="clock-compact-time">{hm}</span>
+      <span className="clock-compact-date">{date}</span>
+    </div>
+  )
+}
+
+// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+function WeatherWidget() {
+  const [wx, setWx] = useState(null)
+  useEffect(() => {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+      } catch {}
+    }, () => {})
+  }, [])
+  if (!wx) return null
+  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  return (
+    <div className="weather-wrap">
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+    </div>
+  )
+}
+
+// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
-  // Surfaces
-  bg:              '#0c0c0f',
-  bg2:             '#13131a',
-  bg3:             '#1a1a24',
-  card:            '#13131a',
-  cardOpacity:     1,
-  // Borders
-  border:          '#2a2a3a',
-  borderHover:     '#3d3d55',
-  borderOpacity:   1,
-  handleOpacity:   15,       // 0-100; applyTheme divides by 100
-  // Text
-  text:            '#e8e8f0',
-  textDim:         '#7878a0',
-  titleColor:      '#7878a0',
-  // Accent / state
-  accent:          '#6c8fff',
-  danger:          '#ff6b6b',
-  success:         '#6bffb8',
-  // Buttons
-  btnBg:           '#1e3a8a',
-  btnText:         '#ffffff',
-  // Typography
-  font:            "'DM Mono', monospace",
-  fontSize:        14,
-  topbarFontSize:  12,
-  clockWidgetSize: 1,
-  notesFontSize:   13,
-  // Radii
-  radius:          10,
-  sectionRadius:   0,
-  // Spacing
-  linkGap:         0.5,
-  cardPadding:     0.75,
-  sectionGap:      0,
-  sectionGapH:     0,
-  mainGapTop:      12,
-  pageScale:       1,
-  // Favicons
-  faviconOpacity:    1,
-  faviconGreyscale:  false,
-  faviconSize:       13,
-  // Pattern / background
-  patternColor:    '#2a2a3a',
-  patternOpacity:  1,
-  bgPreset:        'noise',
-  // Wallpaper overlay
-  wallpaper:       '',
-  wallpaperFit:    'cover',
-  wallpaperX:      50,
-  wallpaperY:      50,
-  wallpaperScale:  100,
-  wallpaperBlur:   0,
-  wallpaperDim:    35,
-  wallpaperOpacity: 100,
-  // Layout
-  sectionsCols:    4,
-  // Notes styling
-  notesGap:        0,
-  notesCardBg:     '#13131a',
-  notesTextColor:  '#e8e8f0',
-  notesTextBg:     '#0c0c0f',
-  // UI
-  settingsSide:    'right',
+  bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
+  card: '#13131a', cardOpacity: 1,
+  border: '#2a2a3a', borderHover: '#3d3d55', borderOpacity: 1,
+  handleOpacity: 15,
+  text: '#e8e8f0', textDim: '#7878a0', titleColor: '#7878a0',
+  accent: '#6c8fff', danger: '#ff6b6b', success: '#6bffb8',
+  btnBg: '#3a3a4a', btnText: '#e8e8f0',          // grey by default
+  font: "'DM Mono', monospace",
+  fontSize: 14, topbarFontSize: 12, clockWidgetSize: 1, notesFontSize: 13,
+  radius: 10, sectionRadius: 0,
+  linkGap: 0.5, cardPadding: 0.75,
+  sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
+  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13,
+  patternColor: '#2a2a3a', patternOpacity: 1,
+  bgPreset: 'noise',
+  wallpaper: '', wallpaperFit: 'cover',
+  wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
+  wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
+  sectionsCols: 4,
+  notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  settingsSide: 'right',
 }
 
 // ─── APPLY THEME ─────────────────────────────────────────────────────────────
@@ -82,51 +78,40 @@ function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
   const s = (k, v) => { if (v !== undefined && v !== null) root.style.setProperty(k, String(v)) }
-
-  s('--bg',             t.bg)
-  s('--bg2',            t.bg2)
-  s('--bg3',            t.bg3)
-  s('--card',           t.card)
-  s('--card-opacity',   t.cardOpacity ?? 1)
-  s('--border',         t.border)
-  s('--border-hover',   t.borderHover)
+  s('--bg', t.bg); s('--bg2', t.bg2); s('--bg3', t.bg3)
+  s('--card', t.card); s('--card-opacity', t.cardOpacity ?? 1)
+  s('--border', t.border); s('--border-hover', t.borderHover)
   s('--border-opacity', t.borderOpacity ?? 1)
   s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
-  s('--text',           t.text)
-  s('--text-dim',       t.textDim)
-  s('--text-muted',     t.textMuted ?? t.textDim)
-  s('--title-color',    t.titleColor ?? t.textDim)
-  s('--accent',         t.accent)
+  s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
+  s('--title-color', t.titleColor ?? t.textDim)
+  s('--accent', t.accent)
   if (t.accent) { s('--accent-dim', t.accent + '33'); s('--accent-glow', t.accent + '22') }
-  s('--danger',         t.danger)
-  s('--success',        t.success)
-  s('--btn-bg',         t.btnBg)
-  s('--btn-text',       t.btnText)
-  s('--font',           t.font)
-  if (t.fontSize)        s('--font-size',         t.fontSize + 'px')
-  if (t.topbarFontSize)  s('--topbar-font-size',   t.topbarFontSize + 'px')
-  if (t.clockWidgetSize) s('--clock-widget-size',  t.clockWidgetSize + 'rem')
-  if (t.notesFontSize)   s('--notes-font-size',    t.notesFontSize + 'px')
-  if (t.faviconSize)     s('--favicon-size',       t.faviconSize + 'px')
-  if (t.radius != null) { s('--radius', t.radius + 'px'); s('--radius-sm', Math.max(2, t.radius - 4) + 'px') }
+  s('--danger', t.danger); s('--success', t.success)
+  s('--btn-bg', t.btnBg); s('--btn-text', t.btnText)
+  s('--font', t.font)
+  if (t.fontSize)        s('--font-size',        t.fontSize + 'px')
+  if (t.topbarFontSize)  s('--topbar-font-size',  t.topbarFontSize + 'px')
+  if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
+  if (t.notesFontSize)   s('--notes-font-size',   t.notesFontSize + 'px')
+  if (t.faviconSize)     s('--favicon-size',      t.faviconSize + 'px')
+  if (t.radius != null)  { s('--radius', t.radius + 'px'); s('--radius-sm', Math.max(2, t.radius - 4) + 'px') }
   s('--section-radius',  (t.sectionRadius ?? 0) + 'px')
-  if (t.linkGap != null)     s('--link-gap',      t.linkGap + 'rem')
-  if (t.cardPadding != null) s('--card-padding',  t.cardPadding + 'rem')
-  s('--section-gap',     (t.sectionGap ?? 0) + 'px')
-  s('--section-gap-h',   (t.sectionGapH ?? 0) + 'px')
-  s('--main-gap-top',    (t.mainGapTop ?? 12) + 'px')
-  s('--sections-cols',   t.sectionsCols ?? 4)
+  if (t.linkGap != null)     s('--link-gap',     t.linkGap + 'rem')
+  if (t.cardPadding != null) s('--card-padding', t.cardPadding + 'rem')
+  s('--section-gap',   (t.sectionGap ?? 0) + 'px')
+  s('--section-gap-h', (t.sectionGapH ?? 0) + 'px')
+  s('--main-gap-top',  (t.mainGapTop ?? 12) + 'px')
+  s('--sections-cols',  t.sectionsCols ?? 4)
   s('--favicon-opacity', t.faviconOpacity ?? 1)
   s('--favicon-filter',  t.faviconGreyscale ? 'grayscale(1)' : 'none')
-  s('--pattern-color',   t.patternColor)
-  s('--pattern-opacity', t.patternOpacity ?? 1)
+  s('--pattern-color',   t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
   s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap',       (t.notesGap ?? 0) + 'px')
   if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
   if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
   if (t.notesTextBg)    s('--notes-input-bg',   t.notesTextBg)
-
   root.dataset.settingsSide = t.settingsSide || 'right'
   document.body.style.fontFamily       = t.font || "'DM Mono', monospace"
   document.body.style.backgroundColor = t.bg   || '#0c0c0f'
@@ -138,22 +123,27 @@ function applyTheme(t) {
 export default function App() {
   const [session,  setSession]  = useState(null)
   const sessionRef              = useRef(null)
-
   const [workspaces, setWorkspaces] = useState([])
   const [activeWs,   setActiveWs]   = useState(null)
+  const [sections,   setSections]   = useState([])
+  const [links,      setLinks]      = useState([])
+  const [notes,      setNotes]      = useState([])
 
-  const [sections, setSections] = useState([])
-  const [links,    setLinks]    = useState([])
-  const [notes,    setNotes]    = useState([])
-
-  const [theme, setTheme] = useState(() => {
+  const [theme, setThemeState] = useState(() => {
     try { return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem('current_theme')) || {}) } }
     catch { return DEFAULT_THEME }
   })
 
-  // bg image stored separately (can be large)
-  const [bgImage, setBgImage] = useState(() => localStorage.getItem('bg_image') || '')
+  // Wrap setTheme so every change auto-saves to localStorage
+  const setTheme = (updater) => {
+    setThemeState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      localStorage.setItem('current_theme', JSON.stringify(next))
+      return next
+    })
+  }
 
+  const [bgImage,         setBgImage]         = useState(() => localStorage.getItem('bg_image') || '')
   const [search,          setSearch]          = useState('')
   const [settingsOpen,    setSettingsOpen]    = useState(false)
   const [loading,         setLoading]         = useState(true)
@@ -162,14 +152,14 @@ export default function App() {
   const fileRef       = useRef(null)
   const backupFileRef = useRef(null)
 
+  // Apply theme on every change (auto-saved via setTheme wrapper)
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null)
-      setLoading(false)
+      setSession(data.session ?? null); setLoading(false)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_e, sess) => setSession(sess ?? null))
     return () => listener.subscription.unsubscribe()
@@ -206,11 +196,9 @@ export default function App() {
     const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
       supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
       supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: true }),
+      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }), // newest first
     ])
-    setSections(secData || [])
-    setLinks(linkData || [])
-    setNotes(noteData || [])
+    setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
   }
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
@@ -223,15 +211,13 @@ export default function App() {
   }, [links, search])
 
   // ── Workspace CRUD ────────────────────────────────────────────────────────
-  // accepts a name string (from Settings input) OR no arg (uses prompt, for WorkspaceTabs)
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
     const { data, error } = await supabase
       .from('workspaces').insert({ user_id: session.user.id, name: wsName.trim() }).select().single()
     if (error) return alert(error.message)
-    setWorkspaces(prev => [...prev, data])
-    setActiveWs(data.id)
+    setWorkspaces(prev => [...prev, data]); setActiveWs(data.id)
   }
 
   const renameWorkspace = async (id, name) => {
@@ -252,11 +238,7 @@ export default function App() {
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
-    reader.onload = (e) => {
-      const next = { ...theme, wallpaper: e.target.result }
-      setTheme(next)
-      localStorage.setItem('current_theme', JSON.stringify(next))
-    }
+    reader.onload = (e) => setTheme(prev => ({ ...prev, wallpaper: e.target.result }))
     reader.readAsDataURL(file)
   }
 
@@ -278,7 +260,7 @@ export default function App() {
     for (const ws of wsData || []) {
       const [{ data: secData }, { data: noteData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', ws.id).order('position', { ascending: true }),
-        supabase.from('notes').select('*').eq('workspace_id', ws.id).order('created_at', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', ws.id).order('created_at', { ascending: false }),
       ])
       const sectionsWithLinks = []
       for (const sec of secData || []) {
@@ -297,30 +279,23 @@ export default function App() {
     const { data: lnks } = await supabase.from('links').select('*').eq('workspace_id', activeWs).order('position')
     const rows = [['Section', 'Title', 'URL']]
     secs?.forEach(s => lnks?.filter(l => l.section_id === s.id).forEach(l => rows.push([s.name, l.title, l.url])))
-    const dq = '""'; const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, dq) + '"').join(",")).join("\n")
+    const dq = '""'
+    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, dq) + '"').join(',')).join('\n')
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
     a.download = 'startpage-links.csv'; a.click()
   }
 
   const resetWorkspaceLinks = async () => {
-    if (!confirm('Delete ALL sections and links in this workspace? Notes are kept. Cannot be undone.')) return
+    if (!confirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
     await supabase.from('links').delete().eq('workspace_id', activeWs)
     await supabase.from('sections').delete().eq('workspace_id', activeWs)
     handleRefresh()
   }
 
-  // ── Save theme ────────────────────────────────────────────────────────────
-  const saveTheme = () => {
-    localStorage.setItem('current_theme', JSON.stringify(theme))
-    applyTheme(theme)
-  }
-
   // ── Import ────────────────────────────────────────────────────────────────
   const handleImportBackup = (e) => {
-    const f = e.target.files?.[0]
-    if (!f) return
-    e.target.value = ''
+    const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
     setImportingBackup(true)
     const r = new FileReader()
     r.onload = async (ev) => {
@@ -329,8 +304,6 @@ export default function App() {
         if (!uid) throw new Error('Not logged in')
         const text = ev.target.result
         const ext  = f.name.split('.').pop().toLowerCase()
-
-        // CSV
         if (ext === 'csv') {
           const lines = text.trim().split('\n').slice(1)
           const sectionMap = {}; let pos = 0
@@ -345,10 +318,7 @@ export default function App() {
           }
           await handleRefresh(); alert('CSV imported!'); return
         }
-
         const data = JSON.parse(text)
-
-        // Array format
         if (Array.isArray(data)) {
           const rows = (Array.isArray(data[0]) ? data[0] : data).filter(g => g && typeof g === 'object')
           for (let i = 0; i < rows.length; i++) {
@@ -359,8 +329,6 @@ export default function App() {
           }
           await handleRefresh(); alert('Imported ' + rows.length + ' section(s).'); return
         }
-
-        // Full backup
         if (data.workspaces && Array.isArray(data.workspaces)) {
           if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
           for (const ws of data.workspaces) {
@@ -373,34 +341,22 @@ export default function App() {
             }
             if (ws.notes?.length) await supabase.from('notes').insert(ws.notes.map(n => ({ user_id: uid, workspace_id: newWs.id, content: n.content ?? '' })))
           }
-          if (data.theme) { const t = { ...DEFAULT_THEME, ...data.theme }; setTheme(t); applyTheme(t); localStorage.setItem('current_theme', JSON.stringify(t)) }
+          if (data.theme) { const t = { ...DEFAULT_THEME, ...data.theme }; setTheme(t) }
           await handleRefresh(); alert('Backup imported!'); return
         }
-
-        // Theme only
         if (data.bg || data.text || data.accent) {
-          const t = { ...DEFAULT_THEME, ...data }
-          setTheme(t); applyTheme(t); localStorage.setItem('current_theme', JSON.stringify(t))
-          alert('Theme imported.'); return
+          setTheme({ ...DEFAULT_THEME, ...data }); alert('Theme imported.'); return
         }
-
         alert('Unrecognised format.')
-      } catch (err) {
-        alert('Import failed: ' + err.message)
-      } finally {
-        setImportingBackup(false)
-      }
+      } catch (err) { alert('Import failed: ' + err.message) }
+      finally { setImportingBackup(false) }
     }
     r.readAsText(f)
   }
 
   // ── Background ────────────────────────────────────────────────────────────
-  const bgClass = (bgImage && theme.bgPreset === 'image')
-    ? 'bg-layer bg-image'
-    : `bg-layer bg-${theme.bgPreset || 'noise'}`
-  const bgStyle = (bgImage && theme.bgPreset === 'image')
-    ? { backgroundImage: `url(${bgImage})` }
-    : {}
+  const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
+  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
   const activeWorkspace = workspaces.find(w => w.id === activeWs)
 
@@ -409,56 +365,86 @@ export default function App() {
 
   return (
     <>
-      {/* Background layer — purely visual, no children so bg animations can't trap fixed panels */}
+      {/* Background — self-closing so bg animations never trap fixed children */}
       <div className={bgClass} style={bgStyle} />
 
-      {/* App shell — uses the .app class already defined in index.css */}
       <div className="app">
 
-        {/* Wallpaper overlay — absolute so it's scoped to .app and unaffected by bg animations */}
+        {/* Wallpaper overlay */}
         {theme.wallpaper ? (
-          <div
-            style={{
-              position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-              backgroundImage:    `url(${theme.wallpaper})`,
-              backgroundSize:     `${theme.wallpaperScale ?? 100}%`,
-              backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
-              backgroundRepeat:   'no-repeat',
-              filter:             `blur(${theme.wallpaperBlur ?? 0}px)`,
-              opacity:            (theme.wallpaperOpacity ?? 100) / 100,
-            }}
-          />
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+            backgroundImage: `url(${theme.wallpaper})`,
+            backgroundSize: `${theme.wallpaperScale ?? 100}%`,
+            backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
+            backgroundRepeat: 'no-repeat',
+            filter: `blur(${theme.wallpaperBlur ?? 0}px)`,
+            opacity: (theme.wallpaperOpacity ?? 100) / 100,
+          }} />
         ) : null}
-        {theme.wallpaperDim > 0 && theme.wallpaper ? (
+        {theme.wallpaper && theme.wallpaperDim > 0 ? (
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
-        <Toolbar
-          search={search}
-          setSearch={setSearch}
-          onAddSection={() => {}}
-          onAddNote={() => {}}
-          onRefresh={handleRefresh}
-          onOpenSettings={() => setSettingsOpen(true)}
-        />
+        {/* ── TOPBAR ──────────────────────────────────────── */}
+        <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
-        <WorkspaceTabs
-          workspaces={workspaces}
-          activeWs={activeWs}
-          setActiveWs={setActiveWs}
-          onAddWorkspace={addWorkspace}
-          onRenameWorkspace={renameWorkspace}
-          onDeleteWorkspace={deleteWorkspace}
-        />
+          {/* Workspace tabs */}
+          <div className="workspace-tabs">
+            {workspaces.map(ws => (
+              <button
+                key={ws.id}
+                className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
+                onClick={() => setActiveWs(ws.id)}
+              >
+                {ws.name}
+                {workspaces.length > 1 && (
+                  <span
+                    className="del-ws"
+                    onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
+                  >✕</span>
+                )}
+              </button>
+            ))}
+            <button
+              className="icon-btn"
+              title="New workspace"
+              onClick={() => addWorkspace()}
+              style={{ fontSize: '1.1em', lineHeight: 1 }}
+            >+</button>
+          </div>
 
-        <main
-          className="main-layout"
-          style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}
-        >
-          <div className="main-col">
-            <div className="page-title-row">
-              <h1 className="page-title">{activeWorkspace?.name || 'Workspace'}</h1>
+          <div className="topbar-divider" />
+
+          {/* Widgets: clock + weather + search */}
+          <div className="topbar-widgets">
+            <ClockWidget />
+            <div className="topbar-divider" />
+            <WeatherWidget />
+            <div className="search-compact" style={{ flex: 1 }}>
+              <input
+                className="input search-compact-input"
+                placeholder="Search links…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => e.key === 'Escape' && setSearch('')}
+              />
+              {search && (
+                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">✕</button>
+              )}
             </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="topbar-actions">
+            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>↻</button>
+            <button className="icon-btn" title="Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
+          </div>
+        </div>
+
+        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
+        <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
+          <div className="main-col">
             <Sections
               sections={sections}
               links={filteredLinks}
@@ -478,11 +464,12 @@ export default function App() {
           </div>
         </main>
 
+        {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
           <Settings
             theme={theme}
             setTheme={setTheme}
-            onSave={saveTheme}
+            onSave={() => { applyTheme(theme); localStorage.setItem('current_theme', JSON.stringify(theme)) }}
             onClose={() => setSettingsOpen(false)}
             onImageUpload={handleImageUpload}
             onBgImageUpload={handleBgImageUpload}
