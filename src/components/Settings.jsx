@@ -21,7 +21,6 @@ const BG_PRESETS = [
   { label: 'Solid',    value: 'solid'         },
   { label: 'Dots',     value: 'dots'          },
   { label: 'Grid',     value: 'grid'          },
-  { label: 'Lines',    value: 'lines'         },
   { label: 'Gradient', value: 'gradient'      },
   { label: 'Mesh',     value: 'mesh'          },
   { label: 'Aurora',   value: 'aurora'        },
@@ -31,8 +30,6 @@ const BG_PRESETS = [
   { label: 'Fog',      value: 'fog'           },
   { label: 'Scan',     value: 'scan'          },
   { label: 'Vortex',   value: 'vortex'        },
-  { label: 'Ripple',   value: 'ripple'        },
-  { label: 'Filament', value: 'filament'      },
   { label: 'Plasma',   value: 'plasma'        },
   { label: 'Inferno',  value: 'inferno'       },
   { label: 'Mint',     value: 'mint'          },
@@ -41,8 +38,17 @@ const BG_PRESETS = [
   { label: 'Bokeh',    value: 'light-bokeh'   },
   { label: 'Silver',   value: 'silver-radial' },
   { label: 'Wall',     value: 'wall-texture'  },
-  { label: 'Timber',   value: 'timber-dark'   },
+  // New animated backgrounds
+  { label: '🌿 Grass', value: 'grass'         },
+  { label: '🌊 Ocean', value: 'ocean'         },
 ]
+
+const ANIMATED_PRESETS = [
+  'aurora','starfield','fog','scan','vortex',
+  'plasma','inferno','mint','dusk','mono',
+  'grass','ocean',
+]
+const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
 const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
 
@@ -219,6 +225,45 @@ export default function Settings({
               >{p.label}</button>
             ))}
           </div>
+
+          {/* ── Dynamic controls per preset ── */}
+          {ANIMATED_PRESETS.includes(theme.bgPreset) && (
+            <>
+              <SectionTitle>Animation</SectionTitle>
+              <Row label="Speed">
+                <Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={25} max={400} step={25}
+                  onChange={v => set('bgAnimSpeed', v / 100)} unit="%" />
+              </Row>
+            </>
+          )}
+
+          {PLASMA_PRESETS.includes(theme.bgPreset) && (
+            <>
+              <SectionTitle>Plasma colours</SectionTitle>
+              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
+              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
+              <Row label="Colour 3"><ColorPick value={theme.bgC3 || '#50c8ff'} onChange={v => set('bgC3', v)} /></Row>
+              <Row label="Blur radius">
+                <Slider val={theme.bgBlur ?? 45} min={10} max={120} onChange={v => set('bgBlur', v)} unit="px" />
+              </Row>
+            </>
+          )}
+
+          {theme.bgPreset === 'grass' && (
+            <>
+              <SectionTitle>Grass colours</SectionTitle>
+              <Row label="Sky colour">    <ColorPick value={theme.bgGrassSky    || '#020609'} onChange={v => set('bgGrassSky', v)} /></Row>
+              <Row label="Ground colour"> <ColorPick value={theme.bgGrassGround || '#071a05'} onChange={v => set('bgGrassGround', v)} /></Row>
+            </>
+          )}
+
+          {theme.bgPreset === 'ocean' && (
+            <>
+              <SectionTitle>Ocean colours</SectionTitle>
+              <Row label="Sky colour">   <ColorPick value={theme.bgOceanSky   || '#000814'} onChange={v => set('bgOceanSky', v)} /></Row>
+              <Row label="Water colour"> <ColorPick value={theme.bgOceanWater || '#001428'} onChange={v => set('bgOceanWater', v)} /></Row>
+            </>
+          )}
 
           <Row label="Pattern colour">
             <ColorPick value={theme.patternColor} onChange={v => set('patternColor', v)} />

@@ -66,6 +66,9 @@ const DEFAULT_THEME = {
   patternColor: '#2a2a3a', patternOpacity: 1,
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
+  bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
+  bgGrassSky: '#020609', bgGrassGround: '#071a05',
+  bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
   sectionsCols: 4,
@@ -112,6 +115,144 @@ function applyTheme(t) {
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
   styleEl.textContent = `.links-list { padding-left: ${t.linksPaddingH ?? 0.75}rem !important; padding-right: ${t.linksPaddingH ?? 0.75}rem !important; }`
+
+  // ── Plasma speed (already CSS vars) + custom plasma colours
+  const speed = t.bgAnimSpeed ?? 1
+  const dur = (b) => `${(b / speed).toFixed(1)}s`
+  s('--plasma-speed-a', dur(20))
+  s('--plasma-speed-b', dur(28))
+  if (t.bgBlur != null) { s('--plasma-blur-a', `${t.bgBlur}px`); s('--plasma-blur-b', `${t.bgBlur + 20}px`) }
+  if (t.bgC1) {
+    const rgba = (hex, a) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})` }
+    s('--plasma-c1', rgba(t.bgC1, 0.28)); s('--plasma-c2', rgba(t.bgC2||t.bgC1, 0.25)); s('--plasma-c3', rgba(t.bgC3||t.bgC1, 0.18))
+    s('--plasma-c4', rgba(t.bgC1, 0.14)); s('--plasma-c5', rgba(t.bgC2||t.bgC1, 0.14)); s('--plasma-c6', rgba(t.bgC1, 0.16))
+  }
+
+  // ── Inject CSS for animation speed overrides + new grass/ocean backgrounds
+  const gSky = t.bgGrassSky || '#020609'
+  const gGnd = t.bgGrassGround || '#071a05'
+  const oSky = t.bgOceanSky || '#000814'
+  const oWtr = t.bgOceanWater || '#001428'
+  let bgEl = document.getElementById('sp-bg')
+  if (!bgEl) { bgEl = document.createElement('style'); bgEl.id = 'sp-bg'; document.head.appendChild(bgEl) }
+  bgEl.textContent = `
+    .bg-aurora { animation-duration: ${dur(12)} !important; }
+    .bg-layer.bg-starfield::before { animation-duration: ${dur(80)} !important; }
+    .bg-layer.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
+    .bg-layer.bg-fog::before       { animation-duration: ${dur(42)} !important; }
+    .bg-layer.bg-fog::after        { animation-duration: ${dur(58)} !important; }
+    .bg-layer.bg-scan::before      { animation-duration: ${dur(7)} !important; }
+    .bg-layer.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
+    .bg-layer.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
+
+    /* ── GRASS AT NIGHT ── */
+    .bg-layer.bg-grass {
+      overflow: hidden;
+      background-color: ${gSky};
+      background-image:
+        radial-gradient(6px 6px at 72% 12%, rgba(255,248,220,.95) 0, transparent 100%),
+        radial-gradient(45px 45px at 72% 12%, rgba(255,240,180,.22) 0, transparent 100%),
+        radial-gradient(100px 100px at 72% 12%, rgba(255,240,180,.06) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.9) 0, transparent 100%),
+        radial-gradient(1px 1px at 14% 4%, rgba(255,255,255,.7) 0, transparent 100%),
+        radial-gradient(1px 1px at 23% 11%, rgba(255,255,255,.6) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 38% 6%, rgba(255,255,255,.8) 0, transparent 100%),
+        radial-gradient(1px 1px at 50% 3%, rgba(255,255,255,.5) 0, transparent 100%),
+        radial-gradient(1px 1px at 58% 14%, rgba(255,255,255,.65) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 80% 7%, rgba(255,255,255,.75) 0, transparent 100%),
+        radial-gradient(1px 1px at 93% 4%, rgba(255,255,255,.8) 0, transparent 100%),
+        radial-gradient(1px 1px at 33% 16%, rgba(255,255,255,.45) 0, transparent 100%),
+        radial-gradient(1px 1px at 65% 10%, rgba(255,255,255,.55) 0, transparent 100%),
+        linear-gradient(to bottom, ${gSky} 0%, ${gSky}bb 55%, ${gGnd}aa 66%, ${gGnd} 100%);
+    }
+    .bg-layer.bg-grass::before {
+      content: '';
+      position: absolute; bottom: 0; left: -5%; width: 110%; height: 42%;
+      background: ${gGnd};
+      clip-path: polygon(
+        0% 100%, 0% 52%,
+        1% 30%, 2% 50%, 3% 22%, 4% 46%, 5% 10%, 6% 40%, 7% 18%, 8% 44%,
+        9% 6%,  10% 38%, 11% 20%, 12% 46%, 13% 8%,  14% 36%, 15% 16%, 16% 42%,
+        17% 4%, 18% 34%, 19% 14%, 20% 40%, 21% 4%,  22% 30%, 23% 14%, 24% 42%,
+        25% 6%, 26% 37%, 27% 18%, 28% 44%, 29% 8%,  30% 38%, 31% 16%, 32% 42%,
+        33% 5%, 34% 34%, 35% 12%, 36% 42%, 37% 4%,  38% 32%, 39% 14%, 40% 40%,
+        41% 6%, 42% 36%, 43% 18%, 44% 44%, 45% 8%,  46% 38%, 47% 16%, 48% 42%,
+        49% 4%, 50% 32%, 51% 12%, 52% 42%, 53% 4%,  54% 30%, 55% 14%, 56% 40%,
+        57% 6%, 58% 36%, 59% 18%, 60% 44%, 61% 8%,  62% 38%, 63% 16%, 64% 42%,
+        65% 4%, 66% 32%, 67% 12%, 68% 42%, 69% 4%,  70% 30%, 71% 14%, 72% 40%,
+        73% 6%, 74% 36%, 75% 18%, 76% 44%, 77% 8%,  78% 38%, 79% 16%, 80% 42%,
+        81% 4%, 82% 32%, 83% 12%, 84% 42%, 85% 4%,  86% 30%, 87% 14%, 88% 40%,
+        89% 6%, 90% 36%, 91% 18%, 92% 44%, 93% 8%,  94% 38%, 95% 16%, 96% 42%,
+        97% 4%, 98% 32%, 99% 50%, 100% 52%, 100% 100%
+      );
+      animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    .bg-layer.bg-grass::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
+      background-image:
+        radial-gradient(2.5px 2.5px at 12% 40%, rgba(180,255,80,.7) 0, transparent 100%),
+        radial-gradient(2px 2px   at 28% 55%, rgba(200,255,100,.55) 0, transparent 100%),
+        radial-gradient(2.5px 2.5px at 45% 35%, rgba(180,255,80,.65) 0, transparent 100%),
+        radial-gradient(2px 2px   at 62% 50%, rgba(200,255,100,.6) 0, transparent 100%),
+        radial-gradient(2.5px 2.5px at 78% 42%, rgba(180,255,80,.55) 0, transparent 100%),
+        radial-gradient(2px 2px   at 18% 62%, rgba(200,255,100,.5) 0, transparent 100%),
+        radial-gradient(2px 2px   at 52% 68%, rgba(180,255,80,.6) 0, transparent 100%),
+        radial-gradient(2.5px 2.5px at 88% 48%, rgba(200,255,100,.55) 0, transparent 100%),
+        linear-gradient(to top, rgba(2,6,2,.7) 0%, transparent 100%);
+      animation: firefly-blink ${dur(3)} ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes grass-sway   { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
+    @keyframes firefly-blink { 0% { opacity: .3; }              100% { opacity: 1; } }
+
+    /* ── OCEAN AT NIGHT ── */
+    .bg-layer.bg-ocean {
+      overflow: hidden;
+      background-color: ${oSky};
+      background-image:
+        radial-gradient(7px 7px at 30% 18%, rgba(255,248,220,.95) 0, transparent 100%),
+        radial-gradient(55px 55px at 30% 18%, rgba(255,240,180,.22) 0, transparent 100%),
+        radial-gradient(120px 120px at 30% 18%, rgba(255,240,180,.06) 0, transparent 100%),
+        linear-gradient(to right, transparent 28%, rgba(255,248,200,.04) 29.5%, rgba(255,248,200,.07) 30.5%, rgba(255,248,200,.04) 31.5%, transparent 33%),
+        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.85) 0, transparent 100%),
+        radial-gradient(1px 1px at 12% 4%, rgba(255,255,255,.65) 0, transparent 100%),
+        radial-gradient(1px 1px at 20% 12%, rgba(255,255,255,.55) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 42% 6%, rgba(255,255,255,.75) 0, transparent 100%),
+        radial-gradient(1px 1px at 55% 14%, rgba(255,255,255,.6) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 63% 4%, rgba(255,255,255,.8) 0, transparent 100%),
+        radial-gradient(1px 1px at 76% 10%, rgba(255,255,255,.55) 0, transparent 100%),
+        radial-gradient(1px 1px at 86% 5%, rgba(255,255,255,.7) 0, transparent 100%),
+        radial-gradient(1px 1px at 94% 15%, rgba(255,255,255,.6) 0, transparent 100%),
+        radial-gradient(1px 1px at 18% 17%, rgba(255,255,255,.45) 0, transparent 100%),
+        linear-gradient(to bottom, ${oSky} 0%, ${oSky}cc 36%, ${oWtr}cc 52%, ${oWtr} 100%);
+    }
+    .bg-layer.bg-ocean::before {
+      content: '';
+      position: absolute; bottom: -22%; left: -30%; width: 160%; height: 75%;
+      background: ${oWtr};
+      border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%;
+      opacity: .88;
+      animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
+    }
+    .bg-layer.bg-ocean::after {
+      content: '';
+      position: absolute; bottom: -18%; left: -40%; width: 180%; height: 60%;
+      background: color-mix(in srgb, ${oWtr} 85%, #000020);
+      border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%;
+      opacity: .75;
+      animation: ocean-wave-b ${dur(15)} ease-in-out infinite alternate-reverse;
+    }
+    @keyframes ocean-wave-a {
+      0%   { transform: translateX(-6%) rotate(-1.5deg); border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%; }
+      100% { transform: translateX(6%)  rotate(1.5deg);  border-radius: 60% 40% 45% 55% / 25% 35% 28% 45%; }
+    }
+    @keyframes ocean-wave-b {
+      0%   { transform: translateX(8%)  rotate(2deg);    border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%; }
+      100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
+    }
+  `
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap',       (t.notesGap ?? 0) + 'px')
   if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
