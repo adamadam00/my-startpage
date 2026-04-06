@@ -488,7 +488,7 @@ a { color: inherit; text-decoration: none; }
 .section-card.locked .section-header:hover { background: transparent; }
 .section-card:not(.locked) .section-header { cursor: grab; }
 .section-card:not(.locked) .section-header:active { cursor: grabbing; }
-.section-name { flex: 1; font-size: var(--section-title-font-size, 0.74em); font-weight: 500; color: var(--title-color); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: center; }
+.section-name { flex: 1; font-size: 0.74em; font-weight: 500; color: var(--title-color); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: center; }
 .section-actions { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
 .section-card:hover .section-actions { opacity: 1; }
 .section-delete-btn       { color: var(--text-muted) !important; }
@@ -514,7 +514,7 @@ a { color: inherit; text-decoration: none; }
 .link-item { position: relative; display: flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.3rem; border-radius: var(--radius-sm); transition: background 0.15s; overflow: hidden; min-width: 0; }
 .link-item:hover { background: var(--bg3); }
 .link-favicon { width: var(--favicon-size,13px); height: var(--favicon-size,13px); border-radius: 2px; flex-shrink: 0; object-fit: contain; opacity: var(--favicon-opacity); filter: var(--favicon-filter); }
-.link-title { flex: 1; font-size: var(--link-font-size, 0.85em); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
+.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
 .link-title:hover { color: var(--accent); }
 .link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 28%); }
 .link-item:hover .link-actions-overlay { opacity: 1; pointer-events: auto; }
@@ -662,7 +662,7 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
   .topbar-widgets { display: none; }
   .settings-panel, .settings-footer { width: 100vw; }
   .add-section-fixed { bottom: 0.5rem; left: 0.5rem; }
-}@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=DM+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=Figtree:wght@300;400;500;600&display=swap');
+}
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
    CSS Variables
@@ -1152,7 +1152,7 @@ a { color: inherit; text-decoration: none; }
 .section-card.locked .section-header:hover { background: transparent; }
 .section-card:not(.locked) .section-header { cursor: grab; }
 .section-card:not(.locked) .section-header:active { cursor: grabbing; }
-.section-name { flex: 1; font-size: var(--section-title-font-size, 0.74em); font-weight: 500; color: var(--title-color); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: center; }
+.section-name { flex: 1; font-size: 0.74em; font-weight: 500; color: var(--title-color); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; text-align: center; }
 .section-actions { display: flex; gap: 0.1rem; opacity: 0; transition: opacity 0.15s; flex-shrink: 0; }
 .section-card:hover .section-actions { opacity: 1; }
 .section-delete-btn       { color: var(--text-muted) !important; }
@@ -1178,7 +1178,7 @@ a { color: inherit; text-decoration: none; }
 .link-item { position: relative; display: flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.3rem; border-radius: var(--radius-sm); transition: background 0.15s; overflow: hidden; min-width: 0; }
 .link-item:hover { background: var(--bg3); }
 .link-favicon { width: var(--favicon-size,13px); height: var(--favicon-size,13px); border-radius: 2px; flex-shrink: 0; object-fit: contain; opacity: var(--favicon-opacity); filter: var(--favicon-filter); }
-.link-title { flex: 1; font-size: var(--link-font-size, 0.85em); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
+.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
 .link-title:hover { color: var(--accent); }
 .link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 28%); }
 .link-item:hover .link-actions-overlay { opacity: 1; pointer-events: auto; }
