@@ -274,9 +274,13 @@ export default function Sections({
       const to = finalCols[activeCol].findIndex(s => s.id === over.id)
       if (from !== -1 && to !== -1 && from !== to) finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
     } else {
-      // Cross-column: handleDragOver already moved the item and updated colsRef.current
-      // synchronously, so finalCols is already correct — no further reorder needed here
-      finalCols = current.map(col => [...col])
+      const activeItem = finalCols[activeCol].find(s => s.id === active.id)
+      if (activeItem) {
+        finalCols[activeCol] = finalCols[activeCol].filter(s => s.id !== active.id)
+        const overIndex = finalCols[overCol].findIndex(s => s.id === over.id)
+        if (overIndex === -1) finalCols[overCol].push(activeItem)
+        else finalCols[overCol].splice(overIndex, 0, activeItem)
+      }
     }
     colsRef.current = finalCols
     setCols(finalCols)
