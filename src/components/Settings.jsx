@@ -1,638 +1,771 @@
-import { useState, useRef, useEffect } from 'react'
+import { useEffect, useRef, useState, useMemo, lazy, Suspense, Component } from 'react'
+import Auth from './components/Auth'
+import Sections from './components/Sections'
+import Notes from './components/Notes'
+const Settings = lazy(() => import('./components/Settings'))
+import { supabase } from './lib/supabase'
+import './index.css'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
-
-const FONTS = [
-  { label: 'DM Mono',        value: "'DM Mono', monospace"        },
-  { label: 'JetBrains Mono', value: "'JetBrains Mono', monospace" },
-  { label: 'IBM Plex Mono',  value: "'IBM Plex Mono', monospace"  },
-  { label: 'Inter',          value: 'Inter, system-ui, sans-serif'},
-  { label: 'Geist',          value: 'Geist, system-ui, sans-serif'},
-  { label: 'IBM Plex Sans',  value: "'IBM Plex Sans', sans-serif" },
-  { label: 'Outfit',         value: 'Outfit, sans-serif'          },
-  { label: 'Space Grotesk',  value: "'Space Grotesk', sans-serif" },
-  { label: 'Figtree',        value: 'Figtree, sans-serif'         },
-]
-
-const BG_PRESETS = [
-  { label: 'Noise',    value: 'noise'         },
-  { label: 'Solid',    value: 'solid'         },
-  { label: 'Dots',     value: 'dots'          },
-  { label: 'Grid',     value: 'grid'          },
-  { label: 'Gradient', value: 'gradient'      },
-  { label: 'Mesh',     value: 'mesh'          },
-  { label: 'Aurora',   value: 'aurora'        },
-  { label: 'Stars',    value: 'stars'         },
-  { label: 'Nebula',   value: 'nebula'        },
-  { label: 'Starfield',value: 'starfield'     },
-  { label: 'Fog',      value: 'fog'           },
-  { label: 'Scan',     value: 'scan'          },
-  { label: 'Vortex',   value: 'vortex'        },
-  { label: 'Plasma',   value: 'plasma'        },
-  { label: 'Inferno',  value: 'inferno'       },
-  { label: 'Mint',     value: 'mint'          },
-  { label: 'Dusk',     value: 'dusk'          },
-  { label: 'Mono',     value: 'mono'          },
-  { label: 'Bokeh',    value: 'light-bokeh'   },
-  { label: 'Silver',   value: 'silver-radial' },
-  { label: 'Wall',     value: 'wall-texture'  },
-  // New animated backgrounds
-  { label: '🌿 Grass', value: 'grass'         },
-  { label: '🌊 Ocean', value: 'ocean'         },
-]
-
-const ANIMATED_PRESETS = [
-  'aurora','starfield','fog','scan','vortex',
-  'plasma','inferno','mint','dusk','mono',
-  'grass','ocean',
-]
-const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
-
-const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
-
-// ─────────────────────────────────────────────────────────────────────────────
-// PRIMITIVES
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** Label on left, control on right — tight layout */
-function Row({ label, children, dimLabel = false }) {
+// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
+function ClockWidget() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const hm   = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '1.5rem',
-      padding: '0.28rem 0',
-      minHeight: '1.8rem',
-    }}>
-      <span style={{
-        fontSize: '0.82em',
-        color: dimLabel ? 'var(--text-muted)' : 'var(--text-dim)',
-        whiteSpace: 'nowrap',
-        flexShrink: 0,
-      }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
-        {children}
-      </div>
+    <div className="clock-compact">
+      <span className="clock-compact-time">{hm}</span>
+      <span className="clock-compact-date">{date}</span>
     </div>
   )
 }
 
-/** Compact slider with value readout */
-function Slider({ val, min, max, step = 1, onChange, unit = '' }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-      <input
-        type="range" min={min} max={max} step={step} value={val}
-        onChange={e => onChange(Number(e.target.value))}
-        style={{ width: 80 }}
-      />
-      <span style={{ fontSize: '0.72em', color: 'var(--text-dim)', minWidth: '2.8em', textAlign: 'right' }}>
-        {val}{unit}
-      </span>
-    </div>
-  )
-}
+// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+const WEATHER_CACHE_KEY = 'cache_weather'
+const WEATHER_TTL = 30 * 60 * 1000
 
-/** Colour swatch picker */
-function ColorPick({ value, onChange }) {
-  const safe = (value || '#000000').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)
-  const hex  = safe.length === 7 ? safe : '#000000'
-  return (
-    <input type="color" className="color-input" value={hex} onChange={e => onChange(e.target.value)} />
-  )
-}
-
-/** On/off toggle */
-function Toggle({ checked, onChange }) {
-  return (
-    <label className="toggle">
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
-      <span className="toggle-slider" />
-    </label>
-  )
-}
-
-/** Sub-heading inside a group — centred + bold */
-function SectionTitle({ children }) {
-  return (
-    <div className="settings-title" style={{
-      textAlign: 'center',
-      fontWeight: 700,
-      marginTop: '0.3rem',
-      color: 'var(--settings-title-color, #7878a0)',
-    }}>
-      {children}
-    </div>
-  )
-}
-
-/**
- * Collapsible group.
- * Pass `signal={{ open: bool, t: Date.now() }}` to bulk-open/close from the header.
- */
-function Group({ title, children, defaultOpen = true, signal }) {
-  const [open, setOpen] = useState(defaultOpen)
-  const lastSignal = useRef(null)
+function WeatherWidget({ delay = 5000 }) {
+  const [wx,      setWx]      = useState(null)
+  const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    if (!signal || signal === lastSignal.current) return
-    setOpen(signal.open)
-    lastSignal.current = signal
-  }, [signal])
-
+    try {
+      const hit = JSON.parse(localStorage.getItem(WEATHER_CACHE_KEY) || 'null')
+      if (hit && Date.now() - hit.ts < WEATHER_TTL) {
+        setWx(hit.data)
+        setVisible(true)
+        return
+      }
+    } catch {}
+    const t = setTimeout(() => {
+      if (!navigator.geolocation) return
+      navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+        try {
+          const r = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+          )
+          const d = await r.json()
+          setWx(d.current_weather)
+          setVisible(true)
+          localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
+        } catch {}
+      }, () => {})
+    }, delay)
+    return () => clearTimeout(t)
+  }, [delay])
+  if (!wx) return null
+  const wDur = getComputedStyle(document.documentElement).getPropertyValue('--weather-fade-dur').trim() || '1.4s'
+  const fadeStyle = { opacity: visible ? 1 : 0, transition: `opacity ${wDur} ease` }
+  const icons = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌦️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌦️',82:'🌦️',95:'⛈️',96:'⛈️',99:'⛈️' }
+  const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
-    <div className="settings-section">
-      <div
-        className="settings-title"
-        style={{
-          cursor: 'pointer',
-          userSelect: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontWeight: 700,
-          textAlign: 'center',
-          color: 'var(--settings-title-color, #7878a0)',
-        }}
-        onClick={() => setOpen(v => !v)}
-      >
-        <span style={{ flex: 1, textAlign: 'center' }}>{title}</span>
-        <span style={{ fontSize: '0.75em', opacity: 0.45, marginLeft: '0.4rem' }}>
-          {open ? '▲' : '▼'}
-        </span>
-      </div>
-      {open && <div style={{ marginTop: '0.4rem' }}>{children}</div>}
+    <div className="weather-wrap" style={fadeStyle}>
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡️'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
 
+
+// ─── SETTINGS ERROR BOUNDARY ─────────────────────────────────────────────────
+class SettingsErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(e) { return { error: e } }
+  render() {
+    if (this.state.error) return (
+      <div style={{ position:'fixed',bottom:'1rem',right:'1rem',background:'var(--bg2)',
+        border:'1px solid var(--danger)',borderRadius:'var(--radius)',padding:'0.75rem 1rem',
+        color:'var(--danger)',fontSize:'0.82em',zIndex:200,maxWidth:320 }}>
+        Settings failed to load: {String(this.state.error.message)}
+      </div>
+    )
+    return this.props.children
+  }
+}
+
+// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
+const DEFAULT_THEME = {
+  bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
+  card: '#13131a', cardOpacity: 1,
+  border: '#2a2a3a', borderHover: '#3d3d55', borderOpacity: 1,
+  handleOpacity: 15,
+  text: '#e8e8f0', textDim: '#7878a0', titleColor: '#7878a0',
+  accent: '#6c8fff', danger: '#ff6b6b', success: '#6bffb8',
+  btnBg: '#3a3a4a', btnText: '#e8e8f0',
+  font: "'DM Mono', monospace",
+  fontSize: 14, topbarFontSize: 12, clockWidgetSize: 1, notesFontSize: 13, settingsFontSize: 13,
+  radius: 10, sectionRadius: 0,
+  linkGap: 0.5, cardPadding: 0.75,
+  sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
+  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13, faviconDelay: 3,
+  weatherDelay: 5,
+  bgFadeIn: 3.5,
+  faviconFadeDuration: 1.2,
+  weatherFadeDuration: 1.4,
+  patternColor: '#2a2a3a', patternOpacity: 1,
+  bgPreset: 'noise',
+  wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
+  bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
+  settingsTitleColor: '#7878a0',
+  bgGrassSky: '#020609', bgGrassGround: '#071a05',
+  bgOceanSky: '#000814', bgOceanWater: '#001428',
+  wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
+  wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
+  sectionsCols: 4,
+  notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  settingsSide: 'right',
+}
+
+// ─── APPLY THEME ─────────────────────────────────────────────────────────────
+function applyTheme(t) {
+  if (!t) return
+  const root = document.documentElement
+  const s = (k, v) => { if (v !== undefined && v !== null) root.style.setProperty(k, String(v)) }
+  s('--bg', t.bg); s('--bg2', t.bg2); s('--bg3', t.bg3)
+  s('--card', t.card); s('--card-opacity', t.cardOpacity ?? 1)
+  s('--border', t.border); s('--border-hover', t.borderHover)
+  s('--border-opacity', t.borderOpacity ?? 1)
+  s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
+  s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
+  s('--title-color', t.titleColor ?? t.textDim)
+  s('--accent', t.accent)
+  if (t.accent) { s('--accent-dim', t.accent + '33'); s('--accent-glow', t.accent + '22') }
+  s('--danger', t.danger); s('--success', t.success)
+  s('--btn-bg', t.btnBg); s('--btn-text', t.btnText)
+  s('--font', t.font)
+  if (t.fontSize)        s('--font-size',        t.fontSize + 'px')
+  if (t.topbarFontSize)  s('--topbar-font-size',  t.topbarFontSize + 'px')
+  if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
+  if (t.notesFontSize)   s('--notes-font-size',   t.notesFontSize + 'px')
+  if (t.faviconSize)     s('--favicon-size',      t.faviconSize + 'px')
+  if (t.radius != null)  { s('--radius', t.radius + 'px'); s('--radius-sm', Math.max(2, t.radius - 4) + 'px') }
+  s('--section-radius',  (t.sectionRadius ?? 0) + 'px')
+  if (t.linkGap != null)     s('--link-gap',     t.linkGap + 'rem')
+  if (t.cardPadding != null) s('--card-padding', t.cardPadding + 'rem')
+  s('--section-gap',   (t.sectionGap ?? 0) + 'px')
+  s('--section-gap-h', (t.sectionGapH ?? 0) + 'px')
+  s('--main-gap-top',  (t.mainGapTop ?? 12) + 'px')
+  s('--sections-cols',  t.sectionsCols ?? 4)
+  s('--favicon-opacity', t.faviconOpacity ?? 1)
+  s('--favicon-filter',  t.faviconGreyscale ? 'grayscale(1)' : 'none')
+  s('--pattern-color',   t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
+  s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
+  if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
+  if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
+  let styleEl = document.getElementById('sp-overrides')
+  if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
+  const lph = t.linksPaddingH ?? 0.75
+  if (lph >= 0) {
+    styleEl.textContent = [
+      '.links-list {',
+      '  padding-left: ' + lph + 'rem !important;',
+      '  padding-right: ' + lph + 'rem !important;',
+      '  margin-left: 0 !important;',
+      '}',
+    ].join(' ')
+  } else {
+    styleEl.textContent = [
+      '.links-list {',
+      '  padding-left: 0 !important;',
+      '  padding-right: var(--card-padding, 0.75rem) !important;',
+      '  margin-left: ' + lph + 'rem !important;',
+      '}',
+    ].join(' ')
+  }
+  const speed = t.bgAnimSpeed ?? 1
+  const dur = (b) => `${(b / speed).toFixed(1)}s`
+  s('--plasma-speed-a', dur(20))
+  s('--plasma-speed-b', dur(28))
+  if (t.bgBlur != null) { s('--plasma-blur-a', `${t.bgBlur}px`); s('--plasma-blur-b', `${t.bgBlur + 20}px`) }
+  if (t.bgC1) {
+    const rgba = (hex, a) => { const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16); return `rgba(${r},${g},${b},${a})` }
+    s('--plasma-c1', rgba(t.bgC1, 0.28)); s('--plasma-c2', rgba(t.bgC2||t.bgC1, 0.25)); s('--plasma-c3', rgba(t.bgC3||t.bgC1, 0.18))
+    s('--plasma-c4', rgba(t.bgC1, 0.14)); s('--plasma-c5', rgba(t.bgC2||t.bgC1, 0.14)); s('--plasma-c6', rgba(t.bgC1, 0.16))
+  }
+  const gSky = t.bgGrassSky || '#020609'
+  const gGnd = t.bgGrassGround || '#071a05'
+  const oSky = t.bgOceanSky || '#000814'
+  const oWtr = t.bgOceanWater || '#001428'
+  let bgEl = document.getElementById('sp-bg')
+  if (!bgEl) { bgEl = document.createElement('style'); bgEl.id = 'sp-bg'; document.head.appendChild(bgEl) }
+  bgEl.textContent = `
+    .bg-aurora { animation-duration: ${dur(12)} !important; }
+    .bg-layer.bg-starfield::before { animation-duration: ${dur(80)} !important; }
+    .bg-layer.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
+    .bg-layer.bg-fog::before       { animation-duration: ${dur(42)} !important; }
+    .bg-layer.bg-fog::after        { animation-duration: ${dur(58)} !important; }
+    .bg-layer.bg-scan::before      { animation-duration: ${dur(7)} !important; }
+    .bg-layer.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
+    .bg-layer.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
+
+    .bg-layer.bg-grass {
+      overflow: hidden;
+      background-color: ${gSky};
+      background-image:
+        radial-gradient(6px 6px at 72% 12%, rgba(255,248,220,.95) 0, transparent 100%),
+        radial-gradient(45px 45px at 72% 12%, rgba(255,240,180,.22) 0, transparent 100%),
+        radial-gradient(100px 100px at 72% 12%, rgba(255,240,180,.06) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.9) 0, transparent 100%),
+        radial-gradient(1px 1px at 14% 4%, rgba(255,255,255,.7) 0, transparent 100%),
+        radial-gradient(1px 1px at 23% 11%, rgba(255,255,255,.6) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 38% 6%, rgba(255,255,255,.8) 0, transparent 100%),
+        radial-gradient(1px 1px at 50% 3%, rgba(255,255,255,.5) 0, transparent 100%),
+        radial-gradient(1px 1px at 58% 14%, rgba(255,255,255,.65) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 80% 7%, rgba(255,255,255,.75) 0, transparent 100%),
+        radial-gradient(1px 1px at 93% 4%, rgba(255,255,255,.8) 0, transparent 100%),
+        radial-gradient(1px 1px at 33% 16%, rgba(255,255,255,.45) 0, transparent 100%),
+        radial-gradient(1px 1px at 65% 10%, rgba(255,255,255,.55) 0, transparent 100%),
+        linear-gradient(to bottom, ${gSky} 0%, ${gSky}bb 55%, ${gGnd}aa 66%, ${gGnd} 100%);
+    }
+    .bg-layer.bg-grass::before {
+      content: '';
+      position: absolute; bottom: 0; left: -5%; width: 110%; height: 42%;
+      background: ${gGnd};
+      clip-path: polygon(
+        0% 100%, 0% 52%,
+        1% 30%, 2% 50%, 3% 22%, 4% 46%, 5% 10%, 6% 40%, 7% 18%, 8% 44%,
+        9% 6%, 10% 38%, 11% 20%, 12% 46%, 13% 8%, 14% 36%, 15% 16%, 16% 42%,
+        17% 4%, 18% 34%, 19% 14%, 20% 40%, 21% 4%, 22% 30%, 23% 14%, 24% 42%,
+        25% 6%, 26% 37%, 27% 18%, 28% 44%, 29% 8%, 30% 38%, 31% 16%, 32% 42%,
+        33% 5%, 34% 34%, 35% 12%, 36% 42%, 37% 4%, 38% 32%, 39% 14%, 40% 40%,
+        41% 6%, 42% 36%, 43% 18%, 44% 44%, 45% 8%, 46% 38%, 47% 16%, 48% 42%,
+        49% 4%, 50% 32%, 51% 12%, 52% 42%, 53% 4%, 54% 30%, 55% 14%, 56% 40%,
+        57% 6%, 58% 36%, 59% 18%, 60% 44%, 61% 8%, 62% 38%, 63% 16%, 64% 42%,
+        65% 4%, 66% 32%, 67% 12%, 68% 42%, 69% 4%, 70% 30%, 71% 14%, 72% 40%,
+        73% 6%, 74% 36%, 75% 18%, 76% 44%, 77% 8%, 78% 38%, 79% 16%, 80% 42%,
+        81% 4%, 82% 32%, 83% 12%, 84% 42%, 85% 4%, 86% 30%, 87% 14%, 88% 40%,
+        89% 6%, 90% 36%, 91% 18%, 92% 44%, 93% 8%, 94% 38%, 95% 16%, 96% 42%,
+        97% 4%, 98% 32%, 99% 50%, 100% 52%, 100% 100%
+      );
+      animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
+      transform-origin: bottom center;
+    }
+    .bg-layer.bg-grass::after {
+      content: '';
+      position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
+      background-image:
+        radial-gradient(2.5px 2.5px at 12% 40%, rgba(180,255,80,.7) 0, transparent 100%),
+        radial-gradient(2px 2px at 28% 55%, rgba(200,255,100,.55) 0, transparent 100%),
+        radial-gradient(2.5px 2.5px at 45% 35%, rgba(180,255,80,.65) 0, transparent 100%),
+        radial-gradient(2px 2px at 62% 50%, rgba(200,255,100,.6) 0, transparent 100%),
+        radial-gradient(2.5px 2.5px at 78% 42%, rgba(180,255,80,.55) 0, transparent 100%),
+        radial-gradient(2px 2px at 18% 62%, rgba(200,255,100,.5) 0, transparent 100%),
+        radial-gradient(2px 2px at 52% 68%, rgba(180,255,80,.6) 0, transparent 100%),
+        radial-gradient(2.5px 2.5px at 88% 48%, rgba(200,255,100,.55) 0, transparent 100%),
+        linear-gradient(to top, rgba(2,6,2,.7) 0%, transparent 100%);
+      animation: firefly-blink ${dur(3)} ease-in-out infinite alternate;
+      pointer-events: none;
+    }
+    @keyframes grass-sway   { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
+    @keyframes firefly-blink { 0% { opacity: .3; } 100% { opacity: 1; } }
+
+    .bg-layer.bg-ocean {
+      overflow: hidden;
+      background-color: ${oSky};
+      background-image:
+        radial-gradient(7px 7px at 30% 18%, rgba(255,248,220,.95) 0, transparent 100%),
+        radial-gradient(55px 55px at 30% 18%, rgba(255,240,180,.22) 0, transparent 100%),
+        radial-gradient(120px 120px at 30% 18%, rgba(255,240,180,.06) 0, transparent 100%),
+        linear-gradient(to right, transparent 28%, rgba(255,248,200,.04) 29.5%, rgba(255,248,200,.07) 30.5%, rgba(255,248,200,.04) 31.5%, transparent 33%),
+        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.85) 0, transparent 100%),
+        radial-gradient(1px 1px at 12% 4%, rgba(255,255,255,.65) 0, transparent 100%),
+        radial-gradient(1px 1px at 20% 12%, rgba(255,255,255,.55) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 42% 6%, rgba(255,255,255,.75) 0, transparent 100%),
+        radial-gradient(1px 1px at 55% 14%, rgba(255,255,255,.6) 0, transparent 100%),
+        radial-gradient(1.5px 1.5px at 63% 4%, rgba(255,255,255,.8) 0, transparent 100%),
+        radial-gradient(1px 1px at 76% 10%, rgba(255,255,255,.55) 0, transparent 100%),
+        radial-gradient(1px 1px at 86% 5%, rgba(255,255,255,.7) 0, transparent 100%),
+        radial-gradient(1px 1px at 94% 15%, rgba(255,255,255,.6) 0, transparent 100%),
+        radial-gradient(1px 1px at 18% 17%, rgba(255,255,255,.45) 0, transparent 100%),
+        linear-gradient(to bottom, ${oSky} 0%, ${oSky}cc 36%, ${oWtr}cc 52%, ${oWtr} 100%);
+    }
+    .bg-layer.bg-ocean::before {
+      content: '';
+      position: absolute; bottom: -22%; left: -30%; width: 160%; height: 75%;
+      background: ${oWtr};
+      border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%;
+      opacity: .88;
+      animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
+    }
+    .bg-layer.bg-ocean::after {
+      content: '';
+      position: absolute; bottom: -18%; left: -40%; width: 180%; height: 60%;
+      background: color-mix(in srgb, ${oWtr} 85%, #000020);
+      border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%;
+      opacity: .75;
+      animation: ocean-wave-b ${dur(15)} ease-in-out infinite alternate-reverse;
+    }
+    @keyframes ocean-wave-a {
+      0%   { transform: translateX(-6%) rotate(-1.5deg); border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%; }
+      100% { transform: translateX(6%)  rotate(1.5deg);  border-radius: 60% 40% 45% 55% / 25% 35% 28% 45%; }
+    }
+    @keyframes ocean-wave-b {
+      0%   { transform: translateX(8%)  rotate(2deg);    border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%; }
+      100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
+    }
+  `
+  s('--bg-fade-in-dur', (t.bgFadeIn ?? 3.5) + 's')
+  s('--favicon-fade-dur', (t.faviconFadeDuration ?? 1.2) + 's')
+  s('--weather-fade-dur',  (t.weatherFadeDuration ?? 1.4) + 's')
+  s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
+  s('--notes-gap',       (t.notesGap ?? 0) + 'px')
+  if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
+  if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
+  if (t.notesTextBg)    s('--notes-input-bg',   t.notesTextBg)
+  root.dataset.settingsSide = t.settingsSide || 'right'
+  document.body.style.fontFamily       = t.font || "'DM Mono', monospace"
+  document.body.style.backgroundColor = t.bg   || '#0c0c0f'
+  document.body.style.color           = t.text || '#e8e8f0'
+  if (t.pageScale) document.body.style.zoom = t.pageScale
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// SETTINGS PANEL
-// ─────────────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [session,  setSession]  = useState(null)
+  const sessionRef              = useRef(null)
+  const [workspaces, setWorkspaces] = useState([])
+  const [activeWs,   setActiveWs]   = useState(null)
+  const [sections,   setSections]   = useState([])
+  const [links,      setLinks]      = useState([])
+  const [notes,      setNotes]      = useState([])
 
-export default function Settings({
-  theme, setTheme, onSave, onClose,
-  onImageUpload, onBgImageUpload,
-  onExportBackup, onExportCSV, onImportBackup,
-  onResetWorkspaceLinks, onResetTheme,
-  fileRef, backupFileRef, importingBackup,
-  workspaces, activeWs,
-  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs,
-}) {
-  const [newWsName, setNewWsName]   = useState('')
-  const [groupSignal, setGroupSignal] = useState(null)   // bulk open/close signal
-  const bgFileRef = useRef(null)
+  const [theme, setThemeState] = useState(() => {
+    try { return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem('current_theme')) || {}) } }
+    catch { return DEFAULT_THEME }
+  })
 
-  const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
-  const side     = theme.settingsSide || 'right'
-  const allOpen  = groupSignal?.open !== false  // default true
+  const setTheme = (updater) => {
+    setThemeState(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      localStorage.setItem('current_theme', JSON.stringify(next))
+      return next
+    })
+  }
 
-  const toggleAllGroups = () =>
-    setGroupSignal({ open: !allOpen, t: Date.now() })
+  const [bgImage,         setBgImage]         = useState(() => localStorage.getItem('bg_image') || '')
+  const [search,          setSearch]          = useState('')
+  const [settingsOpen,    setSettingsOpen]    = useState(false)
+  const [loading,         setLoading]         = useState(true)
+  const [importingBackup, setImportingBackup] = useState(false)
+
+  // ── Collapse / Expand all ─────────────────────────────────────────────────
+  const [allCollapsed,    setAllCollapsed]    = useState(false)
+  const [triggerCollapse, setTriggerCollapse] = useState(0)
+  const [triggerExpand,   setTriggerExpand]   = useState(0)
+  const [notesTrigger,    setNotesTrigger]    = useState(undefined)
+
+  const toggleAll = () => {
+    if (allCollapsed) {
+      setTriggerExpand(t => t + 1)
+      setNotesTrigger(true)
+      setAllCollapsed(false)
+    } else {
+      setTriggerCollapse(t => t + 1)
+      setNotesTrigger(false)
+      setAllCollapsed(true)
+    }
+  }
+
+  const fileRef       = useRef(null)
+  const backupFileRef = useRef(null)
+
+  useEffect(() => { applyTheme(theme) }, [theme])
+  useEffect(() => { sessionRef.current = session }, [session])
+
+  // ── Favicon deferred fade-in ───────────────────────────────────────────────
+  useEffect(() => {
+    document.body.classList.remove('favicons-loaded')
+    const t = setTimeout(() => {
+      document.body.classList.add('favicons-loaded')
+    }, (theme.faviconDelay ?? 3) * 1000)
+    return () => clearTimeout(t)
+  }, [theme.faviconDelay])
+
+  // ── Background ease-in on first paint ─────────────────────────────────────
+  useEffect(() => {
+    const t = setTimeout(() => {
+      document.querySelectorAll('.bg-layer').forEach(el => el.classList.add('bg-visible'))
+    }, 80)
+    return () => clearTimeout(t)
+  }, [])
+
+  // ── Page Visibility — pause bg animations when tab is hidden ──────────────
+  useEffect(() => {
+    const handleVis = () => {
+      const state = document.hidden ? 'paused' : 'running'
+      document.querySelectorAll('.bg-layer').forEach(el => {
+        el.style.animationPlayState = state
+      })
+    }
+    document.addEventListener('visibilitychange', handleVis)
+    return () => document.removeEventListener('visibilitychange', handleVis)
+  }, [])
+
+
+  // ── Auth ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null); setLoading(false)
+    })
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, sess) => setSession(sess ?? null))
+    return () => listener.subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    if (!session) return
+    ensureWorkspace().then(() => handleRefresh())
+  }, [session])
+
+  // ── Workspace bootstrap ───────────────────────────────────────────────────
+  const ensureWorkspace = async () => {
+    const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
+    if (error) { alert(error.message); return }
+    if (!data?.length) {
+      const { data: created, error: err } = await supabase
+        .from('workspaces').insert({ user_id: session.user.id, name: 'Home' }).select().single()
+      if (err) { alert(err.message); return }
+      setWorkspaces([created]); setActiveWs(created.id); return
+    }
+    setWorkspaces(data)
+    setActiveWs(prev => prev ?? data[0]?.id ?? null)
+  }
+
+  // ── Data refresh ──────────────────────────────────────────────────────────
+  const handleRefresh = async () => {
+    if (!sessionRef.current?.user?.id) return
+    const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
+    if (wsErr) { alert(wsErr.message); return }
+    setWorkspaces(wsData || [])
+    const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+    if (!currentWs) return
+    if (!activeWs) setActiveWs(currentWs)
+    const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
+      supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+      supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+    ])
+    setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
+  }
+
+  useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
+
+  // ── Search filter ─────────────────────────────────────────────────────────
+  const filteredLinks = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return links
+    return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
+  }, [links, search])
+
+  // ── Workspace CRUD ────────────────────────────────────────────────────────
+  const addWorkspace = async (name) => {
+    const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
+    if (!wsName?.trim()) return
+    const { data, error } = await supabase
+      .from('workspaces').insert({ user_id: session.user.id, name: wsName.trim() }).select().single()
+    if (error) return alert(error.message)
+    setWorkspaces(prev => [...prev, data]); setActiveWs(data.id)
+  }
+
+  const renameWorkspace = async (id, name) => {
+    const { error } = await supabase.from('workspaces').update({ name }).eq('id', id)
+    if (error) return alert(error.message)
+    setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, name } : w))
+  }
+
+  const deleteWorkspace = async (id) => {
+    if (!confirm('Delete this workspace?')) return
+    const { error } = await supabase.from('workspaces').delete().eq('id', id)
+    if (error) return alert(error.message)
+    const next = workspaces.filter(w => w.id !== id)
+    setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
+  }
+
+  // ── Image uploads ─────────────────────────────────────────────────────────
+  const handleImageUpload = (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => setTheme(prev => ({ ...prev, wallpaper: e.target.result }))
+    reader.readAsDataURL(file)
+  }
+
+  const handleBgImageUpload = (file) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      localStorage.setItem('bg_image', e.target.result)
+      setBgImage(e.target.result)
+      setTheme(prev => ({ ...prev, bgPreset: 'image' }))
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+  const exportFullBackup = async () => {
+    const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
+    const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
+    for (const ws of wsData || []) {
+      const [{ data: secData }, { data: noteData }] = await Promise.all([
+        supabase.from('sections').select('*').eq('workspace_id', ws.id).order('position', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', ws.id).order('created_at', { ascending: false }),
+      ])
+      const sectionsWithLinks = []
+      for (const sec of secData || []) {
+        const { data: secLinks } = await supabase.from('links').select('*').eq('section_id', sec.id).order('position', { ascending: true })
+        sectionsWithLinks.push({ name: sec.name, position: sec.position, collapsed: sec.collapsed, links: (secLinks || []).map(l => ({ title: l.title, url: l.url, position: l.position })) })
+      }
+      backup.workspaces.push({ name: ws.name, sections: sectionsWithLinks, notes: (noteData || []).map(n => ({ content: n.content })) })
+    }
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
+    a.download = 'startpage-backup.json'; a.click()
+  }
+
+  const exportCSV = async () => {
+    const { data: secs } = await supabase.from('sections').select('*').eq('workspace_id', activeWs).order('position')
+    const { data: lnks } = await supabase.from('links').select('*').eq('workspace_id', activeWs).order('position')
+    const rows = [['Section', 'Title', 'URL']]
+    secs?.forEach(s => lnks?.filter(l => l.section_id === s.id).forEach(l => rows.push([s.name, l.title, l.url])))
+    const dq = '""'
+    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, dq) + '"').join(',')).join('\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    a.download = 'startpage-links.csv'; a.click()
+  }
+
+  const resetWorkspaceLinks = async () => {
+    if (!confirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
+    await supabase.from('links').delete().eq('workspace_id', activeWs)
+    await supabase.from('sections').delete().eq('workspace_id', activeWs)
+    handleRefresh()
+  }
+
+  // ── Import ────────────────────────────────────────────────────────────────
+  const handleImportBackup = (e) => {
+    const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
+    setImportingBackup(true)
+    const r = new FileReader()
+    r.onload = async (ev) => {
+      try {
+        const uid = sessionRef.current?.user?.id
+        if (!uid) throw new Error('Not logged in')
+        const text = ev.target.result
+        const ext  = f.name.split('.').pop().toLowerCase()
+        if (ext === 'csv') {
+          const lines = text.trim().split('\n').slice(1)
+          const sectionMap = {}; let pos = 0
+          for (const line of lines) {
+            const [section, title, url] = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+            if (!section || !title || !url) continue
+            if (!sectionMap[section]) {
+              const { data: sec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: activeWs, name: section, position: pos++, collapsed: false }).select().single()
+              sectionMap[section] = { id: sec.id, lpos: 0 }
+            }
+            await supabase.from('links').insert({ user_id: uid, workspace_id: activeWs, section_id: sectionMap[section].id, title, url: url.startsWith('http') ? url : 'https://' + url, position: sectionMap[section].lpos++ })
+          }
+          await handleRefresh(); alert('CSV imported!'); return
+        }
+        const data = JSON.parse(text)
+        if (Array.isArray(data)) {
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
+          const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
+          let imported = 0
+          for (let i = 0; i < rows.length; i++) {
+            const grp = rows[i]
+            const { data: sec, error: secErr } = await supabase
+              .from('sections')
+              .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false })
+              .select().single()
+            if (secErr || !sec) continue  // skip bad section, don't abort
+            const lnks = (grp.bookmarks ?? grp.links ?? [])
+              .filter(b => b && (b.url || b.href))
+              .map((b, j) => ({
+                user_id: uid, workspace_id: activeWs, section_id: sec.id,
+                title: b.name ?? b.title ?? 'Link',
+                url: (b.url ?? b.href ?? '').trim(),
+                position: j,
+              }))
+            if (lnks.length) await supabase.from('links').insert(lnks)
+            imported++
+          }
+          await handleRefresh(); alert('Imported ' + imported + ' of ' + rows.length + ' section(s).'); return
+        }
+        if (data.workspaces && Array.isArray(data.workspaces)) {
+          if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
+          for (const ws of data.workspaces) {
+            const { data: newWs } = await supabase.from('workspaces').insert({ user_id: uid, name: ws.name }).select().single()
+            for (let si = 0; si < (ws.sections ?? []).length; si++) {
+              const sec = ws.sections[si]
+              const { data: newSec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: newWs.id, name: sec.name, position: sec.position ?? si, collapsed: sec.collapsed ?? false }).select().single()
+              const lnks = (sec.links ?? []).map((l, j) => ({ user_id: uid, workspace_id: newWs.id, section_id: newSec.id, title: l.title ?? l.name ?? 'Link', url: l.url, position: l.position ?? j }))
+              if (lnks.length) await supabase.from('links').insert(lnks)
+            }
+            if (ws.notes?.length) await supabase.from('notes').insert(ws.notes.map(n => ({ user_id: uid, workspace_id: newWs.id, content: n.content ?? '' })))
+          }
+          if (data.theme) { const t = { ...DEFAULT_THEME, ...data.theme }; setTheme(t) }
+          await handleRefresh(); alert('Backup imported!'); return
+        }
+        if (data.bg || data.text || data.accent) {
+          setTheme({ ...DEFAULT_THEME, ...data }); alert('Theme imported.'); return
+        }
+        alert('Unrecognised format.')
+      } catch (err) { alert('Import failed: ' + err.message) }
+      finally { setImportingBackup(false) }
+    }
+    r.readAsText(f)
+  }
+
+  // ── Background ────────────────────────────────────────────────────────────
+  const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
+  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
+
+  if (loading) return <div className="center-fill">Loading…</div>
+  if (!session) return <Auth />
 
   return (
     <>
-      {/* Veil */}
-      <div className="settings-veil" onClick={onClose} />
+      {/* Background */}
+      <div className={bgClass} style={bgStyle} />
 
-      {/* Panel */}
-      <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)' }}>
+      <div className="app">
 
-        {/* ── Fixed header ──────────────────────────── */}
-        <div className="settings-header">
-          <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>
-            Settings
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <button
-              className="btn-xs"
-              title={allOpen ? 'Collapse all sections' : 'Expand all sections'}
-              onClick={toggleAllGroups}
-            >
-              {allOpen ? '▲ Close' : '▼ Expand'}
-            </button>
-            <button
-              className="btn-xs"
-              title="Move panel to the other side"
-              onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}
-            >
-              {side === 'right' ? '← Left' : 'Right →'}
-            </button>
-            <button className="icon-btn" onClick={onClose} title="Close (Esc)">✕</button>
-          </div>
-        </div>
+        {/* Wallpaper overlay */}
+        {theme.wallpaper ? (
+          <div style={{
+            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+            backgroundImage: `url(${theme.wallpaper})`,
+            backgroundSize: `${theme.wallpaperScale ?? 100}%`,
+            backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
+            backgroundRepeat: 'no-repeat',
+            filter: `blur(${theme.wallpaperBlur ?? 0}px)`,
+            opacity: (theme.wallpaperOpacity ?? 100) / 100,
+          }} />
+        ) : null}
+        {theme.wallpaper && theme.wallpaperDim > 0 ? (
+          <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
+        ) : null}
 
-        {/* ══════════════════════════════════════════
-            BACKGROUND
-        ══════════════════════════════════════════ */}
-        <Group title="Background" defaultOpen signal={groupSignal}>
+        {/* ── TOPBAR ──────────────────────────────────────── */}
+        <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', marginBottom: '0.4rem' }}>
-            {BG_PRESETS.map(p => (
+          {/* Workspace tabs */}
+          <div className="workspace-tabs">
+            {workspaces.map(ws => (
               <button
-                key={p.value}
-                className={`btn-xs${theme.bgPreset === p.value ? ' btn-primary' : ''}`}
-                onClick={() => set('bgPreset', p.value)}
-              >{p.label}</button>
+                key={ws.id}
+                className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
+                onClick={() => setActiveWs(ws.id)}
+              >
+                {ws.name}
+                {workspaces.length > 1 && (
+                  <span
+                    className="del-ws"
+                    onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
+                  >✕</span>
+                )}
+              </button>
             ))}
+            <button
+              className="icon-btn"
+              title="New workspace"
+              onClick={() => addWorkspace()}
+              style={{ fontSize: '1.1em', lineHeight: 1 }}
+            >+</button>
           </div>
 
-          {/* ── Dynamic controls per preset ── */}
-          {/* ── Background fade-in duration — always shown ── */}
-          <Row label="Fade-in duration">
-            <Slider val={theme.bgFadeIn ?? 3.5} min={0} max={8} step={0.5}
-              onChange={v => set('bgFadeIn', v)} unit="s" />
-          </Row>
+          <div className="topbar-divider" />
 
-          {ANIMATED_PRESETS.includes(theme.bgPreset) && (
-            <>
-              <SectionTitle>Animation</SectionTitle>
-              <Row label="Speed">
-                <Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={25} max={400} step={25}
-                  onChange={v => set('bgAnimSpeed', v / 100)} unit="%" />
-              </Row>
-            </>
-          )}
-
-          {PLASMA_PRESETS.includes(theme.bgPreset) && (
-            <>
-              <SectionTitle>Plasma colours</SectionTitle>
-              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
-              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
-              <Row label="Colour 3"><ColorPick value={theme.bgC3 || '#50c8ff'} onChange={v => set('bgC3', v)} /></Row>
-              <Row label="Blur radius">
-                <Slider val={theme.bgBlur ?? 45} min={10} max={120} onChange={v => set('bgBlur', v)} unit="px" />
-              </Row>
-            </>
-          )}
-
-          {theme.bgPreset === 'grass' && (
-            <>
-              <SectionTitle>Grass colours</SectionTitle>
-              <Row label="Sky colour">    <ColorPick value={theme.bgGrassSky    || '#020609'} onChange={v => set('bgGrassSky', v)} /></Row>
-              <Row label="Ground colour"> <ColorPick value={theme.bgGrassGround || '#071a05'} onChange={v => set('bgGrassGround', v)} /></Row>
-            </>
-          )}
-
-          {theme.bgPreset === 'ocean' && (
-            <>
-              <SectionTitle>Ocean colours</SectionTitle>
-              <Row label="Sky colour">   <ColorPick value={theme.bgOceanSky   || '#000814'} onChange={v => set('bgOceanSky', v)} /></Row>
-              <Row label="Water colour"> <ColorPick value={theme.bgOceanWater || '#001428'} onChange={v => set('bgOceanWater', v)} /></Row>
-            </>
-          )}
-
-          <Row label="Pattern colour">
-            <ColorPick value={theme.patternColor} onChange={v => set('patternColor', v)} />
-          </Row>
-          <Row label="Pattern opacity">
-            <Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
-              onChange={v => set('patternOpacity', v / 100)} unit="%" />
-          </Row>
-          <Row label="Custom bg image">
-            <button className="btn-xs" onClick={() => bgFileRef.current?.click()}>Upload</button>
-            {theme.bgPreset === 'image' && (
-              <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                onClick={() => { localStorage.removeItem('bg_image'); set('bgPreset', 'noise') }}>Remove</button>
-            )}
-          </Row>
-          <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={e => { onBgImageUpload(e.target.files?.[0]); e.target.value = '' }} />
-
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            WALLPAPER OVERLAY
-        ══════════════════════════════════════════ */}
-        <Group title="Wallpaper overlay" defaultOpen={false} signal={groupSignal}>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
-            <button className="btn-xs" onClick={() => fileRef.current?.click()}>Upload wallpaper</button>
-            {theme.wallpaper && (
-              <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                onClick={() => set('wallpaper', '')}>Remove</button>
-            )}
-          </div>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
-            onChange={e => { onImageUpload(e.target.files?.[0]); e.target.value = '' }} />
-
-          {theme.wallpaper && (<>
-            <Row label="Fit">
-              <select className="input" style={{ maxWidth: 110, fontSize: '0.8em' }}
-                value={theme.wallpaperFit || 'cover'} onChange={e => set('wallpaperFit', e.target.value)}>
-                <option value="cover">Cover</option>
-                <option value="contain">Contain</option>
-                <option value="fill">Fill</option>
-                <option value="none">None</option>
-              </select>
-            </Row>
-            <Row label="Position X">
-              <Slider val={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => set('wallpaperX', v)} unit="%" />
-            </Row>
-            <Row label="Position Y">
-              <Slider val={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => set('wallpaperY', v)} unit="%" />
-            </Row>
-            <Row label="Scale">
-              <Slider val={theme.wallpaperScale ?? 100} min={50} max={300} onChange={v => set('wallpaperScale', v)} unit="%" />
-            </Row>
-            <Row label="Blur">
-              <Slider val={theme.wallpaperBlur ?? 0} min={0} max={40} onChange={v => set('wallpaperBlur', v)} unit="px" />
-            </Row>
-            <Row label="Dim overlay">
-              <Slider val={theme.wallpaperDim ?? 35} min={0} max={100} onChange={v => set('wallpaperDim', v)} unit="%" />
-            </Row>
-            <Row label="Opacity">
-              <Slider val={theme.wallpaperOpacity ?? 100} min={0} max={100} onChange={v => set('wallpaperOpacity', v)} unit="%" />
-            </Row>
-          </>)}
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            COLOURS
-        ══════════════════════════════════════════ */}
-        <Group title="Colours" defaultOpen={false} signal={groupSignal}>
-
-          <SectionTitle>Surfaces</SectionTitle>
-          <Row label="Background"><ColorPick value={theme.bg}  onChange={v => set('bg', v)} /></Row>
-          <Row label="Surface 2"> <ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
-          <Row label="Surface 3"> <ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
-          <Row label="Card">
-            <ColorPick value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
-          </Row>
-          <Row label="Card opacity">
-            <Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" />
-          </Row>
-
-          <SectionTitle>Borders</SectionTitle>
-          <Row label="Border">       <ColorPick value={theme.border}      onChange={v => set('border', v)} /></Row>
-          <Row label="Border hover"> <ColorPick value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
-          <Row label="Border opacity">
-            <Slider val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" />
-          </Row>
-
-          <SectionTitle>Text</SectionTitle>
-          <Row label="Text">         <ColorPick value={theme.text}        onChange={v => set('text', v)} /></Row>
-          <Row label="Text dim">     <ColorPick value={theme.textDim}     onChange={v => set('textDim', v)} /></Row>
-          <Row label="Title / label"><ColorPick value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
-
-          <SectionTitle>Accent &amp; state</SectionTitle>
-          <Row label="Accent">  <ColorPick value={theme.accent}  onChange={v => set('accent', v)} /></Row>
-          <Row label="Danger">  <ColorPick value={theme.danger}  onChange={v => set('danger', v)} /></Row>
-          <Row label="Success"> <ColorPick value={theme.success} onChange={v => set('success', v)} /></Row>
-
-          <SectionTitle>Buttons</SectionTitle>
-          <Row label="Button bg">   <ColorPick value={theme.btnBg}   onChange={v => set('btnBg', v)} /></Row>
-          <Row label="Button text"> <ColorPick value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
-
-          <SectionTitle>Settings panel</SectionTitle>
-          <Row label="Section title colour">
-            <ColorPick value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} />
-          </Row>
-
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            TYPOGRAPHY
-        ══════════════════════════════════════════ */}
-        <Group title="Typography" defaultOpen={false} signal={groupSignal}>
-          <Row label="Font family">
-            <select className="input" style={{ maxWidth: 160, fontSize: '0.8em' }}
-              value={theme.font} onChange={e => set('font', e.target.value)}>
-              {FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-            </select>
-          </Row>
-          <Row label="Body font size">
-            <Slider val={theme.fontSize ?? 14} min={10} max={20} onChange={v => set('fontSize', v)} unit="px" />
-          </Row>
-          <Row label="Topbar font size">
-            <Slider val={theme.topbarFontSize ?? 12} min={9} max={16} onChange={v => set('topbarFontSize', v)} unit="px" />
-          </Row>
-          <Row label="Settings font size">
-            <Slider val={theme.settingsFontSize ?? 13} min={10} max={18} onChange={v => set('settingsFontSize', v)} unit="px" />
-          </Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            LAYOUT & SPACING
-        ══════════════════════════════════════════ */}
-        <Group title="Layout &amp; spacing" defaultOpen={false} signal={groupSignal}>
-
-          <Row label="Columns">
-            <Slider val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
-          </Row>
-          <Row label="Topbar → cards gap">
-            <Slider val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
-          </Row>
-          <Row label="Section gap (v)">
-            <Slider val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" />
-          </Row>
-          <Row label="Section gap (h)">
-            <Slider val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" />
-          </Row>
-          <Row label="Link gap">
-            <Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5}
-              onChange={v => set('linkGap', v / 100)} unit="%" />
-          </Row>
-          <Row label="Link left padding">
-            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
-              onChange={v => set('linksPaddingH', v / 100)} unit="%" />
-          </Row>
-          <Row label="Handle opacity">
-            <Slider val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
-          </Row>
-
-          <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
-            <SectionTitle>Page scale</SectionTitle>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
-              {PAGE_SCALES.map(v => (
-                <button
-                  key={v}
-                  className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`}
-                  onClick={() => set('pageScale', v)}
-                >
-                  {Math.round(v * 100)}%
-                </button>
-              ))}
+          {/* Widgets: clock + weather + search */}
+          <div className="topbar-widgets">
+            <ClockWidget />
+            <div className="topbar-divider" />
+            <WeatherWidget delay={(theme.weatherDelay ?? 5) * 1000} />
+            <div className="search-compact" style={{ flex: 1 }}>
+              <input
+                className="input search-compact-input"
+                placeholder="Search links…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => e.key === 'Escape' && setSearch('')}
+              />
+              {search && (
+                <button className="icon-btn search-btn" onClick={() => setSearch('')} title="Clear">✕</button>
+              )}
             </div>
           </div>
 
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            CARDS & BORDERS
-        ══════════════════════════════════════════ */}
-        <Group title="Cards &amp; borders" defaultOpen={false} signal={groupSignal}>
-
-          <Row label="Card corner radius">
-            <Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" />
-          </Row>
-          {/* Quick presets */}
-          <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
-            {[{ l: 'Sharp', v: 0 }, { l: 'Normal', v: 10 }, { l: 'Round', v: 20 }].map(p => (
-              <button
-                key={p.v}
-                className={`btn-xs${theme.radius === p.v ? ' btn-primary' : ''}`}
-                onClick={() => set('radius', p.v)}
-              >{p.l}</button>
-            ))}
-          </div>
-
-          <Row label="Section corner radius">
-            <Slider val={theme.sectionRadius ?? 0} min={0} max={24} onChange={v => set('sectionRadius', v)} unit="px" />
-          </Row>
-
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            WEATHER
-        ══════════════════════════════════════════ */}
-        <Group title="Weather" defaultOpen={false} signal={groupSignal}>
-          <Row label="Weather delay">
-            <Slider val={theme.weatherDelay ?? 5} min={0} max={30} step={1}
-              onChange={v => set('weatherDelay', v)} unit="s" />
-          </Row>
-          <Row label="Fade-in duration">
-            <Slider val={theme.weatherFadeDuration ?? 1.4} min={0.2} max={5} step={0.2}
-              onChange={v => set('weatherFadeDuration', v)} unit="s" />
-          </Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            CLOCK
-        ══════════════════════════════════════════ */}
-        <Group title="Clock" defaultOpen={false} signal={groupSignal}>
-          <Row label="Clock widget size">
-            <Slider val={Math.round((theme.clockWidgetSize ?? 1) * 10)} min={5} max={30}
-              onChange={v => set('clockWidgetSize', v / 10)} unit="×" />
-          </Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            FAVICONS
-        ══════════════════════════════════════════ */}
-        <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
-          <Row label="Favicon delay">
-            <Slider val={theme.faviconDelay ?? 3} min={0} max={15} step={0.5}
-              onChange={v => set('faviconDelay', v)} unit="s" />
-          </Row>
-          <Row label="Fade-in duration">
-            <Slider val={theme.faviconFadeDuration ?? 1.2} min={0.2} max={5} step={0.2}
-              onChange={v => set('faviconFadeDuration', v)} unit="s" />
-          </Row>
-          <Row label="Favicon size">
-            <Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
-          </Row>
-          <Row label="Favicon opacity">
-            <Slider val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100}
-              onChange={v => set('faviconOpacity', v / 100)} unit="%" />
-          </Row>
-          <Row label="Greyscale">
-            <Toggle checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} />
-          </Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            NOTES
-        ══════════════════════════════════════════ */}
-        <Group title="Notes" defaultOpen={false} signal={groupSignal}>
-          <Row label="Font size">
-            <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
-          </Row>
-          <Row label="Gap between notes">
-            <Slider val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" />
-          </Row>
-          <Row label="Note card background"> <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} /></Row>
-          <Row label="Note text colour">     <ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
-          <Row label="Note text background"> <ColorPick value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            WORKSPACES
-        ══════════════════════════════════════════ */}
-        <Group title="Workspaces" defaultOpen={false} signal={groupSignal}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.4rem' }}>
-            {workspaces.map(ws => (
-              <div key={ws.id} style={{
-                display: 'flex', alignItems: 'center', gap: '0.35rem',
-                padding: '0.25rem 0.45rem', borderRadius: 'var(--radius-sm)',
-                background: ws.id === activeWs ? 'var(--accent-dim)' : 'transparent',
-                border: `1px solid ${ws.id === activeWs ? 'var(--accent)' : 'transparent'}`,
-              }}>
-                <span style={{ flex: 1, fontSize: '0.82em', cursor: 'pointer',
-                  color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)' }}
-                  onClick={() => onSetActiveWs(ws.id)}>
-                  {ws.name}
-                </span>
-                <button className="btn-xs" onClick={() => {
-                  const n = prompt('Rename workspace:', ws.name)
-                  if (n?.trim()) onRenameWorkspace(ws.id, n.trim())
-                }}>✎</button>
-                <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                  onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '0.35rem' }}>
-            <input className="input" style={{ flex: 1, fontSize: '0.8em' }}
-              placeholder="New workspace name…" value={newWsName}
-              onChange={e => setNewWsName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }} />
-            <button className="btn-xs btn-primary" disabled={!newWsName.trim()}
-              onClick={() => { if (newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }}>Add</button>
-          </div>
-        </Group>
-
-        {/* ══════════════════════════════════════════
-            IMPORT / EXPORT
-        ══════════════════════════════════════════ */}
-        <Group title="Import / Export" defaultOpen={false} signal={groupSignal}>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
-            <button className="btn-xs" onClick={onExportBackup}>↓ Full backup (JSON)</button>
-            <button className="btn-xs" onClick={onExportCSV}>↓ Links CSV</button>
-          </div>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <button className="btn-xs" disabled={importingBackup} onClick={() => backupFileRef.current?.click()}>
-              {importingBackup ? '⟳ Importing…' : '↑ Import JSON / CSV'}
+          {/* Action buttons */}
+          <div className="topbar-actions">
+            <button
+              className="btn"
+              title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+              onClick={toggleAll}
+            >
+              {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
+            <button className="icon-btn" title="Refresh" onClick={handleRefresh}>↻</button>
+            <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
-          <input ref={backupFileRef} type="file" accept="application/json,.json,.csv,text/csv"
-            style={{ display: 'none' }} onChange={onImportBackup} />
-        </Group>
+        </div>
 
-        {/* ══════════════════════════════════════════
-            DANGER ZONE
-        ══════════════════════════════════════════ */}
-        <Group title="Danger zone" defaultOpen={false} signal={groupSignal}>
-          <p style={{ fontSize: '0.78em', color: 'var(--text-dim)', lineHeight: 1.5, margin: '0.2rem 0 0.5rem' }}>
-            Destructive — cannot be undone.
-          </p>
-          <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-            <button className="btn btn-danger" style={{ fontSize: '0.78em', padding: '0.28rem 0.7rem' }}
-              onClick={onResetWorkspaceLinks}>
-              ✕ Clear all sections &amp; links
-            </button>
-            <button className="btn btn-danger" style={{ fontSize: '0.78em', padding: '0.28rem 0.7rem' }}
-              onClick={() => { if (confirm('Reset all theme settings to defaults?')) onResetTheme() }}>
-              ↺ Reset theme to defaults
-            </button>
+        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
+        <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
+          <div className="main-col">
+            <Sections
+              sections={sections}
+              links={filteredLinks}
+              userId={session.user.id}
+              workspaceId={activeWs}
+              onRefresh={handleRefresh}
+              colCount={theme.sectionsCols ?? 4}
+              triggerCollapseAll={triggerCollapse}
+              triggerExpandAll={triggerExpand}
+            />
           </div>
-        </Group>
+          <div className="side-col">
+            <Notes
+              notes={notes}
+              workspaceId={activeWs}
+              userId={session.user.id}
+              onRefresh={handleRefresh}
+              forceOpen={notesTrigger}
+            />
+          </div>
+        </main>
 
-      </div>
+        {/* ── SETTINGS ────────────────────────────────────── */}
+        {settingsOpen && (
+          <SettingsErrorBoundary>
+          <Suspense fallback={null}>
+          <Settings
+            theme={theme}
+            setTheme={setTheme}
+            onSave={() => { applyTheme(theme); localStorage.setItem('current_theme', JSON.stringify(theme)) }}
+            onClose={() => setSettingsOpen(false)}
+            onImageUpload={handleImageUpload}
+            onBgImageUpload={handleBgImageUpload}
+            onExportBackup={exportFullBackup}
+            onExportCSV={exportCSV}
+            onImportBackup={handleImportBackup}
+            onResetWorkspaceLinks={resetWorkspaceLinks}
+            onResetTheme={() => setTheme(DEFAULT_THEME)}
+            fileRef={fileRef}
+            backupFileRef={backupFileRef}
+            importingBackup={importingBackup}
+            workspaces={workspaces}
+            activeWs={activeWs}
+            onAddWorkspace={addWorkspace}
+            onRenameWorkspace={renameWorkspace}
+            onDeleteWorkspace={deleteWorkspace}
+            onSetActiveWs={setActiveWs}
+          />
+          </Suspense>
+          </SettingsErrorBoundary>
+        )}
 
-      {/* ── Footer — z-index above panel so it's always visible ── */}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
-       
-        <button className="btn btn-primary" style={{ flex: 1 }}
-          onClick={() => { onSave(); onClose() }}>
-          Save &amp; Close
-        </button>
-       
-        <button className="btn" onClick={onClose}>
-          Close
-        </button>
       </div>
     </>
   )
