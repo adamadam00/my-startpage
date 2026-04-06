@@ -3,7 +3,7 @@ import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
 import Settings from './components/Settings'
-import { supabase } from './lib/supabase'
+import { supabase } from '../lib/supabase'
 import './index.css'
 
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
