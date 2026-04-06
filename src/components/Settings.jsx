@@ -238,88 +238,107 @@ export default function Settings({
             ))}
           </div>
 
-          {/* ── Dynamic controls per preset ── */}
-          {ANIMATED_PRESETS.includes(theme.bgPreset) && (
-            <>
-              <SectionTitle>Animation</SectionTitle>
-              <Row label="Speed">
-                <Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={800} step={25}
-                  onChange={v => set('bgAnimSpeed', v / 100)} unit="%" />
-              </Row>
-            </>
-          )}
+          {/* ── Per-preset helpers ── */}
+          {(() => {
+            const gp = (key, def) => theme.bgSt?.[theme.bgPreset]?.[key] ?? def
+            const sp = (key, val) => set('bgSt', {
+              ...(theme.bgSt ?? {}),
+              [theme.bgPreset]: { ...(theme.bgSt?.[theme.bgPreset] ?? {}), [key]: val }
+            })
+            return (
+              <>
+                {/* ── Animation speed ── */}
+                {ANIMATED_PRESETS.includes(theme.bgPreset) && (
+                  <>
+                    <SectionTitle>Animation</SectionTitle>
+                    <Row label="Speed">
+                      <Slider val={Math.round(gp('speed', 1) * 100)} min={0} max={800} step={25}
+                        onChange={v => sp('speed', v / 100)} unit="%" />
+                    </Row>
+                  </>
+                )}
 
-          {PLASMA_PRESETS.includes(theme.bgPreset) && (
-            <>
-              <SectionTitle>Plasma colours</SectionTitle>
-              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
-              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
-              <Row label="Colour 3"><ColorPick value={theme.bgC3 || '#50c8ff'} onChange={v => set('bgC3', v)} /></Row>
-              <Row label="Blur radius">
-                <Slider val={theme.bgBlur ?? 45} min={10} max={120} onChange={v => set('bgBlur', v)} unit="px" />
-              </Row>
-            </>
-          )}
+                {/* ── Plasma colours ── */}
+                {PLASMA_PRESETS.includes(theme.bgPreset) && (
+                  <>
+                    <SectionTitle>Plasma colours</SectionTitle>
+                    <Row label="Colour 1"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
+                    <Row label="Colour 3"><ColorPick value={gp('c3', '#50c8ff')} onChange={v => sp('c3', v)} /></Row>
+                    <Row label="Blur radius">
+                      <Slider val={gp('blur', 45)} min={10} max={120} onChange={v => sp('blur', v)} unit="px" />
+                    </Row>
+                  </>
+                )}
 
-          {theme.bgPreset === 'fog' && (
-            <>
-              <SectionTitle>Fog colour</SectionTitle>
-              <Row label="Fog colour"><ColorPick value={theme.patternColor || '#323c6e'} onChange={v => set('patternColor', v)} /></Row>
-              <Row label="Fog density">
-                <Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
-                  onChange={v => set('patternOpacity', v / 100)} unit="%" />
-              </Row>
-            </>
-          )}
+                {/* ── Fog ── */}
+                {theme.bgPreset === 'fog' && (
+                  <>
+                    <SectionTitle>Fog colour</SectionTitle>
+                    <Row label="Fog colour"><ColorPick value={gp('fogColor', '#323c6e')} onChange={v => sp('fogColor', v)} /></Row>
+                    <Row label="Fog density">
+                      <Slider val={Math.round(gp('fogOpacity', 1) * 100)} min={0} max={100}
+                        onChange={v => sp('fogOpacity', v / 100)} unit="%" />
+                    </Row>
+                  </>
+                )}
 
-          {theme.bgPreset === 'scan' && (
-            <>
-              <SectionTitle>Scan line</SectionTitle>
-              <Row label="Line colour"><ColorPick value={theme.patternColor || '#6c8fff'} onChange={v => set('patternColor', v)} /></Row>
-              <Row label="Brightness">
-                <Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
-                  onChange={v => set('patternOpacity', v / 100)} unit="%" />
-              </Row>
-            </>
-          )}
+                {/* ── Scan ── */}
+                {theme.bgPreset === 'scan' && (
+                  <>
+                    <SectionTitle>Scan line</SectionTitle>
+                    <Row label="Line colour"><ColorPick value={gp('scanColor', '#6c8fff')} onChange={v => sp('scanColor', v)} /></Row>
+                    <Row label="Brightness">
+                      <Slider val={Math.round(gp('scanOpacity', 1) * 100)} min={0} max={100}
+                        onChange={v => sp('scanOpacity', v / 100)} unit="%" />
+                    </Row>
+                  </>
+                )}
 
-          {theme.bgPreset === 'starfield' && (
-            <>
-              <SectionTitle>Starfield gradient</SectionTitle>
-              <Row label="Gradient overlay">
-                <Toggle checked={theme.starfieldGradient ?? false} onChange={v => set('starfieldGradient', v)} />
-              </Row>
-              {(theme.starfieldGradient ?? false) && (
-                <>
-                  <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
-                  <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
-                </>
-              )}
-            </>
-          )}
+                {/* ── Starfield ── */}
+                {theme.bgPreset === 'starfield' && (
+                  <>
+                    <SectionTitle>Starfield gradient</SectionTitle>
+                    <Row label="Gradient overlay">
+                      <Toggle checked={gp('sfGrad', false)} onChange={v => sp('sfGrad', v)} />
+                    </Row>
+                    {gp('sfGrad', false) && (
+                      <>
+                        <Row label="Colour 1"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                        <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
+                      </>
+                    )}
+                  </>
+                )}
 
-          {theme.bgPreset === 'drift' && (
-            <>
-              <SectionTitle>Drift colours</SectionTitle>
-              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
-              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#9c6fff'} onChange={v => set('bgC2', v)} /></Row>
-            </>
-          )}
+                {/* ── Drift ── */}
+                {theme.bgPreset === 'drift' && (
+                  <>
+                    <SectionTitle>Drift colours</SectionTitle>
+                    <Row label="Colour 1"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
+                  </>
+                )}
 
-          {theme.bgPreset === 'pulse' && (
-            <>
-              <SectionTitle>Pulse colour</SectionTitle>
-              <Row label="Colour"><ColorPick value={theme.bgC1 || '#6c8fff'} onChange={v => set('bgC1', v)} /></Row>
-            </>
-          )}
+                {/* ── Pulse ── */}
+                {theme.bgPreset === 'pulse' && (
+                  <>
+                    <SectionTitle>Pulse colour</SectionTitle>
+                    <Row label="Colour"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                  </>
+                )}
 
-          {theme.bgPreset === 'tide' && (
-            <>
-              <SectionTitle>Tide colours</SectionTitle>
-              <Row label="Colour 1"><ColorPick value={theme.bgC1 || '#005080'} onChange={v => set('bgC1', v)} /></Row>
-              <Row label="Colour 2"><ColorPick value={theme.bgC2 || '#0078c8'} onChange={v => set('bgC2', v)} /></Row>
-            </>
-          )}
+                {/* ── Tide ── */}
+                {theme.bgPreset === 'tide' && (
+                  <>
+                    <SectionTitle>Tide colours</SectionTitle>
+                    <Row label="Colour 1"><ColorPick value={gp('c1', '#005080')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour 2"><ColorPick value={gp('c2', '#0078c8')} onChange={v => sp('c2', v)} /></Row>
+                  </>
+                )}
+              </>
+            )
+          })()}
 
           <Row label="Pattern colour">
             <ColorPick value={theme.patternColor} onChange={v => set('patternColor', v)} />

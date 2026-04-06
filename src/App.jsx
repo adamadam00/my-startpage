@@ -138,11 +138,9 @@ function applyTheme(t) {
       '}',
     ].join(' ')
   }
-  const speed = t.bgAnimSpeed ?? 1
-  const dur = (b) => speed <= 0 ? '9999s' : `${(b / speed).toFixed(1)}s`
-  s('--plasma-speed-a', dur(20))
-  s('--plasma-speed-b', dur(28))
-  if (t.bgBlur != null) { s('--plasma-blur-a', `${t.bgBlur}px`); s('--plasma-blur-b', `${t.bgBlur + 20}px`) }
+  const ps    = (t.bgSt ?? {})[t.bgPreset] ?? {}
+  const speed = ps.speed ?? 1
+  const dur   = (b) => speed <= 0 ? '9999s' : `${(b / speed).toFixed(1)}s`
 
   const rgba = (hex, a) => {
     const h = (hex || '#000000').replace('#', '')
@@ -154,38 +152,55 @@ function applyTheme(t) {
     return `${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)}`
   }
 
-  if (t.bgC1) {
-    s('--plasma-c1', rgba(t.bgC1, 0.28)); s('--plasma-c2', rgba(t.bgC2||t.bgC1, 0.25)); s('--plasma-c3', rgba(t.bgC3||t.bgC1, 0.18))
-    s('--plasma-c4', rgba(t.bgC1, 0.14)); s('--plasma-c5', rgba(t.bgC2||t.bgC1, 0.14)); s('--plasma-c6', rgba(t.bgC1, 0.16))
-    s('--drift-c1', rgba(t.bgC1, 0.20))
-    s('--drift-c2', rgba(t.bgC2||t.bgC1, 0.16))
-    s('--pulse-c',  rgba(t.bgC1, 0.22))
-    s('--tide-c1',  rgba(t.bgC1, 0.24))
-    s('--tide-c2',  rgba(t.bgC2||t.bgC1, 0.20))
+  const c1   = ps.c1   || null
+  const c2   = ps.c2   || null
+  const c3   = ps.c3   || null
+  const blur = ps.blur ?? null
+
+  s('--plasma-speed-a', dur(20))
+  s('--plasma-speed-b', dur(28))
+  if (blur != null) { s('--plasma-blur-a', `${blur}px`); s('--plasma-blur-b', `${blur + 20}px`) }
+
+  if (c1) {
+    s('--plasma-c1', rgba(c1, 0.28)); s('--plasma-c2', rgba(c2||c1, 0.25)); s('--plasma-c3', rgba(c3||c1, 0.18))
+    s('--plasma-c4', rgba(c1, 0.14)); s('--plasma-c5', rgba(c2||c1, 0.14)); s('--plasma-c6', rgba(c1, 0.16))
+    s('--drift-c1', rgba(c1, 0.20))
+    s('--drift-c2', rgba(c2||c1, 0.16))
+    s('--pulse-c',  rgba(c1, 0.22))
+    s('--tide-c1',  rgba(c1, 0.24))
+    s('--tide-c2',  rgba(c2||c1, 0.20))
   }
 
-  if (t.starfieldGradient && t.bgC1) {
+  const sfGrad = ps.sfGrad ?? false
+  if (sfGrad && c1) {
     s('--starfield-bg-image',
-      `radial-gradient(ellipse 80% 70% at 25% 45%, ${rgba(t.bgC1,0.22)} 0%, transparent 65%),` +
-      `radial-gradient(ellipse 70% 80% at 75% 60%, ${rgba(t.bgC2||t.bgC1,0.16)} 0%, transparent 65%)`)
+      `radial-gradient(ellipse 80% 70% at 25% 45%, ${rgba(c1,0.22)} 0%, transparent 65%),` +
+      `radial-gradient(ellipse 70% 80% at 75% 60%, ${rgba(c2||c1,0.16)} 0%, transparent 65%)`)
   } else {
     s('--starfield-bg-image', 'none')
   }
 
-  if (t.patternColor) {
-    const op = t.patternOpacity ?? 1
-    const rgb = hexRgb(t.patternColor)
-    s('--fog-c1', `rgba(${rgb},${(0.22*op).toFixed(3)})`)
-    s('--fog-c2', `rgba(${rgb},${(0.18*op).toFixed(3)})`)
-    s('--fog-c3', `rgba(${rgb},${(0.15*op).toFixed(3)})`)
-    s('--fog-c4', `rgba(${rgb},${(0.16*op).toFixed(3)})`)
-    s('--fog-c5', `rgba(${rgb},${(0.14*op).toFixed(3)})`)
-    s('--fog-c6', `rgba(${rgb},${(0.10*op).toFixed(3)})`)
-    s('--scan-line-c',  `rgba(${rgb},${(0.90*op).toFixed(3)})`)
-    s('--scan-mid-c',   `rgba(${rgb},${(0.55*op).toFixed(3)})`)
-    s('--scan-glow-c',  `rgba(${rgb},${(0.20*op).toFixed(3)})`)
-    s('--scan-glow2-c', `rgba(${rgb},${(0.08*op).toFixed(3)})`)
-    s('--scan-glow3-c', `rgba(${rgb},${(0.04*op).toFixed(3)})`)
+  const fogColor   = ps.fogColor   || t.patternColor || null
+  const fogOpacity = ps.fogOpacity ?? 1
+  if (fogColor) {
+    const rgb = hexRgb(fogColor)
+    s('--fog-c1', `rgba(${rgb},${(0.22*fogOpacity).toFixed(3)})`)
+    s('--fog-c2', `rgba(${rgb},${(0.18*fogOpacity).toFixed(3)})`)
+    s('--fog-c3', `rgba(${rgb},${(0.15*fogOpacity).toFixed(3)})`)
+    s('--fog-c4', `rgba(${rgb},${(0.16*fogOpacity).toFixed(3)})`)
+    s('--fog-c5', `rgba(${rgb},${(0.14*fogOpacity).toFixed(3)})`)
+    s('--fog-c6', `rgba(${rgb},${(0.10*fogOpacity).toFixed(3)})`)
+  }
+
+  const scanColor   = ps.scanColor   || t.patternColor || null
+  const scanOpacity = ps.scanOpacity ?? 1
+  if (scanColor) {
+    const rgb = hexRgb(scanColor)
+    s('--scan-line-c',  `rgba(${rgb},${(0.90*scanOpacity).toFixed(3)})`)
+    s('--scan-mid-c',   `rgba(${rgb},${(0.55*scanOpacity).toFixed(3)})`)
+    s('--scan-glow-c',  `rgba(${rgb},${(0.20*scanOpacity).toFixed(3)})`)
+    s('--scan-glow2-c', `rgba(${rgb},${(0.08*scanOpacity).toFixed(3)})`)
+    s('--scan-glow3-c', `rgba(${rgb},${(0.04*scanOpacity).toFixed(3)})`)
   }
 
   let bgEl = document.getElementById('sp-bg')
@@ -285,6 +300,23 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
+  // ── Re-auth + refresh when tab becomes visible again (fixes long-idle NetworkError) ──
+  useEffect(() => {
+    const onVisible = async () => {
+      if (document.visibilityState !== 'visible') return
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (data?.session) { setSession(data.session); handleRefresh() }
+      } catch { /* network still offline, ignore */ }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('online', onVisible)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      window.removeEventListener('online', onVisible)
+    }
+  }, [])
+
   useEffect(() => {
     if (!session) return
     ensureWorkspace().then(() => handleRefresh())
@@ -307,18 +339,22 @@ export default function App() {
   // ── Data refresh ──────────────────────────────────────────────────────────
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
-    const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
-    if (wsErr) { alert(wsErr.message); return }
-    setWorkspaces(wsData || [])
-    const currentWs = activeWs ?? wsData?.[0]?.id ?? null
-    if (!currentWs) return
-    if (!activeWs) setActiveWs(currentWs)
-    const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
-      supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-      supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-      supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
-    ])
-    setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
+    try {
+      const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
+      if (wsErr) { console.error('Refresh error:', wsErr.message); return }
+      setWorkspaces(wsData || [])
+      const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+      if (!currentWs) return
+      if (!activeWs) setActiveWs(currentWs)
+      const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
+        supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+      ])
+      setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
+    } catch (err) {
+      console.error('Refresh network error:', err.message)
+    }
   }
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
