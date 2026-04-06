@@ -1,4 +1,4 @@
-import { useState, memo, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext, closestCenter, PointerSensor,
@@ -15,7 +15,7 @@ function getFavicon(url) {
   catch { return null }
 }
 
-const LinkItem = memo(function LinkItem({ link, onEdit, onDelete, openInNewTab }) {
+function LinkItem({ link, onEdit, onDelete, openInNewTab, faviconEnabled = true }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
   const open = () => openInNewTab
@@ -25,7 +25,7 @@ const LinkItem = memo(function LinkItem({ link, onEdit, onDelete, openInNewTab }
   return (
     <div ref={setNodeRef} style={style} className="link-item">
       <span className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()} />
-      {getFavicon(link.url) && (
+      {faviconEnabled && getFavicon(link.url) && (
         <img src={getFavicon(link.url)} alt="" className="link-favicon"
           onError={e => e.target.style.display = 'none'} />
       )}
@@ -37,7 +37,7 @@ const LinkItem = memo(function LinkItem({ link, onEdit, onDelete, openInNewTab }
       </div>
     </div>
   )
-})
+}
 
 export default function Links({
   links = [],
@@ -46,6 +46,7 @@ export default function Links({
   userId,
   onRefresh,
   openInNewTab = true,
+  faviconEnabled = true,
   externalAdding = false,
   onExternalAddingDone,
 }) {
@@ -132,7 +133,7 @@ export default function Links({
               ) : (
                 <LinkItem key={link.id} link={link}
                   onEdit={l => { setEditing(l); setTitle(l.title); setUrl(l.url) }}
-                  onDelete={handleDelete} openInNewTab={openInNewTab} />
+                  onDelete={handleDelete} openInNewTab={openInNewTab} faviconEnabled={faviconEnabled} />
               )
             )}
           </div>

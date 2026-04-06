@@ -64,7 +64,7 @@ const DEFAULT_THEME = {
   radius: 10, sectionRadius: 0,
   linkGap: 0.5, cardPadding: 0.75,
   sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
-  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13,
+  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13, faviconEnabled: true, faviconDelay: 0, faviconFade: 0.3, openInNewTab: true,
   patternColor: '#2a2a3a', patternOpacity: 1,
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
@@ -111,6 +111,9 @@ function applyTheme(t) {
   s('--sections-cols',  t.sectionsCols ?? 4)
   s('--favicon-opacity', t.faviconOpacity ?? 1)
   s('--favicon-filter',  t.faviconGreyscale ? 'grayscale(1)' : 'none')
+  s('--favicon-display', (t.faviconEnabled ?? true) ? 'block' : 'none')
+  s('--favicon-delay',   `${t.faviconDelay ?? 0}s`)
+  s('--favicon-fade',    `${t.faviconFade  ?? 0.3}s`)
   s('--pattern-color',   t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
   s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
   if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
@@ -590,6 +593,8 @@ export default function App() {
               colCount={theme.sectionsCols ?? 4}
               triggerCollapseAll={triggerCollapse}
               triggerExpandAll={triggerExpand}
+              openInNewTab={theme.openInNewTab ?? true}
+              faviconEnabled={theme.faviconEnabled ?? true}
             />
           </div>
           <div className="side-col">

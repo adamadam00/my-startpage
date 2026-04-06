@@ -529,15 +529,35 @@ export default function Settings({
         </Group>
 
         {/* ══════════════════════════════════════════
+            LINKS
+        ══════════════════════════════════════════ */}
+        <Group title="Links" defaultOpen={false} signal={groupSignal}>
+          <Row label="Open in new tab">
+            <Toggle checked={theme.openInNewTab ?? true} onChange={v => set('openInNewTab', v)} />
+          </Row>
+        </Group>
+
+        {/* ══════════════════════════════════════════
             FAVICONS
         ══════════════════════════════════════════ */}
         <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
-          <Row label="Favicon size">
+          <Row label="Show favicons">
+            <Toggle checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} />
+          </Row>
+          <Row label="Size">
             <Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
           </Row>
-          <Row label="Favicon opacity">
+          <Row label="Opacity">
             <Slider val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100}
               onChange={v => set('faviconOpacity', v / 100)} unit="%" />
+          </Row>
+          <Row label="Load delay">
+            <Slider val={theme.faviconDelay ?? 0} min={0} max={15} step={0.5}
+              onChange={v => set('faviconDelay', v)} unit="s" />
+          </Row>
+          <Row label="Fade in">
+            <Slider val={theme.faviconFade ?? 0.3} min={0} max={3} step={0.1}
+              onChange={v => set('faviconFade', v)} unit="s" />
           </Row>
           <Row label="Greyscale">
             <Toggle checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} />
