@@ -102,11 +102,10 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
               <textarea
                 ref={textRef}
                 className="input"
-                rows={4}
                 value={text}
                 onChange={e => setText(e.target.value)}
                 placeholder="Type a note… Ctrl+Enter saves, Esc cancels"
-                style={{ width:'100%', minHeight:96, resize:'vertical', lineHeight:1.55, fontSize:'var(--new-note-font-size, var(--notes-font-size, 13px))' }}
+                style={{ width:'100%', minHeight:64, resize:'vertical', lineHeight:1.55 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) add()
                   if (e.key === 'Escape') { setAdding(false); setText(''); setErr('') }
