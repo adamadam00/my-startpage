@@ -79,11 +79,12 @@ function Row({ label, children, dimLabel = false }) {
 }
 
 /** Compact slider with value readout */
-function Slider({ val, min, max, step = 1, onChange, unit = '' }) {
+function Slider({ val, min, max, step = 1, onChange, unit = '', label = '' }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
       <input
         type="range" min={min} max={max} step={step} value={val}
+        title={label || undefined}
         onChange={e => onChange(Number(e.target.value))}
         style={{ width: 80 }}
       />
@@ -95,18 +96,18 @@ function Slider({ val, min, max, step = 1, onChange, unit = '' }) {
 }
 
 /** Colour swatch picker */
-function ColorPick({ value, onChange }) {
+function ColorPick({ value, onChange, label = '' }) {
   const safe = (value || '#000000').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)
   const hex  = safe.length === 7 ? safe : '#000000'
   return (
-    <input type="color" className="color-input" value={hex} onChange={e => onChange(e.target.value)} />
+    <input type="color" className="color-input" title={label || undefined} value={hex} onChange={e => onChange(e.target.value)} />
   )
 }
 
 /** On/off toggle */
-function Toggle({ checked, onChange }) {
+function Toggle({ checked, onChange, label = '' }) {
   return (
-    <label className="toggle">
+    <label className="toggle" title={label || undefined}>
       <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
       <span className="toggle-slider" />
     </label>
@@ -252,7 +253,7 @@ export default function Settings({
                   <>
                     <SectionTitle>Animation</SectionTitle>
                     <Row label="Speed">
-                      <Slider val={Math.round(gp('speed', 1) * 100)} min={0} max={800} step={25}
+                      <Slider label="Speed" val={Math.round(gp('speed', 1) * 100)} min={0} max={800} step={25}
                         onChange={v => sp('speed', v / 100)} unit="%" />
                     </Row>
                   </>
@@ -261,11 +262,11 @@ export default function Settings({
                 {PLASMA_PRESETS.includes(theme.bgPreset) && (
                   <>
                     <SectionTitle>Plasma colours</SectionTitle>
-                    <Row label="Colour 1"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                    <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
-                    <Row label="Colour 3"><ColorPick value={gp('c3', '#50c8ff')} onChange={v => sp('c3', v)} /></Row>
+                    <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
+                    <Row label="Colour 3"><ColorPick label="Colour 3" value={gp('c3', '#50c8ff')} onChange={v => sp('c3', v)} /></Row>
                     <Row label="Blur radius">
-                      <Slider val={gp('blur', 45)} min={10} max={120} onChange={v => sp('blur', v)} unit="px" />
+                      <Slider label="Blur radius" val={gp('blur', 45)} min={10} max={120} onChange={v => sp('blur', v)} unit="px" />
                     </Row>
                   </>
                 )}
@@ -273,9 +274,9 @@ export default function Settings({
                 {theme.bgPreset === 'fog' && (
                   <>
                     <SectionTitle>Fog colour</SectionTitle>
-                    <Row label="Fog colour"><ColorPick value={gp('fogColor', '#323c6e')} onChange={v => sp('fogColor', v)} /></Row>
+                    <Row label="Fog colour"><ColorPick label="Fog colour" value={gp('fogColor', '#323c6e')} onChange={v => sp('fogColor', v)} /></Row>
                     <Row label="Fog density">
-                      <Slider val={Math.round(gp('fogOpacity', 1) * 100)} min={0} max={100}
+                      <Slider label="Fog density" val={Math.round(gp('fogOpacity', 1) * 100)} min={0} max={100}
                         onChange={v => sp('fogOpacity', v / 100)} unit="%" />
                     </Row>
                   </>
@@ -284,9 +285,9 @@ export default function Settings({
                 {theme.bgPreset === 'scan' && (
                   <>
                     <SectionTitle>Scan line</SectionTitle>
-                    <Row label="Line colour"><ColorPick value={gp('scanColor', '#6c8fff')} onChange={v => sp('scanColor', v)} /></Row>
+                    <Row label="Line colour"><ColorPick label="Line colour" value={gp('scanColor', '#6c8fff')} onChange={v => sp('scanColor', v)} /></Row>
                     <Row label="Brightness">
-                      <Slider val={Math.round(gp('scanOpacity', 1) * 100)} min={0} max={100}
+                      <Slider label="Brightness" val={Math.round(gp('scanOpacity', 1) * 100)} min={0} max={100}
                         onChange={v => sp('scanOpacity', v / 100)} unit="%" />
                     </Row>
                   </>
@@ -296,26 +297,26 @@ export default function Settings({
                   <>
                     <SectionTitle>Starfield gradient</SectionTitle>
                     <Row label="Gradient overlay">
-                      <Toggle checked={gp('sfGrad', false)} onChange={v => sp('sfGrad', v)} />
+                      <Toggle label="Gradient overlay" checked={gp('sfGrad', false)} onChange={v => sp('sfGrad', v)} />
                     </Row>
                     {gp('sfGrad', false) && (
                       <>
-                        <Row label="Colour 1"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                        <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
+                        <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                        <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
                       </>
                     )}
                     <SectionTitle>Stars</SectionTitle>
                     <Row label="Star density">
-                      <Slider val={gp('density', 3)} min={1} max={5} step={1}
+                      <Slider label="Star density" val={gp('density', 3)} min={1} max={5} step={1}
                         onChange={v => sp('density', v)} unit="" />
                     </Row>
                     <SectionTitle>Planets</SectionTitle>
                     <Row label="Show planets">
-                      <Toggle checked={gp('planets', false)} onChange={v => sp('planets', v)} />
+                      <Toggle label="Show planets" checked={gp('planets', false)} onChange={v => sp('planets', v)} />
                     </Row>
                     {gp('planets', false) && (
                       <Row label="Planet count">
-                        <Slider val={gp('planetCount', 2)} min={1} max={3} step={1}
+                        <Slider label="Planet count" val={gp('planetCount', 2)} min={1} max={3} step={1}
                           onChange={v => sp('planetCount', v)} unit="" />
                       </Row>
                     )}
@@ -325,33 +326,33 @@ export default function Settings({
                 {theme.bgPreset === 'drift' && (
                   <>
                     <SectionTitle>Drift colours</SectionTitle>
-                    <Row label="Colour 1"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                    <Row label="Colour 2"><ColorPick value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
+                    <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
                   </>
                 )}
 
                 {theme.bgPreset === 'pulse' && (
                   <>
                     <SectionTitle>Pulse colour</SectionTitle>
-                    <Row label="Colour"><ColorPick value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour"><ColorPick label="Colour" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
                   </>
                 )}
 
                 {theme.bgPreset === 'tide' && (
                   <>
                     <SectionTitle>Tide colours</SectionTitle>
-                    <Row label="Colour 1"><ColorPick value={gp('c1', '#005080')} onChange={v => sp('c1', v)} /></Row>
-                    <Row label="Colour 2"><ColorPick value={gp('c2', '#0078c8')} onChange={v => sp('c2', v)} /></Row>
+                    <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#005080')} onChange={v => sp('c1', v)} /></Row>
+                    <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#0078c8')} onChange={v => sp('c2', v)} /></Row>
                   </>
                 )}
               </>
             )
           })()}
           <Row label="Pattern colour">
-            <ColorPick value={theme.patternColor} onChange={v => set('patternColor', v)} />
+            <ColorPick label="Pattern colour" value={theme.patternColor} onChange={v => set('patternColor', v)} />
           </Row>
           <Row label="Pattern opacity">
-            <Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
+            <Slider label="Pattern opacity" val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
               onChange={v => set('patternOpacity', v / 100)} unit="%" />
           </Row>
           <Row label="Custom bg image">
@@ -391,22 +392,22 @@ export default function Settings({
               </select>
             </Row>
             <Row label="Position X">
-              <Slider val={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => set('wallpaperX', v)} unit="%" />
+              <Slider label="Position X" val={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => set('wallpaperX', v)} unit="%" />
             </Row>
             <Row label="Position Y">
-              <Slider val={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => set('wallpaperY', v)} unit="%" />
+              <Slider label="Position Y" val={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => set('wallpaperY', v)} unit="%" />
             </Row>
             <Row label="Scale">
-              <Slider val={theme.wallpaperScale ?? 100} min={50} max={300} onChange={v => set('wallpaperScale', v)} unit="%" />
+              <Slider label="Scale" val={theme.wallpaperScale ?? 100} min={50} max={300} onChange={v => set('wallpaperScale', v)} unit="%" />
             </Row>
             <Row label="Blur">
-              <Slider val={theme.wallpaperBlur ?? 0} min={0} max={40} onChange={v => set('wallpaperBlur', v)} unit="px" />
+              <Slider label="Blur" val={theme.wallpaperBlur ?? 0} min={0} max={40} onChange={v => set('wallpaperBlur', v)} unit="px" />
             </Row>
             <Row label="Dim overlay">
-              <Slider val={theme.wallpaperDim ?? 35} min={0} max={100} onChange={v => set('wallpaperDim', v)} unit="%" />
+              <Slider label="Dim overlay" val={theme.wallpaperDim ?? 35} min={0} max={100} onChange={v => set('wallpaperDim', v)} unit="%" />
             </Row>
             <Row label="Opacity">
-              <Slider val={theme.wallpaperOpacity ?? 100} min={0} max={100} onChange={v => set('wallpaperOpacity', v)} unit="%" />
+              <Slider label="Opacity" val={theme.wallpaperOpacity ?? 100} min={0} max={100} onChange={v => set('wallpaperOpacity', v)} unit="%" />
             </Row>
           </>)}
         </Group>
@@ -417,40 +418,40 @@ export default function Settings({
         <Group title="Colours" defaultOpen={false} signal={groupSignal}>
 
           <SectionTitle>Surfaces</SectionTitle>
-          <Row label="Background"><ColorPick value={theme.bg}  onChange={v => set('bg', v)} /></Row>
-          <Row label="Surface 2"> <ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
-          <Row label="Surface 3"> <ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
+          <Row label="Background"><ColorPick label="Background" value={theme.bg}  onChange={v => set('bg', v)} /></Row>
+          <Row label="Surface 2"> <ColorPick label="Surface 2" value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
+          <Row label="Surface 3"> <ColorPick label="Surface 3" value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
           <Row label="Card">
-            <ColorPick value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
+            <ColorPick label="Card" value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
           </Row>
           <Row label="Card opacity">
-            <Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" />
+            <Slider label="Card opacity" val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" />
           </Row>
 
           <SectionTitle>Borders</SectionTitle>
-          <Row label="Border">       <ColorPick value={theme.border}      onChange={v => set('border', v)} /></Row>
-          <Row label="Border hover"> <ColorPick value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
+          <Row label="Border">       <ColorPick label="Border" value={theme.border}      onChange={v => set('border', v)} /></Row>
+          <Row label="Border hover"> <ColorPick label="Border hover" value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
           <Row label="Border opacity">
-            <Slider val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" />
+            <Slider label="Border opacity" val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" />
           </Row>
 
           <SectionTitle>Text</SectionTitle>
-          <Row label="Text">         <ColorPick value={theme.text}        onChange={v => set('text', v)} /></Row>
-          <Row label="Text dim">     <ColorPick value={theme.textDim}     onChange={v => set('textDim', v)} /></Row>
-          <Row label="Title / label"><ColorPick value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
+          <Row label="Text">         <ColorPick label="Text" value={theme.text}        onChange={v => set('text', v)} /></Row>
+          <Row label="Text dim">     <ColorPick label="Text dim" value={theme.textDim}     onChange={v => set('textDim', v)} /></Row>
+          <Row label="Title / label"><ColorPick label="Title / label" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
 
           <SectionTitle>Accent &amp; state</SectionTitle>
-          <Row label="Accent">  <ColorPick value={theme.accent}  onChange={v => set('accent', v)} /></Row>
-          <Row label="Danger">  <ColorPick value={theme.danger}  onChange={v => set('danger', v)} /></Row>
-          <Row label="Success"> <ColorPick value={theme.success} onChange={v => set('success', v)} /></Row>
+          <Row label="Accent">  <ColorPick label="Accent" value={theme.accent}  onChange={v => set('accent', v)} /></Row>
+          <Row label="Danger">  <ColorPick label="Danger" value={theme.danger}  onChange={v => set('danger', v)} /></Row>
+          <Row label="Success"> <ColorPick label="Success" value={theme.success} onChange={v => set('success', v)} /></Row>
 
           <SectionTitle>Buttons</SectionTitle>
-          <Row label="Button bg">   <ColorPick value={theme.btnBg}   onChange={v => set('btnBg', v)} /></Row>
-          <Row label="Button text"> <ColorPick value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
+          <Row label="Button bg">   <ColorPick label="Button bg" value={theme.btnBg}   onChange={v => set('btnBg', v)} /></Row>
+          <Row label="Button text"> <ColorPick label="Button text" value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
 
           <SectionTitle>Settings panel</SectionTitle>
           <Row label="Section title colour">
-            <ColorPick value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} />
+            <ColorPick label="Section title colour" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} />
           </Row>
 
         </Group>
@@ -466,13 +467,13 @@ export default function Settings({
             </select>
           </Row>
           <Row label="Body font size">
-            <Slider val={theme.fontSize ?? 14} min={10} max={20} onChange={v => set('fontSize', v)} unit="px" />
+            <Slider label="Body font size" val={theme.fontSize ?? 14} min={10} max={20} onChange={v => set('fontSize', v)} unit="px" />
           </Row>
           <Row label="Topbar font size">
-            <Slider val={theme.topbarFontSize ?? 12} min={9} max={16} onChange={v => set('topbarFontSize', v)} unit="px" />
+            <Slider label="Topbar font size" val={theme.topbarFontSize ?? 12} min={9} max={16} onChange={v => set('topbarFontSize', v)} unit="px" />
           </Row>
           <Row label="Settings font size">
-            <Slider val={theme.settingsFontSize ?? 13} min={10} max={18} onChange={v => set('settingsFontSize', v)} unit="px" />
+            <Slider label="Settings font size" val={theme.settingsFontSize ?? 13} min={10} max={18} onChange={v => set('settingsFontSize', v)} unit="px" />
           </Row>
         </Group>
 
@@ -482,27 +483,27 @@ export default function Settings({
         <Group title="Layout &amp; spacing" defaultOpen={false} signal={groupSignal}>
 
           <Row label="Columns">
-            <Slider val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
+            <Slider label="Columns" val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
           </Row>
           <Row label="Topbar → cards gap">
-            <Slider val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
+            <Slider label="Topbar → cards gap" val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
           </Row>
           <Row label="Section gap (v)">
-            <Slider val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" />
+            <Slider label="Section gap (v)" val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" />
           </Row>
           <Row label="Section gap (h)">
-            <Slider val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" />
+            <Slider label="Section gap (h)" val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" />
           </Row>
           <Row label="Link gap">
-            <Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5}
+            <Slider label="Link gap" val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5}
               onChange={v => set('linkGap', v / 100)} unit="%" />
           </Row>
           <Row label="Link left padding">
-            <Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
+            <Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-100} max={200} step={5}
               onChange={v => set('linksPaddingH', v / 100)} unit="%" />
           </Row>
           <Row label="Handle opacity">
-            <Slider val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
+            <Slider label="Handle opacity" val={theme.handleOpacity ?? 15} min={0} max={100} onChange={v => set('handleOpacity', v)} unit="%" />
           </Row>
 
           <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
@@ -528,7 +529,7 @@ export default function Settings({
         <Group title="Cards &amp; borders" defaultOpen={false} signal={groupSignal}>
 
           <Row label="Card corner radius">
-            <Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" />
+            <Slider label="Card corner radius" val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" />
           </Row>
           {/* Quick presets */}
           <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
@@ -542,7 +543,7 @@ export default function Settings({
           </div>
 
           <Row label="Section corner radius">
-            <Slider val={theme.sectionRadius ?? 0} min={0} max={24} onChange={v => set('sectionRadius', v)} unit="px" />
+            <Slider label="Section corner radius" val={theme.sectionRadius ?? 0} min={0} max={24} onChange={v => set('sectionRadius', v)} unit="px" />
           </Row>
 
         </Group>
@@ -552,7 +553,7 @@ export default function Settings({
         ══════════════════════════════════════════ */}
         <Group title="Clock" defaultOpen={false} signal={groupSignal}>
           <Row label="Clock widget size">
-            <Slider val={Math.round((theme.clockWidgetSize ?? 1) * 10)} min={5} max={30}
+            <Slider label="Clock widget size" val={Math.round((theme.clockWidgetSize ?? 1) * 10)} min={5} max={30}
               onChange={v => set('clockWidgetSize', v / 10)} unit="×" />
           </Row>
         </Group>
@@ -562,24 +563,24 @@ export default function Settings({
         ══════════════════════════════════════════ */}
         <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
           <Row label="Show favicons">
-            <Toggle checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} />
+            <Toggle label="Show favicons" checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} />
           </Row>
           <Row label="Favicon size">
-            <Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
+            <Slider label="Favicon size" val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" />
           </Row>
           <Row label="Favicon opacity">
-            <Slider val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100}
+            <Slider label="Favicon opacity" val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100}
               onChange={v => set('faviconOpacity', v / 100)} unit="%" />
           </Row>
           <Row label="Greyscale">
-            <Toggle checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} />
+            <Toggle label="Greyscale" checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} />
           </Row>
           <Row label="Load delay">
-            <Slider val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5}
+            <Slider label="Load delay" val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5}
               onChange={v => set('faviconDelay', v)} unit="s" />
           </Row>
           <Row label="Fade-in duration">
-            <Slider val={theme.faviconFade ?? 0.3} min={0} max={2} step={0.1}
+            <Slider label="Fade-in duration" val={theme.faviconFade ?? 0.3} min={0} max={2} step={0.1}
               onChange={v => set('faviconFade', v)} unit="s" />
           </Row>
         </Group>
@@ -589,14 +590,14 @@ export default function Settings({
         ══════════════════════════════════════════ */}
         <Group title="Notes" defaultOpen={false} signal={groupSignal}>
           <Row label="Font size">
-            <Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
+            <Slider label="Font size" val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
           </Row>
           <Row label="Gap between notes">
-            <Slider val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" />
+            <Slider label="Gap between notes" val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" />
           </Row>
-          <Row label="Note card background"> <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} /></Row>
-          <Row label="Note text colour">     <ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
-          <Row label="Note text background"> <ColorPick value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row>
+          <Row label="Note card background"> <ColorPick label="Note card background" value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} /></Row>
+          <Row label="Note text colour">     <ColorPick label="Note text colour" value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
+          <Row label="Note text background"> <ColorPick label="Note text background" value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row>
         </Group>
 
         {/* ══════════════════════════════════════════

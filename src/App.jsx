@@ -488,11 +488,12 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus search bar on new tab load ──────────────────────
+  // ── Focus search bar once app is fully loaded ────────────
   useEffect(() => {
-    const timer = setTimeout(() => searchInputRef.current?.focus(), 80)
+    if (!session) return
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 200)
     return () => clearTimeout(timer)
-  }, [])
+  }, [session])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -528,51 +529,47 @@ export default function App() {
   // ── Load theme from Supabase ──────────────────────────────────────────────
   const loadUserSettings = async (force = false) => {
     const uid = sessionRef.current?.user?.id ?? session?.user?.id
-    if (!uid) { console.log('[settings] no uid, skipping load'); return }
+    if (!uid) { console.log('[settings] no uid'); return }
     try {
       const { data, error } = await supabase
         .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
-      const localRaw  = localStorage.getItem('current_theme')
+      const localRaw    = localStorage.getItem('current_theme')
       const localTheme  = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
       const remoteTheme = data?.theme ?? {}
-      const hasLocal  = Object.keys(localTheme).length  > 3
-      const hasRemote = Object.keys(remoteTheme).length > 3
-      console.log('[settings] load | force:', force, '| hasLocal:', hasLocal, '| hasRemote:', hasRemote)
+      const hasLocal    = Object.keys(localTheme).length  > 5
+      const hasRemote   = Object.keys(remoteTheme).length > 5
+      console.log('[settings]', force ? 'FORCE' : 'auto', '| local:', hasLocal, '| remote:', hasRemote)
 
-      if (force && hasRemote) {
-        // Manual refresh — always apply Supabase
-        const wallpaper = localTheme.wallpaper ?? null
-        const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wallpaper ? { wallpaper } : {}) }
-        setThemeState(merged)
-        localStorage.setItem('current_theme', JSON.stringify(merged))
-        console.log('[settings] force-applied Supabase theme')
-      } else if (!hasRemote && hasLocal) {
-        // Supabase empty — push local up (bootstrap)
-        console.log('[settings] bootstrapping Supabase from local')
-        persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
-      } else if (hasRemote && !hasLocal) {
-        // Local empty — pull from Supabase
-        const merged = { ...DEFAULT_THEME, ...remoteTheme }
-        setThemeState(merged)
-        localStorage.setItem('current_theme', JSON.stringify(merged))
-        console.log('[settings] pulled Supabase theme (no local)')
+      if (hasRemote) {
+        // Supabase has data — apply it (always on force; on auto only if local is empty or older)
+        const localTs  = localTheme._savedAt  || 0
+        const remoteTs = remoteTheme._savedAt || 0
+        if (force || !hasLocal || remoteTs > localTs) {
+          const wall   = localTheme.wallpaper ?? null
+          const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wall ? { wallpaper: wall } : {}) }
+          setThemeState(merged)
+          localStorage.setItem('current_theme', JSON.stringify(merged))
+          console.log('[settings] ✅ applied Supabase theme (_savedAt:', remoteTs, ')')
+        } else {
+          // Local is same age or newer — keep it but push to Supabase to stay in sync
+          persistTheme(localTheme, true)
+          console.log('[settings] local kept, pushed to Supabase (_savedAt:', localTs, ')')
+        }
       } else {
-        console.log('[settings] both exist, keeping local, syncing to Supabase')
-        persistTheme({ ...DEFAULT_THEME, ...localTheme }, true)
+        // Supabase empty — push local up as bootstrap
+        if (hasLocal) {
+          persistTheme(localTheme, true)
+          console.log('[settings] 🚀 bootstrapping Supabase from local')
+        } else {
+          console.log('[settings] neither local nor remote has data — using defaults')
+        }
       }
-    } catch (e) { console.error('[settings] load exception:', e) }
+    } catch (e) { console.error('[settings] exception:', e.message) }
   }
 
-    // ── Sign out ─────────────────────────────────────────────────────────────
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    setSession(null)
-    setSettingsOpen(false)
-  }
-
-  // ── Workspace bootstrap ───────────────────────────────────────────────────
+    // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
