@@ -209,9 +209,12 @@ export default function Sections({
   const safeLinks = Array.isArray(links) ? links : []
   const colsRef = useRef(cols)
   useEffect(() => { colsRef.current = cols }, [cols])
+  const skipRebuildRef = useRef(false)
 
   useEffect(() => {
-    if (!dragging) setCols(buildColumns(sections, colCount))
+    if (dragging) return
+    if (skipRebuildRef.current) { skipRebuildRef.current = false; return }
+    setCols(buildColumns(sections, colCount))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sections, colCount])
 
@@ -249,15 +252,16 @@ export default function Sections({
     const activeCol = findColIndex(current, active.id)
     const overCol = findColIndex(current, over.id)
     if (activeCol === -1 || overCol === -1 || activeCol === overCol) return
-    const next = current.map(col => [...col])
-    const activeItem = next[activeCol].find(s => s.id === active.id)
-    if (!activeItem) return
-    next[activeCol] = next[activeCol].filter(s => s.id !== active.id)
-    const overIndex = next[overCol].findIndex(s => s.id === over.id)
-    if (overIndex === -1) next[overCol].push(activeItem)
-    else next[overCol].splice(overIndex, 0, activeItem)
-    colsRef.current = next
-    setCols(next)
+    setCols(prev => {
+      const next = prev.map(col => [...col])
+      const activeItem = next[activeCol].find(s => s.id === active.id)
+      if (!activeItem) return prev
+      next[activeCol] = next[activeCol].filter(s => s.id !== active.id)
+      const overIndex = next[overCol].findIndex(s => s.id === over.id)
+      if (overIndex === -1) next[overCol].push(activeItem)
+      else next[overCol].splice(overIndex, 0, activeItem)
+      return next
+    })
   }
 
   const handleDragEnd = async ({ active, over }) => {
@@ -273,16 +277,8 @@ export default function Sections({
       const from = finalCols[activeCol].findIndex(s => s.id === active.id)
       const to = finalCols[activeCol].findIndex(s => s.id === over.id)
       if (from !== -1 && to !== -1 && from !== to) finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
-    } else {
-      const activeItem = finalCols[activeCol].find(s => s.id === active.id)
-      if (activeItem) {
-        finalCols[activeCol] = finalCols[activeCol].filter(s => s.id !== active.id)
-        const overIndex = finalCols[overCol].findIndex(s => s.id === over.id)
-        if (overIndex === -1) finalCols[overCol].push(activeItem)
-        else finalCols[overCol].splice(overIndex, 0, activeItem)
-      }
     }
-    colsRef.current = finalCols
+    skipRebuildRef.current = true
     setCols(finalCols)
     const updates = []
     finalCols.forEach((col, ci) => col.forEach((s, i) => updates.push(
