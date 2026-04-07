@@ -619,7 +619,7 @@ export default function App() {
 
   // ── Load bookmarks from extension ────────────────────────────
   useEffect(() => {
-    const load = () => {
+    const loadFromStorage = () => {
       try {
         const raw = localStorage.getItem('sp_bookmarks')
         if (!raw) return
@@ -628,9 +628,19 @@ export default function App() {
         setBmFolders(data.folders   || [])
       } catch (e) { console.error('bookmark load:', e) }
     }
-    load()
-    window.addEventListener('sp_bookmarks_updated', load)
-    return () => window.removeEventListener('sp_bookmarks_updated', load)
+    // Load on mount from whatever content.js wrote last session
+    loadFromStorage()
+    // Listen for live updates via postMessage (content script bridge)
+    const onMessage = (e) => {
+      if (e.source !== window) return
+      if (e.data?.type === 'SP_BOOKMARKS_UPDATE' && e.data.payload) {
+        const { bookmarks: bm, folders: fl } = e.data.payload
+        setBookmarks(bm || [])
+        setBmFolders(fl || [])
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
   }, [])
 
   // ── Search filter ─────────────────────────────────────────────────────────

@@ -194,7 +194,7 @@ export default function Settings({
       return next
     })
   }
-  const forceSync = () => window.dispatchEvent(new CustomEvent('sp_force_sync'))
+  const forceSync = () => window.postMessage({ type: 'SP_FORCE_SYNC' }, '*')
   const [groupSignal, setGroupSignal] = useState(null)   // bulk open/close signal
   const bgFileRef = useRef(null)
 
