@@ -181,8 +181,20 @@ export default function Settings({
   workspaces, activeWs,
   onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs,
   onSignOut, userEmail,
+  bmFolders, bookmarkCount,
 }) {
   const [newWsName, setNewWsName]   = useState('')
+  const [hiddenFolders, setHiddenFolders] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('sp_bm_hidden') || '[]') } catch { return [] }
+  })
+  const toggleFolder = (id) => {
+    setHiddenFolders(prev => {
+      const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+      localStorage.setItem('sp_bm_hidden', JSON.stringify(next))
+      return next
+    })
+  }
+  const forceSync = () => window.dispatchEvent(new CustomEvent('sp_force_sync'))
   const [groupSignal, setGroupSignal] = useState(null)   // bulk open/close signal
   const bgFileRef = useRef(null)
 
@@ -705,6 +717,47 @@ export default function Settings({
               ↺ Reset theme to defaults
             </button>
           </div>
+        </Group>
+
+        {/* ── Bookmarks ───────────────────────────────────────────── */}
+        <Group title="Bookmarks" defaultOpen={false}>
+          <Row label="Extension status">
+            <span style={{ fontSize: '0.8em', color: bookmarkCount > 0 ? 'var(--success, #4caf50)' : 'var(--text-muted)' }}>
+              {bookmarkCount > 0 ? `● ${bookmarkCount} bookmarks synced` : '○ Extension not detected'}
+            </span>
+          </Row>
+          {bookmarkCount > 0 && (
+            <Row label="Re-sync">
+              <button className="btn" style={{ fontSize: '0.8em' }}
+                onClick={forceSync} title="Force re-sync bookmarks from Firefox">
+                ↻ Force sync
+              </button>
+            </Row>
+          )}
+          {bmFolders && bmFolders.length > 0 && (
+            <>
+              <SectionTitle>Folder visibility</SectionTitle>
+              <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {bmFolders.map(f => (
+                  <label key={f.id} title={`${hiddenFolders.includes(f.id) ? 'Show' : 'Hide'} folder: ${f.path || f.title}`}
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.2rem 0',
+                             paddingLeft: (f.depth * 12) + 'px', cursor: 'pointer', fontSize: '0.82em',
+                             color: hiddenFolders.includes(f.id) ? 'var(--text-muted)' : 'var(--text)',
+                             opacity: hiddenFolders.includes(f.id) ? 0.5 : 1 }}>
+                    <input type="checkbox" checked={!hiddenFolders.includes(f.id)}
+                      onChange={() => toggleFolder(f.id)}
+                      style={{ accentColor: 'var(--accent)', flexShrink: 0 }} />
+                    {f.title}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
+          {(!bmFolders || bmFolders.length === 0) && (
+            <div style={{ fontSize: '0.8em', color: 'var(--text-muted)', padding: '0.5rem 0', lineHeight: 1.5 }}>
+              Install the browser extension to enable bookmark search in the topbar.
+            </div>
+          )}
         </Group>
 
       </div>

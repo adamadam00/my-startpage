@@ -459,7 +459,11 @@ export default function App() {
   const [bgImage,         setBgImage]         = useState(() => localStorage.getItem('bg_image') || '')
   const [search,          setSearch]          = useState('')
   const [webSearch,       setWebSearch]       = useState('')
+  const [bmSearch,        setBmSearch]        = useState('')
   const [searchMode,      setSearchMode]      = useState('web')
+  const [bookmarks,       setBookmarks]       = useState([])
+  const [bmFolders,       setBmFolders]       = useState([])
+  const [bmQuery,         setBmQuery]         = useState('')
   const [settingsOpen,    setSettingsOpen]    = useState(false)
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
@@ -606,12 +610,44 @@ export default function App() {
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
 
+  // ── Load bookmarks from extension ────────────────────────────
+  useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem('sp_bookmarks')
+        if (!raw) return
+        const data = JSON.parse(raw)
+        setBookmarks(data.bookmarks || [])
+        setBmFolders(data.folders   || [])
+      } catch (e) { console.error('bookmark load:', e) }
+    }
+    load()
+    window.addEventListener('sp_bookmarks_updated', load)
+    return () => window.removeEventListener('sp_bookmarks_updated', load)
+  }, [])
+
   // ── Search filter ─────────────────────────────────────────────────────────
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
     return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
   }, [links, search])
+
+  // ── Bookmark search ────────────────────────────────────────────────────────
+  const filteredBookmarks = useMemo(() => {
+    const q = bmQuery.trim().toLowerCase()
+    if (!q || !bookmarks.length) return []
+    const hiddenFolders = (() => {
+      try { return JSON.parse(localStorage.getItem('sp_bm_hidden') || '[]') } catch { return [] }
+    })()
+    return bookmarks
+      .filter(b => !hiddenFolders.includes(b.folderId))
+      .filter(b =>
+        (b.title || '').toLowerCase().includes(q) ||
+        (b.url   || '').toLowerCase().includes(q)
+      )
+      .slice(0, 12)
+  }, [bookmarks, bmQuery])
 
   // ── Workspace CRUD ────────────────────────────────────────────────────────
   const addWorkspace = async (name) => {
@@ -836,33 +872,56 @@ export default function App() {
             <ClockWidget />
             <div className="topbar-divider" />
             <WeatherWidget />
-            <div className="search-compact" style={{ flex: 1 }}>
+            <div className="search-compact" style={{ flex: 1, position: 'relative' }}>
               <button
                 className="btn-xs"
-                title={searchMode === 'web' ? 'Switch to link search' : 'Switch to web search'}
+                title="Cycle search mode: Web → Links → Bookmarks"
                 style={{ flexShrink: 0, fontSize: '0.72em', whiteSpace: 'nowrap' }}
-                onClick={() => { setSearchMode(m => m === 'web' ? 'links' : 'web'); setSearch(''); setWebSearch('') }}
+                onClick={() => {
+                  setSearchMode(m => m === 'web' ? 'links' : m === 'links' ? 'bookmarks' : 'web')
+                  setSearch(''); setWebSearch(''); setBmQuery('')
+                }}
               >
-                {searchMode === 'web' ? 'Web' : 'Links'}
+                {searchMode === 'web' ? 'Web' : searchMode === 'links' ? 'Links' : '🔖'}
               </button>
               <input
                 className="input search-compact-input"
-                placeholder={searchMode === 'web' ? 'Search the web...' : 'Filter links...'}
+                placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
                 ref={searchInputRef}
-                value={searchMode === 'web' ? webSearch : search}
-                onChange={e => searchMode === 'web' ? setWebSearch(e.target.value) : setSearch(e.target.value)}
+                value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
+                onChange={e => {
+                  if (searchMode === 'web')       setWebSearch(e.target.value)
+                  else if (searchMode === 'links') setSearch(e.target.value)
+                  else                             setBmQuery(e.target.value)
+                }}
                 onKeyDown={e => {
                   if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
                     const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
                     if (theme.openInNewTab ?? true) { window.open(url, '_blank', 'noopener,noreferrer') } else { window.location.href = url }
                     setWebSearch('')
                   }
-                  if (e.key === 'Escape') { setSearch(''); setWebSearch('') }
+                  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
+                    window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
+                    setBmQuery('')
+                  }
+                  if (e.key === 'Escape') { setSearch(''); setWebSearch(''); setBmQuery('') }
                 }}
               />
-              {(searchMode === 'web' ? webSearch : search) && (
+              {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
                 <button className="icon-btn search-btn" title="Clear"
-                  onClick={() => searchMode === 'web' ? setWebSearch('') : setSearch('')}>x</button>
+                  onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
+              )}
+              {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
+                <div className="bm-dropdown">
+                  {filteredBookmarks.map((b, i) => (
+                    <a key={b.id || i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer"
+                      onClick={() => setBmQuery('')}>
+                      <span className="bm-result-title">{b.title}</span>
+                      <span className="bm-result-folder">{b.folder}</span>
+                      <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
+                    </a>
+                  ))}
+                </div>
               )}
             </div>
           </div>
@@ -916,6 +975,8 @@ export default function App() {
             onSave={() => { persistTheme(theme, true) }}
             onClose={() => setSettingsOpen(false)}
             onSignOut={handleSignOut}
+            bmFolders={bmFolders}
+            bookmarkCount={bookmarks.length}
             userEmail={session?.user?.email ?? ''}
             onImageUpload={handleImageUpload}
             onBgImageUpload={handleBgImageUpload}
