@@ -25,8 +25,25 @@ function ClockWidget() {
 
 // ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
 function WeatherWidget() {
-  const [wx, setWx] = useState(null)
+  const CACHE_KEY = 'wx_cache'
+  const CACHE_TTL = 25 * 60 * 1000  // 25 minutes
+
+  const [wx, setWx] = useState(() => {
+    // Show cached weather instantly while fresh data loads
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+      if (c && Date.now() - c.ts < CACHE_TTL) return c.data
+    } catch {}
+    return null
+  })
+
   useEffect(() => {
+    // Only fetch if cache is stale or missing
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+      if (c && Date.now() - c.ts < CACHE_TTL) return  // cache still fresh
+    } catch {}
+
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       try {
@@ -35,6 +52,7 @@ function WeatherWidget() {
         )
         const d = await r.json()
         setWx(d.current_weather)
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
       } catch {}
     }, () => {})
   }, [])
