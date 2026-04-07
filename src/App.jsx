@@ -906,7 +906,7 @@ export default function App() {
             <ClockWidget />
             <div className="topbar-divider" />
             <WeatherWidget />
-            <div className="search-compact" style={{ flex: 1, position: 'relative' }}>
+            <div className="search-compact">
               <button
                 className="btn-xs"
                 title="Cycle search mode: Web → Links → Bookmarks"

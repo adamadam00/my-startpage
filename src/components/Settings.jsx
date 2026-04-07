@@ -728,7 +728,7 @@ export default function Settings({
           </Row>
           {bookmarkCount > 0 && (
             <Row label="Re-sync">
-              <button className="btn" style={{ fontSize: '0.8em' }}
+              <button className="btn btn-primary" style={{ fontSize: '0.8em' }}
                 onClick={forceSync} title="Force re-sync bookmarks from Firefox">
                 ↻ Force sync
               </button>
