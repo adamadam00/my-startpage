@@ -15,25 +15,67 @@ function getFavicon(url) {
   catch { return null }
 }
 
-function LinkItem({ link, onEdit, onDelete, openInNewTab, faviconEnabled = true }) {
+const SWATCH_COLORS = [
+  { label: 'Reset',  value: '' },
+  { label: 'Red',    value: '#ff6b6b' },
+  { label: 'Orange', value: '#ff9f43' },
+  { label: 'Yellow', value: '#ffd32a' },
+  { label: 'Green',  value: '#6bffb8' },
+  { label: 'Cyan',   value: '#48dbfb' },
+  { label: 'Blue',   value: '#6c8fff' },
+  { label: 'Purple', value: '#a29bfe' },
+  { label: 'Pink',   value: '#fd79a8' },
+]
+
+function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
   const open = () => openInNewTab
     ? window.open(link.url, '_blank', 'noopener,noreferrer')
     : (window.location.href = link.url)
+  const [showColors, setShowColors] = useState(false)
+
+  const handleColor = async (color) => {
+    await supabase.from('links').update({ color }).eq('id', link.id)
+    setShowColors(false)
+    onRefresh()
+  }
 
   return (
     <div ref={setNodeRef} style={style} className="link-item">
       <span className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()} />
-      {faviconEnabled && getFavicon(link.url) && (
+      {getFavicon(link.url) && (
         <img src={getFavicon(link.url)} alt="" className="link-favicon"
           onError={e => e.target.style.display = 'none'} />
       )}
-      <span className="link-title" onClick={open} title={link.url}>{link.title}</span>
+      <span className="link-title" onClick={open} title={link.url}
+        style={link.color ? { color: link.color } : {}}>
+        {link.title}
+      </span>
       {/* Compact action overlay — visible on hover only */}
-      <div className="link-actions-overlay">
+      <div className="link-actions-overlay" style={{ position: 'relative' }}>
+        <button className="link-act" title="Color"
+          onClick={e => { e.stopPropagation(); setShowColors(v => !v) }}
+          style={{ opacity: 0.6 }}>●</button>
         <button className="link-act" onClick={e => { e.stopPropagation(); onEdit(link) }} title="Edit">✎</button>
         <button className="link-act link-act-del" onClick={e => { e.stopPropagation(); onDelete(link.id) }} title="Delete">✕</button>
+        {showColors && (
+          <div className="link-color-swatches" onClick={e => e.stopPropagation()}>
+            {SWATCH_COLORS.map(c => (
+              <button key={c.value || 'reset'} className="color-swatch"
+                title={c.label}
+                onClick={() => handleColor(c.value)}
+                style={{
+                  background: c.value || 'var(--border)',
+                  outlineColor: 'var(--accent)',
+                  outlineStyle: link.color === c.value ? 'solid' : 'none',
+                  outlineWidth: '2px',
+                  outlineOffset: '1px',
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -46,7 +88,6 @@ export default function Links({
   userId,
   onRefresh,
   openInNewTab = true,
-  faviconEnabled = true,
   externalAdding = false,
   onExternalAddingDone,
 }) {
@@ -133,7 +174,7 @@ export default function Links({
               ) : (
                 <LinkItem key={link.id} link={link}
                   onEdit={l => { setEditing(l); setTitle(l.title); setUrl(l.url) }}
-                  onDelete={handleDelete} openInNewTab={openInNewTab} faviconEnabled={faviconEnabled} />
+                  onDelete={handleDelete} openInNewTab={openInNewTab} onRefresh={onRefresh} />
               )
             )}
           </div>
