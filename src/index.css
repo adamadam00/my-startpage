@@ -571,9 +571,9 @@ a { color: inherit; text-decoration: none; }
 .link-item:hover { background: var(--bg3); }
 .link-favicon { width: var(--favicon-size,13px); height: var(--favicon-size,13px); border-radius: 2px; flex-shrink: 0; object-fit: contain; display: var(--favicon-display, block); opacity: var(--favicon-opacity); filter: var(--favicon-filter); animation: favicon-in var(--favicon-fade, 0.3s) ease var(--favicon-delay, 0s) both; }
 @keyframes favicon-in { from { opacity: 0; } to { opacity: var(--favicon-opacity, 1); } }
-.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
+.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; }
 .link-title:hover { color: var(--accent); }
-.link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 28%); }
+.link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 40%); }
 .link-item:hover .link-actions-overlay { opacity: 1; pointer-events: auto; }
 .link-act { display: flex; align-items: center; padding: 0 0.45rem; background: #1e1e2e; border: none; color: var(--text-dim); font-size: 0.88em; cursor: pointer; transition: color 0.12s, background 0.12s; height: 100%; }
 .link-act-color { font-size: 1em; opacity: 0.55; }
@@ -1291,9 +1291,9 @@ a { color: inherit; text-decoration: none; }
 .link-item.color-open .link-actions-overlay { opacity: 1 !important; pointer-events: auto !important; }
 .link-item:hover { background: var(--bg3); }
 .link-favicon { width: var(--favicon-size,13px); height: var(--favicon-size,13px); border-radius: 2px; flex-shrink: 0; object-fit: contain; display: var(--favicon-display, block); opacity: var(--favicon-opacity); filter: var(--favicon-filter); animation: favicon-in var(--favicon-fade, 0.3s) ease var(--favicon-delay, 0s) both; }
-.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; padding-right: 0.2rem; }
+.link-title { flex: 1; font-size: 0.85em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; min-width: 0; }
 .link-title:hover { color: var(--accent); }
-.link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 28%); }
+.link-actions-overlay { position: absolute; right: 0; top: 0; bottom: 0; display: flex; align-items: stretch; opacity: 0; transition: opacity 0.15s; pointer-events: none; background: linear-gradient(to right, transparent 0%, var(--bg3) 40%); }
 .link-item:hover .link-actions-overlay { opacity: 1; pointer-events: auto; }
 .link-act { display: flex; align-items: center; padding: 0 0.45rem; background: #1e1e2e; border: none; color: var(--text-dim); font-size: 0.88em; cursor: pointer; transition: color 0.12s, background 0.12s; height: 100%; }
 .link-act-color { font-size: 1em; opacity: 0.55; }
@@ -1489,54 +1489,35 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+
 /* ── Search mode buttons ─────────────────────────────────────────────── */
-.search-mode-bar {
-  display: flex;
-  gap: 2px;
-  flex-shrink: 0;
-}
+.search-mode-bar { display: flex; gap: 2px; flex-shrink: 0; }
 .search-mode-btn {
-  font-size: 0.72em;
-  padding: 2px 7px;
+  font-size: 0.72em; padding: 2px 7px;
   border-radius: var(--radius-sm, 4px);
   border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text-dim);
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  line-height: 1.5;
+  background: transparent; color: var(--text-dim);
+  cursor: pointer; transition: all 0.15s; white-space: nowrap; line-height: 1.5;
 }
 .search-mode-btn:hover { border-color: var(--border-hover); color: var(--text); }
-.search-mode-btn.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
+.search-mode-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-/* ── Link color swatches ─────────────────────────────────────────────── */
-.link-color-swatches {
-  position: absolute;
-  right: 0;
-  top: 100%;
-  margin-top: 3px;
-  display: flex;
+/* ── Link color dot button ───────────────────────────────────────────── */
+.link-act-color { font-size: 1.1em; opacity: 0.5; }
+.link-act-color:hover { opacity: 1; color: var(--text); }
+
+/* ── Inline color swatches (inside overlay, no dropdown) ────────────── */
+.link-actions-overlay.colors-open {
+  background: var(--bg3);          /* solid so swatches are readable over link text */
+  padding-inline: 6px;
   gap: 4px;
-  background: var(--card, #13131a);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm, 4px);
-  padding: 5px 6px;
-  z-index: 100;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  white-space: nowrap;
+  align-items: center;
 }
-.color-swatch {
-  width: 12px;
-  height: 12px;
+.color-swatch-inline {
+  width: 11px; height: 11px;
   border-radius: 50%;
-  border: none;
-  cursor: pointer;
-  flex-shrink: 0;
+  border: none; cursor: pointer; flex-shrink: 0;
   transition: transform 0.1s;
+  outline-offset: 1px;
 }
-.color-swatch:hover { transform: scale(1.3); }
+.color-swatch-inline:hover { transform: scale(1.35); }
