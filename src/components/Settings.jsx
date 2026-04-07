@@ -734,6 +734,18 @@ export default function Settings({
               </button>
             </Row>
           )}
+          <Row label="Result font size">
+            <Slider label="Result font size" val={theme.bmFontSize ?? 13} min={9} max={18} step={1} unit="px"
+              onChange={v => setTheme(t => ({ ...t, bmFontSize: v }))} />
+          </Row>
+          <Row label="Result background">
+            <ColorPick label="Result background colour" value={theme.bmResultBg || '#13131a'}
+              onChange={v => setTheme(t => ({ ...t, bmResultBg: v }))} />
+          </Row>
+          <Row label="Result text colour">
+            <ColorPick label="Result text colour" value={theme.bmResultText || '#e8e8f0'}
+              onChange={v => setTheme(t => ({ ...t, bmResultText: v }))} />
+          </Row>
           {bmFolders && bmFolders.length > 0 && (
             <>
               <SectionTitle>Folder visibility</SectionTitle>

@@ -79,6 +79,9 @@ const DEFAULT_THEME = {
   sectionsCols: 3,
   notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
   settingsSide: 'right',
+  bmFontSize: 13,
+  bmResultBg: '',
+  bmResultText: '',
 }
 
 // ─── APPLY THEME ─────────────────────────────────────────────────────────────
@@ -680,7 +683,7 @@ export default function App() {
         (b.title || '').toLowerCase().includes(q) ||
         (b.url   || '').toLowerCase().includes(q)
       )
-      .slice(0, 12)
+      .slice(0, 15)
   }, [bookmarks, bmQuery])
 
   // ── Workspace CRUD ────────────────────────────────────────────────────────
@@ -946,13 +949,17 @@ export default function App() {
                   onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
               )}
               {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
-                <div className="bm-dropdown">
+                <div className="bm-dropdown" style={{
+                  fontSize: (theme.bmFontSize || 13) + 'px',
+                  ...(theme.bmResultBg   ? { background: theme.bmResultBg }   : {}),
+                  ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
+                }}>
                   {filteredBookmarks.map((b, i) => (
                     <a key={b.id || i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer"
                       onClick={() => setBmQuery('')}>
-                      <span className="bm-result-title">{b.title}</span>
-                      <span className="bm-result-folder">{b.folder}</span>
                       <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
+                      <span className="bm-result-folder">{b.folder}</span>
+                      <span className="bm-result-title">{b.title}</span>
                     </a>
                   ))}
                 </div>
