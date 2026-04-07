@@ -513,11 +513,24 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus search bar once app is fully loaded ────────────
+  // ── Focus search on load + redirect stray keystrokes to search bar ──
   useEffect(() => {
     if (!session) return
-    const timer = setTimeout(() => searchInputRef.current?.focus(), 200)
-    return () => clearTimeout(timer)
+    // Try to grab focus after everything settles
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 350)
+    // Global keydown: if user types a printable char and nothing is focused, grab it
+    const handleKey = (e) => {
+      if (
+        e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA' &&
+        document.activeElement?.contentEditable !== 'true'
+      ) {
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => { clearTimeout(timer); window.removeEventListener('keydown', handleKey) }
   }, [session])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
@@ -944,7 +957,6 @@ export default function App() {
               </div>
               <input
                 className="input search-compact-input"
-                autoFocus
                 placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
                 ref={searchInputRef}
                 value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
