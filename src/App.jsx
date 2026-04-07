@@ -624,24 +624,41 @@ export default function App() {
         const raw = localStorage.getItem('sp_bookmarks')
         if (!raw) return
         const data = JSON.parse(raw)
-        setBookmarks(data.bookmarks || [])
-        setBmFolders(data.folders   || [])
-      } catch (e) { console.error('bookmark load:', e) }
+        if (data.bookmarks?.length) {
+          setBookmarks(data.bookmarks)
+          setBmFolders(data.folders || [])
+          console.log('[bookmarks] loaded', data.bookmarks.length, 'from localStorage')
+        }
+      } catch (e) { console.error('[bookmarks] load error:', e) }
     }
-    // Load on mount from whatever content.js wrote last session
     loadFromStorage()
-    // Listen for live updates via postMessage (content script bridge)
+    // Listen for live pushes from content script
+    // NOTE: do NOT check e.source — Firefox content script window !== page window
     const onMessage = (e) => {
-      if (e.source !== window) return
-      if (e.data?.type === 'SP_BOOKMARKS_UPDATE' && e.data.payload) {
+      if (e.data?.type === 'SP_BOOKMARKS_UPDATE' && e.data?.payload) {
         const { bookmarks: bm, folders: fl } = e.data.payload
         setBookmarks(bm || [])
         setBmFolders(fl || [])
+        console.log('[bookmarks] postMessage update:', bm?.length)
       }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [])
+
+  // Also re-load bookmarks once session/app is ready (catches late extension inject)
+  useEffect(() => {
+    if (!session) return
+    try {
+      const raw = localStorage.getItem('sp_bookmarks')
+      if (!raw) return
+      const data = JSON.parse(raw)
+      if (data.bookmarks?.length) {
+        setBookmarks(data.bookmarks)
+        setBmFolders(data.folders || [])
+      }
+    } catch (e) {}
+  }, [session])
 
   // ── Search filter ─────────────────────────────────────────────────────────
   const filteredLinks = useMemo(() => {
