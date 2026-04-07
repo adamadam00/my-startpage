@@ -944,6 +944,7 @@ export default function App() {
               </div>
               <input
                 className="input search-compact-input"
+                autoFocus
                 placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
                 ref={searchInputRef}
                 value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
