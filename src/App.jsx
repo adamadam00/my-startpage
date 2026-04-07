@@ -513,24 +513,35 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus search on load + redirect stray keystrokes to search bar ──
+  // ── Focus search on load + capture stray keystrokes into search bar ──
   useEffect(() => {
     if (!session) return
-    // Try to grab focus after everything settles
     const timer = setTimeout(() => searchInputRef.current?.focus(), 350)
-    // Global keydown: if user types a printable char and nothing is focused, grab it
+    return () => clearTimeout(timer)
+  }, [session])
+
+  useEffect(() => {
+    if (!session) return
     const handleKey = (e) => {
+      const active = document.activeElement
       if (
         e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA' &&
-        document.activeElement?.contentEditable !== 'true'
+        active?.tagName !== 'INPUT' &&
+        active?.tagName !== 'TEXTAREA' &&
+        active?.contentEditable !== 'true'
       ) {
-        searchInputRef.current?.focus()
+        const input = searchInputRef.current
+        if (!input) return
+        // Focus + inject the typed character so it's not lost
+        input.focus()
+        const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
+        setter.call(input, e.key)
+        input.dispatchEvent(new Event('input', { bubbles: true }))
+        e.preventDefault()
       }
     }
     window.addEventListener('keydown', handleKey)
-    return () => { clearTimeout(timer); window.removeEventListener('keydown', handleKey) }
+    return () => window.removeEventListener('keydown', handleKey)
   }, [session])
 
   // ── Auth ──────────────────────────────────────────────────────────────────
