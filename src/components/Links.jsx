@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext, closestCenter, PointerSensor,
@@ -34,6 +34,17 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
     ? window.open(link.url, '_blank', 'noopener,noreferrer')
     : (window.location.href = link.url)
   const [showColors, setShowColors] = useState(false)
+  const swatchRef = useRef(null)
+
+  // Close on click outside
+  useEffect(() => {
+    if (!showColors) return
+    const handler = (e) => {
+      if (swatchRef.current && !swatchRef.current.contains(e.target)) setShowColors(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [showColors])
 
   const handleColor = async (color) => {
     await supabase.from('links').update({ color }).eq('id', link.id)
@@ -42,7 +53,9 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="link-item">
+    // color-open class: removes overflow:hidden so swatches aren't clipped,
+    // and keeps overlay visible while picker is open
+    <div ref={setNodeRef} style={style} className={`link-item${showColors ? ' color-open' : ''}`}>
       <span className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()} />
       {getFavicon(link.url) && (
         <img src={getFavicon(link.url)} alt="" className="link-favicon"
@@ -52,11 +65,9 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
         style={link.color ? { color: link.color } : {}}>
         {link.title}
       </span>
-      {/* Compact action overlay — visible on hover only */}
-      <div className="link-actions-overlay" style={{ position: 'relative' }}>
-        <button className="link-act" title="Color"
-          onClick={e => { e.stopPropagation(); setShowColors(v => !v) }}
-          style={{ opacity: 0.6 }}>●</button>
+      <div className="link-actions-overlay" ref={swatchRef}>
+        <button className="link-act link-act-color" title="Set color"
+          onClick={e => { e.stopPropagation(); setShowColors(v => !v) }}>●</button>
         <button className="link-act" onClick={e => { e.stopPropagation(); onEdit(link) }} title="Edit">✎</button>
         <button className="link-act link-act-del" onClick={e => { e.stopPropagation(); onDelete(link.id) }} title="Delete">✕</button>
         {showColors && (
