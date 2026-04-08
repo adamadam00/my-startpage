@@ -6,7 +6,7 @@ import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
 
-// ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ CLOCK WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
@@ -23,7 +23,7 @@ function ClockWidget() {
   )
 }
 
-// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+// â”€â”€â”€ WEATHER WIDGET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function WeatherWidget() {
   const CACHE_KEY = 'wx_cache'
   const CACHE_TTL = 25 * 60 * 1000  // 25 minutes
@@ -57,18 +57,18 @@ function WeatherWidget() {
     }, () => {})
   }, [])
   if (!wx) return null
-  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  const icons = { 0:'â˜€ï¸',1:'ðŸŒ¤',2:'â›…',3:'â˜ï¸',45:'ðŸŒ«',48:'ðŸŒ«',51:'ðŸŒ¦',53:'ðŸŒ¦',55:'ðŸŒ¦',61:'ðŸŒ§',63:'ðŸŒ§',65:'ðŸŒ§',71:'ðŸŒ¨',73:'ðŸŒ¨',75:'ðŸŒ¨',80:'ðŸŒ¦',81:'ðŸŒ¦',82:'ðŸŒ¦',95:'â›ˆ',96:'â›ˆ',99:'â›ˆ' }
   const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
   return (
     <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-icon">{icons[wx.weathercode] || 'ðŸŒ¡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}Â°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
 
-// ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ DEFAULT THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DEFAULT_THEME = {
   bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
   card: '#13131a', cardOpacity: 1,
@@ -102,7 +102,7 @@ const DEFAULT_THEME = {
   bmResultText: '',
 }
 
-// ─── APPLY THEME ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ APPLY THEME â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
@@ -227,7 +227,7 @@ function applyTheme(t) {
   const gGnd = t.bgGrassGround || '#071a05'
   const oSky = t.bgOceanSky || '#000814'
   const oWtr = t.bgOceanWater || '#001428'
-  // ── Starfield density CSS vars ────────────────────────────────
+  // â”€â”€ Starfield density CSS vars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   var sfDensity = ps.density ?? 3
   var sfTileA   = ([1200, 900, 700, 500, 350][sfDensity - 1] || 700) + 'px'
   var sfTileB   = ([750,  600, 450, 320, 220][sfDensity - 1] || 450) + 'px'
@@ -363,7 +363,7 @@ function applyTheme(t) {
       100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
     }
   `
-  // ── Starfield planet injection ────────────────────────────────
+  // â”€â”€ Starfield planet injection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   var oldPlanets = document.getElementById('sf-planets')
   if (oldPlanets) oldPlanets.remove()
   if (t.bgPreset === 'starfield' && ps.planets) {
@@ -420,7 +420,7 @@ function applyTheme(t) {
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function App() {
   const [session,  setSession]  = useState(null)
   const sessionRef              = useRef(null)
@@ -436,7 +436,7 @@ export default function App() {
     catch { return DEFAULT_THEME }
   })
 
-  // ── Supabase theme persistence ───────────────────────────────
+  // â”€â”€ Supabase theme persistence â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const saveThemeRef = useRef(null)
 
   const persistTheme = (t, immediate = false) => {
@@ -453,7 +453,7 @@ export default function App() {
         .select('id')
       if (upErr) { console.error('[settings] update error:', upErr.message); return }
       if (!updated?.length) {
-        // Row doesn't exist yet — insert it
+        // Row doesn't exist yet â€” insert it
         const { error: insErr } = await supabase
           .from('user_settings')
           .insert({ user_id: uid, theme: themeData })
@@ -489,7 +489,7 @@ export default function App() {
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
-  // ── Collapse / Expand all ─────────────────────────────────────────────────
+  // â”€â”€ Collapse / Expand all â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const [allCollapsed,    setAllCollapsed]    = useState(false)
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand,   setTriggerExpand]   = useState(0)
@@ -513,7 +513,7 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus search on load + capture stray keystrokes into search bar ──
+  // â”€â”€ Focus search on load + capture stray keystrokes into search bar â”€â”€
   useEffect(() => {
     if (!session) return
     const timer = setTimeout(() => searchInputRef.current?.focus(), 350)
@@ -544,7 +544,7 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [session])
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
+  // â”€â”€ Auth â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null); setLoading(false)
@@ -553,7 +553,7 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // ── Re-auth on tab focus / network restore (fixes long-idle NetworkError) ──
+  // â”€â”€ Re-auth on tab focus / network restore (fixes long-idle NetworkError) â”€â”€
   useEffect(() => {
     const onVisible = async () => {
       if (document.visibilityState !== 'visible') return
@@ -575,7 +575,7 @@ export default function App() {
     loadUserSettings().then(() => ensureWorkspace()).then(() => handleRefresh())
   }, [session])
 
-  // ── Load theme from Supabase ──────────────────────────────────────────────
+  // â”€â”€ Load theme from Supabase â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const loadUserSettings = async (force = false) => {
     const uid = sessionRef.current?.user?.id ?? session?.user?.id
     if (!uid) { console.log('[settings] no uid'); return }
@@ -592,7 +592,7 @@ export default function App() {
       console.log('[settings]', force ? 'FORCE' : 'auto', '| local:', hasLocal, '| remote:', hasRemote)
 
       if (hasRemote) {
-        // Supabase has data — apply it (always on force; on auto only if local is empty or older)
+        // Supabase has data â€” apply it (always on force; on auto only if local is empty or older)
         const localTs  = localTheme._savedAt  || 0
         const remoteTs = remoteTheme._savedAt || 0
         if (force || !hasLocal || remoteTs > localTs) {
@@ -600,32 +600,32 @@ export default function App() {
           const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wall ? { wallpaper: wall } : {}) }
           setThemeState(merged)
           localStorage.setItem('current_theme', JSON.stringify(merged))
-          console.log('[settings] ✅ applied Supabase theme (_savedAt:', remoteTs, ')')
+          console.log('[settings] âœ… applied Supabase theme (_savedAt:', remoteTs, ')')
         } else {
-          // Local is same age or newer — keep it but push to Supabase to stay in sync
+          // Local is same age or newer â€” keep it but push to Supabase to stay in sync
           persistTheme(localTheme, true)
           console.log('[settings] local kept, pushed to Supabase (_savedAt:', localTs, ')')
         }
       } else {
-        // Supabase empty — push local up as bootstrap
+        // Supabase empty â€” push local up as bootstrap
         if (hasLocal) {
           persistTheme(localTheme, true)
-          console.log('[settings] 🚀 bootstrapping Supabase from local')
+          console.log('[settings] ðŸš€ bootstrapping Supabase from local')
         } else {
-          console.log('[settings] neither local nor remote has data — using defaults')
+          console.log('[settings] neither local nor remote has data â€” using defaults')
         }
       }
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
 
-    // ── Sign out ─────────────────────────────────────────────────────────────
+    // â”€â”€ Sign out â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setSession(null)
     setSettingsOpen(false)
   }
 
-  // ── Workspace bootstrap ───────────────────────────────────────────────────
+  // â”€â”€ Workspace bootstrap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
@@ -639,7 +639,7 @@ export default function App() {
     setActiveWs(prev => prev ?? data[0]?.id ?? null)
   }
 
-  // ── Data refresh ──────────────────────────────────────────────────────────
+  // â”€â”€ Data refresh â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
     try {
@@ -662,7 +662,7 @@ export default function App() {
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
 
-  // ── Load bookmarks from extension ────────────────────────────
+  // â”€â”€ Load bookmarks from extension â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     const loadFromStorage = () => {
       try {
@@ -678,7 +678,7 @@ export default function App() {
     }
     loadFromStorage()
     // Listen for live pushes from content script
-    // NOTE: do NOT check e.source — Firefox content script window !== page window
+    // NOTE: do NOT check e.source â€” Firefox content script window !== page window
     const onMessage = (e) => {
       if (e.data?.type === 'SP_BOOKMARKS_UPDATE' && e.data?.payload) {
         const { bookmarks: bm, folders: fl } = e.data.payload
@@ -705,14 +705,14 @@ export default function App() {
     } catch (e) {}
   }, [session])
 
-  // ── Search filter ─────────────────────────────────────────────────────────
+  // â”€â”€ Search filter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
     return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
   }, [links, search])
 
-  // ── Bookmark search ────────────────────────────────────────────────────────
+  // â”€â”€ Bookmark search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const filteredBookmarks = useMemo(() => {
     const q = bmQuery.trim().toLowerCase()
     if (!q || !bookmarks.length) return []
@@ -728,7 +728,7 @@ export default function App() {
       .slice(0, 15)
   }, [bookmarks, bmQuery])
 
-  // ── Workspace CRUD ────────────────────────────────────────────────────────
+  // â”€â”€ Workspace CRUD â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
@@ -752,7 +752,7 @@ export default function App() {
     setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
   }
 
-  // ── Image uploads ─────────────────────────────────────────────────────────
+  // â”€â”€ Image uploads â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -771,7 +771,7 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  // ── Export ────────────────────────────────────────────────────────────────
+  // â”€â”€ Export â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const exportFullBackup = async () => {
     const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
     const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -811,7 +811,7 @@ export default function App() {
     handleRefresh()
   }
 
-  // ── Import ────────────────────────────────────────────────────────────────
+  // â”€â”€ Import â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const handleImportBackup = (e) => {
     const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
     setImportingBackup(true)
@@ -838,7 +838,7 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
-          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] â†’ [sec,sec,sec,...]
           const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
           for (let i = 0; i < rows.length; i++) {
@@ -886,11 +886,11 @@ export default function App() {
     r.readAsText(f)
   }
 
-  // ── Background ────────────────────────────────────────────────────────────
+  // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
   const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
-  if (loading) return <div className="center-fill">Loading…</div>
+  if (loading) return <div className="center-fill">Loadingâ€¦</div>
   if (!session) return <Auth />
 
   return (
@@ -916,7 +916,7 @@ export default function App() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
-        {/* ── TOPBAR ──────────────────────────────────────── */}
+        {/* â”€â”€ TOPBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
           {/* Workspace tabs */}
@@ -932,7 +932,7 @@ export default function App() {
                   <span
                     className="del-ws"
                     onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-                  >✕</span>
+                  >âœ•</span>
                 )}
               </button>
             ))}
@@ -956,7 +956,7 @@ export default function App() {
                 {[
                   { key: 'web',       label: 'Web'   },
                   { key: 'links',     label: 'Links' },
-                  { key: 'bookmarks', label: '🔖'    },
+                  { key: 'bookmarks', label: 'ðŸ”–'    },
                 ].map(({ key, label }) => (
                   <button
                     key={key}
@@ -968,7 +968,7 @@ export default function App() {
               </div>
               <input
                 className="input search-compact-input"
-                placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
+                placeholder={searchMode === 'web' ? 'Search the webâ€¦' : searchMode === 'links' ? 'Filter linksâ€¦' : 'Search bookmarksâ€¦'}
                 ref={searchInputRef}
                 value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
                 onChange={e => {
@@ -991,7 +991,7 @@ export default function App() {
               />
               {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
                 <button className="icon-btn search-btn" title="Clear"
-                  onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
+                  onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>âœ•</button>
               )}
               {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
                 <div className="bm-dropdown" style={{
@@ -1021,12 +1021,12 @@ export default function App() {
             >
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
+            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>â†»</button>
             <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
 
-        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
+        {/* â”€â”€ MAIN LAYOUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
           <div className="main-col">
             <Sections
@@ -1053,7 +1053,7 @@ export default function App() {
           </div>
         </main>
 
-        {/* ── SETTINGS ────────────────────────────────────── */}
+        {/* â”€â”€ SETTINGS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         {settingsOpen && (
           <Settings
             theme={theme}

@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const FONTS = [
   { label: 'DM Mono',        value: "'DM Mono', monospace"        },
@@ -50,11 +50,11 @@ const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
 const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // PRIMITIVES
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-/** Label on left, control on right — tight layout */
+/** Label on left, control on right â€” tight layout */
 function Row({ label, children, dimLabel = false }) {
   return (
     <div style={{
@@ -114,7 +114,7 @@ function Toggle({ checked, onChange, label = '' }) {
   )
 }
 
-/** Sub-heading inside a group — centred + bold */
+/** Sub-heading inside a group â€” centred + bold */
 function SectionTitle({ children }) {
   return (
     <div className="settings-title" style={{
@@ -160,7 +160,7 @@ function Group({ title, children, defaultOpen = true, signal }) {
       >
         <span style={{ flex: 1, textAlign: 'center' }}>{title}</span>
         <span style={{ fontSize: '0.75em', opacity: 0.45, marginLeft: '0.4rem' }}>
-          {open ? '▲' : '▼'}
+          {open ? 'â–²' : 'â–¼'}
         </span>
       </div>
       {open && <div style={{ marginTop: '0.4rem' }}>{children}</div>}
@@ -168,9 +168,9 @@ function Group({ title, children, defaultOpen = true, signal }) {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // SETTINGS PANEL
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function Settings({
   theme, setTheme, onSave, onClose,
@@ -213,7 +213,7 @@ export default function Settings({
       {/* Panel */}
       <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)' }}>
 
-        {/* ── Fixed header ──────────────────────────── */}
+        {/* â”€â”€ Fixed header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="settings-header">
           <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>
             Settings
@@ -224,22 +224,22 @@ export default function Settings({
               title={allOpen ? 'Collapse all sections' : 'Expand all sections'}
               onClick={toggleAllGroups}
             >
-              {allOpen ? '▲ Close' : '▼ Expand'}
+              {allOpen ? 'â–² Close' : 'â–¼ Expand'}
             </button>
             <button
               className="btn-xs"
               title="Move panel to the other side"
               onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}
             >
-              {side === 'right' ? '← Left' : 'Right →'}
+              {side === 'right' ? 'â† Left' : 'Right â†’'}
             </button>
-            <button className="icon-btn" onClick={onClose} title="Close (Esc)">✕</button>
+            <button className="icon-btn" onClick={onClose} title="Close (Esc)">âœ•</button>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             BACKGROUND
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Background" defaultOpen signal={groupSignal}>
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', marginBottom: '0.4rem' }}>
@@ -252,7 +252,7 @@ export default function Settings({
             ))}
           </div>
 
-          {/* ── Per-preset helpers ── */}
+          {/* â”€â”€ Per-preset helpers â”€â”€ */}
           {(() => {
             const gp = (key, def) => theme.bgSt?.[theme.bgPreset]?.[key] ?? def
             const sp = (key, val) => set('bgSt', {
@@ -379,9 +379,9 @@ export default function Settings({
 
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             WALLPAPER OVERLAY
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Wallpaper overlay" defaultOpen={false} signal={groupSignal}>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
             <button className="btn-xs" onClick={() => fileRef.current?.click()}>Upload wallpaper</button>
@@ -424,9 +424,9 @@ export default function Settings({
           </>)}
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             COLOURS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Colours" defaultOpen={false} signal={groupSignal}>
 
           <SectionTitle>Surfaces</SectionTitle>
@@ -468,9 +468,9 @@ export default function Settings({
 
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TYPOGRAPHY
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Typography" defaultOpen={false} signal={groupSignal}>
           <Row label="Font family">
             <select className="input" style={{ maxWidth: 160, fontSize: '0.8em' }}
@@ -489,16 +489,16 @@ export default function Settings({
           </Row>
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             LAYOUT & SPACING
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Layout &amp; spacing" defaultOpen={false} signal={groupSignal}>
 
           <Row label="Columns">
             <Slider label="Columns" val={theme.sectionsCols ?? 4} min={1} max={10} onChange={v => set('sectionsCols', v)} />
           </Row>
-          <Row label="Topbar → cards gap">
-            <Slider label="Topbar → cards gap" val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
+          <Row label="Topbar â†’ cards gap">
+            <Slider label="Topbar â†’ cards gap" val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" />
           </Row>
           <Row label="Section gap (v)">
             <Slider label="Section gap (v)" val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" />
@@ -535,9 +535,9 @@ export default function Settings({
 
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             CARDS & BORDERS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Cards &amp; borders" defaultOpen={false} signal={groupSignal}>
 
           <Row label="Card corner radius">
@@ -560,19 +560,19 @@ export default function Settings({
 
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             CLOCK
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Clock" defaultOpen={false} signal={groupSignal}>
           <Row label="Clock widget size">
             <Slider label="Clock widget size" val={Math.round((theme.clockWidgetSize ?? 1) * 10)} min={5} max={30}
-              onChange={v => set('clockWidgetSize', v / 10)} unit="×" />
+              onChange={v => set('clockWidgetSize', v / 10)} unit="Ã—" />
           </Row>
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             FAVICONS
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Favicons" defaultOpen={false} signal={groupSignal}>
           <Row label="Show favicons">
             <Toggle label="Show favicons" checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} />
@@ -597,9 +597,9 @@ export default function Settings({
           </Row>
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             NOTES
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Notes" defaultOpen={false} signal={groupSignal}>
           <Row label="Font size">
             <Slider label="Font size" val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" />
@@ -612,9 +612,9 @@ export default function Settings({
           <Row label="Note text background"> <ColorPick label="Note text background" value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row>
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             SEARCH
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Search" defaultOpen={false} signal={groupSignal}>
           <SectionTitle>Search engine</SectionTitle>
           <Row label="Engine URL">
@@ -647,9 +647,9 @@ export default function Settings({
           </Row>
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             WORKSPACES
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Workspaces" defaultOpen={false} signal={groupSignal}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.4rem' }}>
             {workspaces.map(ws => (
@@ -667,15 +667,15 @@ export default function Settings({
                 <button className="btn-xs" onClick={() => {
                   const n = prompt('Rename workspace:', ws.name)
                   if (n?.trim()) onRenameWorkspace(ws.id, n.trim())
-                }}>✎</button>
+                }}>âœŽ</button>
                 <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                  onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button>
+                  onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>âœ•</button>
               </div>
             ))}
           </div>
           <div style={{ display: 'flex', gap: '0.35rem' }}>
             <input className="input" style={{ flex: 1, fontSize: '0.8em' }}
-              placeholder="New workspace name…" value={newWsName}
+              placeholder="New workspace nameâ€¦" value={newWsName}
               onChange={e => setNewWsName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }} />
             <button className="btn-xs btn-primary" disabled={!newWsName.trim()}
@@ -683,54 +683,54 @@ export default function Settings({
           </div>
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             IMPORT / EXPORT
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Import / Export" defaultOpen={false} signal={groupSignal}>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
-            <button className="btn-xs" onClick={onExportBackup}>↓ Full backup (JSON)</button>
-            <button className="btn-xs" onClick={onExportCSV}>↓ Links CSV</button>
+            <button className="btn-xs" onClick={onExportBackup}>â†“ Full backup (JSON)</button>
+            <button className="btn-xs" onClick={onExportCSV}>â†“ Links CSV</button>
           </div>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <button className="btn-xs" disabled={importingBackup} onClick={() => backupFileRef.current?.click()}>
-              {importingBackup ? '⟳ Importing…' : '↑ Import JSON / CSV'}
+              {importingBackup ? 'âŸ³ Importingâ€¦' : 'â†‘ Import JSON / CSV'}
             </button>
           </div>
           <input ref={backupFileRef} type="file" accept="application/json,.json,.csv,text/csv"
             style={{ display: 'none' }} onChange={onImportBackup} />
         </Group>
 
-        {/* ══════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             DANGER ZONE
-        ══════════════════════════════════════════ */}
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         <Group title="Danger zone" defaultOpen={false} signal={groupSignal}>
           <p style={{ fontSize: '0.78em', color: 'var(--text-dim)', lineHeight: 1.5, margin: '0.2rem 0 0.5rem' }}>
-            Destructive — cannot be undone.
+            Destructive â€” cannot be undone.
           </p>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
             <button className="btn btn-danger" style={{ fontSize: '0.78em', padding: '0.28rem 0.7rem' }}
               onClick={onResetWorkspaceLinks}>
-              ✕ Clear all sections &amp; links
+              âœ• Clear all sections &amp; links
             </button>
             <button className="btn btn-danger" style={{ fontSize: '0.78em', padding: '0.28rem 0.7rem' }}
               onClick={() => { if (confirm('Reset all theme settings to defaults?')) onResetTheme() }}>
-              ↺ Reset theme to defaults
+              â†º Reset theme to defaults
             </button>
           </div>
         </Group>
 
-        {/* ── Bookmarks ───────────────────────────────────────────── */}
+        {/* â”€â”€ Bookmarks â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <Group title="Bookmarks" defaultOpen={false}>
           <Row label="Extension status">
             <span style={{ fontSize: '0.8em', color: bookmarkCount > 0 ? 'var(--success, #4caf50)' : 'var(--text-muted)' }}>
-              {bookmarkCount > 0 ? `● ${bookmarkCount} bookmarks synced` : '○ Extension not detected'}
+              {bookmarkCount > 0 ? `â— ${bookmarkCount} bookmarks synced` : 'â—‹ Extension not detected'}
             </span>
           </Row>
           {bookmarkCount > 0 && (
             <Row label="Re-sync">
               <button className="btn btn-primary" style={{ fontSize: '0.8em' }}
                 onClick={forceSync} title="Force re-sync bookmarks from Firefox">
-                ↻ Force sync
+                â†» Force sync
               </button>
             </Row>
           )}
@@ -774,7 +774,7 @@ export default function Settings({
 
       </div>
 
-      {/* ── Footer — z-index above panel so it's always visible ── */}
+      {/* â”€â”€ Footer â€” z-index above panel so it's always visible â”€â”€ */}
       {onSignOut && (
         <div style={{ padding: '0.45rem 0.75rem', borderTop: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', fontSize: '0.78em', color: 'var(--text-muted)' }}>
           <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
