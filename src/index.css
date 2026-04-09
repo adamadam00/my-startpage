@@ -1455,3 +1455,37 @@ input[type='range']::-moz-range-thumb {
     left: 0.5rem;
   }
 }
+.section-header .section-drag-handle,
+.section-header .section-toggle,
+.section-header .section-arrow,
+.section-header .collapse-arrow {
+  opacity: 0;
+  color: var(--text-dim) !important;
+  transition: opacity 0.15s, color 0.15s;
+}
+
+.section-card:hover .section-drag-handle,
+.section-card:hover .section-toggle,
+.section-card:hover .section-arrow,
+.section-card:hover .collapse-arrow,
+.section-header:hover .section-drag-handle,
+.section-header:hover .section-toggle,
+.section-header:hover .section-arrow,
+.section-header:hover .collapse-arrow {
+  opacity: 1;
+}
+
+.section-drag-handle,
+.section-toggle,
+.section-arrow,
+.collapse-arrow {
+  background: transparent !important;
+  color: var(--text-dim) !important;
+}
+
+.section-drag-handle:hover,
+.section-toggle:hover,
+.section-arrow:hover,
+.collapse-arrow:hover {
+  color: var(--text) !important;
+}
