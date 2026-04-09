@@ -196,7 +196,8 @@ function SectionCard({
     setName(section.name ?? '')
     setRenaming(true)
   }
-    const rename = async (e) => {
+
+  const rename = async (e) => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -250,23 +251,21 @@ function SectionCard({
       className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}${renaming ? ' is-renaming' : ''}`}
     >
       <div className="section-header">
-        {!locked && <span className="drag-handle" aria-hidden="true" />}
-
-		<div
-		  className="section-header-click"
-		  {...(!locked && !renaming ? { ...attributes, ...listeners } : {})}
-		  onClick={toggleCollapse}
-		  role="button"
-		  tabIndex={renaming ? -1 : 0}
-		  title={!locked && !renaming ? 'Drag to reorder' : undefined}
-		  onKeyDown={(e) => {
-			if (renaming) return
-			if (e.key === 'Enter' || e.key === ' ') {
-			  e.preventDefault()
-			  toggleCollapse(e)
-			}
-		  }}
-		>
+        <div
+          className="section-header-click"
+          {...(!locked && !renaming ? { ...attributes, ...listeners } : {})}
+          onClick={toggleCollapse}
+          role="button"
+          tabIndex={renaming ? -1 : 0}
+          title={!locked && !renaming ? 'Drag to reorder' : undefined}
+          onKeyDown={(e) => {
+            if (renaming) return
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleCollapse(e)
+            }
+          }}
+        >
           {renaming ? (
             <form
               className="section-rename-form"
@@ -543,7 +542,8 @@ export default function Sections({
     setAddingSection(false)
     onRefresh()
   }
-    const runImport = async () => {
+
+  const runImport = async () => {
     setImportError('')
     setImportLoading(true)
 
@@ -645,9 +645,6 @@ export default function Sections({
               }}
             >
               <div className="section-header" style={{ cursor: 'grabbing' }}>
-                <span className="drag-handle" style={{ opacity: 0.5 }}>
-                  ⋮⋮
-                </span>
                 <div className="section-header-click" style={{ cursor: 'grabbing' }}>
                   <span className="section-name">{activeSection.name}</span>
                 </div>
