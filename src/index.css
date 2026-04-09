@@ -871,13 +871,13 @@ a {
 .link-item {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.3rem;
   padding: 0.2rem 0.3rem;
   border-radius: var(--radius-sm);
   transition: background 0.15s;
+  overflow: visible;
   min-width: 0;
-  flex-wrap: wrap;
 }
 
 .link-item:hover {
@@ -895,7 +895,7 @@ a {
 }
 
 .link-title {
-  flex: 1 1 100%;
+  flex: 1;
   font-size: 0.85em;
   color: var(--text);
   white-space: nowrap;
@@ -903,7 +903,7 @@ a {
   text-overflow: ellipsis;
   cursor: pointer;
   min-width: 0;
-  padding-right: 0;
+  padding-right: 170px;
 }
 
 .link-title:hover {
@@ -911,24 +911,25 @@ a {
 }
 
 .link-actions-overlay {
-  position: static;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-end;
   align-items: center;
-  gap: 0;
+  row-gap: 2px;
+  max-width: 160px;
   opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transition: opacity 0.15s, max-height 0.15s;
+  transition: opacity 0.15s;
   pointer-events: none;
-  width: 100%;
-  margin-top: 0.18rem;
-  background: transparent;
+  padding-left: 18px;
+  background: linear-gradient(to right, transparent 0%, var(--bg3) 20%);
 }
 
 .link-item:hover .link-actions-overlay {
   opacity: 1;
-  max-height: 40px;
   pointer-events: auto;
 }
 
