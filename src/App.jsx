@@ -1253,7 +1253,11 @@ export default function App() {
 
         <main
           className="main-layout"
-          style={{ position: 'relative', zIndex: 2, gridTemplateColumns: '1fr var(--notes-width, 240px)' }}
+          style={{
+            position: 'relative',
+            zIndex: 2,
+            gridTemplateColumns: '1fr var(--notes-width, 240px)',
+          }}
         >
           <div className="main-col">
             <Sections
