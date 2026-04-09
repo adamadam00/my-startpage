@@ -951,6 +951,16 @@ a {
   color: var(--danger);
 }
 
+.color-swatch-inline {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  margin: auto 3px;
+  flex: 0 0 14px;
+  cursor: pointer;
+}
 /* Notes */
 .notes-panel {
   background: color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent);
