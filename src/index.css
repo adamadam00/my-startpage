@@ -1455,35 +1455,43 @@ input[type='range']::-moz-range-thumb {
     left: 0.5rem;
   }
 }
-.section-card button,
-.section-header button,
-.section-header svg,
-.section-card svg {
+.section-drag-handle,
+.drag-handle {
+  display: none !important;
+}
+
+.section-header {
+  padding-left: var(--card-padding, 0.75rem) !important;
+}
+
+.section-header-click {
+  padding-left: 0 !important;
+}
+
+.section-actions {
+  opacity: 0 !important;
+}
+
+.section-card:hover .section-actions,
+.section-header:hover .section-actions {
+  opacity: 1 !important;
+}
+
+.section-actions button,
+.section-actions .icon-btn,
+.section-actions svg {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   color: var(--text-dim) !important;
   fill: currentColor !important;
   stroke: currentColor !important;
 }
 
-.section-card:hover button,
-.section-header:hover button,
-.section-card:hover svg,
-.section-header:hover svg {
+.section-actions button:hover,
+.section-actions .icon-btn:hover,
+.section-actions button:hover svg,
+.section-actions .icon-btn:hover svg {
   color: var(--text) !important;
-}
-
-.section-header button:not(:hover),
-.section-card button:not(:hover) {
   background: transparent !important;
-}
-
-.section-header button[aria-label*="collapse"],
-.section-header button[aria-label*="expand"],
-.section-header button[title*="collapse"],
-.section-header button[title*="expand"] {
-  opacity: 0 !important;
-}
-
-.section-card:hover .section-header button,
-.section-header:hover button {
-  opacity: 1 !important;
 }
