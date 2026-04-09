@@ -251,13 +251,25 @@ function SectionCard({
       className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}${renaming ? ' is-renaming' : ''}`}
     >
       <div className="section-header">
+        {!locked && !renaming && (
+          <button
+            type="button"
+            className="section-grab"
+            {...attributes}
+            {...listeners}
+            aria-label="Drag to reorder"
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="section-grab-dots" aria-hidden="true">⋮⋮</span>
+          </button>
+        )}
+
         <div
           className="section-header-click"
-          {...(!locked && !renaming ? { ...attributes, ...listeners } : {})}
           onClick={toggleCollapse}
           role="button"
           tabIndex={renaming ? -1 : 0}
-          title={!locked && !renaming ? 'Drag to reorder' : undefined}
           onKeyDown={(e) => {
             if (renaming) return
             if (e.key === 'Enter' || e.key === ' ') {
@@ -362,6 +374,7 @@ function SectionCard({
     </div>
   )
 }
+
 export default function Sections({
   sections = [],
   links = [],
@@ -645,10 +658,13 @@ export default function Sections({
               }}
             >
               <div className="section-header" style={{ cursor: 'grabbing' }}>
-                <div className="section-header-click" style={{ cursor: 'grabbing' }}>
+                <button type="button" className="section-grab" style={{ cursor: 'grabbing' }}>
+                  <span className="section-grab-dots" aria-hidden="true">⋮⋮</span>
+                </button>
+                <div className="section-header-click">
                   <span className="section-name">{activeSection.name}</span>
                 </div>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>
+                <span className="section-collapse-arrow" style={{ opacity: 1, pointerEvents: 'none' }}>
                   ▾
                 </span>
               </div>
