@@ -1456,67 +1456,63 @@ input[type='range']::-moz-range-thumb {
   }
 }
 /* remove left drag handle */
-.section-drag-handle,
 .drag-handle {
   display: none !important;
 }
 
-/* make header the anchor for right-side overlay actions */
-.section-header {
-  position: relative !important;
-}
-
-/* title gets full width; no reserved button gutter */
-.section-header-click,
-.section-name {
-  min-width: 0 !important;
-  max-width: none !important;
-}
-
+/* title gets full width */
 .section-name {
   padding-right: 0 !important;
 }
 
-/* only the existing right-side action group overlays */
+/* put the RIGHT ACTION GROUP in overlay position */
 .section-actions {
   position: absolute !important;
-  right: 0.55rem !important;
+  right: 2.2rem !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  display: flex !important;
-  gap: 0.1rem !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  gap: 0.1rem !important;
   z-index: 20 !important;
-  background: transparent !important;
 }
 
-/* reveal the WHOLE action group on hover */
 .section-card:hover .section-actions,
-.section-header:hover .section-actions,
-.section-header:focus-within .section-actions {
+.section-header:hover .section-actions {
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
-/* neutral icon styling only inside the right action group */
-.section-actions > button,
-.section-actions > .icon-btn {
+/* open/close ARROW is separate - hide it too */
+.section-collapse-arrow {
+  position: absolute !important;
+  right: 0.55rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
   background: transparent !important;
   border: none !important;
-  box-shadow: none !important;
   color: var(--text-dim) !important;
+  font-size: 0.9em !important;
   padding: 0.2rem !important;
+  z-index: 20 !important;
 }
 
-.section-actions > button:hover,
-.section-actions > .icon-btn:hover {
+.section-card:hover .section-collapse-arrow,
+.section-header:hover .section-collapse-arrow {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.section-collapse-arrow:hover {
   color: var(--text) !important;
-  background: transparent !important;
 }
 
-.section-actions > button svg,
-.section-actions > .icon-btn svg {
-  fill: none !important;
+/* neutral styling for all header icons */
+.section-actions button,
+.section-collapse-arrow,
+.section-actions svg {
+  fill: currentColor !important;
   stroke: currentColor !important;
 }
