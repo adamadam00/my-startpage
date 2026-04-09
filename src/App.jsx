@@ -1043,19 +1043,27 @@ export default function App() {
             <WeatherWidget />
             <div className="search-compact">
               <div className="search-mode-bar">
-                {[
-                  { key: 'web',       label: 'Web'   },
-                  { key: 'links',     label: 'Links' },
-                  { key: 'bookmarks', label: '🔖'    },
-                ].map(({ key, label }) => (
-                  <button
-                    key={key}
-                    className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
-                    title={key.charAt(0).toUpperCase() + key.slice(1)}
-                    onClick={() => { setSearchMode(key); setSearch(''); setWebSearch(''); setBmQuery('') }}
-                  >{label}</button>
-                ))}
-              </div>
+				  {[
+					{ key: 'web', label: 'Web' },
+					{ key: 'links', label: 'Links' },
+					{ key: 'bookmarks', label: 'Bookmarks' },
+				  ].map(({ key, label }) => (
+					<button
+					  key={key}
+					  type="button"
+					  className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
+					  title={key.charAt(0).toUpperCase() + key.slice(1)}
+					  onClick={() => {
+						setSearchMode(key)
+						setSearch('')
+						setWebSearch('')
+						setBmQuery('')
+					  }}
+					>
+					  {label}
+					</button>
+				  ))}
+				</div>
               <input
                 className="input search-compact-input"
                 placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
