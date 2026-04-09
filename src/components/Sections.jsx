@@ -194,7 +194,6 @@ function SectionCard({
   const toggleCollapse = async (e) => {
     e?.stopPropagation?.()
     if (renaming || locked) return
-
     const next = !collapsed
     setCollapsed(next)
     await supabase.from('sections').update({ collapsed: next }).eq('id', section.id)
@@ -232,15 +231,8 @@ function SectionCard({
 
   const handleRenameKeyDown = (e) => {
     e.stopPropagation()
-
-    if (e.key === 'Escape') {
-      cancelRename(e)
-      return
-    }
-
-    if (e.key === 'Enter') {
-      rename(e)
-    }
+    if (e.key === 'Escape') return cancelRename(e)
+    if (e.key === 'Enter') rename(e)
   }
 
   const deleteSection = async (e) => {
@@ -261,20 +253,6 @@ function SectionCard({
       className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}${renaming ? ' is-renaming' : ''}`}
     >
       <div className="section-header">
-        {!locked && !renaming && (
-          <button
-            type="button"
-            className="section-grab"
-            {...attributes}
-            {...listeners}
-            aria-label="Drag to reorder"
-            title="Drag to reorder"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <span className="section-grab-dots" aria-hidden="true">⋮⋮</span>
-          </button>
-        )}
-
         <div
           className="section-header-click"
           onClick={toggleCollapse}
@@ -303,18 +281,10 @@ function SectionCard({
                 onKeyDown={handleRenameKeyDown}
                 placeholder="Section name"
               />
-              <button
-                className="btn btn-primary"
-                type="submit"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <button className="btn btn-primary" type="submit" onClick={(e) => e.stopPropagation()}>
                 Save
               </button>
-              <button
-                className="btn"
-                type="button"
-                onClick={cancelRename}
-              >
+              <button className="btn" type="button" onClick={cancelRename}>
                 Cancel
               </button>
             </form>
@@ -323,7 +293,7 @@ function SectionCard({
               <span className="section-name">{section.name}</span>
 
               {!locked && (
-                <div className="section-actions">
+                <div className="section-actions" onClick={(e) => e.stopPropagation()}>
                   <button
                     className="icon-btn"
                     title="Add link"
@@ -336,18 +306,10 @@ function SectionCard({
                   >
                     +
                   </button>
-                  <button
-                    className="icon-btn"
-                    title="Rename"
-                    onClick={startRename}
-                  >
+                  <button className="icon-btn" title="Rename" onClick={startRename}>
                     ✎
                   </button>
-                  <button
-                    className="icon-btn section-delete-btn"
-                    title="Delete"
-                    onClick={deleteSection}
-                  >
+                  <button className="icon-btn section-delete-btn" title="Delete" onClick={deleteSection}>
                     ✕
                   </button>
                 </div>
@@ -355,6 +317,20 @@ function SectionCard({
             </>
           )}
         </div>
+
+        {!locked && !renaming && (
+          <button
+            type="button"
+            className="section-grab"
+            {...attributes}
+            {...listeners}
+            aria-label="Drag to reorder"
+            title="Drag to reorder"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="section-grab-dots" aria-hidden="true">⋮⋮</span>
+          </button>
+        )}
 
         {!locked && !renaming && (
           <button
@@ -387,7 +363,6 @@ function SectionCard({
 
 function DropColumn({ id, children }) {
   const { setNodeRef } = useDroppable({ id })
-
   return (
     <div ref={setNodeRef} className="section-col">
       {children}
@@ -479,7 +454,7 @@ export default function Sections({
   }
 
   const handleDragOver = ({ active, over }) => {
-    if (locked || !over || active.id === over.id) return
+    if (locked || !over) return
 
     const current = colsRef.current
     const activeCol = findColIndex(current, active.id)
@@ -488,7 +463,6 @@ export default function Sections({
     if (activeCol === -1 || overCol === -1) return
 
     const next = current.map((col) => [...col])
-
     const fromIndex = next[activeCol].findIndex((s) => s.id === active.id)
     if (fromIndex === -1) return
 
@@ -527,10 +501,15 @@ export default function Sections({
     setCols(finalCols)
 
     const updates = []
+    let globalPosition = 0
+
     finalCols.forEach((col, ci) => {
-      col.forEach((s, i) => {
+      col.forEach((s) => {
         updates.push(
-          supabase.from('sections').update({ position: i, colindex: ci }).eq('id', s.id)
+          supabase
+            .from('sections')
+            .update({ position: globalPosition++, colindex: ci })
+            .eq('id', s.id)
         )
       })
     })
@@ -553,7 +532,7 @@ export default function Sections({
       user_id: userId,
       workspace_id: workspaceId,
       name: newName.trim(),
-      position: current[shortest].length,
+      position: sections.length,
       colindex: shortest,
     })
 
@@ -583,7 +562,7 @@ export default function Sections({
             user_id: userId,
             workspace_id: workspaceId,
             name: g.name,
-            position: current[ci].length,
+            position: sections.length,
             colindex: ci,
           })
           .select()
@@ -621,7 +600,7 @@ export default function Sections({
   }
 
   return (
-    <div style={{ width: '100%' }}>
+    <div style={{ width: '100%', position: 'relative', zIndex: 2 }}>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -653,7 +632,7 @@ export default function Sections({
         </div>
 
         <DragOverlay>
-          {activeSection && (
+          {activeSection ? (
             <div
               className="section-card"
               style={{
@@ -675,11 +654,11 @@ export default function Sections({
                 </span>
               </div>
             </div>
-          )}
+          ) : null}
         </DragOverlay>
       </DndContext>
 
-      {addingSection && (
+      {addingSection ? (
         <div className="add-section-fixed">
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
             <input
@@ -706,9 +685,9 @@ export default function Sections({
             </button>
           </form>
         </div>
-      )}
+      ) : null}
 
-      {showImport && (
+      {showImport ? (
         <div className="modal-overlay" onClick={() => setShowImport(false)}>
           <div className="modal-box" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -743,7 +722,7 @@ export default function Sections({
               }}
             />
 
-            {importError && (
+            {importError ? (
               <div
                 style={{
                   fontSize: '0.78em',
@@ -758,9 +737,9 @@ export default function Sections({
               >
                 {importError}
               </div>
-            )}
+            ) : null}
 
-            {importDone && (
+            {importDone ? (
               <div
                 style={{
                   fontSize: '0.82em',
@@ -773,7 +752,7 @@ export default function Sections({
               >
                 ✓ Import successful!
               </div>
-            )}
+            ) : null}
 
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button
@@ -788,7 +767,7 @@ export default function Sections({
             </div>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

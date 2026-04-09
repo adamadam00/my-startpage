@@ -1029,7 +1029,12 @@ export default function App() {
 
   const bgStyle =
     bgImage && theme.bgPreset === 'image'
-      ? { backgroundImage: `url(${bgImage})` }
+      ? {
+          backgroundImage: `url(${bgImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }
       : undefined
 
   if (loading) return <div className="center-fill">Loading...</div>
@@ -1037,7 +1042,14 @@ export default function App() {
 
   return (
     <div className={bgClass} style={bgStyle}>
-      <div className="app">
+      <div
+        className="app"
+        style={{
+          position: 'relative',
+          zIndex: 1,
+          minHeight: '100vh',
+        }}
+      >
         {theme.wallpaper ? (
           <div
             style={{
@@ -1241,7 +1253,7 @@ export default function App() {
 
         <main
           className="main-layout"
-          style={{ gridTemplateColumns: '1fr var(--notes-width, 240px)' }}
+          style={{ position: 'relative', zIndex: 2, gridTemplateColumns: '1fr var(--notes-width, 240px)' }}
         >
           <div className="main-col">
             <Sections
@@ -1301,4 +1313,3 @@ export default function App() {
     </div>
   )
 }
- 
