@@ -1455,17 +1455,49 @@ input[type='range']::-moz-range-thumb {
     left: 0.5rem;
   }
 }
-/* hide left drag handle */
+/* keep drag handle functional but invisible until hover */
 .drag-handle {
-  display: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.55rem !important;
+  min-width: 1.55rem !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  color: transparent !important;
+  opacity: 0 !important;
+  cursor: grab !important;
+  transition: opacity 0.15s ease !important;
 }
 
-/* header becomes positioning context */
+.section-card:hover .drag-handle,
+.section-header:hover .drag-handle,
+.section-header:focus-within .drag-handle {
+  opacity: 1 !important;
+}
+
+.drag-handle::before {
+  content: '⋮⋮';
+  color: var(--text-dim) !important;
+  font-size: 0.95em !important;
+  line-height: 1 !important;
+}
+
+.drag-handle:hover::before {
+  color: var(--text) !important;
+}
+
+.drag-handle:active {
+  cursor: grabbing !important;
+}
+
+/* header positioning */
 .section-header {
   position: relative !important;
 }
 
-/* title gets full width and leaves room only when controls appear */
+/* title area keeps width */
 .section-header-click {
   flex: 1 !important;
   min-width: 0 !important;
@@ -1475,11 +1507,11 @@ input[type='range']::-moz-range-thumb {
 .section-name {
   flex: 1 !important;
   min-width: 0 !important;
-  text-align: center !important;
   padding-right: 0 !important;
+  text-align: center !important;
 }
 
-/* hover/focus should reveal controls, not click */
+/* controls hidden by default */
 .section-actions,
 .section-collapse-arrow {
   opacity: 0 !important;
@@ -1487,6 +1519,7 @@ input[type='range']::-moz-range-thumb {
   transition: opacity 0.15s ease !important;
 }
 
+/* controls appear on card/header hover */
 .section-card:hover .section-actions,
 .section-card:hover .section-collapse-arrow,
 .section-header:hover .section-actions,
@@ -1499,24 +1532,24 @@ input[type='range']::-moz-range-thumb {
   pointer-events: auto !important;
 }
 
-/* actions overlay */
+/* solid chip background appears immediately with actions */
 .section-actions {
   position: absolute !important;
-  right: 2.4rem !important;
+  right: 2.35rem !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
   display: flex !important;
   align-items: center !important;
-  gap: 0.12rem !important;
+  gap: 0.1rem !important;
   z-index: 25 !important;
   padding: 0.14rem !important;
   border-radius: var(--radius-sm) !important;
   background: var(--bg3) !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22) !important;
 }
 
-/* collapse arrow overlay */
+/* arrow gets same solid background immediately */
 .section-collapse-arrow {
   position: absolute !important;
   right: 0.55rem !important;
@@ -1531,12 +1564,12 @@ input[type='range']::-moz-range-thumb {
   padding: 0 0.35rem !important;
   border-radius: var(--radius-sm) !important;
   background: var(--bg3) !important;
-  border: 1px solid var(--border) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent) !important;
   color: var(--text-dim) !important;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22) !important;
 }
 
-/* icon buttons match the header chip background */
+/* buttons sit inside the already-solid chip */
 .section-actions .icon-btn {
   background: transparent !important;
   border: none !important;
