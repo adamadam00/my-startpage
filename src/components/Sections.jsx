@@ -250,31 +250,23 @@ function SectionCard({
       className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}${renaming ? ' is-renaming' : ''}`}
     >
       <div className="section-header">
-        {!locked && (
-          <span
-            className="drag-handle"
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
-            title="Drag to reorder"
-          >
-            ⋮⋮
-          </span>
-        )}
+        {!locked && <span className="drag-handle" aria-hidden="true" />}
 
-        <div
-          className="section-header-click"
-          onClick={toggleCollapse}
-          role="button"
-          tabIndex={renaming ? -1 : 0}
-          onKeyDown={(e) => {
-            if (renaming) return
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              toggleCollapse(e)
-            }
-          }}
-        >
+		<div
+		  className="section-header-click"
+		  {...(!locked && !renaming ? { ...attributes, ...listeners } : {})}
+		  onClick={toggleCollapse}
+		  role="button"
+		  tabIndex={renaming ? -1 : 0}
+		  title={!locked && !renaming ? 'Drag to reorder' : undefined}
+		  onKeyDown={(e) => {
+			if (renaming) return
+			if (e.key === 'Enter' || e.key === ' ') {
+			  e.preventDefault()
+			  toggleCollapse(e)
+			}
+		  }}
+		>
           {renaming ? (
             <form
               className="section-rename-form"
