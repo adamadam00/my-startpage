@@ -1,49 +1,109 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
-  DndContext, closestCenter, DragOverlay,
-  PointerSensor, KeyboardSensor, useSensor, useSensors,
+  DndContext,
+  closestCenter,
+  DragOverlay,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core'
 import {
-  SortableContext, sortableKeyboardCoordinates,
-  verticalListSortingStrategy, useSortable, arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import Links from './Links'
 
 function parseAFineStart(raw) {
   let data
-  try { data = JSON.parse(raw) } catch { throw new Error('Not valid JSON — paste the export code exactly.') }
-  const extractBookmarks = (bms) => bms
-    .map(b => ({ title: b.name || b.title || 'Link', url: b.url || b.href }))
-    .filter(b => b.url)
+  try {
+    data = JSON.parse(raw)
+  } catch {
+    throw new Error('Not valid JSON — paste the export code exactly.')
+  }
+
+  const extractBookmarks = (bms) =>
+    bms
+      .map((b) => ({
+        title: b.name || b.title || 'Link',
+        url: b.url || b.href,
+      }))
+      .filter((b) => b.url)
+
   const groups = []
-  if (Array.isArray(data) && data.every(i => Array.isArray(i))) {
-    data.forEach(col => col.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) }))
+
+  if (Array.isArray(data) && data.every((i) => Array.isArray(i))) {
+    data.forEach((col) =>
+      col.forEach((g) => {
+        if (g?.name) {
+          groups.push({
+            name: g.name,
+            links: extractBookmarks(g.bookmarks || []),
+          })
+        }
+      })
+    )
     if (groups.length) return groups
   }
+
   if (Array.isArray(data) && data[0]?.name) {
-    data.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links || []) }) })
-    if (groups.length) return groups
-  }
-  const root = data.columns || data.groups || data.data || null
-  if (Array.isArray(root)) {
-    root.forEach(item => {
-      if (Array.isArray(item)) item.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) })
-      else if (item?.name) groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links || []) })
+    data.forEach((g) => {
+      if (g?.name) {
+        groups.push({
+          name: g.name,
+          links: extractBookmarks(g.bookmarks || g.links || []),
+        })
+      }
     })
     if (groups.length) return groups
   }
+
+  const root = data.columns || data.groups || data.data || null
+  if (Array.isArray(root)) {
+    root.forEach((item) => {
+      if (Array.isArray(item)) {
+        item.forEach((g) => {
+          if (g?.name) {
+            groups.push({
+              name: g.name,
+              links: extractBookmarks(g.bookmarks || []),
+            })
+          }
+        })
+      } else if (item?.name) {
+        groups.push({
+          name: item.name,
+          links: extractBookmarks(item.bookmarks || item.links || []),
+        })
+      }
+    })
+    if (groups.length) return groups
+  }
+
   const walk = (node) => {
     if (!node || typeof node !== 'object') return
+
     const bms = node.bookmarks || node.links || node.items
     if ((node.name || node.title) && Array.isArray(bms)) {
-      groups.push({ name: node.name || node.title, links: extractBookmarks(bms) }); return
+      groups.push({
+        name: node.name || node.title,
+        links: extractBookmarks(bms),
+      })
+      return
     }
+
     ;(Array.isArray(node) ? node : Object.values(node)).forEach(walk)
   }
+
   walk(data)
+
   if (groups.length) return groups
+
   throw new Error(`No groups found. Keys: ${Object.keys(data).join(', ')}`)
 }
 
@@ -51,29 +111,41 @@ function buildColumns(sections = [], colCount = 2) {
   const cols = Math.max(colCount, 1)
   const result = Array.from({ length: cols }, () => [])
   const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-  const allZero = sorted.length > 0 && sorted.every(s => (s.colindex ?? 0) === 0)
+  const allZero = sorted.length > 0 && sorted.every((s) => (s.colindex ?? 0) === 0)
+
   sorted.forEach((s, i) => {
     const ci = allZero ? i % cols : Math.min(Math.max(s.colindex ?? 0, 0), cols - 1)
     result[ci].push(s)
   })
+
   return result
 }
 
 function findColIndex(cols, id) {
-  return cols.findIndex(col => col.some(s => s.id === id))
+  return cols.findIndex((col) => col.some((s) => s.id === id))
 }
 
-/* ── Section card ── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, ghost, locked, forceCollapsed }) {
+function SectionCard({
+  section,
+  links,
+  userId,
+  workspaceId,
+  onRefresh,
+  openInNewTab,
+  ghost,
+  locked,
+  forceCollapsed,
+}) {
   const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section.name ?? '')
   const [addingLink, setAddingLink] = useState(false)
-  const [titleHovered, setTitleHovered] = useState(false)
-  const [headerHovered, setHeaderHovered] = useState(false)
+
+  const renameInputRef = useRef(null)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: section.id, disabled: locked,
+    id: section.id,
+    disabled: locked || renaming,
   })
 
   const style = {
@@ -93,38 +165,79 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
   }, [section.name])
 
   useEffect(() => {
+    if (!renaming) return
+    const t = setTimeout(() => {
+      renameInputRef.current?.focus()
+      renameInputRef.current?.select()
+    }, 0)
+    return () => clearTimeout(t)
+  }, [renaming])
+
+  useEffect(() => {
     if (forceCollapsed === undefined) return
     setCollapsed(forceCollapsed)
     supabase.from('sections').update({ collapsed: forceCollapsed }).eq('id', section.id)
   }, [forceCollapsed, section.id])
 
-  const sectionLinks = links.filter(l => l.section_id === section.id)
+  const sectionLinks = links.filter((l) => l.section_id === section.id)
 
-  const toggleCollapse = async () => {
-    if (renaming) return
+  const toggleCollapse = async (e) => {
+    e?.stopPropagation?.()
+    if (renaming || locked) return
+
     const next = !collapsed
     setCollapsed(next)
     await supabase.from('sections').update({ collapsed: next }).eq('id', section.id)
   }
 
-  const rename = async (e) => {
+  const startRename = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!name.trim()) return
-    await supabase.from('sections').update({ name: name.trim() }).eq('id', section.id)
+    setName(section.name ?? '')
+    setRenaming(true)
+  }
+    const rename = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const trimmed = name.trim()
+    if (!trimmed) {
+      setName(section.name ?? '')
+      setRenaming(false)
+      return
+    }
+
+    await supabase.from('sections').update({ name: trimmed }).eq('id', section.id)
     setRenaming(false)
     onRefresh()
   }
 
   const cancelRename = (e) => {
+    e?.preventDefault?.()
     e?.stopPropagation?.()
     setName(section.name ?? '')
     setRenaming(false)
   }
 
-  const deleteSection = async (e) => {
+  const handleRenameKeyDown = (e) => {
     e.stopPropagation()
+
+    if (e.key === 'Escape') {
+      cancelRename(e)
+      return
+    }
+
+    if (e.key === 'Enter') {
+      rename(e)
+    }
+  }
+
+  const deleteSection = async (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
     if (!confirm(`Delete "${section.name}" and all its links?`)) return
+
     await supabase.from('links').delete().eq('section_id', section.id)
     await supabase.from('sections').delete().eq('id', section.id)
     onRefresh()
@@ -134,137 +247,112 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
     <div
       ref={setNodeRef}
       style={style}
-      className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}`}
+      className={`section-card${collapsed ? ' collapsed' : ''}${locked ? ' locked' : ''}${renaming ? ' is-renaming' : ''}`}
     >
-      <div
-        className="section-header"
-        onClick={toggleCollapse}
-        onMouseEnter={() => setHeaderHovered(true)}
-        onMouseLeave={() => setHeaderHovered(false)}
-        {...(!locked && !renaming ? attributes : {})}
-        {...(!locked && !renaming ? listeners : {})}
-      >
+      <div className="section-header">
         {!locked && (
           <span
             className="drag-handle"
-            onClick={e => e.stopPropagation()}
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
             title="Drag to reorder"
-          />
+          >
+            ⋮⋮
+          </span>
         )}
 
-        <span style={{ width: '0.4rem', flexShrink: 0 }} />
-
-        {renaming ? (
-          <form
-            onSubmit={rename}
-            onClick={e => e.stopPropagation()}
-            style={{ flex: 1, display: 'flex', gap: '0.35rem', minWidth: 0 }}
-          >
-            <input
-              className="input"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onClick={e => e.stopPropagation()}
-              onKeyDown={e => e.stopPropagation()}
-              autoFocus
-              style={{ flex: 1, fontSize: '0.82em', minWidth: 0 }}
-            />
-            <button
-              className="btn btn-primary"
-              type="submit"
-              style={{ fontSize: '0.75em' }}
-              onClick={e => e.stopPropagation()}
+        <div
+          className="section-header-click"
+          onClick={toggleCollapse}
+          role="button"
+          tabIndex={renaming ? -1 : 0}
+          onKeyDown={(e) => {
+            if (renaming) return
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              toggleCollapse(e)
+            }
+          }}
+        >
+          {renaming ? (
+            <form
+              className="section-rename-form"
+              onSubmit={rename}
+              onClick={(e) => e.stopPropagation()}
             >
-              Save
-            </button>
-            <button
-              className="btn"
-              type="button"
-              style={{ fontSize: '0.75em' }}
-              onClick={cancelRename}
-            >
-              Cancel
-            </button>
-          </form>
-        ) : (
-          <div
-            className="section-name-area"
-            onMouseEnter={() => setTitleHovered(true)}
-            onMouseLeave={() => setTitleHovered(false)}
-            onClick={e => e.stopPropagation()}
-            style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.1rem',
-              minWidth: 0,
-              overflow: 'visible',
-            }}
-          >
-            <span className="section-name">{section.name}</span>
-
-            {!locked && (
-              <div
-                className="section-actions"
-                style={{
-                  opacity: titleHovered ? 1 : 0,
-                  transition: 'opacity 0.15s',
-                  display: 'flex',
-                  gap: 0,
-                  flexShrink: 0,
-                }}
+              <input
+                ref={renameInputRef}
+                className="input section-rename-input"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={handleRenameKeyDown}
+                placeholder="Section name"
+              />
+              <button
+                className="btn btn-primary"
+                type="submit"
+                onClick={(e) => e.stopPropagation()}
               >
-                <button
-                  className="icon-btn"
-                  title="Add link"
-                  style={{ padding: 0, width: 18, height: 18, fontSize: '0.68em', borderRadius: 3 }}
-                  onClick={e => {
-                    e.stopPropagation()
-                    setCollapsed(false)
-                    setAddingLink(true)
-                  }}
-                >
-                  +
-                </button>
-                <button
-                  className="icon-btn"
-                  title="Rename"
-                  style={{ padding: 0, width: 18, height: 18, fontSize: '0.68em', borderRadius: 3 }}
-                  onClick={e => {
-                    e.stopPropagation()
-                    setRenaming(true)
-                  }}
-                >
-                  ✎
-                </button>
-                <button
-                  className="icon-btn section-delete-btn"
-                  title="Delete"
-                  style={{ padding: 0, width: 18, height: 18, fontSize: '0.68em', borderRadius: 3 }}
-                  onClick={deleteSection}
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+                Save
+              </button>
+              <button
+                className="btn"
+                type="button"
+                onClick={cancelRename}
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <>
+              <span className="section-name">{section.name}</span>
 
-        {!locked && (
-          <span
+              {!locked && (
+                <div className="section-actions">
+                  <button
+                    className="icon-btn"
+                    title="Add link"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setCollapsed(false)
+                      setAddingLink(true)
+                    }}
+                  >
+                    +
+                  </button>
+                  <button
+                    className="icon-btn"
+                    title="Rename"
+                    onClick={startRename}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    className="icon-btn section-delete-btn"
+                    title="Delete"
+                    onClick={deleteSection}
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {!locked && !renaming && (
+          <button
+            type="button"
             className="section-collapse-arrow"
-            style={{
-              color: 'var(--text-muted)',
-              fontSize: '0.7em',
-              marginLeft: '0.15rem',
-              flexShrink: 0,
-              opacity: headerHovered ? 1 : 0,
-              transition: 'opacity 0.15s',
-            }}
+            onClick={toggleCollapse}
+            title={collapsed ? 'Expand section' : 'Collapse section'}
+            aria-label={collapsed ? 'Expand section' : 'Collapse section'}
           >
             {collapsed ? '▸' : '▾'}
-          </span>
+          </button>
         )}
       </div>
 
@@ -283,8 +371,6 @@ function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNew
     </div>
   )
 }
-
-/* ── Main Sections component ── */
 export default function Sections({
   sections = [],
   links = [],
@@ -313,12 +399,11 @@ export default function Sections({
 
   const safeLinks = Array.isArray(links) ? links : []
   const colsRef = useRef(cols)
+  const skipRebuildRef = useRef(false)
 
   useEffect(() => {
     colsRef.current = cols
   }, [cols])
-
-  const skipRebuildRef = useRef(false)
 
   useEffect(() => {
     if (dragging) return
@@ -355,30 +440,35 @@ export default function Sections({
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const handleDragStart = ({ active }) => {
     if (locked) return
     setDragging(true)
+
     const current = colsRef.current
     const ci = findColIndex(current, active.id)
-    if (ci !== -1) setActiveSection(current[ci].find(s => s.id === active.id) ?? null)
+    if (ci !== -1) {
+      setActiveSection(current[ci].find((s) => s.id === active.id) ?? null)
+    }
   }
 
   const handleDragOver = ({ active, over }) => {
     if (locked || !over || active.id === over.id) return
+
     const current = colsRef.current
     const activeCol = findColIndex(current, active.id)
     const overCol = findColIndex(current, over.id)
+
     if (activeCol === -1 || overCol === -1 || activeCol === overCol) return
 
-    const next = current.map(col => [...col])
-    const activeItem = next[activeCol].find(s => s.id === active.id)
+    const next = current.map((col) => [...col])
+    const activeItem = next[activeCol].find((s) => s.id === active.id)
     if (!activeItem) return
 
-    next[activeCol] = next[activeCol].filter(s => s.id !== active.id)
-    const overIndex = next[overCol].findIndex(s => s.id === over.id)
+    next[activeCol] = next[activeCol].filter((s) => s.id !== active.id)
+    const overIndex = next[overCol].findIndex((s) => s.id === over.id)
 
     if (overIndex === -1) next[overCol].push(activeItem)
     else next[overCol].splice(overIndex, 0, activeItem)
@@ -389,6 +479,7 @@ export default function Sections({
 
   const handleDragEnd = async ({ active, over }) => {
     if (locked) return
+
     setDragging(false)
     setActiveSection(null)
 
@@ -403,19 +494,19 @@ export default function Sections({
 
     if (activeCol === -1) return
 
-    const finalCols = current.map(col => [...col])
+    const finalCols = current.map((col) => [...col])
 
     if (activeCol === overCol) {
-      const from = finalCols[activeCol].findIndex(s => s.id === active.id)
-      const to = finalCols[activeCol].findIndex(s => s.id === over.id)
+      const from = finalCols[activeCol].findIndex((s) => s.id === active.id)
+      const to = finalCols[activeCol].findIndex((s) => s.id === over.id)
       if (from !== -1 && to !== -1 && from !== to) {
         finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
       }
     } else if (overCol !== -1) {
-      const activeItem = finalCols[activeCol].find(s => s.id === active.id)
+      const activeItem = finalCols[activeCol].find((s) => s.id === active.id)
       if (activeItem) {
-        finalCols[activeCol] = finalCols[activeCol].filter(s => s.id !== active.id)
-        const overIndex = finalCols[overCol].findIndex(s => s.id === over.id)
+        finalCols[activeCol] = finalCols[activeCol].filter((s) => s.id !== active.id)
+        const overIndex = finalCols[overCol].findIndex((s) => s.id === over.id)
         if (overIndex === -1) finalCols[overCol].push(activeItem)
         else finalCols[overCol].splice(overIndex, 0, activeItem)
       }
@@ -441,8 +532,12 @@ export default function Sections({
   const addSection = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
+
     const current = buildColumns(sections, colCount)
-    const shortest = current.reduce((best, col, i) => col.length < current[best].length ? i : best, 0)
+    const shortest = current.reduce(
+      (best, col, i) => (col.length < current[best].length ? i : best),
+      0
+    )
 
     await supabase.from('sections').insert({
       user_id: userId,
@@ -456,8 +551,7 @@ export default function Sections({
     setAddingSection(false)
     onRefresh()
   }
-
-  const runImport = async () => {
+    const runImport = async () => {
     setImportError('')
     setImportLoading(true)
 
@@ -467,15 +561,22 @@ export default function Sections({
 
       for (const g of groups) {
         const current = buildColumns(sections, colCount)
-        const ci = current.reduce((best, col, i) => col.length < current[best].length ? i : best, 0)
+        const ci = current.reduce(
+          (best, col, i) => (col.length < current[best].length ? i : best),
+          0
+        )
 
-        const { data: sec, error: secErr } = await supabase.from('sections').insert({
-          user_id: userId,
-          workspace_id: workspaceId,
-          name: g.name,
-          position: current[ci].length,
-          colindex: ci,
-        }).select().single()
+        const { data: sec, error: secErr } = await supabase
+          .from('sections')
+          .insert({
+            user_id: userId,
+            workspace_id: workspaceId,
+            name: g.name,
+            position: current[ci].length,
+            colindex: ci,
+          })
+          .select()
+          .single()
 
         if (secErr) throw new Error(secErr.message)
 
@@ -495,6 +596,7 @@ export default function Sections({
 
       setImportDone(true)
       onRefresh()
+
       setTimeout(() => {
         setShowImport(false)
         setImportText('')
@@ -519,8 +621,8 @@ export default function Sections({
         <div className="sections-grid">
           {cols.map((col, ci) => (
             <div key={ci} className="section-col">
-              <SortableContext items={col.map(s => s.id)} strategy={verticalListSortingStrategy}>
-                {col.map(section => (
+              <SortableContext items={col.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                {col.map((section) => (
                   <SectionCard
                     key={section.id}
                     section={section}
@@ -551,9 +653,15 @@ export default function Sections({
               }}
             >
               <div className="section-header" style={{ cursor: 'grabbing' }}>
-                <span className="drag-handle" style={{ opacity: 0.5 }} />
-                <span className="section-name">{activeSection.name}</span>
-                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>▾</span>
+                <span className="drag-handle" style={{ opacity: 0.5 }}>
+                  ⋮⋮
+                </span>
+                <div className="section-header-click" style={{ cursor: 'grabbing' }}>
+                  <span className="section-name">{activeSection.name}</span>
+                </div>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.15rem' }}>
+                  ▾
+                </span>
               </div>
             </div>
           )}
@@ -566,7 +674,7 @@ export default function Sections({
             <input
               className="input"
               value={newName}
-              onChange={e => setNewName(e.target.value)}
+              onChange={(e) => setNewName(e.target.value)}
               placeholder="Section name"
               autoFocus
               style={{ width: 150, fontSize: '0.82em' }}
@@ -591,7 +699,7 @@ export default function Sections({
 
       {showImport && (
         <div className="modal-overlay" onClick={() => setShowImport(false)}>
-          <div className="modal-box" style={{ maxWidth: 480 }} onClick={e => e.stopPropagation()}>
+          <div className="modal-box" style={{ maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontWeight: 500, fontSize: '0.95em' }}>Import from A Fine Start</span>
               <button className="icon-btn" onClick={() => setShowImport(false)}>✕</button>
@@ -603,7 +711,7 @@ export default function Sections({
 
             <textarea
               value={importText}
-              onChange={e => {
+              onChange={(e) => {
                 setImportText(e.target.value)
                 setImportError('')
               }}
