@@ -8,6 +8,7 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  useDroppable,
 } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -123,6 +124,41 @@ function buildColumns(sections = [], colCount = 2) {
 
 function findColIndex(cols, id) {
   return cols.findIndex((col) => col.some((s) => s.id === id))
+}
+
+function getOverColumnIndex(cols, overId) {
+  if (overId == null) return -1
+  const str = String(overId)
+  if (str.startsWith('col-')) {
+    const n = Number(str.replace('col-', ''))
+    return Number.isNaN(n) ? -1 : n
+  }
+  return findColIndex(cols, overId)
+}
+
+function moveSectionBetweenColumns(current, activeId, overId) {
+  const activeCol = findColIndex(current, activeId)
+  const overCol = getOverColumnIndex(current, overId)
+
+  if (activeCol === -1 || overCol === -1) return current.map((col) => [...col])
+
+  const next = current.map((col) => [...col])
+  const activeItem = next[activeCol].find((s) => s.id === activeId)
+  if (!activeItem) return current.map((col) => [...col])
+
+  next[activeCol] = next[activeCol].filter((s) => s.id !== activeId)
+
+  const overIdStr = String(overId)
+  if (overIdStr.startsWith('col-')) {
+    next[overCol].push(activeItem)
+    return next
+  }
+
+  const overIndex = next[overCol].findIndex((s) => s.id === overId)
+  if (overIndex === -1) next[overCol].push(activeItem)
+  else next[overCol].splice(overIndex, 0, activeItem)
+
+  return next
 }
 
 function SectionCard({
@@ -375,6 +411,19 @@ function SectionCard({
   )
 }
 
+function DropColumn({ id, children }) {
+  const { setNodeRef, isOver } = useDroppable({ id })
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`section-col${isOver ? ' is-over' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function Sections({
   sections = [],
   links = [],
@@ -463,20 +512,17 @@ export default function Sections({
 
     const current = colsRef.current
     const activeCol = findColIndex(current, active.id)
-    const overCol = findColIndex(current, over.id)
+    const overCol = getOverColumnIndex(current, over.id)
 
-    if (activeCol === -1 || overCol === -1 || activeCol === overCol) return
+    if (activeCol === -1 || overCol === -1) return
 
-    const next = current.map((col) => [...col])
-    const activeItem = next[activeCol].find((s) => s.id === active.id)
-    if (!activeItem) return
+    const overIdStr = String(over.id)
+    const sameColumn = activeCol === overCol
 
-    next[activeCol] = next[activeCol].filter((s) => s.id !== active.id)
-    const overIndex = next[overCol].findIndex((s) => s.id === over.id)
+    if (sameColumn && overIdStr.startsWith('col-')) return
+    if (sameColumn && over.id !== active.id) return
 
-    if (overIndex === -1) next[overCol].push(activeItem)
-    else next[overCol].splice(overIndex, 0, activeItem)
-
+    const next = moveSectionBetweenColumns(current, active.id, over.id)
     colsRef.current = next
     setCols(next)
   }
@@ -494,26 +540,24 @@ export default function Sections({
 
     const current = colsRef.current
     const activeCol = findColIndex(current, active.id)
-    const overCol = findColIndex(current, over.id)
+    const overCol = getOverColumnIndex(current, over.id)
 
-    if (activeCol === -1) return
+    if (activeCol === -1 || overCol === -1) {
+      setCols(buildColumns(sections, colCount))
+      return
+    }
 
-    const finalCols = current.map((col) => [...col])
+    let finalCols = current.map((col) => [...col])
+    const overIdStr = String(over.id)
 
-    if (activeCol === overCol) {
+    if (activeCol === overCol && !overIdStr.startsWith('col-')) {
       const from = finalCols[activeCol].findIndex((s) => s.id === active.id)
       const to = finalCols[activeCol].findIndex((s) => s.id === over.id)
       if (from !== -1 && to !== -1 && from !== to) {
         finalCols[activeCol] = arrayMove(finalCols[activeCol], from, to)
       }
-    } else if (overCol !== -1) {
-      const activeItem = finalCols[activeCol].find((s) => s.id === active.id)
-      if (activeItem) {
-        finalCols[activeCol] = finalCols[activeCol].filter((s) => s.id !== active.id)
-        const overIndex = finalCols[overCol].findIndex((s) => s.id === over.id)
-        if (overIndex === -1) finalCols[overCol].push(activeItem)
-        else finalCols[overCol].splice(overIndex, 0, activeItem)
-      }
+    } else {
+      finalCols = moveSectionBetweenColumns(finalCols, active.id, over.id)
     }
 
     skipRebuildRef.current = true
@@ -625,7 +669,7 @@ export default function Sections({
       >
         <div className="sections-grid">
           {cols.map((col, ci) => (
-            <div key={ci} className="section-col">
+            <DropColumn key={ci} id={`col-${ci}`}>
               <SortableContext items={col.map((s) => s.id)} strategy={verticalListSortingStrategy}>
                 {col.map((section) => (
                   <SectionCard
@@ -642,7 +686,7 @@ export default function Sections({
                   />
                 ))}
               </SortableContext>
-            </div>
+            </DropColumn>
           ))}
         </div>
 
