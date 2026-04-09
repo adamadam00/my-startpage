@@ -1455,37 +1455,35 @@ input[type='range']::-moz-range-thumb {
     left: 0.5rem;
   }
 }
-.section-header .section-drag-handle,
-.section-header .section-toggle,
-.section-header .section-arrow,
-.section-header .collapse-arrow {
-  opacity: 0;
+.section-card button,
+.section-header button,
+.section-header svg,
+.section-card svg {
   color: var(--text-dim) !important;
-  transition: opacity 0.15s, color 0.15s;
+  fill: currentColor !important;
+  stroke: currentColor !important;
 }
 
-.section-card:hover .section-drag-handle,
-.section-card:hover .section-toggle,
-.section-card:hover .section-arrow,
-.section-card:hover .collapse-arrow,
-.section-header:hover .section-drag-handle,
-.section-header:hover .section-toggle,
-.section-header:hover .section-arrow,
-.section-header:hover .collapse-arrow {
-  opacity: 1;
-}
-
-.section-drag-handle,
-.section-toggle,
-.section-arrow,
-.collapse-arrow {
-  background: transparent !important;
-  color: var(--text-dim) !important;
-}
-
-.section-drag-handle:hover,
-.section-toggle:hover,
-.section-arrow:hover,
-.collapse-arrow:hover {
+.section-card:hover button,
+.section-header:hover button,
+.section-card:hover svg,
+.section-header:hover svg {
   color: var(--text) !important;
+}
+
+.section-header button:not(:hover),
+.section-card button:not(:hover) {
+  background: transparent !important;
+}
+
+.section-header button[aria-label*="collapse"],
+.section-header button[aria-label*="expand"],
+.section-header button[title*="collapse"],
+.section-header button[title*="expand"] {
+  opacity: 0 !important;
+}
+
+.section-card:hover .section-header button,
+.section-header:hover button {
+  opacity: 1 !important;
 }
