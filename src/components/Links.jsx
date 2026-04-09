@@ -42,7 +42,6 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
   }
 
   return (
-    // Overlay is position:absolute so title fills full width — buttons float over it on hover
     <div ref={setNodeRef} style={style} className="link-item">
       <span className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()} />
       {getFavicon(link.url) && (
@@ -54,18 +53,16 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
         {link.title}
       </span>
 
-      {/* Overlay: floats over the title on hover. Swaps between action buttons and color swatches inline. */}
       <div className={`link-actions-overlay${showColors ? ' colors-open' : ''}`}>
         {showColors ? (
-          // ── Color swatch mode — inline, no dropdown needed ──
           <>
             {SWATCH_COLORS.map(c => (
               <button key={c.value || 'reset'} className="color-swatch-inline"
                 title={c.label}
                 onClick={e => { e.stopPropagation(); handleColor(c.value) }}
                 style={{
-                    background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',
-					boxShadow: selectedColor === c.value ? '0 0 0 1px var(--accent)' : 'none',
+                  background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',
+                  boxShadow: '0 0 0 1px var(--accent)',
                 }}
               />
             ))}
@@ -74,7 +71,6 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
               title="Close">✕</button>
           </>
         ) : (
-          // ── Normal action buttons ──
           <>
             <button className="link-act link-act-color" title="Set color"
               onClick={e => { e.stopPropagation(); setShowColors(true) }}>●</button>
