@@ -11,7 +11,9 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 
 function getFavicon(url) {
-  try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32` }
+  try { 
+    return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32` 
+  }
   catch { return null }
 }
 
@@ -30,12 +32,19 @@ const SWATCH_COLORS = [
 function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: link.id })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
-  const open = () => openInNewTab
-    ? window.open(link.url, '_blank', 'noopener,noreferrer')
-    : (window.location.href = link.url)
   const [showColors, setShowColors] = useState(false)
 
-  const handleColor = async (color) => {
+  const open = (e) => {
+    e?.preventDefault?.()
+    e?.stopPropagation?.()
+    openInNewTab
+      ? window.open(link.url, '_blank', 'noopener,noreferrer')
+      : (window.location.href = link.url)
+  }
+
+  const handleColor = async (e, color) => {
+    e.preventDefault()
+    e.stopPropagation()
     await supabase.from('links').update({ color }).eq('id', link.id)
     setShowColors(false)
     onRefresh()
@@ -43,7 +52,9 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
 
   return (
     <div ref={setNodeRef} style={style} className="link-item">
-      <span className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()} />
+      <span className="drag-handle" {...attributes} {...listeners} onClick={e => e.stopPropagation()} title="Drag to reorder">
+        ⋮⋮
+      </span>
       {getFavicon(link.url) && (
         <img src={getFavicon(link.url)} alt="" className="link-favicon"
           onError={e => e.target.style.display='none'} />
@@ -59,7 +70,7 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
             {SWATCH_COLORS.map(c => (
               <button key={c.value || 'reset'} className="color-swatch-inline"
                 title={c.label}
-                onClick={e => { e.stopPropagation(); handleColor(c.value) }}
+                onClick={e => handleColor(e, c.value)}
                 style={{
                   background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',
                   boxShadow: '0 0 0 1px var(--accent)',
@@ -111,8 +122,10 @@ export default function Links({
   )
 
   const closeForm = () => {
-    setAdding(false); setEditing(null)
-    setTitle(''); setUrl('')
+    setAdding(false)
+    setEditing(null)
+    setTitle('')
+    setUrl('')
     onExternalAddingDone?.()
   }
 
@@ -122,11 +135,15 @@ export default function Links({
     let href = url.trim()
     if (!href.startsWith('http')) href = 'https://' + href
     await supabase.from('links').insert({
-      user_id: userId, workspace_id: workspaceId, section_id: sectionId,
-      title: title.trim(), url: href, position: safeLinks.length,
+      user_id: userId,
+      workspace_id: workspaceId,
+      section_id: sectionId,
+      title: title.trim(),
+      url: href,
+      position: safeLinks.length,
     })
-    setTitle(''); setUrl(''); setAdding(false)
-    onExternalAddingDone?.(); onRefresh()
+    closeForm()
+    onRefresh()
   }
 
   const handleEdit = async (e) => {
@@ -135,7 +152,8 @@ export default function Links({
     let href = url.trim()
     if (!href.startsWith('http')) href = 'https://' + href
     await supabase.from('links').update({ title: title.trim(), url: href }).eq('id', editing.id)
-    closeForm(); onRefresh()
+    closeForm()
+    onRefresh()
   }
 
   const handleDelete = async (id) => {
@@ -154,7 +172,9 @@ export default function Links({
   }
 
   const formStyle = {
-    display: 'flex', flexDirection: 'column', gap: '0.3rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.3rem',
     padding: `0.3rem var(--card-padding, 0.75rem) 0.4rem`,
   }
 
@@ -169,7 +189,7 @@ export default function Links({
                   <input className="input" value={title} onChange={e => setTitle(e.target.value)}
                     placeholder="Title" autoFocus style={{ fontSize: '0.82em' }} />
                   <input className="input" value={url} onChange={e => setUrl(e.target.value)}
-                    placeholder="URL" style={{ fontSize: '0.82em' }} />
+                    placeholder="https://…" style={{ fontSize: '0.82em' }} />
                   <div style={{ display: 'flex', gap: '0.3rem' }}>
                     <button className="btn btn-primary" type="submit" style={{ flex: 1, fontSize: '0.75em' }}>Save</button>
                     <button className="btn" type="button" style={{ fontSize: '0.75em' }} onClick={closeForm}>Cancel</button>
