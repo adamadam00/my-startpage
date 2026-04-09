@@ -3,7 +3,6 @@ import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
 import Settings from './components/Settings'
-import Weather from './components/Weather'  // ← CHANGED (replaces inline WeatherWidget)
 import { supabase } from './lib/supabase'
 import './index.css'
 
@@ -20,6 +19,51 @@ function ClockWidget() {
     <div className="clock-compact">
       <span className="clock-compact-time">{hm}</span>
       <span className="clock-compact-date">{date}</span>
+    </div>
+  )
+}
+
+// ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
+function WeatherWidget() {
+  const CACHE_KEY = 'wx_cache'
+  const CACHE_TTL = 25 * 60 * 1000  // 25 minutes
+
+  const [wx, setWx] = useState(() => {
+    // Show cached weather instantly while fresh data loads
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+      if (c && Date.now() - c.ts < CACHE_TTL) return c.data
+    } catch {}
+    return null
+  })
+
+  useEffect(() => {
+    // Only fetch if cache is stale or missing
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+      if (c && Date.now() - c.ts < CACHE_TTL) return  // cache still fresh
+    } catch {}
+
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
+      } catch {}
+    }, () => {})
+  }, [])
+  if (!wx) return null
+  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
+  const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
+  return (
+    <div className="weather-wrap">
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
@@ -44,25 +88,18 @@ const DEFAULT_THEME = {
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
   bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
   bgSt: {},
-  searchEngineUrl: 'https://www.google.com.au/search?q=',  // ← CHANGED
+  searchEngineUrl: 'https://www.google.com/search?q=',
   settingsTitleColor: '#7878a0',
   bgGrassSky: '#020609', bgGrassGround: '#071a05',
   bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
   sectionsCols: 3,
-  notesGap: 0, notesCardBg: '#13131a', notesCardBgOpacity: 1,  // ← CHANGED (added notesCardBgOpacity)
-  notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
   settingsSide: 'right',
   bmFontSize: 13,
   bmResultBg: '',
   bmResultText: '',
-  linksOpenNewWindow: true,   // ← NEW
-  hideClock: false,           // ← NEW
-  hideWeather: false,         // ← NEW
-  hideSearch: false,          // ← NEW
-  hideCards: false,           // ← NEW
-  hideNotes: false,           // ← NEW
 }
 
 // ─── APPLY THEME ─────────────────────────────────────────────────────────────
@@ -373,10 +410,9 @@ function applyTheme(t) {
 
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap',       (t.notesGap ?? 0) + 'px')
-  if (t.notesCardBg)         s('--notes-card-bg',         t.notesCardBg)
-  s('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)  // ← NEW
-  if (t.notesTextColor)      s('--notes-text-color',      t.notesTextColor)
-  if (t.notesTextBg)         s('--notes-input-bg',        t.notesTextBg)
+  if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
+  if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
+  if (t.notesTextBg)    s('--notes-input-bg',   t.notesTextBg)
   root.dataset.settingsSide = t.settingsSide || 'right'
   document.body.style.fontFamily       = t.font || "'DM Mono', monospace"
   document.body.style.backgroundColor = t.bg   || '#0c0c0f'
@@ -431,7 +467,7 @@ export default function App() {
     else saveThemeRef.current = setTimeout(doSave, 1500)
   }
 
-  const setTheme = (updater) => {
+    const setTheme = (updater) => {
     setThemeState(prev => {
       const base = typeof updater === 'function' ? updater(prev) : updater
       const next = { ...base, _savedAt: Date.now() }
@@ -582,7 +618,7 @@ export default function App() {
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
 
-  // ── Sign out ─────────────────────────────────────────────────────────────
+    // ── Sign out ─────────────────────────────────────────────────────────────
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setSession(null)
@@ -642,6 +678,7 @@ export default function App() {
     }
     loadFromStorage()
     // Listen for live pushes from content script
+    // NOTE: do NOT check e.source — Firefox content script window !== page window
     const onMessage = (e) => {
       if (e.data?.type === 'SP_BOOKMARKS_UPDATE' && e.data?.payload) {
         const { bookmarks: bm, folders: fl } = e.data.payload
@@ -801,6 +838,7 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
+          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
           const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
           for (let i = 0; i < rows.length; i++) {
@@ -809,7 +847,7 @@ export default function App() {
               .from('sections')
               .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false })
               .select().single()
-            if (secErr || !sec) continue
+            if (secErr || !sec) continue  // skip bad section, don't abort
             const lnks = (grp.bookmarks ?? grp.links ?? [])
               .filter(b => b && (b.url || b.href))
               .map((b, j) => ({
@@ -910,71 +948,68 @@ export default function App() {
 
           {/* Widgets: clock + weather + search */}
           <div className="topbar-widgets">
-            {/* ← CHANGED: each widget wrapped in visibility check */}
-            {!(theme.hideClock ?? false) && <ClockWidget />}
-            {!(theme.hideClock ?? false) && <div className="topbar-divider" />}
-            {!(theme.hideWeather ?? false) && <Weather />}  {/* ← CHANGED: now uses Weather.jsx with forecast */}
-            {!(theme.hideSearch ?? false) && (
-              <div className="search-compact">
-                <div className="search-mode-bar">
-                  {[
-                    { key: 'web',       label: 'Web'   },
-                    { key: 'links',     label: 'Links' },
-                    { key: 'bookmarks', label: '🔖'    },
-                  ].map(({ key, label }) => (
-                    <button
-                      key={key}
-                      className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
-                      title={key.charAt(0).toUpperCase() + key.slice(1)}
-                      onClick={() => { setSearchMode(key); setSearch(''); setWebSearch(''); setBmQuery('') }}
-                    >{label}</button>
+            <ClockWidget />
+            <div className="topbar-divider" />
+            <WeatherWidget />
+            <div className="search-compact">
+              <div className="search-mode-bar">
+                {[
+                  { key: 'web',       label: 'Web'   },
+                  { key: 'links',     label: 'Links' },
+                  { key: 'bookmarks', label: '🔖'    },
+                ].map(({ key, label }) => (
+                  <button
+                    key={key}
+                    className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
+                    title={key.charAt(0).toUpperCase() + key.slice(1)}
+                    onClick={() => { setSearchMode(key); setSearch(''); setWebSearch(''); setBmQuery('') }}
+                  >{label}</button>
+                ))}
+              </div>
+              <input
+                className="input search-compact-input"
+                placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
+                ref={searchInputRef}
+                value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
+                onChange={e => {
+                  if (searchMode === 'web')       setWebSearch(e.target.value)
+                  else if (searchMode === 'links') setSearch(e.target.value)
+                  else                             setBmQuery(e.target.value)
+                }}
+                onKeyDown={e => {
+                  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
+                    const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
+                    if (theme.openInNewTab ?? true) { window.open(url, '_blank', 'noopener,noreferrer') } else { window.location.href = url }
+                    setWebSearch('')
+                  }
+                  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
+                    window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
+                    setBmQuery('')
+                  }
+                  if (e.key === 'Escape') { setSearch(''); setWebSearch(''); setBmQuery('') }
+                }}
+              />
+              {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
+                <button className="icon-btn search-btn" title="Clear"
+                  onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
+              )}
+              {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
+                <div className="bm-dropdown" style={{
+                  fontSize: (theme.bmFontSize || 13) + 'px',
+                  ...(theme.bmResultBg   ? { background: theme.bmResultBg }   : {}),
+                  ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
+                }}>
+                  {filteredBookmarks.map((b, i) => (
+                    <a key={b.id || i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer"
+                      onClick={() => setBmQuery('')}>
+                      <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
+                      <span className="bm-result-folder">{b.folder}</span>
+                      <span className="bm-result-title">{b.title}</span>
+                    </a>
                   ))}
                 </div>
-                <input
-                  className="input search-compact-input"
-                  placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
-                  ref={searchInputRef}
-                  value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
-                  onChange={e => {
-                    if (searchMode === 'web')       setWebSearch(e.target.value)
-                    else if (searchMode === 'links') setSearch(e.target.value)
-                    else                             setBmQuery(e.target.value)
-                  }}
-                  onKeyDown={e => {
-                    if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
-                      const url = (theme.searchEngineUrl || 'https://www.google.com.au/search?q=') + encodeURIComponent(webSearch.trim())
-                      if (theme.openInNewTab ?? true) { window.open(url, '_blank', 'noopener,noreferrer') } else { window.location.href = url }
-                      setWebSearch('')
-                    }
-                    if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
-                      window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
-                      setBmQuery('')
-                    }
-                    if (e.key === 'Escape') { setSearch(''); setWebSearch(''); setBmQuery('') }
-                  }}
-                />
-                {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
-                  <button className="icon-btn search-btn" title="Clear"
-                    onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
-                )}
-                {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
-                  <div className="bm-dropdown" style={{
-                    fontSize: (theme.bmFontSize || 13) + 'px',
-                    ...(theme.bmResultBg   ? { background: theme.bmResultBg }   : {}),
-                    ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
-                  }}>
-                    {filteredBookmarks.map((b, i) => (
-                      <a key={b.id || i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer"
-                        onClick={() => setBmQuery('')}>
-                        <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
-                        <span className="bm-result-folder">{b.folder}</span>
-                        <span className="bm-result-title">{b.title}</span>
-                      </a>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Action buttons */}
@@ -993,35 +1028,29 @@ export default function App() {
 
         {/* ── MAIN LAYOUT ─────────────────────────────────── */}
         <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
-          {/* ← CHANGED: cards visibility check */}
-          {!(theme.hideCards ?? false) && (
-            <div className="main-col">
-              <Sections
-                sections={sections}
-                links={searchMode === 'links' ? filteredLinks : links}
-                userId={session.user.id}
-                workspaceId={activeWs}
-                onRefresh={handleRefresh}
-                colCount={theme.sectionsCols ?? 4}
-                triggerCollapseAll={triggerCollapse}
-                triggerExpandAll={triggerExpand}
-                openInNewTab={theme.linksOpenNewWindow ?? true}  // ← CHANGED: uses linksOpenNewWindow
-                faviconEnabled={theme.faviconEnabled ?? true}
-              />
-            </div>
-          )}
-          {/* ← CHANGED: notes visibility check */}
-          {!(theme.hideNotes ?? false) && (
-            <div className="side-col">
-              <Notes
-                notes={notes}
-                workspaceId={activeWs}
-                userId={session.user.id}
-                onRefresh={handleRefresh}
-                forceOpen={notesTrigger}
-              />
-            </div>
-          )}
+          <div className="main-col">
+            <Sections
+              sections={sections}
+              links={searchMode === 'links' ? filteredLinks : links}
+              userId={session.user.id}
+              workspaceId={activeWs}
+              onRefresh={handleRefresh}
+              colCount={theme.sectionsCols ?? 4}
+              triggerCollapseAll={triggerCollapse}
+              triggerExpandAll={triggerExpand}
+              openInNewTab={theme.openInNewTab ?? true}
+              faviconEnabled={theme.faviconEnabled ?? true}
+            />
+          </div>
+          <div className="side-col">
+            <Notes
+              notes={notes}
+              workspaceId={activeWs}
+              userId={session.user.id}
+              onRefresh={handleRefresh}
+              forceOpen={notesTrigger}
+            />
+          </div>
         </main>
 
         {/* ── SETTINGS ────────────────────────────────────── */}
