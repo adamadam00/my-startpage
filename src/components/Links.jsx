@@ -72,8 +72,8 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
                 title={c.label}
                 onClick={e => handleColor(e, c.value)}
                 style={{
-                  background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',
-                  boxShadow: '0 0 0 1px var(--accent)',
+					background: c.value || 'var(--bg3)',
+					boxShadow: '0 0 0 1px var(--accent)',
                 }}
               />
             ))}
