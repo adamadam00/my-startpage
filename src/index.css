@@ -641,3 +641,20 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
     display: none !important;
   }
 }
+.section-col {
+  position: relative !important;
+  min-height: 6rem !important;
+}
+
+.section-col.is-over {
+  outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  outline-offset: -1px !important;
+  background: color-mix(in srgb, var(--accent) 6%, transparent) !important;
+}
+
+.section-col::after {
+  content: '';
+  display: block;
+  height: 1rem;
+  flex: 0 0 1rem;
+}
