@@ -64,8 +64,8 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
                 title={c.label}
                 onClick={e => { e.stopPropagation(); handleColor(c.value) }}
                 style={{
-                  background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',accent)' : 'none',
-                  outlineOffset: '1px',
+                    background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',
+					boxShadow: selectedColor === c.value ? '0 0 0 1px var(--accent)' : 'none',
                 }}
               />
             ))}
