@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const WX = {
   0:  { icon: '☀️', label: 'Clear'        },
@@ -38,8 +38,11 @@ function windLabel(kmh) {
 const REFRESH_MS = 15 * 60 * 1000
 
 export default function Weather() {
-  const [wx,    setWx]    = useState(null)
-  const [stale, setStale] = useState(false)
+  const [wx,       setWx]       = useState(null)
+  const [forecast, setForecast] = useState([])
+  const [stale,    setStale]    = useState(false)
+  const [open,     setOpen]     = useState(false)
+  const ref = useRef(null)
 
   const fetchWx = () => {
     if (!navigator.geolocation) return
@@ -49,10 +52,21 @@ export default function Weather() {
           const r = await fetch(
             `https://api.open-meteo.com/v1/forecast` +
             `?latitude=${coords.latitude}&longitude=${coords.longitude}` +
-            `&current_weather=true`
+            `&current_weather=true` +
+            `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
+            `&timezone=auto`
           )
           const d = await r.json()
           setWx(d.current_weather)
+          if (d.daily) {
+            const days = d.daily.time.slice(0, 5).map((date, i) => ({
+              date,
+              code: d.daily.weathercode[i],
+              max:  Math.round(d.daily.temperature_2m_max[i]),
+              min:  Math.round(d.daily.temperature_2m_min[i]),
+            }))
+            setForecast(days)
+          }
           setStale(false)
         } catch {
           setStale(true)
@@ -68,25 +82,75 @@ export default function Weather() {
     return () => clearInterval(t)
   }, [])
 
+  // Close forecast on outside click
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
   if (!wx) return null
 
-  const entry       = WX[wx.weathercode]
-  const icon        = entry?.icon  ?? '🌡'
-  // Prefer the sky condition label, but if it's clear/cloudy and wind
-  // is notable, show the wind label instead — feels more useful
-  const skyLabel    = entry?.label ?? 'Unknown'
-  const wLabel      = windLabel(wx.windspeed)
+  const entry      = WX[wx.weathercode]
+  const icon       = entry?.icon  ?? '🌡'
+  const skyLabel   = entry?.label ?? 'Unknown'
+  const wLabel     = windLabel(wx.windspeed)
   const isNeutralSky = [0, 1, 2, 3].includes(wx.weathercode)
-  const descriptor  = (isNeutralSky && wx.windspeed >= 15) ? wLabel : skyLabel
+  const descriptor = (isNeutralSky && wx.windspeed >= 15) ? wLabel : skyLabel
+
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  }
 
   return (
-    <div
-      className="weather-wrap"
-      style={{ opacity: stale ? 0.45 : 1 }}
-      title={stale ? 'Weather data may be outdated' : 'Updates every 15 min'}>
-      <span className="weather-icon">{icon}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
-      <span className="weather-desc">{descriptor}</span>
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div
+        className="weather-wrap"
+        style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
+        title={stale ? 'Weather data may be outdated' : 'Click for forecast'}
+        onClick={() => setOpen(v => !v)}
+      >
+        <span className="weather-icon">{icon}</span>
+        <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+        <span className="weather-desc">{descriptor}</span>
+      </div>
+
+      {open && forecast.length > 0 && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          zIndex: 300,
+          background: 'var(--bg2)',
+          border: '1px solid var(--border)',
+          borderRadius: 'var(--radius)',
+          padding: '0.5rem 0.75rem',
+          minWidth: 210,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+          marginTop: '0.35rem',
+          fontSize: 'var(--topbar-font-size)',
+        }}>
+          {forecast.map((day, i) => {
+            const wx2 = WX[day.code]
+            return (
+              <div key={day.date} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.28rem 0',
+                borderBottom: i < forecast.length - 1 ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)' : 'none',
+              }}>
+                <span style={{ fontSize: '1.1em' }}>{wx2?.icon ?? '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
+                <span style={{ color: 'var(--text)' }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

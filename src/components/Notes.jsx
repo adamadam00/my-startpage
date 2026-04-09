@@ -144,7 +144,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
           {safeNotes.map((n) => {
             const value = noteValue(n)
             return editing?.id === n.id ? (
-              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)', background: 'var(--notes-card-bg)', border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*60%), transparent)', borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.5rem', }}>
+              <div key={n.id} className="note-item" style={{ marginBottom: 'var(--notes-gap, 0px)', background: `color-mix(in srgb, var(--notes-card-bg) calc(var(--notes-card-bg-opacity, 1) * 100%), transparent)`, border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*60%), transparent)', borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.5rem', }}>
                 <div style={{ flex:1, minWidth:0 }}>
                   <textarea
                     className="input"
