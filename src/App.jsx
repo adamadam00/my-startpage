@@ -26,44 +26,167 @@ function ClockWidget() {
 // ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
 function WeatherWidget() {
   const CACHE_KEY = 'wx_cache'
-  const CACHE_TTL = 25 * 60 * 1000  // 25 minutes
+  const CACHE_TTL = 25 * 60 * 1000
+
+  const WX = {
+    0:  { icon: '☀️', label: 'Clear' },
+    1:  { icon: '🌤', label: 'Mostly clear' },
+    2:  { icon: '⛅', label: 'Partly cloudy' },
+    3:  { icon: '☁️', label: 'Overcast' },
+    45: { icon: '🌫', label: 'Foggy' },
+    48: { icon: '🌫', label: 'Icy fog' },
+    51: { icon: '🌦', label: 'Light drizzle' },
+    53: { icon: '🌦', label: 'Drizzle' },
+    55: { icon: '🌧', label: 'Heavy drizzle' },
+    61: { icon: '🌧', label: 'Light rain' },
+    63: { icon: '🌧', label: 'Raining' },
+    65: { icon: '🌧', label: 'Heavy rain' },
+    71: { icon: '🌨', label: 'Light snow' },
+    73: { icon: '🌨', label: 'Snowing' },
+    75: { icon: '🌨', label: 'Heavy snow' },
+    80: { icon: '🌦', label: 'Showers' },
+    81: { icon: '🌧', label: 'Rain showers' },
+    82: { icon: '⛈', label: 'Violent rain' },
+    95: { icon: '⛈', label: 'Thunderstorm' },
+    96: { icon: '⛈', label: 'Thunderstorm' },
+    99: { icon: '⛈', label: 'Thunderstorm' },
+  }
 
   const [wx, setWx] = useState(() => {
-    // Show cached weather instantly while fresh data loads
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
       if (c && Date.now() - c.ts < CACHE_TTL) return c.data
     } catch {}
     return null
   })
-
-  useEffect(() => {
-    // Only fetch if cache is stale or missing
+  const [forecast, setForecast] = useState(() => {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) return  // cache still fresh
+      if (c && Date.now() - c.ts < CACHE_TTL) return c.forecast || []
     } catch {}
+    return []
+  })
+  const [open, setOpen] = useState(false)
+  const [stale, setStale] = useState(false)
+  const ref = useRef(null)
 
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-      try {
-        const r = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
-        )
-        const d = await r.json()
-        setWx(d.current_weather)
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
-      } catch {}
-    }, () => {})
+  useEffect(() => {
+    const fetchWx = () => {
+      if (!navigator.geolocation) return
+      navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+        try {
+          const r = await fetch(
+            `https://api.open-meteo.com/v1/forecast` +
+            `?latitude=${coords.latitude}` +
+            `&longitude=${coords.longitude}` +
+            `&current_weather=true` +
+            `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
+            `&temperature_unit=celsius` +
+            `&timezone=auto`
+          )
+          const d = await r.json()
+          const nextWx = d.current_weather || null
+          const nextForecast = d.daily
+            ? d.daily.time.slice(0, 5).map((date, i) => ({
+                date,
+                code: d.daily.weathercode[i],
+                max: Math.round(d.daily.temperature_2m_max[i]),
+                min: Math.round(d.daily.temperature_2m_min[i]),
+              }))
+            : []
+
+          setWx(nextWx)
+          setForecast(nextForecast)
+          setStale(false)
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            data: nextWx,
+            forecast: nextForecast,
+            ts: Date.now(),
+          }))
+        } catch {
+          setStale(true)
+        }
+      }, () => {})
+    }
+
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
+      if (!(c && Date.now() - c.ts < CACHE_TTL)) fetchWx()
+    } catch {
+      fetchWx()
+    }
+
+    const id = setInterval(fetchWx, 15 * 60 * 1000)
+    return () => clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
   if (!wx) return null
-  const icons = { 0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌦',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌦',82:'🌦',95:'⛈',96:'⛈',99:'⛈' }
-  const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
+
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  }
+
   return (
-    <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
-      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
+    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }}>
+      <div
+        className="weather-wrap"
+        style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
+        title={stale ? 'Weather data may be outdated' : 'Click for forecast'}
+        onClick={() => setOpen(v => !v)}
+      >
+        <span className="weather-icon">{WX[wx.weathercode]?.icon || '🌡'}</span>
+        <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+        <span className="weather-desc">{WX[wx.weathercode]?.label || ''}</span>
+      </div>
+
+      {open && forecast.length > 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 0.35rem)',
+            left: 0,
+            zIndex: 9999,
+            background: 'var(--bg2)',
+            border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent)',
+            borderRadius: 'var(--radius)',
+            padding: '0.5rem 0.75rem',
+            minWidth: 230,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+            fontSize: 'var(--topbar-font-size)',
+            pointerEvents: 'auto',
+          }}
+        >
+          {forecast.map((day, i) => (
+            <div
+              key={day.date}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.28rem 0',
+                borderBottom: i < forecast.length - 1
+                  ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)'
+                  : 'none',
+              }}
+            >
+              <span style={{ fontSize: '1.1em' }}>{WX[day.code]?.icon || '🌡'}</span>
+              <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
+              <span style={{ color: 'var(--text)' }}>{day.max}°</span>
+              <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -88,14 +211,14 @@ const DEFAULT_THEME = {
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
   bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
   bgSt: {},
-  searchEngineUrl: 'https://www.google.com/search?q=',
+  searchEngineUrl: 'https://www.google.com.au/search?q=',
   settingsTitleColor: '#7878a0',
   bgGrassSky: '#020609', bgGrassGround: '#071a05',
   bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
   sectionsCols: 3,
-  notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  notesGap: 0, notesCardBg: '#13131a', notesCardBgOpacity: 1, notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
   settingsSide: 'right',
   bmFontSize: 13,
   bmResultBg: '',
@@ -227,7 +350,6 @@ function applyTheme(t) {
   const gGnd = t.bgGrassGround || '#071a05'
   const oSky = t.bgOceanSky || '#000814'
   const oWtr = t.bgOceanWater || '#001428'
-  // ── Starfield density CSS vars ────────────────────────────────
   var sfDensity = ps.density ?? 3
   var sfTileA   = ([1200, 900, 700, 500, 350][sfDensity - 1] || 700) + 'px'
   var sfTileB   = ([750,  600, 450, 320, 220][sfDensity - 1] || 450) + 'px'
@@ -363,7 +485,6 @@ function applyTheme(t) {
       100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
     }
   `
-  // ── Starfield planet injection ────────────────────────────────
   var oldPlanets = document.getElementById('sf-planets')
   if (oldPlanets) oldPlanets.remove()
   if (t.bgPreset === 'starfield' && ps.planets) {
@@ -409,14 +530,15 @@ function applyTheme(t) {
   }
 
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
-  s('--notes-gap',       (t.notesGap ?? 0) + 'px')
-  if (t.notesCardBg)    s('--notes-card-bg',    t.notesCardBg)
+  s('--notes-gap', (t.notesGap ?? 0) + 'px')
+  if (t.notesCardBg) s('--notes-card-bg', t.notesCardBg)
+  s('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)
   if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
-  if (t.notesTextBg)    s('--notes-input-bg',   t.notesTextBg)
+  if (t.notesTextBg) s('--notes-text-bg', t.notesTextBg)
   root.dataset.settingsSide = t.settingsSide || 'right'
-  document.body.style.fontFamily       = t.font || "'DM Mono', monospace"
-  document.body.style.backgroundColor = t.bg   || '#0c0c0f'
-  document.body.style.color           = t.text || '#e8e8f0'
+  document.body.style.fontFamily = t.font || "'DM Mono', monospace"
+  document.body.style.backgroundColor = t.bg || '#0c0c0f'
+  document.body.style.color = t.text || '#e8e8f0'
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
@@ -436,7 +558,6 @@ export default function App() {
     catch { return DEFAULT_THEME }
   })
 
-  // ── Supabase theme persistence ───────────────────────────────
   const saveThemeRef = useRef(null)
 
   const persistTheme = (t, immediate = false) => {
@@ -444,8 +565,7 @@ export default function App() {
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
       if (!uid) return
-      const { wallpaper, ...themeData } = t  // wallpaper stays local-only
-      // Try update first; if no row exists yet, insert
+      const { wallpaper, ...themeData } = t
       const { data: updated, error: upErr } = await supabase
         .from('user_settings')
         .update({ theme: themeData, updated_at: new Date().toISOString() })
@@ -453,7 +573,6 @@ export default function App() {
         .select('id')
       if (upErr) { console.error('[settings] update error:', upErr.message); return }
       if (!updated?.length) {
-        // Row doesn't exist yet — insert it
         const { error: insErr } = await supabase
           .from('user_settings')
           .insert({ user_id: uid, theme: themeData })
@@ -467,7 +586,7 @@ export default function App() {
     else saveThemeRef.current = setTimeout(doSave, 1500)
   }
 
-    const setTheme = (updater) => {
+  const setTheme = (updater) => {
     setThemeState(prev => {
       const base = typeof updater === 'function' ? updater(prev) : updater
       const next = { ...base, _savedAt: Date.now() }
@@ -489,7 +608,6 @@ export default function App() {
   const [loading,         setLoading]         = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
-  // ── Collapse / Expand all ─────────────────────────────────────────────────
   const [allCollapsed,    setAllCollapsed]    = useState(false)
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand,   setTriggerExpand]   = useState(0)
@@ -513,7 +631,6 @@ export default function App() {
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
 
-  // ── Focus search on load + capture stray keystrokes into search bar ──
   useEffect(() => {
     if (!session) return
     const timer = setTimeout(() => searchInputRef.current?.focus(), 350)
@@ -532,7 +649,6 @@ export default function App() {
       ) {
         const input = searchInputRef.current
         if (!input) return
-        // Focus + inject the typed character so it's not lost
         input.focus()
         const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set
         setter.call(input, e.key)
@@ -544,7 +660,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKey)
   }, [session])
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null); setLoading(false)
@@ -553,14 +668,13 @@ export default function App() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // ── Re-auth on tab focus / network restore (fixes long-idle NetworkError) ──
   useEffect(() => {
     const onVisible = async () => {
       if (document.visibilityState !== 'visible') return
       try {
         const { data } = await supabase.auth.getSession()
         if (data?.session) { setSession(data.session); handleRefresh() }
-      } catch (_e) { /* still offline, ignore */ }
+      } catch (_e) {}
     }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('online', onVisible)
@@ -575,7 +689,6 @@ export default function App() {
     loadUserSettings().then(() => ensureWorkspace()).then(() => handleRefresh())
   }, [session])
 
-  // ── Load theme from Supabase ──────────────────────────────────────────────
   const loadUserSettings = async (force = false) => {
     const uid = sessionRef.current?.user?.id ?? session?.user?.id
     if (!uid) { console.log('[settings] no uid'); return }
@@ -592,7 +705,6 @@ export default function App() {
       console.log('[settings]', force ? 'FORCE' : 'auto', '| local:', hasLocal, '| remote:', hasRemote)
 
       if (hasRemote) {
-        // Supabase has data — apply it (always on force; on auto only if local is empty or older)
         const localTs  = localTheme._savedAt  || 0
         const remoteTs = remoteTheme._savedAt || 0
         if (force || !hasLocal || remoteTs > localTs) {
@@ -602,12 +714,10 @@ export default function App() {
           localStorage.setItem('current_theme', JSON.stringify(merged))
           console.log('[settings] ✅ applied Supabase theme (_savedAt:', remoteTs, ')')
         } else {
-          // Local is same age or newer — keep it but push to Supabase to stay in sync
           persistTheme(localTheme, true)
           console.log('[settings] local kept, pushed to Supabase (_savedAt:', localTs, ')')
         }
       } else {
-        // Supabase empty — push local up as bootstrap
         if (hasLocal) {
           persistTheme(localTheme, true)
           console.log('[settings] 🚀 bootstrapping Supabase from local')
@@ -618,14 +728,12 @@ export default function App() {
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
 
-    // ── Sign out ─────────────────────────────────────────────────────────────
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setSession(null)
     setSettingsOpen(false)
   }
 
-  // ── Workspace bootstrap ───────────────────────────────────────────────────
   const ensureWorkspace = async () => {
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
@@ -639,7 +747,6 @@ export default function App() {
     setActiveWs(prev => prev ?? data[0]?.id ?? null)
   }
 
-  // ── Data refresh ──────────────────────────────────────────────────────────
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
     try {
@@ -662,7 +769,6 @@ export default function App() {
 
   useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
 
-  // ── Load bookmarks from extension ────────────────────────────
   useEffect(() => {
     const loadFromStorage = () => {
       try {
@@ -677,8 +783,6 @@ export default function App() {
       } catch (e) { console.error('[bookmarks] load error:', e) }
     }
     loadFromStorage()
-    // Listen for live pushes from content script
-    // NOTE: do NOT check e.source — Firefox content script window !== page window
     const onMessage = (e) => {
       if (e.data?.type === 'SP_BOOKMARKS_UPDATE' && e.data?.payload) {
         const { bookmarks: bm, folders: fl } = e.data.payload
@@ -691,7 +795,6 @@ export default function App() {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
-  // Also re-load bookmarks once session/app is ready (catches late extension inject)
   useEffect(() => {
     if (!session) return
     try {
@@ -705,14 +808,12 @@ export default function App() {
     } catch (e) {}
   }, [session])
 
-  // ── Search filter ─────────────────────────────────────────────────────────
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
     return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
   }, [links, search])
 
-  // ── Bookmark search ────────────────────────────────────────────────────────
   const filteredBookmarks = useMemo(() => {
     const q = bmQuery.trim().toLowerCase()
     if (!q || !bookmarks.length) return []
@@ -728,7 +829,6 @@ export default function App() {
       .slice(0, 15)
   }, [bookmarks, bmQuery])
 
-  // ── Workspace CRUD ────────────────────────────────────────────────────────
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
@@ -752,7 +852,6 @@ export default function App() {
     setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
   }
 
-  // ── Image uploads ─────────────────────────────────────────────────────────
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -771,7 +870,6 @@ export default function App() {
     reader.readAsDataURL(file)
   }
 
-  // ── Export ────────────────────────────────────────────────────────────────
   const exportFullBackup = async () => {
     const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
     const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
@@ -811,7 +909,6 @@ export default function App() {
     handleRefresh()
   }
 
-  // ── Import ────────────────────────────────────────────────────────────────
   const handleImportBackup = (e) => {
     const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
     setImportingBackup(true)
@@ -838,7 +935,6 @@ export default function App() {
         }
         const data = JSON.parse(text)
         if (Array.isArray(data)) {
-          // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
           const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
           for (let i = 0; i < rows.length; i++) {
@@ -847,7 +943,7 @@ export default function App() {
               .from('sections')
               .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false })
               .select().single()
-            if (secErr || !sec) continue  // skip bad section, don't abort
+            if (secErr || !sec) continue
             const lnks = (grp.bookmarks ?? grp.links ?? [])
               .filter(b => b && (b.url || b.href))
               .map((b, j) => ({
@@ -886,7 +982,6 @@ export default function App() {
     r.readAsText(f)
   }
 
-  // ── Background ────────────────────────────────────────────────────────────
   const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
   const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
@@ -895,12 +990,10 @@ export default function App() {
 
   return (
     <>
-      {/* Background */}
       <div className={bgClass} style={bgStyle} />
 
       <div className="app">
 
-        {/* Wallpaper overlay */}
         {theme.wallpaper ? (
           <div style={{
             position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
@@ -916,10 +1009,8 @@ export default function App() {
           <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
-        {/* ── TOPBAR ──────────────────────────────────────── */}
         <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
-          {/* Workspace tabs */}
           <div className="workspace-tabs">
             {workspaces.map(ws => (
               <button
@@ -946,7 +1037,6 @@ export default function App() {
 
           <div className="topbar-divider" />
 
-          {/* Widgets: clock + weather + search */}
           <div className="topbar-widgets">
             <ClockWidget />
             <div className="topbar-divider" />
@@ -978,7 +1068,7 @@ export default function App() {
                 }}
                 onKeyDown={e => {
                   if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
-                    const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
+                    const url = (theme.searchEngineUrl || 'https://www.google.com.au/search?q=') + encodeURIComponent(webSearch.trim())
                     if (theme.openInNewTab ?? true) { window.open(url, '_blank', 'noopener,noreferrer') } else { window.location.href = url }
                     setWebSearch('')
                   }
@@ -1012,7 +1102,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Action buttons */}
           <div className="topbar-actions">
             <button
               className="btn"
@@ -1026,7 +1115,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── MAIN LAYOUT ─────────────────────────────────── */}
         <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
           <div className="main-col">
             <Sections
@@ -1053,7 +1141,6 @@ export default function App() {
           </div>
         </main>
 
-        {/* ── SETTINGS ────────────────────────────────────── */}
         {settingsOpen && (
           <Settings
             theme={theme}

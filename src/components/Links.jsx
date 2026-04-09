@@ -64,8 +64,7 @@ function LinkItem({ link, onEdit, onDelete, openInNewTab, onRefresh }) {
                 title={c.label}
                 onClick={e => { e.stopPropagation(); handleColor(c.value) }}
                 style={{
-                  background: c.value || 'var(--text-dim)',
-                  outline: link.color === c.value ? '2px solid var(--accent)' : 'none',
+                  background: c.value || 'linear-gradient(135deg, transparent 0 45%, var(--text-dim) 45% 55%, transparent 55% 100%)',accent)' : 'none',
                   outlineOffset: '1px',
                 }}
               />
