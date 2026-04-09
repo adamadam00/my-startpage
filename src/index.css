@@ -1455,64 +1455,103 @@ input[type='range']::-moz-range-thumb {
     left: 0.5rem;
   }
 }
-/* remove left drag handle */
+/* hide left drag handle */
 .drag-handle {
   display: none !important;
 }
 
-/* title gets full width */
-.section-name {
+/* header becomes positioning context */
+.section-header {
+  position: relative !important;
+}
+
+/* title gets full width and leaves room only when controls appear */
+.section-header-click {
+  flex: 1 !important;
+  min-width: 0 !important;
   padding-right: 0 !important;
 }
 
-/* put the RIGHT ACTION GROUP in overlay position */
-.section-actions {
-  position: absolute !important;
-  right: 2.2rem !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
+.section-name {
+  flex: 1 !important;
+  min-width: 0 !important;
+  text-align: center !important;
+  padding-right: 0 !important;
+}
+
+/* hover/focus should reveal controls, not click */
+.section-actions,
+.section-collapse-arrow {
   opacity: 0 !important;
   pointer-events: none !important;
-  gap: 0.1rem !important;
-  z-index: 20 !important;
+  transition: opacity 0.15s ease !important;
 }
 
 .section-card:hover .section-actions,
-.section-header:hover .section-actions {
+.section-card:hover .section-collapse-arrow,
+.section-header:hover .section-actions,
+.section-header:hover .section-collapse-arrow,
+.section-header-click:hover .section-actions,
+.section-header-click:hover ~ .section-collapse-arrow,
+.section-header:focus-within .section-actions,
+.section-header:focus-within .section-collapse-arrow {
   opacity: 1 !important;
   pointer-events: auto !important;
 }
 
-/* open/close ARROW is separate - hide it too */
+/* actions overlay */
+.section-actions {
+  position: absolute !important;
+  right: 2.4rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.12rem !important;
+  z-index: 25 !important;
+  padding: 0.14rem !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* collapse arrow overlay */
 .section-collapse-arrow {
   position: absolute !important;
   right: 0.55rem !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
+  z-index: 26 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 1.6rem !important;
+  height: 1.6rem !important;
+  padding: 0 0.35rem !important;
+  border-radius: var(--radius-sm) !important;
+  background: var(--bg3) !important;
+  border: 1px solid var(--border) !important;
+  color: var(--text-dim) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* icon buttons match the header chip background */
+.section-actions .icon-btn {
   background: transparent !important;
   border: none !important;
   color: var(--text-dim) !important;
-  font-size: 0.9em !important;
-  padding: 0.2rem !important;
-  z-index: 20 !important;
+  padding: 0.22rem !important;
+  border-radius: var(--radius-sm) !important;
 }
 
-.section-card:hover .section-collapse-arrow,
-.section-header:hover .section-collapse-arrow {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-}
-
+.section-actions .icon-btn:hover,
 .section-collapse-arrow:hover {
+  background: var(--card) !important;
   color: var(--text) !important;
 }
 
-/* neutral styling for all header icons */
-.section-actions button,
-.section-collapse-arrow,
-.section-actions svg {
-  fill: currentColor !important;
-  stroke: currentColor !important;
+.section-delete-btn:hover {
+  color: var(--danger) !important;
+  background: var(--card) !important;
 }
