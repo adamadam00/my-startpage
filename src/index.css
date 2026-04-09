@@ -1455,54 +1455,79 @@ input[type='range']::-moz-range-thumb {
     left: 0.5rem;
   }
 }
-/* HIDE RIGHT BUTTONS BY DEFAULT, OVERLAY ON HOVER */
-.section-actions {
-  opacity: 0 !important;
-  position: absolute !important;
-  right: 0.75rem !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  background: var(--bg3) !important;
-  border-radius: var(--radius-sm) !important;
-  padding: 0.2rem !important;
-  gap: 0.1rem !important;
-  z-index: 10 !important;
+/* header should be the positioning context */
+.section-header {
+  position: relative !important;
 }
 
-.section-card:hover .section-actions,
-.section-header:hover .section-actions {
-  opacity: 1 !important;
-}
-
-/* NO BOX, NO WHITE */
-.section-actions button,
-.section-actions svg {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  color: var(--text-dim) !important;
-  fill: currentColor !important;
-  stroke: currentColor !important;
-  padding: 0.25rem !important;
-}
-
-.section-actions button:hover,
-.section-actions svg:hover {
-  color: var(--text) !important;
-}
-
-/* FULL TITLE WIDTH */
+/* title should use the full width right up to normal card padding */
+.section-header-click,
 .section-name {
-  padding-right: 2rem !important;
+  min-width: 0 !important;
   max-width: none !important;
 }
 
-.section-header {
-  position: relative !important;
-  padding-right: 2.5rem !important;
+.section-name {
+  padding-right: 0 !important;
 }
 
-/* HIDE DRAG HANDLE */
+/* actions must NOT take layout space */
+.section-actions {
+  position: absolute !important;
+  right: 0.55rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  display: flex !important;
+  gap: 0.1rem !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: 20 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* show buttons only on hover */
+.section-card:hover .section-actions,
+.section-header:hover .section-actions,
+.section-header:focus-within .section-actions {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+/* kill white / boxed button look */
+.section-actions button,
+.section-actions .icon-btn,
+.section-actions svg {
+  color: var(--text-dim) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.section-actions button:hover,
+.section-actions .icon-btn:hover,
+.section-actions button:hover svg,
+.section-actions .icon-btn:hover svg {
+  color: var(--text) !important;
+  background: transparent !important;
+}
+
+/* specifically force the open/close control to be hidden until hover */
+.section-actions .section-toggle,
+.section-actions [aria-label*="collapse"],
+.section-actions [aria-label*="expand"],
+.section-actions [title*="Collapse"],
+.section-actions [title*="Expand"],
+.section-actions [title*="collapse"],
+.section-actions [title*="expand"] {
+  opacity: inherit !important;
+  color: var(--text-dim) !important;
+}
+
+/* remove left drag handle */
 .section-drag-handle,
 .drag-handle {
   display: none !important;
