@@ -565,6 +565,7 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   min-width: 0;
   cursor: text;
+  background: transparent;
   font-size: var(--notes-font-size);
   line-height: 1.55;
   white-space: pre-wrap;
