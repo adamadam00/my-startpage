@@ -42,7 +42,10 @@ export default function Weather() {
   const [forecast, setForecast] = useState([])
   const [stale, setStale] = useState(false)
   const [open, setOpen] = useState(false)
+  const [hovering, setHovering] = useState(false)
+  const [hoveringPopup, setHoveringPopup] = useState(false)
   const ref = useRef(null)
+  const closeTimer = useRef(null)
 
   const fetchWx = () => {
     if (!navigator.geolocation) return
@@ -93,6 +96,28 @@ export default function Weather() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  useEffect(() => {
+    if (hovering || hoveringPopup) {
+      if (closeTimer.current) clearTimeout(closeTimer.current)
+      setOpen(true)
+      return
+    }
+
+    closeTimer.current = setTimeout(() => {
+      setOpen(false)
+    }, 120)
+
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current)
+    }
+  }, [hovering, hoveringPopup])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) clearTimeout(closeTimer.current)
+    }
+  }, [])
+
   if (!wx) return null
 
   const entry = WX[wx.weathercode]
@@ -112,7 +137,9 @@ export default function Weather() {
       <div
         className="weather-wrap"
         style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
-        title={stale ? 'Weather data may be outdated' : 'Click for forecast'}
+        title={stale ? 'Weather data may be outdated' : '5-day forecast'}
+        onMouseEnter={() => setHovering(true)}
+        onMouseLeave={() => setHovering(false)}
         onClick={() => setOpen(v => !v)}
       >
         <span className="weather-icon">{icon}</span>
@@ -122,6 +149,9 @@ export default function Weather() {
 
       {open && forecast.length > 0 && (
         <div
+          className="weather-forecast-popup"
+          onMouseEnter={() => setHoveringPopup(true)}
+          onMouseLeave={() => setHoveringPopup(false)}
           style={{
             position: 'absolute',
             top: 'calc(100% + 0.35rem)',
