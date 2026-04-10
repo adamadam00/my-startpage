@@ -8,7 +8,6 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  arrayMove,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -55,7 +54,7 @@ function SectionCard({
     >
       <div className="section-header">
         <div
-          className="section-drag-handle"
+          className="section-drag-handle drag-handle"
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
@@ -67,18 +66,22 @@ function SectionCard({
 
         <div
           className="section-header-click"
-          onClick={() => onToggleCollapse(section)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleCollapse(section);
+          }}
         >
           <div className="section-name">{section.name}</div>
         </div>
 
-        <div className="section-actions">
+        <div
+          className="section-actions"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             className="icon-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleCollapse(section);
-            }}
+            type="button"
+            onClick={() => onToggleCollapse(section)}
             title={section.collapsed ? "Expand" : "Collapse"}
           >
             {section.collapsed ? "▸" : "▾"}
@@ -86,10 +89,8 @@ function SectionCard({
 
           <button
             className="icon-btn section-delete-btn"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteSection(section.id);
-            }}
+            type="button"
+            onClick={() => onDeleteSection(section.id)}
             title="Delete section"
           >
             ×
@@ -161,21 +162,45 @@ export default function Sections({
   useEffect(() => {
     const normalized = [...sections].map((s, i) => ({
       ...s,
-      position: s.position ?? i,
+      position: Number.isFinite(s.position) ? s.position : i,
       colindex: Number.isFinite(s.colindex) ? s.colindex : 0,
     }));
     setLocalSections(normalized);
   }, [sections]);
 
+  const collapseExpandAll = async (collapsedValue, baseSections = localSections) => {
+    const next = baseSections.map((s) => ({
+      ...s,
+      collapsed: collapsedValue,
+    }));
+    setLocalSections(next);
+
+    const results = await Promise.all(
+      next.map((s) =>
+        supabase
+          .from("sections")
+          .update({ collapsed: collapsedValue })
+          .eq("id", s.id)
+          .eq("workspaceid", workspaceId)
+      )
+    );
+
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      console.error("Collapse/expand all failed:", failed.error.message);
+      await onRefresh?.();
+    }
+  };
+
   useEffect(() => {
     if (!localSections.length) return;
-    collapseExpandAll(true);
+    collapseExpandAll(true, localSections);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerCollapseAll]);
 
   useEffect(() => {
     if (!localSections.length) return;
-    collapseExpandAll(false);
+    collapseExpandAll(false, localSections);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerExpandAll]);
 
@@ -198,8 +223,8 @@ export default function Sections({
 
     [...localSections]
       .sort((a, b) => {
-        const ca = a.colindex ?? 0;
-        const cb = b.colindex ?? 0;
+        const ca = Number.isFinite(a.colindex) ? a.colindex : 0;
+        const cb = Number.isFinite(b.colindex) ? b.colindex : 0;
         if (ca !== cb) return ca - cb;
         return (a.position ?? 0) - (b.position ?? 0);
       })
@@ -211,10 +236,6 @@ export default function Sections({
 
     return cols;
   }, [localSections, safeColCount]);
-
-  function findSection(id) {
-    return localSections.find((s) => String(s.id) === String(id));
-  }
 
   function findContainer(id) {
     if (!id) return null;
@@ -249,20 +270,20 @@ export default function Sections({
   }
 
   async function persistSections(nextSections) {
-    const updates = nextSections.map((s) =>
-      supabase
-        .from("sections")
-        .update({
-          colindex: s.colindex ?? 0,
-          position: s.position ?? 0,
-        })
-        .eq("id", s.id)
-        .eq("workspaceid", workspaceId)
+    const results = await Promise.all(
+      nextSections.map((s) =>
+        supabase
+          .from("sections")
+          .update({
+            colindex: s.colindex ?? 0,
+            position: s.position ?? 0,
+          })
+          .eq("id", s.id)
+          .eq("workspaceid", workspaceId)
+      )
     );
 
-    const results = await Promise.all(updates);
     const failed = results.find((r) => r.error);
-
     if (failed?.error) {
       throw failed.error;
     }
@@ -270,7 +291,7 @@ export default function Sections({
 
   async function handleDragEnd(event) {
     const { active, over } = event;
-    if (!over || !active) return;
+    if (!active || !over) return;
 
     const activeId = String(active.id);
     const overId = String(over.id);
@@ -365,30 +386,6 @@ export default function Sections({
     }
 
     await onRefresh?.();
-  }
-
-  async function collapseExpandAll(collapsedValue) {
-    const next = localSections.map((s) => ({
-      ...s,
-      collapsed: collapsedValue,
-    }));
-    setLocalSections(next);
-
-    const updates = next.map((s) =>
-      supabase
-        .from("sections")
-        .update({ collapsed: collapsedValue })
-        .eq("id", s.id)
-        .eq("workspaceid", workspaceId)
-    );
-
-    const results = await Promise.all(updates);
-    const failed = results.find((r) => r.error);
-
-    if (failed?.error) {
-      console.error("Collapse/expand all failed:", failed.error.message);
-      await onRefresh?.();
-    }
   }
 
   return (
