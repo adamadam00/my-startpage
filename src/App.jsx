@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
@@ -8,8 +8,8 @@ import './index.css'
 
 function safeLocalGet(key, fallback = null) {
   try {
-    const v = localStorage.getItem(key)
-    return v == null ? fallback : v
+    const value = localStorage.getItem(key)
+    return value == null ? fallback : value
   } catch {
     return fallback
   }
@@ -19,6 +19,27 @@ function safeLocalSet(key, value) {
   try {
     localStorage.setItem(key, value)
   } catch {}
+}
+
+function normalizeHex(value) {
+  if (typeof value !== 'string') return value
+  const v = value.trim()
+  if (!v) return v
+  if (v.startsWith('#')) return v
+  if (/^[0-9a-fA-F]{3}$/.test(v) || /^[0-9a-fA-F]{6}$/.test(v)) return `#${v}`
+  return v
+}
+
+function rgba(hex, alpha) {
+  const h = normalizeHex(hex) || '#000000'
+  const clean = h.replace('#', '')
+  const full = clean.length === 3
+    ? clean.split('').map((c) => c + c).join('')
+    : clean.padEnd(6, '0').slice(0, 6)
+  const r = parseInt(full.slice(0, 2), 16)
+  const g = parseInt(full.slice(2, 4), 16)
+  const b = parseInt(full.slice(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 function ClockWidget() {
@@ -40,25 +61,157 @@ function ClockWidget() {
   )
 }
 
+function WeatherWidget() {
+  const CACHE_KEY = 'wx_cache'
+  const CACHE_TTL = 25 * 60 * 1000
+
+  const WX = {
+    0: { icon: '☀️', label: 'Clear' },
+    1: { icon: '🌤', label: 'Mostly clear' },
+    2: { icon: '⛅', label: 'Partly cloudy' },
+    3: { icon: '☁️', label: 'Overcast' },
+    45: { icon: '🌫', label: 'Foggy' },
+    48: { icon: '🌫', label: 'Icy fog' },
+    51: { icon: '🌦', label: 'Light drizzle' },
+    53: { icon: '🌦', label: 'Drizzle' },
+    55: { icon: '🌧', label: 'Heavy drizzle' },
+    61: { icon: '🌧', label: 'Light rain' },
+    63: { icon: '🌧', label: 'Raining' },
+    65: { icon: '🌧', label: 'Heavy rain' },
+    71: { icon: '🌨', label: 'Light snow' },
+    73: { icon: '🌨', label: 'Snowing' },
+    75: { icon: '🌨', label: 'Heavy snow' },
+    80: { icon: '🌦', label: 'Showers' },
+    81: { icon: '🌧', label: 'Rain showers' },
+    82: { icon: '⛈', label: 'Violent rain' },
+    95: { icon: '⛈', label: 'Thunderstorm' },
+    96: { icon: '⛈', label: 'Thunderstorm' },
+    99: { icon: '⛈', label: 'Thunderstorm' },
+  }
+
+  const [wx, setWx] = useState(() => {
+    try {
+      const c = JSON.parse(safeLocalGet(CACHE_KEY, 'null'))
+      if (c && Date.now() - c.ts < CACHE_TTL) return c.data
+    } catch {}
+    return null
+  })
+  const [forecast, setForecast] = useState(() => {
+    try {
+      const c = JSON.parse(safeLocalGet(CACHE_KEY, 'null'))
+      if (c && Date.now() - c.ts < CACHE_TTL) return c.forecast || []
+    } catch {}
+    return []
+  })
+  const [open, setOpen] = useState(false)
+  const [stale, setStale] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const fetchWx = () => {
+      if (!navigator.geolocation) return
+      navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+        try {
+          const r = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`
+          )
+          const d = await r.json()
+          const nextWx = d.current_weather || null
+          const nextForecast = d.daily
+            ? d.daily.time.slice(0, 5).map((date, i) => ({
+                date,
+                code: d.daily.weathercode[i],
+                max: Math.round(d.daily.temperature_2m_max[i]),
+                min: Math.round(d.daily.temperature_2m_min[i]),
+              }))
+            : []
+
+          setWx(nextWx)
+          setForecast(nextForecast)
+          setStale(false)
+          safeLocalSet(CACHE_KEY, JSON.stringify({ data: nextWx, forecast: nextForecast, ts: Date.now() }))
+        } catch {
+          setStale(true)
+        }
+      }, () => {})
+    }
+
+    try {
+      const c = JSON.parse(safeLocalGet(CACHE_KEY, 'null'))
+      if (!(c && Date.now() - c.ts < CACHE_TTL)) fetchWx()
+    } catch {
+      fetchWx()
+    }
+
+    const id = setInterval(fetchWx, 15 * 60 * 1000)
+    return () => clearInterval(id)
+  }, [])
+
+  useEffect(() => {
+    if (!open) return undefined
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  if (!wx) return null
+
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  }
+
+  return (
+    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }}>
+      <div
+        className="weather-wrap"
+        style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
+        title={stale ? 'Weather data may be outdated' : 'Click for forecast'}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="weather-icon">{WX[wx.weathercode]?.icon || '🌡'}</span>
+        <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+        <span className="weather-desc">{WX[wx.weathercode]?.label || ''}</span>
+      </div>
+
+      {open && forecast.length > 0 && (
+        <div className="weather-popover">
+          {forecast.map((day, i) => (
+            <div key={day.date} className="weather-row" style={{ borderBottom: i < forecast.length - 1 ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)' : 'none' }}>
+              <span style={{ fontSize: '1.1em' }}>{WX[day.code]?.icon || '🌡'}</span>
+              <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
+              <span style={{ color: 'var(--text)' }}>{day.max}°</span>
+              <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const DEFAULT_THEME = {
-  bg: '0c0c0f',
-  bg2: '13131a',
-  bg3: '1a1a24',
-  card: '13131a',
+  bg: '#0c0c0f',
+  bg2: '#13131a',
+  bg3: '#1a1a24',
+  card: '#13131a',
   cardOpacity: 1,
-  border: '2a2a3a',
-  borderHover: '3d3d55',
+  border: '#2a2a3a',
+  borderHover: '#3d3d55',
   borderOpacity: 1,
   handleOpacity: 15,
-  text: 'e8e8f0',
-  textDim: '7878a0',
-  titleColor: '7878a0',
-  accent: '6c8fff',
-  danger: 'ff6b6b',
-  success: '6bffb8',
-  btnBg: '3a3a4a',
-  btnText: 'e8e8f0',
-  font: 'DM Mono, monospace',
+  text: '#e8e8f0',
+  textDim: '#7878a0',
+  textMuted: '#4a4a6a',
+  titleColor: '#7878a0',
+  accent: '#6c8fff',
+  danger: '#ff6b6b',
+  success: '#6bffb8',
+  btnBg: '#3a3a4a',
+  btnText: '#e8e8f0',
+  font: "'DM Mono', monospace",
   fontSize: 14,
   topbarFontSize: 12,
   clockWidgetSize: 1,
@@ -74,8 +227,11 @@ const DEFAULT_THEME = {
   pageScale: 1,
   faviconOpacity: 1,
   faviconGreyscale: false,
+  faviconEnabled: true,
   faviconSize: 13,
-  patternColor: '2a2a3a',
+  faviconDelay: 0,
+  faviconFade: 0.3,
+  patternColor: '#2a2a3a',
   patternOpacity: 1,
   bgPreset: 'noise',
   wallpaper: '',
@@ -86,13 +242,13 @@ const DEFAULT_THEME = {
   bgC2: '',
   bgC3: '',
   bgBlur: null,
-  bgSt: '',
+  bgSt: {},
   searchEngineUrl: 'https://www.google.com.au/search?q=',
-  settingsTitleColor: '7878a0',
-  bgGrassSky: '020609',
-  bgGrassGround: '071a05',
-  bgOceanSky: '000814',
-  bgOceanWater: '001428',
+  settingsTitleColor: '#7878a0',
+  bgGrassSky: '#020609',
+  bgGrassGround: '#071a05',
+  bgOceanSky: '#000814',
+  bgOceanWater: '#001428',
   wallpaperX: 50,
   wallpaperY: 50,
   wallpaperScale: 100,
@@ -101,79 +257,79 @@ const DEFAULT_THEME = {
   wallpaperOpacity: 100,
   sectionsCols: 3,
   notesGap: 0,
-  notesCardBg: '13131a',
+  notesCardBg: '#13131a',
   notesCardBgOpacity: 1,
-  notesTextColor: 'e8e8f0',
-  notesTextBg: '0c0c0f',
+  notesTextColor: '#e8e8f0',
+  notesTextBg: '#0c0c0f',
   settingsSide: 'right',
   bmFontSize: 13,
   bmResultBg: '',
   bmResultText: '',
+  openInNewTab: true,
 }
 
 function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
-  const s = (k, v) => {
-    if (v !== undefined && v !== null) root.style.setProperty(k, String(v))
+  const setVar = (key, value) => {
+    if (value !== undefined && value !== null) root.style.setProperty(key, String(value))
   }
 
-  s('--bg', t.bg)
-  s('--bg2', t.bg2)
-  s('--bg3', t.bg3)
-  s('--card', t.card)
-  s('--card-opacity', t.cardOpacity ?? 1)
-  s('--border', t.border)
-  s('--border-hover', t.borderHover)
-  s('--border-opacity', t.borderOpacity ?? 1)
-  s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
-  s('--text', t.text)
-  s('--text-dim', t.textDim)
-  s('--text-muted', t.textMuted ?? t.textDim)
-  s('--title-color', t.titleColor ?? t.textDim)
-  s('--accent', t.accent)
+  setVar('--bg', normalizeHex(t.bg))
+  setVar('--bg2', normalizeHex(t.bg2))
+  setVar('--bg3', normalizeHex(t.bg3))
+  setVar('--card', normalizeHex(t.card))
+  setVar('--card-opacity', t.cardOpacity ?? 1)
+  setVar('--border', normalizeHex(t.border))
+  setVar('--border-hover', normalizeHex(t.borderHover))
+  setVar('--border-opacity', t.borderOpacity ?? 1)
+  setVar('--handle-opacity', (t.handleOpacity ?? 15) / 100)
+  setVar('--text', normalizeHex(t.text))
+  setVar('--text-dim', normalizeHex(t.textDim))
+  setVar('--text-muted', normalizeHex(t.textMuted ?? t.textDim))
+  setVar('--title-color', normalizeHex(t.titleColor ?? t.textDim))
+  setVar('--accent', normalizeHex(t.accent))
   if (t.accent) {
-    s('--accent-dim', `${t.accent}33`)
-    s('--accent-glow', `${t.accent}22`)
+    setVar('--accent-dim', rgba(t.accent, 0.2))
+    setVar('--accent-glow', rgba(t.accent, 0.13))
   }
-  s('--danger', t.danger)
-  s('--success', t.success)
-  s('--btn-bg', t.btnBg)
-  s('--btn-text', t.btnText)
-  s('--font', t.font)
-
-  if (t.fontSize) s('--font-size', `${t.fontSize}px`)
-  if (t.topbarFontSize) s('--topbar-font-size', `${t.topbarFontSize}px`)
-  if (t.clockWidgetSize) s('--clock-widget-size', `${t.clockWidgetSize}rem`)
-  if (t.notesFontSize) s('--notes-font-size', `${t.notesFontSize}px`)
-  if (t.faviconSize) s('--favicon-size', `${t.faviconSize}px`)
-
-  if (t.radius != null) {
-    s('--radius', `${t.radius}px`)
-    s('--radius-sm', `${Math.max(2, t.radius - 4)}px`)
-  }
-
-  s('--section-radius', `${t.sectionRadius ?? 0}px`)
-
-  if (t.linkGap != null) s('--link-gap', `${t.linkGap}rem`)
-  if (t.cardPadding != null) s('--card-padding', `${t.cardPadding}rem`)
-
-  s('--section-gap', `${t.sectionGap ?? 0}px`)
-  s('--section-gap-h', `${t.sectionGapH ?? 0}px`)
-  s('--main-gap-top', `${t.mainGapTop ?? 12}px`)
-  s('--sections-cols', t.sectionsCols ?? 4)
-  s('--favicon-opacity', t.faviconOpacity ?? 1)
-  s('--favicon-filter', t.faviconGreyscale ? 'grayscale(1)' : 'none')
-  s('--favicon-display', t.faviconEnabled ?? true ? 'block' : 'none')
-  s('--wallpaper-dim', (t.wallpaperDim ?? 35) / 100)
-
-  if (t.settingsFontSize) s('--settings-font-size', `${t.settingsFontSize}px`)
-  if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
-  if (t.notesGap != null) s('--notes-gap', `${t.notesGap}px`)
-  if (t.notesCardBg) s('--notes-card-bg', t.notesCardBg)
-  s('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)
-  if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
-  if (t.notesTextBg) s('--notes-text-bg', t.notesTextBg)
+  setVar('--danger', normalizeHex(t.danger))
+  setVar('--success', normalizeHex(t.success))
+  setVar('--btn-bg', normalizeHex(t.btnBg))
+  setVar('--btn-text', normalizeHex(t.btnText))
+  setVar('--notes-bg', normalizeHex(t.notesCardBg ?? t.bg2))
+  setVar('--notes-input-bg', normalizeHex(t.notesTextBg ?? t.bg))
+  setVar('--font', t.font)
+  setVar('--font-size', `${t.fontSize ?? 14}px`)
+  setVar('--topbar-font-size', `${t.topbarFontSize ?? 12}px`)
+  setVar('--clock-widget-size', `${t.clockWidgetSize ?? 1}rem`)
+  setVar('--notes-font-size', `${t.notesFontSize ?? 13}px`)
+  setVar('--settings-font-size', `${t.settingsFontSize ?? 13}px`)
+  setVar('--notes-width', `${t.notesWidth ?? 240}px`)
+  setVar('--favicon-size', `${t.faviconSize ?? 13}px`)
+  setVar('--radius', `${t.radius ?? 10}px`)
+  setVar('--radius-sm', `${Math.max(2, (t.radius ?? 10) - 4)}px`)
+  setVar('--section-radius', `${t.sectionRadius ?? 0}px`)
+  setVar('--link-gap', `${t.linkGap ?? 0.5}rem`)
+  setVar('--card-padding', `${t.cardPadding ?? 0.75}rem`)
+  setVar('--section-gap', `${t.sectionGap ?? 0}px`)
+  setVar('--section-gap-h', `${t.sectionGapH ?? 0}px`)
+  setVar('--main-gap-top', `${t.mainGapTop ?? 12}px`)
+  setVar('--sections-cols', t.sectionsCols ?? 3)
+  setVar('--favicon-opacity', t.faviconOpacity ?? 1)
+  setVar('--favicon-filter', t.faviconGreyscale ? 'grayscale(1)' : 'none')
+  setVar('--favicon-display', (t.faviconEnabled ?? true) ? 'block' : 'none')
+  setVar('--favicon-delay', `${t.faviconDelay ?? 0}s`)
+  setVar('--favicon-fade', `${t.faviconFade ?? 0.3}s`)
+  setVar('--pattern-color', normalizeHex(t.patternColor))
+  setVar('--pattern-opacity', t.patternOpacity ?? 1)
+  setVar('--wallpaper-dim', (t.wallpaperDim ?? 35) / 100)
+  setVar('--settings-title-color', normalizeHex(t.settingsTitleColor))
+  setVar('--notes-gap', `${t.notesGap ?? 0}px`)
+  setVar('--notes-card-bg', normalizeHex(t.notesCardBg))
+  setVar('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)
+  setVar('--notes-text-color', normalizeHex(t.notesTextColor))
+  setVar('--notes-text-bg', normalizeHex(t.notesTextBg))
 
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) {
@@ -183,30 +339,28 @@ function applyTheme(t) {
   }
 
   const lph = t.linksPaddingH ?? 0.75
-  if (lph > 0) {
+  if (lph >= 0) {
     styleEl.textContent = [
-      `.links-list {`,
+      '.links-list {',
       `padding-left: ${lph}rem !important;`,
       `padding-right: ${lph}rem !important;`,
-      `margin-left: 0 !important;`,
-      `}`,
-    ].join('')
+      'margin-left: 0 !important;',
+      '}',
+    ].join(' ')
   } else {
     styleEl.textContent = [
-      `.links-list {`,
-      `padding-left: 0 !important;`,
-      `padding-right: var(--card-padding, 0.75rem) !important;`,
+      '.links-list {',
+      'padding-left: 0 !important;',
+      'padding-right: var(--card-padding, 0.75rem) !important;',
       `margin-left: ${lph}rem !important;`,
-      `}`,
-    ].join('')
+      '}',
+    ].join(' ')
   }
 
-  root.dataset.settingsSide = t.settingsSide || 'right'
-  document.body.style.fontFamily = t.font || 'DM Mono, monospace'
-  document.body.style.backgroundColor = `#${t.bg || '0c0c0f'}`
-  document.body.style.color = `#${t.text || 'e8e8f0'}`
-
-  if (t.pageScale) document.body.style.zoom = t.pageScale
+  document.documentElement.dataset.settingsSide = t.settingsSide || 'right'
+  document.body.style.fontFamily = t.font || "'DM Mono', monospace"
+  document.body.style.backgroundColor = normalizeHex(t.bg || '#0c0c0f')
+  document.body.style.color = normalizeHex(t.text || '#e8e8f0')
 }
 
 export default function App() {
@@ -253,7 +407,7 @@ export default function App() {
   }, [session])
 
   useEffect(() => {
-    if (!session) return
+    if (!session) return undefined
     const timer = setTimeout(() => searchInputRef.current?.focus(), 350)
     return () => clearTimeout(timer)
   }, [session])
@@ -264,7 +418,6 @@ export default function App() {
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
       if (!uid) return
-
       const { wallpaper, ...themeData } = t
       const { data: updated, error: upErr } = await supabase
         .from('user_settings')
@@ -273,10 +426,7 @@ export default function App() {
         .select('id')
 
       if (upErr) return
-
-      if (!updated?.length) {
-        await supabase.from('user_settings').insert({ user_id: uid, theme: themeData })
-      }
+      if (!updated?.length) await supabase.from('user_settings').insert({ user_id: uid, theme: themeData })
     }
 
     if (immediate) doSave()
@@ -361,7 +511,6 @@ export default function App() {
         .insert({ user_id: session.user.id, name: 'Home' })
         .select()
         .single()
-
       if (err) return
       setWorkspaces([created])
       setActiveWs(created.id)
@@ -380,7 +529,6 @@ export default function App() {
         .from('workspaces')
         .select('*')
         .order('created_at', { ascending: true })
-
       if (wsErr) return
 
       setWorkspaces(wsData)
@@ -406,9 +554,7 @@ export default function App() {
       setLoading(false)
     })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_e, sess) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, sess) => {
       setSession(sess ?? null)
     })
 
@@ -474,9 +620,7 @@ export default function App() {
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
-    return links.filter(
-      (l) => l.title?.toLowerCase().includes(q) || l.url?.toLowerCase().includes(q)
-    )
+    return links.filter((l) => l.title?.toLowerCase().includes(q) || l.url?.toLowerCase().includes(q))
   }, [links, search])
 
   const filteredBookmarks = useMemo(() => {
@@ -490,9 +634,7 @@ export default function App() {
 
     return bookmarks
       .filter((b) => !hiddenFolders.includes(b.folderId))
-      .filter(
-        (b) => b.title?.toLowerCase().includes(q) || b.url?.toLowerCase().includes(q)
-      )
+      .filter((b) => b.title?.toLowerCase().includes(q) || b.url?.toLowerCase().includes(q))
       .slice(0, 15)
   }, [bookmarks, bmQuery])
 
@@ -545,13 +687,7 @@ export default function App() {
   }
 
   const exportFullBackup = async () => {
-    const backup = {
-      version: 2,
-      exportedAt: new Date().toISOString(),
-      theme,
-      workspaces: [],
-    }
-
+    const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
     const { data: wsData } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
 
     for (const ws of wsData ?? []) {
@@ -561,7 +697,6 @@ export default function App() {
       ])
 
       const sectionsWithLinks = []
-
       for (const sec of secData ?? []) {
         const { data: secLinks } = await supabase
           .from('links')
@@ -574,11 +709,7 @@ export default function App() {
           position: sec.position,
           collapsed: sec.collapsed,
           colindex: sec.colindex ?? 0,
-          links: (secLinks ?? []).map((l) => ({
-            title: l.title,
-            url: l.url,
-            position: l.position,
-          })),
+          links: (secLinks ?? []).map((l) => ({ title: l.title, url: l.url, position: l.position })),
         })
       }
 
@@ -590,9 +721,7 @@ export default function App() {
     }
 
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(
-      new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
-    )
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
     a.download = 'startpage-backup.json'
     a.click()
   }
@@ -611,14 +740,9 @@ export default function App() {
       .order('position', { ascending: true })
 
     const rows = [['Section', 'Title', 'URL']]
-    secs?.forEach((s) =>
-      lnks?.filter((l) => l.section_id === s.id).forEach((l) => rows.push([s.name, l.title, l.url]))
-    )
-
+    secs?.forEach((s) => lnks?.filter((l) => l.section_id === s.id).forEach((l) => rows.push([s.name, l.title, l.url])))
     const dq = '"'
-    const csv = rows
-      .map((r) => r.map((c) => dq + String(c).replaceAll(dq, dq + dq) + dq).join(','))
-      .join('\n')
+    const csv = rows.map((r) => r.map((c) => dq + String(c).replaceAll(dq, dq + dq) + dq).join(',')).join('\n')
 
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
@@ -638,83 +762,53 @@ export default function App() {
     if (!f) return
     e.target.value = ''
     setImportingBackup(true)
-
     const r = new FileReader()
     r.onload = async (ev) => {
       try {
         const uid = sessionRef.current?.user?.id
         if (!uid) throw new Error('Not logged in')
-
         const text = ev.target.result
         const ext = f.name.split('.').pop().toLowerCase()
-
         if (ext === 'csv') {
           const lines = text.trim().split('\n').slice(1)
           const sectionMap = {}
           let pos = 0
-
           for (const line of lines) {
-            const [section, title, url] = line
-              .split(',')
-              .map((c) => c.trim().replace(/^"/, '').replace(/"$/, ''))
-
+            const [section, title, url] = line.split(',').map((c) => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
             if (!section || !title || !url) continue
-
             if (!sectionMap[section]) {
               const { data: sec } = await supabase
                 .from('sections')
-                .insert({
-                  user_id: uid,
-                  workspace_id: activeWs,
-                  name: section,
-                  position: pos++,
-                  collapsed: false,
-                  colindex: 0,
-                })
+                .insert({ user_id: uid, workspace_id: activeWs, name: section, position: pos++, collapsed: false, colindex: 0 })
                 .select()
                 .single()
-
               sectionMap[section] = { id: sec.id, lpos: 0 }
             }
-
             await supabase.from('links').insert({
               user_id: uid,
               workspace_id: activeWs,
               section_id: sectionMap[section].id,
               title,
-              url: url.startsWith('http') ? url : `https://${url}`,
+              url: url.startsWith('http') ? url : 'https://' + url,
               position: sectionMap[section].lpos++,
             })
           }
-
           await handleRefresh()
           alert('CSV imported!')
           return
         }
-
         const data = JSON.parse(text)
-
         if (Array.isArray(data)) {
           const rows = data.flat(2).filter((g) => g && typeof g === 'object' && !Array.isArray(g))
           let imported = 0
-
-          for (let i = 0; i < rows.length; i += 1) {
+          for (let i = 0; i < rows.length; i++) {
             const grp = rows[i]
             const { data: sec, error: secErr } = await supabase
               .from('sections')
-              .insert({
-                user_id: uid,
-                workspace_id: activeWs,
-                name: grp.name ?? grp.title ?? 'Section',
-                position: i,
-                collapsed: false,
-                colindex: 0,
-              })
+              .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false, colindex: 0 })
               .select()
               .single()
-
             if (secErr || !sec) continue
-
             const lnks = (grp.bookmarks ?? grp.links ?? [])
               .filter((b) => b && (b.url || b.href))
               .map((b, j) => ({
@@ -725,27 +819,18 @@ export default function App() {
                 url: (b.url ?? b.href ?? '').trim(),
                 position: j,
               }))
-
             if (lnks.length) await supabase.from('links').insert(lnks)
             imported++
           }
-
           await handleRefresh()
-          alert(`Imported ${imported} of ${rows.length} sections.`)
+          alert('Imported ' + imported + ' of ' + rows.length + ' section(s).')
           return
         }
-
         if (data.workspaces && Array.isArray(data.workspaces)) {
-          if (!confirm(`Add ${data.workspaces.length} workspaces? Existing data is kept.`)) return
-
+          if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
           for (const ws of data.workspaces) {
-            const { data: newWs } = await supabase
-              .from('workspaces')
-              .insert({ user_id: uid, name: ws.name })
-              .select()
-              .single()
-
-            for (let si = 0; si < (ws.sections ?? []).length; si += 1) {
+            const { data: newWs } = await supabase.from('workspaces').insert({ user_id: uid, name: ws.name }).select().single()
+            for (let si = 0; si < (ws.sections ?? []).length; si++) {
               const sec = ws.sections[si]
               const { data: newSec } = await supabase
                 .from('sections')
@@ -759,7 +844,6 @@ export default function App() {
                 })
                 .select()
                 .single()
-
               const lnks = (sec.links ?? []).map((l, j) => ({
                 user_id: uid,
                 workspace_id: newWs.id,
@@ -768,83 +852,52 @@ export default function App() {
                 url: l.url,
                 position: l.position ?? j,
               }))
-
               if (lnks.length) await supabase.from('links').insert(lnks)
             }
-
             if (ws.notes?.length) {
-              await supabase.from('notes').insert(
-                ws.notes.map((n) => ({
-                  user_id: uid,
-                  workspace_id: newWs.id,
-                  content: n.content ?? '',
-                }))
-              )
+              await supabase.from('notes').insert(ws.notes.map((n) => ({ user_id: uid, workspace_id: newWs.id, content: n.content ?? '' })))
             }
           }
-
           if (data.theme) {
             const t = { ...DEFAULT_THEME, ...data.theme }
             setTheme(t)
           }
-
           await handleRefresh()
           alert('Backup imported!')
           return
         }
-
         if (data.bg || data.text || data.accent) {
           setTheme({ ...DEFAULT_THEME, ...data })
           alert('Theme imported.')
           return
         }
-
         alert('Unrecognised format.')
       } catch (err) {
-        alert(`Import failed: ${err.message}`)
+        alert('Import failed: ' + err.message)
       } finally {
         setImportingBackup(false)
       }
     }
-
     r.readAsText(f)
   }
 
-  const bgClass =
-    bgImage && theme.bgPreset === 'image'
-      ? 'bg-layer bg-image'
-      : `bg-layer bg-${theme.bgPreset || 'noise'}`
-
-  const bgStyle =
-    bgImage && theme.bgPreset === 'image'
-      ? {
-          backgroundImage: `url(${bgImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }
-      : undefined
+  const bgClass = bgImage && theme.bgPreset === 'image' ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
+  const bgStyle = bgImage && theme.bgPreset === 'image'
+    ? { backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat' }
+    : undefined
 
   if (loading) return <div className="center-fill">Loading...</div>
   if (!session) return <Auth />
 
   return (
-    <div className={bgClass} style={bgStyle}>
-      <div
-        className="app"
-        style={{
-          position: 'relative',
-          zIndex: 1,
-          minHeight: '100vh',
-        }}
-      >
+    <div className="app-shell">
+      <div className={bgClass} style={bgStyle} />
+
+      <div className="app">
         {theme.wallpaper ? (
           <div
+            className="wallpaper-layer"
             style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 0,
-              pointerEvents: 'none',
               backgroundImage: `url(${theme.wallpaper})`,
               backgroundSize: `${theme.wallpaperScale ?? 100}%`,
               backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
@@ -856,15 +909,7 @@ export default function App() {
         ) : null}
 
         {theme.wallpaper && (theme.wallpaperDim ?? 0) > 0 ? (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              zIndex: 0,
-              pointerEvents: 'none',
-              background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})`,
-            }}
-          />
+          <div className="wallpaper-dim" style={{ background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
         ) : null}
 
         <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
@@ -872,38 +917,25 @@ export default function App() {
             {workspaces.map((ws) => (
               <button
                 key={ws.id}
-                className={`workspace-tab ${activeWs === ws.id ? 'active' : ''}`}
+                className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
                 onClick={() => setActiveWs(ws.id)}
               >
                 {ws.name}
-                {workspaces.length > 1 ? (
-                  <span
-                    className="del-ws"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      deleteWorkspace(ws.id)
-                    }}
-                  >
-                    ×
+                {workspaces.length > 1 && (
+                  <span className="del-ws" onClick={(e) => { e.stopPropagation(); deleteWorkspace(ws.id) }}>
+                    ✕
                   </span>
-                ) : null}
+                )}
               </button>
             ))}
-
-            <button
-              className="icon-btn"
-              title="New workspace"
-              onClick={() => addWorkspace()}
-              style={{ fontSize: '1.1em', lineHeight: 1 }}
-            >
-              +
-            </button>
+            <button className="icon-btn" title="New workspace" onClick={() => addWorkspace()} style={{ fontSize: '1.1em', lineHeight: 1 }}>+</button>
           </div>
 
           <div className="topbar-divider" />
 
           <div className="topbar-widgets">
             <ClockWidget />
+            <WeatherWidget />
           </div>
 
           <div className="search-compact">
@@ -917,7 +949,7 @@ export default function App() {
                   key={key}
                   type="button"
                   className={`search-mode-btn ${searchMode === key ? 'active' : ''}`}
-                  title={key.charAt(0).toUpperCase() + key.slice(1)}
+                  title={label}
                   onClick={() => {
                     setSearchMode(key)
                     setSearch('')
@@ -932,13 +964,7 @@ export default function App() {
 
             <input
               className="input search-compact-input"
-              placeholder={
-                searchMode === 'web'
-                  ? 'Search the web'
-                  : searchMode === 'links'
-                    ? 'Filter links'
-                    : 'Search bookmarks'
-              }
+              placeholder={searchMode === 'web' ? 'Search the web' : searchMode === 'links' ? 'Filter links' : 'Search bookmarks'}
               ref={searchInputRef}
               value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
               onChange={(e) => {
@@ -952,12 +978,10 @@ export default function App() {
                   window.open(url, '_blank', 'noopener,noreferrer')
                   setWebSearch('')
                 }
-
                 if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
                   window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
                   setBmQuery('')
                 }
-
                 if (e.key === 'Escape') {
                   setSearch('')
                   setWebSearch('')
@@ -966,81 +990,31 @@ export default function App() {
               }}
             />
 
-            <button
-              className="icon-btn search-btn"
-              title="Clear"
-              onClick={() => {
-                setSearch('')
-                setWebSearch('')
-                setBmQuery('')
-              }}
-            >
-              ×
-            </button>
+            <button className="icon-btn search-btn" title="Clear" onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>×</button>
 
-            {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 ? (
-              <div
-                className="bm-dropdown"
-                style={{
-                  fontSize: `${theme.bmFontSize ?? 13}px`,
-                  ...(theme.bmResultBg ? { background: theme.bmResultBg } : {}),
-                  ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
-                }}
-              >
+            {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
+              <div className="bm-dropdown" style={{ fontSize: `${theme.bmFontSize ?? 13}px`, ...(theme.bmResultBg ? { background: theme.bmResultBg } : {}), ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}) }}>
                 {filteredBookmarks.map((b, i) => (
-                  <a
-                    key={b.id ?? i}
-                    className="bm-result"
-                    href={b.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setBmQuery('')}
-                  >
-                    <span className="bm-result-url">
-                      {b.url.replace(/^https?:\/\//, '').split('/')[0]}
-                    </span>
+                  <a key={b.id ?? i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => setBmQuery('')}>
+                    <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
                     <span className="bm-result-folder">{b.folder}</span>
                     <span className="bm-result-title">{b.title}</span>
                   </a>
                 ))}
               </div>
-            ) : null}
+            )}
           </div>
 
           <div className="topbar-actions">
-            <button
-              className="btn"
-              title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
-              onClick={toggleAll}
-            >
+            <button className="btn" title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'} onClick={toggleAll}>
               {allCollapsed ? 'Expand' : 'Collapse'}
             </button>
-
-            <button
-              className="icon-btn"
-              title="Refresh"
-              onClick={async () => {
-                await loadUserSettings(true)
-                await handleRefresh()
-              }}
-            >
-              ↻
-            </button>
-
-            <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>
-              Settings
-            </button>
+            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); await handleRefresh() }}>↻</button>
+            <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
           </div>
         </div>
 
-        <main
-          className="main-layout"
-          style={{
-            position: 'relative',
-            zIndex: 2,
-            gridTemplateColumns: '1fr var(--notes-width, 240px)',
-          }}
-        >
+        <main className="main-layout" style={{ position: 'relative', zIndex: 2, gridTemplateColumns: '1fr var(--notes-width, 240px)' }}>
           <div className="main-col">
             <Sections
               sections={sections}
@@ -1048,7 +1022,7 @@ export default function App() {
               userId={session.user.id}
               workspaceId={activeWs}
               onRefresh={handleRefresh}
-              colCount={theme.sectionsCols ?? 4}
+              colCount={theme.sectionsCols ?? 3}
               triggerCollapseAll={triggerCollapse}
               triggerExpandAll={triggerExpand}
               openInNewTab={theme.openInNewTab ?? true}
@@ -1067,7 +1041,7 @@ export default function App() {
           </div>
         </main>
 
-        {settingsOpen ? (
+        {settingsOpen && (
           <Settings
             theme={theme}
             setTheme={setTheme}
@@ -1094,7 +1068,7 @@ export default function App() {
             onDeleteWorkspace={deleteWorkspace}
             onSetActiveWs={setActiveWs}
           />
-        ) : null}
+        )}
       </div>
     </div>
   )
