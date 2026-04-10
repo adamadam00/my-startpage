@@ -459,12 +459,12 @@ export default function Sections({
     if (locked) return
 
     setDragging(false)
+    setActiveSection(null)
 
     if (!over) {
       const rebuilt = buildColumns(sections, colCount)
       colsRef.current = rebuilt
       setCols(rebuilt)
-      setActiveSection(null)
       return
     }
 
@@ -476,41 +476,37 @@ export default function Sections({
       const rebuilt = buildColumns(sections, colCount)
       colsRef.current = rebuilt
       setCols(rebuilt)
-      setActiveSection(null)
       return
     }
 
     skipRebuildRef.current = true
     colsRef.current = finalCols
     setCols(finalCols)
-    setActiveSection(null)
 
-    const updates = []
     let globalPosition = 0
 
-    finalCols.forEach((col, ci) => {
-      col.forEach((s) => {
-        updates.push(
-          supabase
-            .from('sections')
-            .update({ position: globalPosition++, colindex: ci })
-            .eq('id', s.id)
-        )
-      })
-    })
-
     try {
-      const results = await Promise.all(updates)
-      const failed = results.find((r) => r.error)
-      if (failed?.error) throw failed.error
-      await new Promise((resolve) => setTimeout(resolve, 120))
+      for (let ci = 0; ci < finalCols.length; ci++) {
+        for (const s of finalCols[ci]) {
+          const { error } = await supabase
+            .from('sections')
+            .update({
+              position: globalPosition++,
+              colindex: ci,
+            })
+            .eq('id', s.id)
+
+          if (error) throw error
+        }
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 150))
       onRefresh()
     } catch (err) {
       console.error('Section drag save failed:', err)
       const rebuilt = buildColumns(sections, colCount)
       colsRef.current = rebuilt
       setCols(rebuilt)
-      setActiveSection(null)
     }
   }
 
