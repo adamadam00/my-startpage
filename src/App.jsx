@@ -21,12 +21,6 @@ function safeLocalSet(key, value) {
   } catch {}
 }
 
-function safeLocalRemove(key) {
-  try {
-    localStorage.removeItem(key)
-  } catch {}
-}
-
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
 
@@ -42,219 +36,6 @@ function ClockWidget() {
     <div className="clock-compact">
       <span className="clock-compact-time">{hm}</span>
       <span className="clock-compact-date">{date}</span>
-    </div>
-  )
-}
-
-function WeatherWidget() {
-  const CACHE_KEY = 'wxcache'
-  const CACHE_TTL = 25 * 60 * 1000
-
-  const WX = {
-    0: { icon: '☀️', label: 'Clear' },
-    1: { icon: '🌤️', label: 'Mostly clear' },
-    2: { icon: '⛅', label: 'Partly cloudy' },
-    3: { icon: '☁️', label: 'Overcast' },
-    45: { icon: '🌫️', label: 'Foggy' },
-    48: { icon: '🌫️', label: 'Icy fog' },
-    51: { icon: '🌦️', label: 'Light drizzle' },
-    53: { icon: '🌦️', label: 'Drizzle' },
-    55: { icon: '🌧️', label: 'Heavy drizzle' },
-    61: { icon: '🌦️', label: 'Light rain' },
-    63: { icon: '🌧️', label: 'Raining' },
-    65: { icon: '🌧️', label: 'Heavy rain' },
-    71: { icon: '🌨️', label: 'Light snow' },
-    73: { icon: '🌨️', label: 'Snowing' },
-    75: { icon: '❄️', label: 'Heavy snow' },
-    80: { icon: '🌦️', label: 'Showers' },
-    81: { icon: '🌧️', label: 'Rain showers' },
-    82: { icon: '⛈️', label: 'Violent rain' },
-    95: { icon: '⛈️', label: 'Thunderstorm' },
-    96: { icon: '⛈️', label: 'Thunderstorm' },
-    99: { icon: '⛈️', label: 'Thunderstorm' },
-  }
-
-  const [wx, setWx] = useState(() => {
-    try {
-      const raw = safeLocalGet(CACHE_KEY, null)
-      if (!raw) return null
-      const c = JSON.parse(raw)
-      if (Date.now() - c.ts < CACHE_TTL) return c.data ?? null
-    } catch {}
-    return null
-  })
-
-  const [forecast, setForecast] = useState(() => {
-    try {
-      const raw = safeLocalGet(CACHE_KEY, null)
-      if (!raw) return []
-      const c = JSON.parse(raw)
-      if (Date.now() - c.ts < CACHE_TTL) return c.forecast ?? []
-    } catch {}
-    return []
-  })
-
-  const [open, setOpen] = useState(false)
-  const [stale, setStale] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const ref = useRef(null)
-
-  useEffect(() => {
-    const fetchByCoords = async (lat, lon) => {
-      setLoading(true)
-      try {
-        const url =
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}` +
-          `&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min` +
-          `&forecast_days=5&timezone=auto`
-
-        const r = await fetch(url)
-        if (!r.ok) throw new Error('Weather request failed')
-
-        const d = await r.json()
-
-        const nextWx = d.current
-          ? {
-              temperature: d.current.temperature_2m,
-              weathercode: d.current.weather_code,
-            }
-          : null
-
-        const nextForecast = Array.isArray(d.daily?.time)
-          ? d.daily.time.slice(0, 5).map((date, i) => ({
-              date,
-              code: d.daily.weather_code?.[i],
-              max: Math.round(d.daily.temperature_2m_max?.[i]),
-              min: Math.round(d.daily.temperature_2m_min?.[i]),
-            }))
-          : []
-
-        if (nextWx) {
-          setWx(nextWx)
-          setForecast(nextForecast)
-          setStale(false)
-          safeLocalSet(
-            CACHE_KEY,
-            JSON.stringify({
-              data: nextWx,
-              forecast: nextForecast,
-              ts: Date.now(),
-            })
-          )
-        } else {
-          throw new Error('No weather data returned')
-        }
-      } catch {
-        setStale(true)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    const fetchWx = async () => {
-      const cached = safeLocalGet(CACHE_KEY, null)
-      if (cached) {
-        try {
-          const c = JSON.parse(cached)
-          if (Date.now() - c.ts < CACHE_TTL && c.data) {
-            setWx(c.data)
-            setForecast(c.forecast ?? [])
-          }
-        } catch {}
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          async ({ coords }) => {
-            await fetchByCoords(coords.latitude, coords.longitude)
-          },
-          async () => {
-            await fetchByCoords(-37.8136, 144.9631)
-          },
-          { enableHighAccuracy: false, timeout: 8000, maximumAge: 10 * 60 * 1000 }
-        )
-      } else {
-        await fetchByCoords(-37.8136, 144.9631)
-      }
-    }
-
-    fetchWx()
-    const id = setInterval(fetchWx, 15 * 60 * 1000)
-    return () => clearInterval(id)
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  if (!wx) return null
-
-  const dayLabel = (dateStr) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-  }
-
-  return (
-    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }}>
-      <div
-        className="weather-wrap"
-        style={{ opacity: stale ? 0.55 : 1, cursor: 'pointer' }}
-        title={stale ? 'Weather data may be outdated. Click for forecast.' : 'Click for forecast.'}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span className="weather-icon">{WX[wx.weathercode]?.icon ?? '☁️'}</span>
-        <span className="weather-temp">{Math.round(wx.temperature)}°</span>
-        <span className="weather-desc">
-          {loading ? 'Updating…' : WX[wx.weathercode]?.label ?? 'Weather'}
-        </span>
-      </div>
-
-      {open && forecast.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 0.35rem)',
-            left: 0,
-            zIndex: 9999,
-            background: 'var(--bg2)',
-            border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent)',
-            borderRadius: 'var(--radius)',
-            padding: '0.5rem 0.75rem',
-            minWidth: 230,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
-            fontSize: 'var(--topbar-font-size)',
-            pointerEvents: 'auto',
-          }}
-        >
-          {forecast.map((day, i) => (
-            <div
-              key={day.date}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.28rem 0',
-                borderBottom:
-                  i < forecast.length - 1
-                    ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)'
-                    : 'none',
-              }}
-            >
-              <span style={{ fontSize: '1.1em' }}>{WX[day.code]?.icon ?? '☁️'}</span>
-              <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
-              <span style={{ color: 'var(--text)' }}>{day.max}°</span>
-              <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }
@@ -454,7 +235,6 @@ export default function App() {
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand, setTriggerExpand] = useState(0)
   const [notesTrigger, setNotesTrigger] = useState(undefined)
-  const [sectionsNonce, setSectionsNonce] = useState(0)
 
   useEffect(() => {
     applyTheme(theme)
@@ -609,7 +389,6 @@ export default function App() {
       setSections(secData ?? [])
       setLinks(linkData ?? [])
       setNotes(noteData ?? [])
-      setSectionsNonce((n) => n + 1)
     } catch {}
   }
 
@@ -1022,6 +801,7 @@ export default function App() {
 
     r.readAsText(f)
   }
+
   const bgClass =
     bgImage && theme.bgPreset === 'image'
       ? 'bg-layer bg-image'
@@ -1116,8 +896,6 @@ export default function App() {
 
           <div className="topbar-widgets">
             <ClockWidget />
-            <div className="topbar-divider" />
-            <WeatherWidget />
           </div>
 
           <div className="search-compact">
@@ -1163,11 +941,7 @@ export default function App() {
               onKeyDown={(e) => {
                 if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
                   const url = `${theme.searchEngineUrl || 'https://www.google.com.au/search?q='}${encodeURIComponent(webSearch.trim())}`
-                  if (theme.openInNewTab ?? true) {
-                    window.open(url, '_blank', 'noopener,noreferrer')
-                  } else {
-                    window.location.href = url
-                  }
+                  window.open(url, '_blank', 'noopener,noreferrer')
                   setWebSearch('')
                 }
 
