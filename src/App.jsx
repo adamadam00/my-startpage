@@ -141,18 +141,23 @@ function applyTheme(t) {
   s('--btn-bg', t.btnBg)
   s('--btn-text', t.btnText)
   s('--font', t.font)
+
   if (t.fontSize) s('--font-size', `${t.fontSize}px`)
   if (t.topbarFontSize) s('--topbar-font-size', `${t.topbarFontSize}px`)
   if (t.clockWidgetSize) s('--clock-widget-size', `${t.clockWidgetSize}rem`)
   if (t.notesFontSize) s('--notes-font-size', `${t.notesFontSize}px`)
   if (t.faviconSize) s('--favicon-size', `${t.faviconSize}px`)
+
   if (t.radius != null) {
     s('--radius', `${t.radius}px`)
     s('--radius-sm', `${Math.max(2, t.radius - 4)}px`)
   }
+
   s('--section-radius', `${t.sectionRadius ?? 0}px`)
+
   if (t.linkGap != null) s('--link-gap', `${t.linkGap}rem`)
   if (t.cardPadding != null) s('--card-padding', `${t.cardPadding}rem`)
+
   s('--section-gap', `${t.sectionGap ?? 0}px`)
   s('--section-gap-h', `${t.sectionGapH ?? 0}px`)
   s('--main-gap-top', `${t.mainGapTop ?? 12}px`)
@@ -161,6 +166,7 @@ function applyTheme(t) {
   s('--favicon-filter', t.faviconGreyscale ? 'grayscale(1)' : 'none')
   s('--favicon-display', t.faviconEnabled ?? true ? 'block' : 'none')
   s('--wallpaper-dim', (t.wallpaperDim ?? 35) / 100)
+
   if (t.settingsFontSize) s('--settings-font-size', `${t.settingsFontSize}px`)
   if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
   if (t.notesGap != null) s('--notes-gap', `${t.notesGap}px`)
@@ -195,9 +201,11 @@ function applyTheme(t) {
     ].join('')
   }
 
+  root.dataset.settingsSide = t.settingsSide || 'right'
   document.body.style.fontFamily = t.font || 'DM Mono, monospace'
   document.body.style.backgroundColor = `#${t.bg || '0c0c0f'}`
   document.body.style.color = `#${t.text || 'e8e8f0'}`
+
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
