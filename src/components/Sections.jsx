@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import {
   DndContext,
-  closestCenter,
+  closestCorners,
   DragOverlay,
   PointerSensor,
   KeyboardSensor,
@@ -94,7 +94,8 @@ function buildColumns(sections = [], colCount = 2) {
   const allZero = sorted.length > 0 && sorted.every((s) => (s.colindex ?? 0) === 0)
 
   sorted.forEach((s, i) => {
-    const ci = allZero ? i % cols : Math.min(Math.max(s.colindex ?? 0, 0), cols - 1)
+    const raw = allZero ? i % cols : (s.colindex ?? 0)
+    const ci = Math.min(Math.max(raw, 0), cols - 1)
     result[ci].push(s)
   })
 
@@ -145,8 +146,13 @@ function SectionCard({
     zIndex: isDragging ? 20 : 'auto',
   }
 
-  useEffect(() => { setCollapsed(section.collapsed ?? false) }, [section.collapsed])
-  useEffect(() => { setName(section.name ?? '') }, [section.name])
+  useEffect(() => {
+    setCollapsed(section.collapsed ?? false)
+  }, [section.collapsed])
+
+  useEffect(() => {
+    setName(section.name ?? '')
+  }, [section.name])
 
   useEffect(() => {
     if (!renaming) return
@@ -247,8 +253,12 @@ function SectionCard({
                 onKeyDown={handleRenameKeyDown}
                 placeholder="Section name"
               />
-              <button className="btn btn-primary" type="submit" onClick={(e) => e.stopPropagation()}>Save</button>
-              <button className="btn" type="button" onClick={cancelRename}>Cancel</button>
+              <button className="btn btn-primary" type="submit" onClick={(e) => e.stopPropagation()}>
+                Save
+              </button>
+              <button className="btn" type="button" onClick={cancelRename}>
+                Cancel
+              </button>
             </form>
           ) : (
             <>
@@ -267,8 +277,12 @@ function SectionCard({
                   >
                     +
                   </button>
-                  <button className="icon-btn" title="Rename" onClick={startRename}>✎</button>
-                  <button className="icon-btn section-delete-btn" title="Delete" onClick={deleteSection}>✕</button>
+                  <button className="icon-btn" title="Rename" onClick={startRename}>
+                    ✎
+                  </button>
+                  <button className="icon-btn section-delete-btn" title="Delete" onClick={deleteSection}>
+                    ✕
+                  </button>
                 </div>
               )}
             </>
@@ -357,7 +371,9 @@ export default function Sections({
   const colsRef = useRef(cols)
   const skipRebuildRef = useRef(false)
 
-  useEffect(() => { colsRef.current = cols }, [cols])
+  useEffect(() => {
+    colsRef.current = cols
+  }, [cols])
 
   useEffect(() => {
     if (dragging) return
@@ -483,8 +499,19 @@ export default function Sections({
       })
     })
 
-    await Promise.all(updates)
-    onRefresh()
+    try {
+      const results = await Promise.all(updates)
+      const failed = results.find((r) => r.error)
+      if (failed?.error) throw failed.error
+      await new Promise((resolve) => setTimeout(resolve, 120))
+      onRefresh()
+    } catch (err) {
+      console.error('Section drag save failed:', err)
+      const rebuilt = buildColumns(sections, colCount)
+      colsRef.current = rebuilt
+      setCols(rebuilt)
+      setActiveSection(null)
+    }
   }
 
   const addSection = async (e) => {
@@ -510,16 +537,26 @@ export default function Sections({
     try {
       const groups = parseAFineStart(importText.trim())
       if (!groups.length) throw new Error('No groups found.')
+
+      let nextPosition = sections.length
+
       for (const g of groups) {
-        const current = buildColumns(sections, colCount)
+        const currentSections = await supabase
+          .from('sections')
+          .select('id, position, colindex')
+          .eq('workspace_id', workspaceId)
+          .order('position', { ascending: true })
+
+        const current = buildColumns(currentSections.data || sections, colCount)
         const ci = current.reduce((best, col, i) => (col.length < current[best].length ? i : best), 0)
+
         const { data: sec, error: secErr } = await supabase
           .from('sections')
           .insert({
             user_id: userId,
             workspace_id: workspaceId,
             name: g.name,
-            position: sections.length,
+            position: nextPosition++,
             colindex: ci,
           })
           .select()
@@ -528,7 +565,7 @@ export default function Sections({
         if (secErr) throw new Error(secErr.message)
 
         if (g.links.length) {
-          await supabase.from('links').insert(
+          const { error: linksErr } = await supabase.from('links').insert(
             g.links.map((lnk, li) => ({
               user_id: userId,
               workspace_id: workspaceId,
@@ -538,6 +575,7 @@ export default function Sections({
               position: li,
             }))
           )
+          if (linksErr) throw new Error(linksErr.message)
         }
       }
 
@@ -559,7 +597,7 @@ export default function Sections({
     <div style={{ width: '100%', position: 'relative', zIndex: 2 }}>
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={closestCorners}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
@@ -623,7 +661,9 @@ export default function Sections({
               autoFocus
               style={{ width: 150, fontSize: '0.82em' }}
             />
-            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>Add</button>
+            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>
+              Add
+            </button>
             <button
               className="btn"
               type="button"
