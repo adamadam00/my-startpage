@@ -227,3 +227,23 @@ input[type='range']::-moz-range-thumb { width: 13px; height: 13px; border-radius
   .add-section-fixed { bottom: 0.5rem; left: 0.5rem; }
   .bm-result { grid-template-columns: 1fr; gap: 0.2rem; }
 }
+.settings-veil {
+  background: rgba(0, 0, 0, 0.85) !important;
+}
+
+.settings-panel,
+.settings-header,
+.settings-footer {
+  background: var(--bg2) !important;
+  backdrop-filter: none !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+.weather-wrap {
+  cursor: pointer;
+  z-index: 20;
+  position: relative;
+}
+
+.weather-popover {
+  z-index: 9999 !important;
+}

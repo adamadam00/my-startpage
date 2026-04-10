@@ -255,7 +255,7 @@ const DEFAULT_THEME = {
   wallpaperBlur: 0,
   wallpaperDim: 35,
   wallpaperOpacity: 100,
-  sectionsCols: 3,
+  sectionsCols: 8,
   notesGap: 0,
   notesCardBg: '#13131a',
   notesCardBgOpacity: 1,
@@ -937,82 +937,53 @@ export default function App() {
             <ClockWidget />
             <WeatherWidget />
           </div>
-
-          <div className="search-compact">
-            <div className="search-mode-bar">
-              {[
-                { key: 'web', label: 'Web' },
-                { key: 'links', label: 'Links' },
-                { key: 'bookmarks', label: 'Bookmarks' },
-              ].map(({ key, label }) => (
-                <button
-                  key={key}
-                  type="button"
-                  className={`search-mode-btn ${searchMode === key ? 'active' : ''}`}
-                  title={label}
-                  onClick={() => {
-                    setSearchMode(key)
-                    setSearch('')
-                    setWebSearch('')
-                    setBmQuery('')
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            <input
-              className="input search-compact-input"
-              placeholder={searchMode === 'web' ? 'Search the web' : searchMode === 'links' ? 'Filter links' : 'Search bookmarks'}
-              ref={searchInputRef}
-              value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
-              onChange={(e) => {
-                if (searchMode === 'web') setWebSearch(e.target.value)
-                else if (searchMode === 'links') setSearch(e.target.value)
-                else setBmQuery(e.target.value)
-              }}
-              onKeyDown={(e) => {
-                if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
-                  const url = `${theme.searchEngineUrl || 'https://www.google.com.au/search?q='}${encodeURIComponent(webSearch.trim())}`
-                  window.open(url, '_blank', 'noopener,noreferrer')
-                  setWebSearch('')
-                }
-                if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
-                  window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
-                  setBmQuery('')
-                }
-                if (e.key === 'Escape') {
-                  setSearch('')
-                  setWebSearch('')
-                  setBmQuery('')
-                }
-              }}
-            />
-
-            <button className="icon-btn search-btn" title="Clear" onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>×</button>
-
-            {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
-              <div className="bm-dropdown" style={{ fontSize: `${theme.bmFontSize ?? 13}px`, ...(theme.bmResultBg ? { background: theme.bmResultBg } : {}), ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}) }}>
-                {filteredBookmarks.map((b, i) => (
-                  <a key={b.id ?? i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer" onClick={() => setBmQuery('')}>
-                    <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
-                    <span className="bm-result-folder">{b.folder}</span>
-                    <span className="bm-result-title">{b.title}</span>
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="topbar-actions">
-            <button className="btn" title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'} onClick={toggleAll}>
-              {allCollapsed ? 'Expand' : 'Collapse'}
-            </button>
-            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); await handleRefresh() }}>↻</button>
-            <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
-          </div>
-        </div>
+		 <div className="search-compact">
+		  <div className="search-mode-bar">
+			{[
+			  { key: 'web', icon: '🌐', title: 'Web search' },
+			  { key: 'links', icon: '🔗', title: 'Links' },
+			  { key: 'bookmarks', icon: '⭐', title: 'Bookmarks' },
+			].map(({ key, icon, title }) => (
+			  <button
+				key={key}
+				className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
+				title={title}
+				onClick={() => {
+				  setSearchMode(key)
+				  setSearch('')
+				  setWebSearch('')
+				  setBmQuery('')
+				}}
+			  >
+				{icon}
+			  </button>
+			))}
+		  </div>
+		  <input
+			className="input search-compact-input"
+			placeholder={
+			  searchMode === 'web' ? 'Search the web' :
+			  searchMode === 'links' ? 'Filter links' :
+			  'Search bookmarks'
+			}
+			ref={searchInputRef}
+			value={
+			  searchMode === 'web' ? webSearch :
+			  searchMode === 'links' ? search :
+			  bmQuery
+			}
+			onChange={(e) => {
+			  if (searchMode === 'web') setWebSearch(e.target.value)
+			  else if (searchMode === 'links') setSearch(e.target.value)
+			  else setBmQuery(e.target.value)
+			}}
+		  />
+		  <button className="icon-btn search-btn" title="Clear" onClick={() => {
+			if (searchMode === 'web') setWebSearch('')
+			else if (searchMode === 'links') setSearch('')
+			else setBmQuery('')
+		  }}>✕</button>
+		</div>
 
         <main className="main-layout" style={{ position: 'relative', zIndex: 2, gridTemplateColumns: '1fr var(--notes-width, 240px)' }}>
           <div className="main-col">
@@ -1022,7 +993,7 @@ export default function App() {
               userId={session.user.id}
               workspaceId={activeWs}
               onRefresh={handleRefresh}
-              colCount={theme.sectionsCols ?? 3}
+              colCount={Math.max(theme.sectionsCols ?? 8, 8)}
               triggerCollapseAll={triggerCollapse}
               triggerExpandAll={triggerExpand}
               openInNewTab={theme.openInNewTab ?? true}
