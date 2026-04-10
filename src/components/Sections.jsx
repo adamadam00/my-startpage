@@ -6,6 +6,7 @@ import {
   DragOverlay,
   PointerSensor,
   KeyboardSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   useDroppable,
@@ -41,10 +42,7 @@ function parseAFineStart(raw) {
     data.forEach((col) =>
       col.forEach((g) => {
         if (g?.name) {
-          groups.push({
-            name: g.name,
-            links: extractBookmarks(g.bookmarks || []),
-          })
+          groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) })
         }
       })
     )
@@ -54,10 +52,7 @@ function parseAFineStart(raw) {
   if (Array.isArray(data) && data[0]?.name) {
     data.forEach((g) => {
       if (g?.name) {
-        groups.push({
-          name: g.name,
-          links: extractBookmarks(g.bookmarks || g.links || []),
-        })
+        groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links || []) })
       }
     })
     if (groups.length) return groups
@@ -68,18 +63,10 @@ function parseAFineStart(raw) {
     root.forEach((item) => {
       if (Array.isArray(item)) {
         item.forEach((g) => {
-          if (g?.name) {
-            groups.push({
-              name: g.name,
-              links: extractBookmarks(g.bookmarks || []),
-            })
-          }
+          if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) })
         })
       } else if (item?.name) {
-        groups.push({
-          name: item.name,
-          links: extractBookmarks(item.bookmarks || item.links || []),
-        })
+        groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links || []) })
       }
     })
     if (groups.length) return groups
@@ -87,23 +74,16 @@ function parseAFineStart(raw) {
 
   const walk = (node) => {
     if (!node || typeof node !== 'object') return
-
     const bms = node.bookmarks || node.links || node.items
     if ((node.name || node.title) && Array.isArray(bms)) {
-      groups.push({
-        name: node.name || node.title,
-        links: extractBookmarks(bms),
-      })
+      groups.push({ name: node.name || node.title, links: extractBookmarks(bms) })
       return
     }
-
     ;(Array.isArray(node) ? node : Object.values(node)).forEach(walk)
   }
 
   walk(data)
-
   if (groups.length) return groups
-
   throw new Error(`No groups found. Keys: ${Object.keys(data).join(', ')}`)
 }
 
@@ -150,7 +130,6 @@ function SectionCard({
   const [renaming, setRenaming] = useState(false)
   const [name, setName] = useState(section.name ?? '')
   const [addingLink, setAddingLink] = useState(false)
-
   const renameInputRef = useRef(null)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -166,13 +145,8 @@ function SectionCard({
     zIndex: isDragging ? 20 : 'auto',
   }
 
-  useEffect(() => {
-    setCollapsed(section.collapsed ?? false)
-  }, [section.collapsed])
-
-  useEffect(() => {
-    setName(section.name ?? '')
-  }, [section.name])
+  useEffect(() => { setCollapsed(section.collapsed ?? false) }, [section.collapsed])
+  useEffect(() => { setName(section.name ?? '') }, [section.name])
 
   useEffect(() => {
     if (!renaming) return
@@ -209,14 +183,8 @@ function SectionCard({
   const rename = async (e) => {
     e.preventDefault()
     e.stopPropagation()
-
     const trimmed = name.trim()
-    if (!trimmed) {
-      setName(section.name ?? '')
-      setRenaming(false)
-      return
-    }
-
+    if (!trimmed) { setName(section.name ?? ''); setRenaming(false); return }
     await supabase.from('sections').update({ name: trimmed }).eq('id', section.id)
     setRenaming(false)
     onRefresh()
@@ -238,9 +206,7 @@ function SectionCard({
   const deleteSection = async (e) => {
     e.preventDefault()
     e.stopPropagation()
-
     if (!confirm(`Delete "${section.name}" and all its links?`)) return
-
     await supabase.from('links').delete().eq('section_id', section.id)
     await supabase.from('sections').delete().eq('id', section.id)
     onRefresh()
@@ -260,18 +226,11 @@ function SectionCard({
           tabIndex={renaming ? -1 : 0}
           onKeyDown={(e) => {
             if (renaming) return
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              toggleCollapse(e)
-            }
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapse(e) }
           }}
         >
           {renaming ? (
-            <form
-              className="section-rename-form"
-              onSubmit={rename}
-              onClick={(e) => e.stopPropagation()}
-            >
+            <form className="section-rename-form" onSubmit={rename} onClick={(e) => e.stopPropagation()}>
               <input
                 ref={renameInputRef}
                 className="input section-rename-input"
@@ -281,37 +240,17 @@ function SectionCard({
                 onKeyDown={handleRenameKeyDown}
                 placeholder="Section name"
               />
-              <button className="btn btn-primary" type="submit" onClick={(e) => e.stopPropagation()}>
-                Save
-              </button>
-              <button className="btn" type="button" onClick={cancelRename}>
-                Cancel
-              </button>
+              <button className="btn btn-primary" type="submit" onClick={(e) => e.stopPropagation()}>Save</button>
+              <button className="btn" type="button" onClick={cancelRename}>Cancel</button>
             </form>
           ) : (
             <>
               <span className="section-name">{section.name}</span>
-
               {!locked && (
                 <div className="section-actions" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    className="icon-btn"
-                    title="Add link"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setCollapsed(false)
-                      setAddingLink(true)
-                    }}
-                  >
-                    +
-                  </button>
-                  <button className="icon-btn" title="Rename" onClick={startRename}>
-                    ✎
-                  </button>
-                  <button className="icon-btn section-delete-btn" title="Delete" onClick={deleteSection}>
-                    ✕
-                  </button>
+                  <button className="icon-btn" title="Add link" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCollapsed(false); setAddingLink(true) }}>+</button>
+                  <button className="icon-btn" title="Rename" onClick={startRename}>✎</button>
+                  <button className="icon-btn section-delete-btn" title="Delete" onClick={deleteSection}>✕</button>
                 </div>
               )}
             </>
@@ -362,9 +301,9 @@ function SectionCard({
 }
 
 function DropColumn({ id, children }) {
-  const { setNodeRef } = useDroppable({ id })
+  const { setNodeRef, isOver } = useDroppable({ id })
   return (
-    <div ref={setNodeRef} className="section-col">
+    <div ref={setNodeRef} className={`section-col${isOver ? ' is-over' : ''}`}>
       {children}
     </div>
   )
@@ -400,29 +339,18 @@ export default function Sections({
   const colsRef = useRef(cols)
   const skipRebuildRef = useRef(false)
 
-  useEffect(() => {
-    colsRef.current = cols
-  }, [cols])
+  useEffect(() => { colsRef.current = cols }, [cols])
 
   useEffect(() => {
     if (dragging) return
-    if (skipRebuildRef.current) {
-      skipRebuildRef.current = false
-      return
-    }
+    if (skipRebuildRef.current) { skipRebuildRef.current = false; return }
     setCols(buildColumns(sections, colCount))
   }, [sections, colCount, dragging])
 
-  useEffect(() => {
-    if (triggerAdd > 0) setAddingSection(true)
-  }, [triggerAdd])
+  useEffect(() => { if (triggerAdd > 0) setAddingSection(true) }, [triggerAdd])
 
   useEffect(() => {
-    if (triggerImport > 0) {
-      setShowImport(true)
-      setImportError('')
-      setImportDone(false)
-    }
+    if (triggerImport > 0) { setShowImport(true); setImportError(''); setImportDone(false) }
   }, [triggerImport])
 
   useEffect(() => {
@@ -437,40 +365,35 @@ export default function Sections({
     setTimeout(() => setForceCollapsed(undefined), 100)
   }, [triggerExpandAll])
 
+  // Use distance:4 + TouchSensor so drag activates reliably on both mouse and touch
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
   const handleDragStart = ({ active }) => {
     if (locked) return
     setDragging(true)
-
     const current = colsRef.current
     const ci = findColIndex(current, active.id)
-    if (ci !== -1) {
-      setActiveSection(current[ci].find((s) => s.id === active.id) ?? null)
-    }
+    if (ci !== -1) setActiveSection(current[ci].find((s) => s.id === active.id) ?? null)
   }
 
   const handleDragOver = ({ active, over }) => {
     if (locked || !over) return
-
     const current = colsRef.current
     const activeCol = findColIndex(current, active.id)
     const overCol = getOverColumnIndex(current, over.id)
-
     if (activeCol === -1 || overCol === -1) return
 
     const next = current.map((col) => [...col])
     const fromIndex = next[activeCol].findIndex((s) => s.id === active.id)
     if (fromIndex === -1) return
-
     const [activeItem] = next[activeCol].splice(fromIndex, 1)
     if (!activeItem) return
 
     const overIdStr = String(over.id)
-
     if (overIdStr.startsWith('col-')) {
       next[overCol].push(activeItem)
     } else {
@@ -485,35 +408,25 @@ export default function Sections({
 
   const handleDragEnd = async ({ over }) => {
     if (locked) return
-
     setDragging(false)
     setActiveSection(null)
 
-    if (!over) {
-      setCols(buildColumns(sections, colCount))
-      return
-    }
+    if (!over) { setCols(buildColumns(sections, colCount)); return }
 
     const finalCols = colsRef.current.map((col) => [...col])
-
     skipRebuildRef.current = true
     colsRef.current = finalCols
     setCols(finalCols)
 
     const updates = []
     let globalPosition = 0
-
     finalCols.forEach((col, ci) => {
       col.forEach((s) => {
         updates.push(
-          supabase
-            .from('sections')
-            .update({ position: globalPosition++, colindex: ci })
-            .eq('id', s.id)
+          supabase.from('sections').update({ position: globalPosition++, colindex: ci }).eq('id', s.id)
         )
       })
     })
-
     await Promise.all(updates)
     onRefresh()
   }
@@ -521,13 +434,8 @@ export default function Sections({
   const addSection = async (e) => {
     e.preventDefault()
     if (!newName.trim()) return
-
     const current = buildColumns(sections, colCount)
-    const shortest = current.reduce(
-      (best, col, i) => (col.length < current[best].length ? i : best),
-      0
-    )
-
+    const shortest = current.reduce((best, col, i) => (col.length < current[best].length ? i : best), 0)
     await supabase.from('sections').insert({
       user_id: userId,
       workspace_id: workspaceId,
@@ -535,7 +443,6 @@ export default function Sections({
       position: sections.length,
       colindex: shortest,
     })
-
     setNewName('')
     setAddingSection(false)
     onRefresh()
@@ -544,54 +451,29 @@ export default function Sections({
   const runImport = async () => {
     setImportError('')
     setImportLoading(true)
-
     try {
       const groups = parseAFineStart(importText.trim())
       if (!groups.length) throw new Error('No groups found.')
-
       for (const g of groups) {
         const current = buildColumns(sections, colCount)
-        const ci = current.reduce(
-          (best, col, i) => (col.length < current[best].length ? i : best),
-          0
-        )
-
+        const ci = current.reduce((best, col, i) => (col.length < current[best].length ? i : best), 0)
         const { data: sec, error: secErr } = await supabase
           .from('sections')
-          .insert({
-            user_id: userId,
-            workspace_id: workspaceId,
-            name: g.name,
-            position: sections.length,
-            colindex: ci,
-          })
-          .select()
-          .single()
-
+          .insert({ user_id: userId, workspace_id: workspaceId, name: g.name, position: sections.length, colindex: ci })
+          .select().single()
         if (secErr) throw new Error(secErr.message)
-
         if (g.links.length) {
           await supabase.from('links').insert(
             g.links.map((lnk, li) => ({
-              user_id: userId,
-              workspace_id: workspaceId,
-              section_id: sec.id,
-              title: lnk.title,
-              url: lnk.url,
-              position: li,
+              user_id: userId, workspace_id: workspaceId, section_id: sec.id,
+              title: lnk.title, url: lnk.url, position: li,
             }))
           )
         }
       }
-
       setImportDone(true)
       onRefresh()
-
-      setTimeout(() => {
-        setShowImport(false)
-        setImportText('')
-        setImportDone(false)
-      }, 1800)
+      setTimeout(() => { setShowImport(false); setImportText(''); setImportDone(false) }, 1800)
     } catch (err) {
       setImportError(err.message)
     } finally {
@@ -633,15 +515,7 @@ export default function Sections({
 
         <DragOverlay>
           {activeSection ? (
-            <div
-              className="section-card"
-              style={{
-                opacity: 0.92,
-                boxShadow: '0 8px 32px #0008',
-                cursor: 'grabbing',
-                pointerEvents: 'none',
-              }}
-            >
+            <div className="section-card" style={{ opacity: 0.92, boxShadow: '0 8px 32px #0008', cursor: 'grabbing', pointerEvents: 'none' }}>
               <div className="section-header" style={{ cursor: 'grabbing' }}>
                 <button type="button" className="section-grab" style={{ cursor: 'grabbing' }}>
                   <span className="section-grab-dots" aria-hidden="true">⋮⋮</span>
@@ -649,9 +523,7 @@ export default function Sections({
                 <div className="section-header-click">
                   <span className="section-name">{activeSection.name}</span>
                 </div>
-                <span className="section-collapse-arrow" style={{ opacity: 1, pointerEvents: 'none' }}>
-                  ▾
-                </span>
+                <span className="section-collapse-arrow" style={{ opacity: 1, pointerEvents: 'none' }}>▾</span>
               </div>
             </div>
           ) : null}
@@ -661,28 +533,9 @@ export default function Sections({
       {addingSection ? (
         <div className="add-section-fixed">
           <form onSubmit={addSection} style={{ display: 'flex', gap: '0.4rem' }}>
-            <input
-              className="input"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Section name"
-              autoFocus
-              style={{ width: 150, fontSize: '0.82em' }}
-            />
-            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>
-              Add
-            </button>
-            <button
-              className="btn"
-              type="button"
-              style={{ fontSize: '0.82em' }}
-              onClick={() => {
-                setAddingSection(false)
-                setNewName('')
-              }}
-            >
-              ✕
-            </button>
+            <input className="input" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Section name" autoFocus style={{ width: 150, fontSize: '0.82em' }} />
+            <button className="btn btn-primary" type="submit" style={{ fontSize: '0.82em' }}>Add</button>
+            <button className="btn" type="button" style={{ fontSize: '0.82em' }} onClick={() => { setAddingSection(false); setNewName('') }}>✕</button>
           </form>
         </div>
       ) : null}
@@ -694,73 +547,27 @@ export default function Sections({
               <span style={{ fontWeight: 500, fontSize: '0.95em' }}>Import from A Fine Start</span>
               <button className="icon-btn" onClick={() => setShowImport(false)}>✕</button>
             </div>
-
             <div style={{ fontSize: '0.8em', color: 'var(--text-dim)', lineHeight: 1.55 }}>
               In A Fine Start go to <strong>Settings → Export bookmarks</strong>, copy the entire code block, then paste it below.
             </div>
-
             <textarea
               value={importText}
-              onChange={(e) => {
-                setImportText(e.target.value)
-                setImportError('')
-              }}
+              onChange={(e) => { setImportText(e.target.value); setImportError('') }}
               placeholder="Paste A Fine Start export code here…"
-              style={{
-                width: '100%',
-                minHeight: 140,
-                resize: 'vertical',
-                background: 'var(--bg3)',
-                color: 'var(--text)',
-                border: `1px solid ${importError ? 'var(--danger)' : 'var(--border)'}`,
-                borderRadius: 'var(--radius-sm)',
-                padding: '0.5rem 0.65rem',
-                fontSize: '0.78em',
-                fontFamily: 'var(--font)',
-                outline: 'none',
-                lineHeight: 1.5,
-              }}
+              style={{ width: '100%', minHeight: 140, resize: 'vertical', background: 'var(--bg3)', color: 'var(--text)', border: `1px solid ${importError ? 'var(--danger)' : 'var(--border)'}`, borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.65rem', fontSize: '0.78em', fontFamily: 'var(--font)', outline: 'none', lineHeight: 1.5 }}
             />
-
             {importError ? (
-              <div
-                style={{
-                  fontSize: '0.78em',
-                  color: 'var(--danger)',
-                  lineHeight: 1.6,
-                  background: 'color-mix(in srgb, var(--danger) 10%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.5rem 0.65rem',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
+              <div style={{ fontSize: '0.78em', color: 'var(--danger)', lineHeight: 1.6, background: 'color-mix(in srgb, var(--danger) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--danger) 30%, transparent)', borderRadius: 'var(--radius-sm)', padding: '0.5rem 0.65rem', whiteSpace: 'pre-wrap' }}>
                 {importError}
               </div>
             ) : null}
-
             {importDone ? (
-              <div
-                style={{
-                  fontSize: '0.82em',
-                  color: 'var(--success)',
-                  background: 'color-mix(in srgb, var(--success) 10%, transparent)',
-                  border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.4rem 0.65rem',
-                }}
-              >
+              <div style={{ fontSize: '0.82em', color: 'var(--success)', background: 'color-mix(in srgb, var(--success) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)', borderRadius: 'var(--radius-sm)', padding: '0.4rem 0.65rem' }}>
                 ✓ Import successful!
               </div>
             ) : null}
-
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button
-                className="btn btn-primary"
-                style={{ flex: 1 }}
-                disabled={!importText.trim() || importLoading}
-                onClick={runImport}
-              >
+              <button className="btn btn-primary" style={{ flex: 1 }} disabled={!importText.trim() || importLoading} onClick={runImport}>
                 {importLoading ? 'Importing…' : 'Import now'}
               </button>
               <button className="btn" onClick={() => setShowImport(false)}>Cancel</button>
