@@ -7,78 +7,6 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import {
-<<<<<<< HEAD
-  SortableContext, sortableKeyboardCoordinates,
-  verticalListSortingStrategy, useSortable, arrayMove,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import Links from './Links'
- 
-function parseAFineStart(raw) {
-  let data
-  try { data = JSON.parse(raw) } catch { throw new Error('Not valid JSON — paste the export code exactly.') }
-  const extractBookmarks = (bms) => bms
-    .map(b => ({ title: b.name || b.title || 'Link', url: b.url || b.href }))
-    .filter(b => b.url)
-  const groups = []
-  if (Array.isArray(data) && data.every(i => Array.isArray(i))) {
-    data.forEach(col => col.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) }))
-    if (groups.length) return groups
-  }
-  if (Array.isArray(data) && data[0]?.name) {
-    data.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || g.links || []) }) })
-    if (groups.length) return groups
-  }
-  const root = data.columns || data.groups || data.data || null
-  if (Array.isArray(root)) {
-    root.forEach(item => {
-      if (Array.isArray(item)) item.forEach(g => { if (g?.name) groups.push({ name: g.name, links: extractBookmarks(g.bookmarks || []) }) })
-      else if (item?.name) groups.push({ name: item.name, links: extractBookmarks(item.bookmarks || item.links || []) })
-    })
-    if (groups.length) return groups
-  }
-  const walk = (node) => {
-    if (!node || typeof node !== 'object') return
-    const bms = node.bookmarks || node.links || node.items
-    if ((node.name || node.title) && Array.isArray(bms)) {
-      groups.push({ name: node.name || node.title, links: extractBookmarks(bms) }); return
-    }
-    ;(Array.isArray(node) ? node : Object.values(node)).forEach(walk)
-  }
-  walk(data)
-  if (groups.length) return groups
-  throw new Error(`No groups found. Keys: ${Object.keys(data).join(', ')}`)
-}
-
-function buildColumns(sections = [], colCount = 2) {
-  const cols = Math.max(colCount, 1)
-  const result = Array.from({ length: cols }, () => [])
-  const sorted = [...sections].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-  const allZero = sorted.length > 0 && sorted.every(s => (s.colindex ?? 0) === 0)
-  sorted.forEach((s, i) => {
-    const ci = allZero ? i % cols : Math.min(Math.max(s.colindex ?? 0, 0), cols - 1)
-    result[ci].push(s)
-  })
-  return result
-}
-
-function findColIndex(cols, id) {
-  return cols.findIndex(col => col.some(s => s.id === id))
-}
-
-/* ── Section card ── */
-function SectionCard({ section, links, userId, workspaceId, onRefresh, openInNewTab, ghost, locked, forceCollapsed }) {
-  const [collapsed, setCollapsed] = useState(section.collapsed ?? false)
-  const [renaming, setRenaming] = useState(false)
-  const [name, setName] = useState(section.name ?? '')
-  const [addingLink, setAddingLink] = useState(false)
-  const [titleHovered, setTitleHovered] = useState(false)
-  const [headerHovered, setHeaderHovered] = useState(false)
-
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: section.id, disabled: locked,
-  })
-=======
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
@@ -109,7 +37,6 @@ function SectionCard({
       colindex: section.colindex ?? 0,
     },
   });
->>>>>>> 1df3ed3a4a7d4c43d04525ab337eaaa0a563ba3c
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -241,7 +168,10 @@ export default function Sections({
     setLocalSections(normalized);
   }, [sections]);
 
-  const collapseExpandAll = async (collapsedValue, baseSections = localSections) => {
+  const collapseExpandAll = async (
+    collapsedValue,
+    baseSections = localSections
+  ) => {
     const next = baseSections.map((s) => ({
       ...s,
       collapsed: collapsedValue,
