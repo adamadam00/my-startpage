@@ -16,3 +16,4 @@ export default function Toolbar({ search, setSearch, onAddSection, onAddNote, on
     </div>
   )
 }
+ 

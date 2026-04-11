@@ -8,7 +8,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
-
+ 
   const handle = async (e) => {
     e.preventDefault()
     setLoading(true)

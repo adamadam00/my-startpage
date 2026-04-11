@@ -8,7 +8,7 @@ self.addEventListener('install', e => {
       .then(() => self.skipWaiting())
   )
 })
-
+ 
 // On activate — drop old caches
 self.addEventListener('activate', e => {
   e.waitUntil(

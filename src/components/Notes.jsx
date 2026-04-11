@@ -9,7 +9,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
     if (forceOpen === undefined) return
     setOpen(forceOpen)
   }, [forceOpen])
-
+ 
   const [adding, setAdding] = useState(false)
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(null)
