@@ -993,81 +993,89 @@ a {
 /* Notes */
 
 .notes-panel {
-  background: color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent);
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
+	background: color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent);
+	display: flex;
+	flex-direction: column;
+	height: auto;
+	min-height: 0;
+	align-self: flex-start;
+	padding: 0;
+	overflow: hidden;
 }
 
 .notes-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  user-select: none;
-  padding: 0 0.1rem 0 0.45rem;
-  flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	user-select: none;
+	padding: 0.42rem var(--card-padding, 0.75rem);
+	border-bottom: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+	transition: background 0.15s;
+	flex-shrink: 0;
+}
+
+.notes-header:hover {
+	background: var(--bg3);	 
 }
 
 .notes-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 0.35rem 0.5rem;
+min-height: 0;
+overflow-y: auto;
+display: flex;
+flex-direction: column;
+gap: 0;
+padding: 0.35rem 0.5rem 0.5rem 0.5rem;
 }
 
 .note-new {
-  margin-bottom: 0.5rem;
-  flex-shrink: 0;
+margin-bottom: 0.5rem;
+flex-shrink: 0;
 }
 
 .notes-drop-zone {
-  border: 1.5px dashed var(--accent);
-  border-radius: var(--radius-sm);
-  padding: 0.55rem 0.6rem;
-  font-size: 0.78em;
-  color: var(--accent);
-  text-align: center;
-  margin-bottom: 0.5rem;
-  background: var(--accent-dim);
-  pointer-events: none;
-  flex-shrink: 0;
+	border: 1.5px dashed var(--accent);
+	border-radius: var(--radius-sm);
+	padding: 0.55rem 0.6rem;
+	font-size: 0.78em;
+	color: var(--accent);
+	text-align: center;
+	margin-bottom: 0.5rem;
+	background: var(--accent-dim);
+	pointer-events: none;
+	flex-shrink: 0;
 }
 
 .notes-drag-over {
-  outline: 1.5px dashed var(--accent) !important;
-  outline-offset: -2px;
+	outline: 1.5px dashed var(--accent) !important;
+	outline-offset: -2px;
 }
 
 .note-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.3rem;
-  padding: 0.3rem 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+	display: flex;
+	align-items: flex-start;
+	gap: 0.3rem;
+	padding: 0.3rem 0;
+	border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
 }
 
 .note-item:last-child {
-  border-bottom: none;
+	border-bottom: none;
 }
 
 .note-content {
-  flex: 1;
-  min-width: 0;
-  cursor: text;
-  font-size: var(--notes-font-size);
-  line-height: 1.55;
-  white-space: pre-wrap;
-  word-break: break-word;
-  padding: 0.1rem 0;
-  color: var(--text);
-  display: block;
-  overflow: hidden;
-  max-height: 15em;
+	flex: 1;
+	min-width: 0;
+	cursor: text;
+	font-size: var(--notes-font-size);
+	line-height: 1.55;
+	white-space: pre-wrap;
+	word-break: break-word;
+	padding: 0.1rem 0;
+	color: var(--text);
+	display: block;
+	overflow: hidden;
+	max-height: 15em;
 }
 
 .note-content:hover {
@@ -1075,44 +1083,44 @@ a {
 }
 
 .note-delete {
-  flex-shrink: 0;
-  background: none;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 1em;
-  line-height: 1;
-  padding: 0.1rem 0.2rem;
-  transition: color 0.15s;
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: 1em;
+	line-height: 1;
+	padding: 0.1rem 0.2rem;
+	transition: color 0.15s;
 }
 
 .note-delete:hover {
-  color: var(--danger);
+	color: var(--danger);
 }
 
 .note-actions {
-  display: flex;
-  gap: 0.25rem;
-  margin-top: 0.3rem;
-  opacity: 0;
-  transition: opacity 0.15s;
+	display: flex;
+	gap: 0.25rem;
+	margin-top: 0.3rem;
+	opacity: 0;
+	transition: opacity 0.15s;
 }
 
 .note-item:hover .note-actions {
-  opacity: 1;
+	opacity: 1;
 }
 
 .notes-count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--accent-dim);
-  color: var(--accent);
-  border-radius: 99px;
-  font-size: 0.7em;
-  padding: 0 0.4em;
-  min-width: 1.4em;
-  margin-left: 0.3em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: var(--accent-dim);
+	color: var(--accent);
+	border-radius: 99px;
+	font-size: 0.7em;
+	padding: 0 0.4em;
+	min-width: 1.4em;
+	margin-left: 0.3em;
 }
 
 /* Modal / Settings / Auth */
