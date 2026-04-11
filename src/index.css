@@ -994,13 +994,16 @@ a {
 
 .notes-panel {
 	background: color-mix(in srgb, var(--notes-bg) calc(var(--card-opacity) * 100%), transparent);
-	display: flex;
+	display: inline-flex;
 	flex-direction: column;
-	height: auto;
+	height: auto !important;
+	max-height: none;
 	min-height: 0;
 	align-self: flex-start;
+	flex: 0 0 auto;
 	padding: 0;
 	overflow: hidden;
+	width: 100%;
 }
 
 .notes-header {
@@ -1016,16 +1019,16 @@ a {
 }
 
 .notes-header:hover {
-	background: var(--bg3);	 
+	background: var(--bg3);
 }
 
 .notes-body {
-min-height: 0;
-overflow-y: auto;
-display: flex;
-flex-direction: column;
-gap: 0;
-padding: 0.35rem 0.5rem 0.5rem 0.5rem;
+	min-height: 0;
+	overflow: visible;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	padding: 0.35rem 0.5rem 0.5rem 0.5rem;
 }
 
 .note-new {
@@ -1052,10 +1055,11 @@ flex-shrink: 0;
 }
 
 .note-item {
+	position: relative;
 	display: flex;
 	align-items: flex-start;
 	gap: 0.3rem;
-	padding: 0.3rem 0;
+	padding: 0.45rem 4.8rem 0.3rem 0;
 	border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
 }
 
@@ -1099,9 +1103,12 @@ flex-shrink: 0;
 }
 
 .note-actions {
+	position: absolute;
+	top: 0.35rem;
+	right: 0;
 	display: flex;
 	gap: 0.25rem;
-	margin-top: 0.3rem;
+	margin-top: 0;
 	opacity: 0;
 	transition: opacity 0.15s;
 }
