@@ -78,38 +78,60 @@ function LinkRow({
   const href = normalizeUrl(link.url);
   const favicon = getFavicon(href);
 
-  async function handleDelete(e) {
+  async function handleRename(e) {
     e.preventDefault();
     e.stopPropagation();
-    const ok = window.confirm("Delete this link?");
-    if (!ok) return;
 
-    const { error } = await supabase.from("links").delete().eq("id", link.id);
+    const nextTitle = window.prompt("Rename link title", link.title ?? "");
+    if (nextTitle === null) return;
+
+    const trimmed = nextTitle.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase
+      .from("links")
+      .update({ title: trimmed })
+      .eq("id", link.id);
+
     if (error) {
       alert(error.message);
       return;
     }
+
     onRefresh?.();
   }
 
-  async function handleEdit(e) {
+  async function handleEditUrl(e) {
     e.preventDefault();
     e.stopPropagation();
-
-    const nextTitle = window.prompt("Rename link", link.title ?? "");
-    if (nextTitle === null) return;
 
     const nextUrl = window.prompt("Edit link URL", link.url ?? "");
     if (nextUrl === null) return;
 
+    const trimmed = nextUrl.trim();
+    if (!trimmed) return;
+
     const { error } = await supabase
       .from("links")
-      .update({
-        title: nextTitle.trim() || link.title,
-        url: nextUrl.trim() || link.url,
-      })
+      .update({ url: trimmed })
       .eq("id", link.id);
 
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    onRefresh?.();
+  }
+
+  async function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const ok = window.confirm("Delete this link?");
+    if (!ok) return;
+
+    const { error } = await supabase.from("links").delete().eq("id", link.id);
     if (error) {
       alert(error.message);
       return;
@@ -179,23 +201,35 @@ function LinkRow({
         <button
           type="button"
           className="link-act"
-          title="Edit link"
-          onClick={handleEdit}
+          title="Rename title"
+          aria-label="Rename title"
+          onClick={handleRename}
         >
-          Edit
+          ✎
+        </button>
+
+        <button
+          type="button"
+          className="link-act"
+          title="Edit URL"
+          aria-label="Edit URL"
+          onClick={handleEditUrl}
+        >
+          🔗
         </button>
 
         <button
           type="button"
           className="link-act"
           title="Text colour"
+          aria-label="Text colour"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
             setShowColors((v) => !v);
           }}
         >
-          Colour
+          ●
         </button>
 
         {showColors &&
@@ -218,9 +252,10 @@ function LinkRow({
           type="button"
           className="link-act link-act-del"
           title="Delete link"
+          aria-label="Delete link"
           onClick={handleDelete}
         >
-          Del
+          ×
         </button>
       </div>
     </div>
@@ -502,13 +537,11 @@ export default function Sections({
   useEffect(() => {
     if (!localSections.length) return;
     collapseExpandAll(true, localSections);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerCollapseAll]);
 
   useEffect(() => {
     if (!localSections.length) return;
     collapseExpandAll(false, localSections);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerExpandAll]);
 
   const sensors = useSensors(
