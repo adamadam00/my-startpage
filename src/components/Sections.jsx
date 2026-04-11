@@ -34,7 +34,7 @@ function SectionCard({
     data: {
       type: "section",
       sectionId: section.id,
-      col_index: section.col_index ?? 0,
+      colindex: section.colindex ?? 0,
     },
   });
 
@@ -60,7 +60,10 @@ function SectionCard({
           onClick={(e) => e.stopPropagation()}
           title="Drag section"
           aria-label={`Drag section ${section.name}`}
-        />
+        >
+          ⋮⋮
+        </div>
+
         <div
           className="section-header-click"
           onClick={(e) => {
@@ -70,18 +73,17 @@ function SectionCard({
         >
           <div className="section-name">{section.name}</div>
         </div>
-        <div
-          className="section-actions"
-          onClick={(e) => e.stopPropagation()}
-        >
+
+        <div className="section-actions" onClick={(e) => e.stopPropagation()}>
           <button
             className="icon-btn"
             type="button"
             onClick={() => onToggleCollapse(section)}
             title={section.collapsed ? "Expand" : "Collapse"}
           >
-            {section.collapsed ? "+" : "−"}
+            {section.collapsed ? "▸" : "▾"}
           </button>
+
           <button
             className="icon-btn section-delete-btn"
             type="button"
@@ -97,8 +99,7 @@ function SectionCard({
         <div className="links-list">
           {links.map((link) => {
             const href =
-              link.url?.startsWith("http://") ||
-              link.url?.startsWith("https://")
+              link.url?.startsWith("http://") || link.url?.startsWith("https://")
                 ? link.url
                 : `https://${link.url}`;
 
@@ -122,6 +123,7 @@ function SectionCard({
                     loading="lazy"
                   />
                 ) : null}
+
                 <a
                   className="link-title"
                   href={href}
@@ -140,34 +142,9 @@ function SectionCard({
   );
 }
 
-function normalizeSections(raw = []) {
-  return raw.map((s, i) => ({
-    ...s,
-    position: Number.isFinite(Number(s.position)) ? Number(s.position) : i,
-    col_index: Number.isFinite(Number(s.col_index)) ? Number(s.col_index) : 0,
-  }));
-}
-
-function sameLayout(a = [], b = []) {
-  if (a.length !== b.length) return false;
-
-  const key = (s) =>
-    `${s.id}:${s.col_index ?? 0}:${s.position ?? 0}:${!!s.collapsed}`;
-
-  const sa = [...a]
-    .sort((x, y) => String(x.id).localeCompare(String(y.id)))
-    .map(key);
-
-  const sb = [...b]
-    .sort((x, y) => String(x.id).localeCompare(String(y.id)))
-    .map(key);
-
-  return sa.join("|") === sb.join("|");
-}
-
 export default function Sections({
-  sections,
-  links,
+  sections = [],
+  links = [],
   userId,
   workspaceId,
   onRefresh,
@@ -178,25 +155,42 @@ export default function Sections({
   faviconEnabled = true,
 }) {
   const [localSections, setLocalSections] = useState([]);
-  const skipNextSyncRef = useRef(false);
+  const isSavingLayoutRef = useRef(false);
+  const lastSavedLayoutRef = useRef("");
 
   useEffect(() => {
-    const normalized = normalizeSections(sections);
+    const normalized = [...sections].map((s, i) => ({
+      ...s,
+      position: Number.isFinite(s.position) ? s.position : i,
+      colindex: Number.isFinite(s.colindex) ? s.colindex : 0,
+    }));
 
-    if (skipNextSyncRef.current) {
-      if (sameLayout(normalized, localSections)) {
-        skipNextSyncRef.current = false;
-      }
+    const incomingSignature = JSON.stringify(
+      normalized.map((s) => ({
+        id: s.id,
+        position: s.position,
+        colindex: s.colindex,
+        collapsed: !!s.collapsed,
+      }))
+    );
+
+    if (isSavingLayoutRef.current && incomingSignature !== lastSavedLayoutRef.current) {
       return;
     }
 
-    setLocalSections((prev) =>
-      sameLayout(prev, normalized) ? prev : normalized
-    );
-  }, [sections, localSections]);
+    setLocalSections(normalized);
 
-  const collapseExpandAll = async (collapsedValue, base = localSections) => {
-    const next = base.map((s) => ({ ...s, collapsed: collapsedValue }));
+    if (incomingSignature === lastSavedLayoutRef.current) {
+      isSavingLayoutRef.current = false;
+    }
+  }, [sections]);
+
+  const collapseExpandAll = async (collapsedValue, baseSections = localSections) => {
+    const next = baseSections.map((s) => ({
+      ...s,
+      collapsed: collapsedValue,
+    }));
+
     setLocalSections(next);
 
     const results = await Promise.all(
@@ -205,33 +199,36 @@ export default function Sections({
           .from("sections")
           .update({ collapsed: collapsedValue })
           .eq("id", s.id)
-          .eq("workspace_id", workspaceId)
+          .eq("workspaceid", workspaceId)
       )
     );
 
     const failed = results.find((r) => r.error);
     if (failed?.error) {
       console.error("Collapse/expand all failed:", failed.error.message);
+      await onRefresh?.();
     }
-
-    await onRefresh?.();
   };
 
   useEffect(() => {
     if (!localSections.length) return;
     collapseExpandAll(true, localSections);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerCollapseAll]);
 
   useEffect(() => {
     if (!localSections.length) return;
     collapseExpandAll(false, localSections);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerExpandAll]);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    })
   );
 
-  const safeColCount = Math.max(1, Number(colCount) || 1);
+  const safeColCount = Math.max(1, Number(colCount || 1));
 
   const columns = useMemo(() => {
     const cols = Array.from({ length: safeColCount }, (_, i) => ({
@@ -242,15 +239,13 @@ export default function Sections({
 
     [...localSections]
       .sort((a, b) => {
-        const ca = Number.isFinite(Number(a.col_index)) ? Number(a.col_index) : 0;
-        const cb = Number.isFinite(Number(b.col_index)) ? Number(b.col_index) : 0;
+        const ca = Number.isFinite(a.colindex) ? a.colindex : 0;
+        const cb = Number.isFinite(b.colindex) ? b.colindex : 0;
         if (ca !== cb) return ca - cb;
-        return (Number(a.position) || 0) - (Number(b.position) || 0);
+        return (a.position ?? 0) - (b.position ?? 0);
       })
       .forEach((section) => {
-        const raw = Number.isFinite(Number(section.col_index))
-          ? Number(section.col_index)
-          : 0;
+        const raw = Number.isFinite(section.colindex) ? section.colindex : 0;
         const col = Math.min(Math.max(raw, 0), safeColCount - 1);
         cols[col].items.push(section);
       });
@@ -275,17 +270,15 @@ export default function Sections({
 
   function buildUpdatedSections(itemsByCol) {
     const next = [];
-
-    itemsByCol.forEach((items, col_index) => {
+    itemsByCol.forEach((items, colindex) => {
       items.forEach((item, position) => {
         next.push({
           ...item,
-          col_index,
+          colindex,
           position,
         });
       });
     });
-
     return next;
   }
 
@@ -295,11 +288,11 @@ export default function Sections({
         supabase
           .from("sections")
           .update({
-            col_index: s.col_index ?? 0,
+            colindex: s.colindex ?? 0,
             position: s.position ?? 0,
           })
           .eq("id", s.id)
-          .eq("workspace_id", workspaceId)
+          .eq("workspaceid", workspaceId)
       )
     );
 
@@ -343,15 +336,24 @@ export default function Sections({
     }
 
     const nextSections = buildUpdatedSections(itemsByCol);
+    const nextSignature = JSON.stringify(
+      nextSections.map((s) => ({
+        id: s.id,
+        position: s.position,
+        colindex: s.colindex,
+        collapsed: !!s.collapsed,
+      }))
+    );
 
-    skipNextSyncRef.current = true;
+    isSavingLayoutRef.current = true;
+    lastSavedLayoutRef.current = nextSignature;
     setLocalSections(nextSections);
 
     try {
       await persistSections(nextSections);
     } catch (err) {
+      isSavingLayoutRef.current = false;
       console.error("Section reorder failed:", err?.message || err);
-      skipNextSyncRef.current = false;
       await onRefresh?.();
     }
   }
@@ -369,7 +371,7 @@ export default function Sections({
       .from("sections")
       .update({ collapsed: nextCollapsed })
       .eq("id", section.id)
-      .eq("workspace_id", workspaceId);
+      .eq("workspaceid", workspaceId);
 
     if (error) {
       console.error("Collapse update failed:", error.message);
@@ -384,8 +386,8 @@ export default function Sections({
     const { error: linksError } = await supabase
       .from("links")
       .delete()
-      .eq("section_id", sectionId)
-      .eq("workspace_id", workspaceId);
+      .eq("sectionid", sectionId)
+      .eq("workspaceid", workspaceId);
 
     if (linksError) {
       alert(linksError.message);
@@ -396,7 +398,7 @@ export default function Sections({
       .from("sections")
       .delete()
       .eq("id", sectionId)
-      .eq("workspace_id", workspaceId);
+      .eq("workspaceid", workspaceId);
 
     if (sectionError) {
       alert(sectionError.message);
@@ -425,7 +427,7 @@ export default function Sections({
                 <SectionCard
                   key={section.id}
                   section={section}
-                  links={links.filter((l) => l.section_id === section.id)}
+                  links={links.filter((l) => l.sectionid === section.id)}
                   onToggleCollapse={handleToggleCollapse}
                   onDeleteSection={handleDeleteSection}
                   openInNewTab={openInNewTab}
