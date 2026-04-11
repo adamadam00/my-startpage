@@ -53,16 +53,17 @@ function SectionCard({
       data-section-id={section.id}
     >
       <div className="section-header">
-        <div
-          className="section-drag-handle drag-handle"
+        <button
+          type="button"
+          className="section-grab"
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
           title="Drag section"
           aria-label={`Drag section ${section.name}`}
         >
-          ⋮⋮
-        </div>
+          <span className="section-grab-dots">⋮⋮</span>
+        </button>
 
         <div
           className="section-header-click"
@@ -231,7 +232,7 @@ export default function Sections({
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 6 },
+      activationConstraint: { distance: 4 },
     })
   );
 
