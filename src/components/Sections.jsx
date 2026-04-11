@@ -3,6 +3,7 @@ import {
   DndContext,
   PointerSensor,
   closestCorners,
+  closestCenter,
   useDroppable,
   useSensor,
   useSensors,
@@ -11,15 +12,297 @@ import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
+  arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "../lib/supabase";
+
+const SWATCH_COLORS = [
+  { label: "Reset", value: "" },
+  { label: "Red", value: "#ff6b6b" },
+  { label: "Orange", value: "#ff9f43" },
+  { label: "Yellow", value: "#ffd32a" },
+  { label: "Green", value: "#6bffb8" },
+  { label: "Cyan", value: "#48dbfb" },
+  { label: "Blue", value: "#6c8fff" },
+  { label: "Purple", value: "#a29bfe" },
+  { label: "Pink", value: "#fd79a8" },
+];
+
+function normalizeUrl(url) {
+  if (!url) return "";
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  return `https://${url}`;
+}
+
+function getFavicon(url) {
+  try {
+    return `https://www.google.com/s2/favicons?domain=${new URL(
+      normalizeUrl(url)
+    ).hostname}&sz=32`;
+  } catch {
+    return null;
+  }
+}
+
+function LinkRow({
+  link,
+  openInNewTab,
+  faviconEnabled,
+  onRefresh,
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: `link-${link.id}`,
+    data: {
+      type: "link",
+      linkId: link.id,
+      sectionId: link.section_id,
+    },
+  });
+
+  const [showColors, setShowColors] = useState(false);
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.45 : 1,
+  };
+
+  const href = normalizeUrl(link.url);
+  const favicon = getFavicon(href);
+
+  async function handleDelete(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const ok = window.confirm("Delete this link?");
+    if (!ok) return;
+
+    const { error } = await supabase.from("links").delete().eq("id", link.id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    onRefresh?.();
+  }
+
+  async function handleEdit(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const nextTitle = window.prompt("Rename link", link.title ?? "");
+    if (nextTitle === null) return;
+
+    const nextUrl = window.prompt("Edit link URL", link.url ?? "");
+    if (nextUrl === null) return;
+
+    const { error } = await supabase
+      .from("links")
+      .update({
+        title: nextTitle.trim() || link.title,
+        url: nextUrl.trim() || link.url,
+      })
+      .eq("id", link.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    onRefresh?.();
+  }
+
+  async function handleColor(e, color) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const { error } = await supabase
+      .from("links")
+      .update({ color })
+      .eq("id", link.id);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    setShowColors(false);
+    onRefresh?.();
+  }
+
+  return (
+    <div ref={setNodeRef} style={style} className="link-item">
+      <button
+        type="button"
+        className="link-act"
+        title="Drag link"
+        aria-label={`Drag link ${link.title}`}
+        {...attributes}
+        {...listeners}
+        onClick={(e) => e.stopPropagation()}
+      >
+        ⋮⋮
+      </button>
+
+      {faviconEnabled && favicon ? (
+        <img
+          className="link-favicon"
+          src={favicon}
+          alt=""
+          width="16"
+          height="16"
+          loading="lazy"
+        />
+      ) : null}
+
+      <a
+        className="link-title"
+        href={href}
+        target={openInNewTab ? "_blank" : "_self"}
+        rel={openInNewTab ? "noopener noreferrer" : undefined}
+        title={link.title}
+        style={link.color ? { color: link.color } : undefined}
+      >
+        {link.title}
+      </a>
+
+      <div
+        className={`link-actions-overlay${showColors ? " colors-open" : ""}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="link-act"
+          title="Edit link"
+          onClick={handleEdit}
+        >
+          Edit
+        </button>
+
+        <button
+          type="button"
+          className="link-act"
+          title="Text colour"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowColors((v) => !v);
+          }}
+        >
+          Colour
+        </button>
+
+        {showColors &&
+          SWATCH_COLORS.map((swatch) => (
+            <button
+              key={swatch.label}
+              type="button"
+              className="color-swatch-inline"
+              title={swatch.label}
+              aria-label={swatch.label}
+              style={{
+                background: swatch.value || "linear-gradient(135deg, #666, #222)",
+                outline: !swatch.value ? "1px solid var(--border)" : "none",
+              }}
+              onClick={(e) => handleColor(e, swatch.value)}
+            />
+          ))}
+
+        <button
+          type="button"
+          className="link-act link-act-del"
+          title="Delete link"
+          onClick={handleDelete}
+        >
+          Del
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function LinksList({
+  section,
+  links,
+  openInNewTab,
+  faviconEnabled,
+  onRefresh,
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 4 },
+    })
+  );
+
+  async function handleDragEnd(event) {
+    const { active, over } = event;
+    if (!active || !over || active.id === over.id) return;
+
+    const current = [...links];
+    const oldIndex = current.findIndex((l) => `link-${l.id}` === String(active.id));
+    const newIndex = current.findIndex((l) => `link-${l.id}` === String(over.id));
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const next = arrayMove(current, oldIndex, newIndex);
+
+    const results = await Promise.all(
+      next.map((link, index) =>
+        supabase
+          .from("links")
+          .update({ position: index })
+          .eq("id", link.id)
+      )
+    );
+
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      alert(failed.error.message);
+      return;
+    }
+
+    onRefresh?.();
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={links.map((link) => `link-${link.id}`)}
+        strategy={verticalListSortingStrategy}
+      >
+        <div className="links-list">
+          {links.map((link) => (
+            <LinkRow
+              key={link.id}
+              link={link}
+              openInNewTab={openInNewTab}
+              faviconEnabled={faviconEnabled}
+              onRefresh={onRefresh}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
 
 function SectionCard({
   section,
   links,
   onToggleCollapse,
   onDeleteSection,
+  onRenameSection,
+  onRefresh,
   openInNewTab,
   faviconEnabled,
 }) {
@@ -73,7 +356,9 @@ function SectionCard({
             onToggleCollapse(section);
           }}
         >
-          <div className="section-name">{section.name}</div>
+          <div className="section-name" title={section.name}>
+            {section.name}
+          </div>
         </div>
 
         <div className="section-actions" onClick={(e) => e.stopPropagation()}>
@@ -84,6 +369,15 @@ function SectionCard({
             title={section.collapsed ? "Expand" : "Collapse"}
           >
             {section.collapsed ? "▸" : "▾"}
+          </button>
+
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={() => onRenameSection(section)}
+            title="Rename section"
+          >
+            ✎
           </button>
 
           <button
@@ -98,56 +392,19 @@ function SectionCard({
       </div>
 
       {!section.collapsed && (
-        <div className="links-list">
-          {links.map((link) => {
-            const href =
-              link.url?.startsWith("http://") || link.url?.startsWith("https://")
-                ? link.url
-                : `https://${link.url}`;
-
-            let faviconUrl = "";
-            try {
-              const u = new URL(href);
-              faviconUrl = `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
-            } catch {
-              faviconUrl = "";
-            }
-
-            return (
-              <div className="link-item" key={link.id}>
-                {faviconEnabled && faviconUrl ? (
-                  <img
-                    className="link-favicon"
-                    src={faviconUrl}
-                    alt=""
-                    width="16"
-                    height="16"
-                    loading="lazy"
-                  />
-                ) : null}
-
-                <a
-                  className="link-title"
-                  href={href}
-                  target={openInNewTab ? "_blank" : "_self"}
-                  rel={openInNewTab ? "noopener noreferrer" : undefined}
-                  title={link.title}
-                >
-                  {link.title}
-                </a>
-              </div>
-            );
-          })}
-        </div>
+        <LinksList
+          section={section}
+          links={links}
+          openInNewTab={openInNewTab}
+          faviconEnabled={faviconEnabled}
+          onRefresh={onRefresh}
+        />
       )}
     </div>
   );
 }
 
-function SectionColumn({
-  col,
-  children,
-}) {
+function SectionColumn({ col, children }) {
   const { setNodeRef, isOver } = useDroppable({
     id: col.id,
     data: {
@@ -411,6 +668,27 @@ export default function Sections({
     }
   }
 
+  async function handleRenameSection(section) {
+    const nextName = window.prompt("Rename section", section.name ?? "");
+    if (nextName === null) return;
+
+    const trimmed = nextName.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase
+      .from("sections")
+      .update({ name: trimmed })
+      .eq("id", section.id)
+      .eq("workspace_id", workspaceId);
+
+    if (error) {
+      alert(error.message);
+      return;
+    }
+
+    await onRefresh?.();
+  }
+
   async function handleDeleteSection(sectionId) {
     const ok = window.confirm("Delete this section?");
     if (!ok) return;
@@ -459,9 +737,13 @@ export default function Sections({
                 <SectionCard
                   key={section.id}
                   section={section}
-                  links={links.filter((l) => l.section_id === section.id)}
+                  links={[...links]
+                    .filter((l) => l.section_id === section.id)
+                    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))}
                   onToggleCollapse={handleToggleCollapse}
                   onDeleteSection={handleDeleteSection}
+                  onRenameSection={handleRenameSection}
+                  onRefresh={onRefresh}
                   openInNewTab={openInNewTab}
                   faviconEnabled={faviconEnabled}
                 />
