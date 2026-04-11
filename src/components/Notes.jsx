@@ -4,12 +4,6 @@ import { supabase } from '../lib/supabase'
 export default function Notes({ notes = [], workspaceId, userId, onRefresh, forceOpen }) {
   const safeNotes = Array.isArray(notes) ? notes : []
   const [open, setOpen] = useState(true)
-
-  useEffect(() => {
-    if (forceOpen === undefined) return
-    setOpen(forceOpen)
-  }, [forceOpen])
- 
   const [adding, setAdding] = useState(false)
   const [text, setText] = useState('')
   const [editing, setEditing] = useState(null)
@@ -19,9 +13,14 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
   const textRef = useRef(null)
 
   useEffect(() => {
+    if (forceOpen === undefined) return
+    setOpen(forceOpen)
+  }, [forceOpen])
+
+  useEffect(() => {
     const id = setInterval(() => {
       setSyncing(true)
-      onRefresh()
+      onRefresh?.()
       setTimeout(() => setSyncing(false), 600)
     }, 30000)
     return () => clearInterval(id)
@@ -45,233 +44,219 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
       setAdding(false)
       return
     }
+
     setErr('')
+
     const { error } = await supabase.from('notes').insert({
       user_id: userId,
       workspace_id: workspaceId,
       content: text.trim(),
     })
+
     if (error) {
       setErr(error.message)
       return
     }
+
     setText('')
     setAdding(false)
-    onRefresh()
+    onRefresh?.()
   }
 
   const update = async (id) => {
     if (!editText.trim()) return
+
     const { error } = await supabase
       .from('notes')
       .update({ content: editText.trim() })
       .eq('id', id)
+
     if (error) {
       setErr(error.message)
       return
     }
+
     setEditing(null)
     setEditText('')
-    onRefresh()
+    onRefresh?.()
   }
 
   const remove = async (id) => {
-    await supabase.from('notes').delete().eq('id', id)
-    onRefresh()
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (error) {
+      setErr(error.message)
+      return
+    }
+    onRefresh?.()
   }
 
   return (
-    <div
-      className="notes-panel"
-      style={{
-        height: 'auto',
-        border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)',
-        borderRadius: 'var(--radius)',
-      }}
-    >
-      <div
-        className="notes-header"
-        style={{
-          borderBottom: open
-            ? '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*100%), transparent)'
-            : '1px solid transparent',
-        }}
-        onClick={() => setOpen(o => !o)}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flex: 1, minWidth: 0 }}>
-          <span
-            style={{
-              fontSize: '0.74em',
-              fontWeight: 500,
-              color: 'var(--title-color)',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-            }}
-          >
-            Notes
-          </span>
-          {safeNotes.length > 0 && <span className="notes-count">{safeNotes.length}</span>}
-          {syncing && <span style={{ fontSize: '0.65em', color: 'var(--accent)', opacity: 0.7 }}>↻</span>}
+    <div className="card notes-panel">
+      <div className="notes-header" onClick={() => setOpen((v) => !v)}>
+        <div
+          className="section-name"
+          style={{ paddingRight: 0 }}
+          title="Notes"
+        >
+          Notes
         </div>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.7em', marginLeft: '0.2rem' }}>
-          {open ? '▾' : '▸'}
-        </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+          {!!safeNotes.length && <span className="notes-count">{safeNotes.length}</span>}
+
+          {syncing && (
+            <span className="settings-label" style={{ fontSize: '0.72em' }}>
+              Syncing
+            </span>
+          )}
+
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              startAdding()
+            }}
+            title="Add note"
+            aria-label="Add note"
+          >
+            +
+          </button>
+
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen((v) => !v)
+            }}
+            title={open ? 'Collapse notes' : 'Expand notes'}
+            aria-label={open ? 'Collapse notes' : 'Expand notes'}
+          >
+            {open ? '▾' : '▸'}
+          </button>
+        </div>
       </div>
 
       {open && (
-        <div
-          className="notes-body"
-          style={{
-            padding: 'var(--notes-padding-v, 0.35rem) var(--notes-padding-h, 0.5rem)',
-          }}
-        >
-          {adding ? (
+        <div className="notes-body">
+          {adding && (
             <div className="note-new">
               <textarea
                 ref={textRef}
                 className="input"
+                rows={4}
                 value={text}
-                onChange={e => setText(e.target.value)}
-                placeholder="Type a note… Ctrl+Enter saves, Esc cancels"
-                style={{
-                  width: '100%',
-                  minHeight: 64,
-                  resize: 'vertical',
-                  lineHeight: 1.55,
-                  background: 'transparent',
-                  color: 'var(--notes-text-color)',
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) add()
+                onChange={(e) => setText(e.target.value)}
+                placeholder="Write a note..."
+                onKeyDown={(e) => {
+                  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add()
                   if (e.key === 'Escape') {
                     setAdding(false)
                     setText('')
-                    setErr('')
                   }
                 }}
               />
-              {err && <div style={{ fontSize: '0.8em', color: 'var(--danger)', marginTop: '0.2rem' }}>{err}</div>}
-              <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem' }}>
-                <button className="btn btn-primary" style={{ flex: 1 }} onClick={add}>Save</button>
-                <button className="btn" onClick={() => { setAdding(false); setText(''); setErr('') }}>Cancel</button>
+              <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.4rem' }}>
+                <button type="button" className="btn btn-primary" onClick={add}>
+                  Save
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setAdding(false)
+                    setText('')
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-          ) : (
-            <button
-              onClick={startAdding}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                width: '100%',
-                background: 'none',
-                border: 'none',
-                borderBottom: safeNotes.length > 0
-                  ? '1px solid color-mix(in srgb, var(--border) 20%, transparent)'
-                  : 'none',
-                padding: '0.3rem 0.1rem 0.45rem',
-                color: 'var(--text-muted)',
-                fontSize: 'var(--font-size)',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'color 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'var(--accent)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}
-            >
-              <span style={{ fontSize: '1.1em', lineHeight: 1 }}>+</span>
-              <span>New note</span>
-            </button>
           )}
 
-          {safeNotes.map((n) => {
-            const value = noteValue(n)
+          {err ? (
+            <div className="settings-label" style={{ color: 'var(--danger)' }}>
+              {err}
+            </div>
+          ) : null}
 
-            return editing?.id === n.id ? (
-              <div
-                key={n.id}
-                className="note-item"
-                style={{
-                  marginBottom: 'var(--notes-gap, 0px)',
-                  background: `color-mix(in srgb, var(--notes-card-bg) calc(var(--notes-card-bg-opacity, 1) * 100%), transparent)`,
-                  border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*60%), transparent)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.4rem 0.5rem',
-                }}
-              >
+          {safeNotes.map((note) => {
+            const value = noteValue(note)
+
+            return (
+              <div key={note.id} className="note-item">
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <textarea
-                    className="input"
-                    value={editText}
-                    onChange={e => setEditText(e.target.value)}
-                    autoFocus
-                    style={{
-                      width: '100%',
-                      minHeight: 60,
-                      resize: 'vertical',
-                      lineHeight: 1.55,
-                      background: 'transparent',
-                      color: 'var(--notes-text-color)',
-                    }}
-                    onKeyDown={e => {
-                      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) update(n.id)
-                      if (e.key === 'Escape') {
-                        setEditing(null)
-                        setEditText('')
-                      }
-                    }}
-                  />
-                  <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem' }}>
-                    <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => update(n.id)}>Save</button>
-                    <button className="btn" onClick={() => { setEditing(null); setEditText('') }}>Cancel</button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div
-                key={n.id}
-                className="note-item"
-                style={{
-                  marginBottom: 'var(--notes-gap, 0px)',
-                  background: `color-mix(in srgb, var(--notes-card-bg) calc(var(--notes-card-bg-opacity, 1) * 100%), transparent)`,
-                  border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity)*60%), transparent)',
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '0.4rem 0.5rem',
-                }}
-              >
-                <span
-                  className="note-content"
-                  style={{
-                    color: 'var(--notes-text-color)',
-                    background: 'transparent',
-                    display: 'block',
-                    width: '100%',
-                    padding: '0.05rem 0',
-                    lineHeight: 1.55,
-                  }}
-                  onClick={() => { setEditing(n); setEditText(value) }}
-                  title="Click to edit"
-                >
-                  {value}
-                </span>
+                  {editing === note.id ? (
+                    <>
+                      <textarea
+                        className="input"
+                        rows={5}
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') update(note.id)
+                          if (e.key === 'Escape') {
+                            setEditing(null)
+                            setEditText('')
+                          }
+                        }}
+                      />
+                      <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.35rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-xs"
+                          onClick={() => update(note.id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-xs"
+                          onClick={() => {
+                            setEditing(null)
+                            setEditText('')
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div
+                        className="note-content"
+                        onClick={() => {
+                          setEditing(note.id)
+                          setEditText(value)
+                        }}
+                        title="Click to edit"
+                      >
+                        {value}
+                      </div>
 
-                <div className="note-actions">
-                  <button
-                    className="icon-btn note-edit"
-                    style={{ fontSize: '0.9em' }}
-                    onClick={() => { setEditing(n); setEditText(value) }}
-                    title="Edit"
-                  >
-                    ✎
-                  </button>
-                  <button
-                    className="icon-btn note-delete"
-                    style={{ fontSize: '0.9em' }}
-                    onClick={() => remove(n.id)}
-                    title="Delete"
-                  >
-                    ✕
-                  </button>
+                      <div className="note-actions">
+                        <button
+                          type="button"
+                          className="btn-xs"
+                          onClick={() => {
+                            setEditing(note.id)
+                            setEditText(value)
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          className="btn-xs"
+                          onClick={() => remove(note.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )
