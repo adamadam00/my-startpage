@@ -16,7 +16,7 @@ function getFavicon(url) {
   }
   catch { return null }
 }
-
+ 
 const SWATCH_COLORS = [
   { label: 'Reset',  value: '' },
   { label: 'Red',    value: '#ff6b6b' },

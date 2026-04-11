@@ -24,3 +24,4 @@ export default function SearchBar({ searchUrl = 'https://google.com/search?q=' }
     </form>
   )
 }
+ 

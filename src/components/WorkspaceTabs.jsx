@@ -13,7 +13,7 @@ export default function WorkspaceTabs({ workspaces, activeWs, setActiveWs, onAdd
     if (renameVal.trim()) onRenameWorkspace(id, renameVal.trim())
     setRenamingId(null)
   }
-
+ 
   return (
     <div className="workspace-tabs">
       {workspaces.map(ws => (

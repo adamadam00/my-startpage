@@ -5,7 +5,7 @@ import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
-
+ 
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())

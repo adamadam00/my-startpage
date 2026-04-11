@@ -5,7 +5,7 @@ function getFavicon(url) {
   try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32` }
   catch { return null }
 }
-
+ 
 export default function Bookmarks({ items = [], workspaceId, userId, onRefresh }) {
   const [adding, setAdding]   = useState(false)
   const [title, setTitle]     = useState('')

@@ -21,7 +21,7 @@ const WX = {
   82: { icon: '⛈', label: 'Violent rain' },
   95: { icon: '⛈', label: 'Thunderstorm' },
 }
-
+ 
 const WIND_LABELS = [
   [1, 'Calm'],
   [5, 'Light breeze'],
