@@ -3,6 +3,7 @@ import {
   DndContext,
   PointerSensor,
   closestCorners,
+  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -139,6 +140,29 @@ function SectionCard({
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+function SectionColumn({
+  col,
+  children,
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: col.id,
+    data: {
+      type: "column",
+      col_index: col.index,
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`section-col${isOver ? " is-over" : ""}`}
+      data-col-id={col.id}
+    >
+      {children}
     </div>
   );
 }
@@ -314,10 +338,10 @@ export default function Sections({
 
     const activeId = String(active.id);
     const overId = String(over.id);
-    if (activeId === overId) return;
 
     const sourceColId = findContainer(activeId);
     const targetColId = findContainer(overId);
+
     if (!sourceColId || !targetColId) return;
 
     const sourceIndex = Number(sourceColId.replace("col-", ""));
@@ -430,7 +454,7 @@ export default function Sections({
             items={col.items.map((s) => String(s.id))}
             strategy={verticalListSortingStrategy}
           >
-            <div className="section-col" data-col-id={col.id}>
+            <SectionColumn col={col}>
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -442,7 +466,7 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
-            </div>
+            </SectionColumn>
           </SortableContext>
         ))}
       </div>
