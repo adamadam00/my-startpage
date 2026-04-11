@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -34,7 +34,7 @@ function SectionCard({
     data: {
       type: "section",
       sectionId: section.id,
-      colindex: section.colindex ?? 0,
+      col_index: section.col_index ?? 0,
     },
   });
 
@@ -60,10 +60,7 @@ function SectionCard({
           onClick={(e) => e.stopPropagation()}
           title="Drag section"
           aria-label={`Drag section ${section.name}`}
-        >
-          ⋮⋮
-        </div>
-
+        />
         <div
           className="section-header-click"
           onClick={(e) => {
@@ -73,7 +70,6 @@ function SectionCard({
         >
           <div className="section-name">{section.name}</div>
         </div>
-
         <div
           className="section-actions"
           onClick={(e) => e.stopPropagation()}
@@ -84,9 +80,8 @@ function SectionCard({
             onClick={() => onToggleCollapse(section)}
             title={section.collapsed ? "Expand" : "Collapse"}
           >
-            {section.collapsed ? "▸" : "▾"}
+            {section.collapsed ? "+" : "−"}
           </button>
-
           <button
             className="icon-btn section-delete-btn"
             type="button"
@@ -102,7 +97,8 @@ function SectionCard({
         <div className="links-list">
           {links.map((link) => {
             const href =
-              link.url?.startsWith("http://") || link.url?.startsWith("https://")
+              link.url?.startsWith("http://") ||
+              link.url?.startsWith("https://")
                 ? link.url
                 : `https://${link.url}`;
 
@@ -126,7 +122,6 @@ function SectionCard({
                     loading="lazy"
                   />
                 ) : null}
-
                 <a
                   className="link-title"
                   href={href}
@@ -145,9 +140,30 @@ function SectionCard({
   );
 }
 
+function normalizeSections(sections = []) {
+  return sections.map((s, i) => ({
+    ...s,
+    position: Number.isFinite(s.position) ? s.position : i,
+    col_index: Number.isFinite(s.col_index) ? s.col_index : 0,
+  }));
+}
+
+function sameLayout(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  const key = (s) => ({
+    id: String(s.id),
+    col_index: Number.isFinite(s.col_index) ? s.col_index : 0,
+    position: Number.isFinite(s.position) ? s.position : 0,
+    collapsed: !!s.collapsed,
+  });
+  const aa = [...a].map(key).sort((x, y) => x.id.localeCompare(y.id));
+  const bb = [...b].map(key).sort((x, y) => x.id.localeCompare(y.id));
+  return JSON.stringify(aa) === JSON.stringify(bb);
+}
+
 export default function Sections({
-  sections = [],
-  links = [],
+  sections,
+  links,
   userId,
   workspaceId,
   onRefresh,
@@ -158,58 +174,51 @@ export default function Sections({
   faviconEnabled = true,
 }) {
   const [localSections, setLocalSections] = useState([]);
+  const isPersistingRef = useRef(false);
 
+  // Sync incoming sections → local state, but skip if we just persisted
   useEffect(() => {
-    const normalized = [...sections].map((s, i) => ({
-      ...s,
-      position: Number.isFinite(s.position) ? s.position : i,
-      colindex: Number.isFinite(s.colindex) ? s.colindex : 0,
-    }));
-    setLocalSections(normalized);
+    const normalized = normalizeSections(sections);
+    if (isPersistingRef.current) {
+      if (sameLayout(normalized, localSections)) {
+        isPersistingRef.current = false;
+        return;
+      }
+    }
+    setLocalSections((prev) =>
+      sameLayout(prev, normalized) ? prev : normalized
+    );
   }, [sections]);
 
-  const collapseExpandAll = async (collapsedValue, baseSections = localSections) => {
-    const next = baseSections.map((s) => ({
-      ...s,
-      collapsed: collapsedValue,
-    }));
+  // ── Collapse / Expand all ──────────────────────────────────────────────────
+  const collapseExpandAll = async (collapsedValue, base = localSections) => {
+    const next = base.map((s) => ({ ...s, collapsed: collapsedValue }));
     setLocalSections(next);
-
-    const results = await Promise.all(
+    await Promise.all(
       next.map((s) =>
         supabase
           .from("sections")
           .update({ collapsed: collapsedValue })
           .eq("id", s.id)
-          .eq("workspaceid", workspaceId)
+          .eq("workspace_id", workspaceId)
       )
     );
-
-    const failed = results.find((r) => r.error);
-    if (failed?.error) {
-      console.error("Collapse/expand all failed:", failed.error.message);
-      await onRefresh?.();
-    }
+    await onRefresh?.();
   };
 
   useEffect(() => {
     if (!localSections.length) return;
     collapseExpandAll(true, localSections);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerCollapseAll]);
 
   useEffect(() => {
     if (!localSections.length) return;
     collapseExpandAll(false, localSections);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [triggerExpandAll]);
 
+  // ── DnD ───────────────────────────────────────────────────────────────────
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 6,
-      },
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
   );
 
   const safeColCount = Math.max(1, Number(colCount) || 1);
@@ -223,49 +232,38 @@ export default function Sections({
 
     [...localSections]
       .sort((a, b) => {
-        const ca = Number.isFinite(a.colindex) ? a.colindex : 0;
-        const cb = Number.isFinite(b.colindex) ? b.colindex : 0;
+        const ca = Number.isFinite(a.col_index) ? a.col_index : 0;
+        const cb = Number.isFinite(b.col_index) ? b.col_index : 0;
         if (ca !== cb) return ca - cb;
         return (a.position ?? 0) - (b.position ?? 0);
       })
-      .forEach((section) => {
-        const raw = Number.isFinite(section.colindex) ? section.colindex : 0;
-        const col = Math.min(Math.max(raw, 0), safeColCount - 1);
-        cols[col].items.push(section);
+      .forEach((s) => {
+        const ci = Math.min(
+          Math.max(Number.isFinite(s.col_index) ? s.col_index : 0, 0),
+          safeColCount - 1
+        );
+        cols[ci].items.push(s);
       });
 
     return cols;
   }, [localSections, safeColCount]);
 
   function findContainer(id) {
-    if (!id) return null;
-
-    const asString = String(id);
-
-    if (asString.startsWith("col-")) return asString;
-
+    const str = String(id);
+    if (str.startsWith("col-")) return str;
     for (const col of columns) {
-      if (col.items.some((item) => String(item.id) === asString)) {
-        return `col-${col.index}`;
-      }
+      if (col.items.some((s) => String(s.id) === str)) return `col-${col.index}`;
     }
-
     return null;
   }
 
-  function buildUpdatedSections(itemsByCol) {
+  function buildUpdated(itemsByCol) {
     const next = [];
-
-    itemsByCol.forEach((items, colindex) => {
+    itemsByCol.forEach((items, col_index) => {
       items.forEach((item, position) => {
-        next.push({
-          ...item,
-          colindex,
-          position,
-        });
+        next.push({ ...item, col_index, position });
       });
     });
-
     return next;
   }
 
@@ -274,116 +272,94 @@ export default function Sections({
       nextSections.map((s) =>
         supabase
           .from("sections")
-          .update({
-            colindex: s.colindex ?? 0,
-            position: s.position ?? 0,
-          })
+          .update({ col_index: s.col_index ?? 0, position: s.position ?? 0 })
           .eq("id", s.id)
-          .eq("workspaceid", workspaceId)
+          .eq("workspace_id", workspaceId)
       )
     );
-
     const failed = results.find((r) => r.error);
-    if (failed?.error) {
-      throw failed.error;
-    }
+    if (failed?.error) throw failed.error;
   }
 
-  async function handleDragEnd(event) {
-    const { active, over } = event;
+  async function handleDragEnd({ active, over }) {
     if (!active || !over) return;
-
     const activeId = String(active.id);
     const overId = String(over.id);
-
     if (activeId === overId) return;
 
-    const sourceColId = findContainer(activeId);
-    const targetColId = findContainer(overId);
+    const srcColId = findContainer(activeId);
+    const dstColId = findContainer(overId);
+    if (!srcColId || !dstColId) return;
 
-    if (!sourceColId || !targetColId) return;
-
-    const sourceIndex = Number(sourceColId.replace("col-", ""));
-    const targetIndex = Number(targetColId.replace("col-", ""));
+    const srcIdx = Number(srcColId.replace("col-", ""));
+    const dstIdx = Number(dstColId.replace("col-", ""));
 
     const itemsByCol = columns.map((c) => [...c.items]);
-
-    const fromIndex = itemsByCol[sourceIndex].findIndex(
+    const fromPos = itemsByCol[srcIdx].findIndex(
       (s) => String(s.id) === activeId
     );
-    if (fromIndex === -1) return;
+    if (fromPos === -1) return;
 
-    const [moved] = itemsByCol[sourceIndex].splice(fromIndex, 1);
+    const [moved] = itemsByCol[srcIdx].splice(fromPos, 1);
 
     if (overId.startsWith("col-")) {
-      itemsByCol[targetIndex].push(moved);
+      itemsByCol[dstIdx].push(moved);
     } else {
-      const targetItemIndex = itemsByCol[targetIndex].findIndex(
+      const toPos = itemsByCol[dstIdx].findIndex(
         (s) => String(s.id) === overId
       );
-      const insertAt =
-        targetItemIndex === -1 ? itemsByCol[targetIndex].length : targetItemIndex;
-      itemsByCol[targetIndex].splice(insertAt, 0, moved);
+      itemsByCol[dstIdx].splice(toPos === -1 ? itemsByCol[dstIdx].length : toPos, 0, moved);
     }
 
-    const nextSections = buildUpdatedSections(itemsByCol);
+    const nextSections = buildUpdated(itemsByCol);
+
+    isPersistingRef.current = true;
     setLocalSections(nextSections);
 
     try {
       await persistSections(nextSections);
-      await onRefresh?.();
     } catch (err) {
       console.error("Section reorder failed:", err?.message || err);
+      isPersistingRef.current = false;
       await onRefresh?.();
     }
   }
 
   async function handleToggleCollapse(section) {
-    const nextCollapsed = !section.collapsed;
-
+    const next = !section.collapsed;
     setLocalSections((prev) =>
-      prev.map((s) =>
-        s.id === section.id ? { ...s, collapsed: nextCollapsed } : s
-      )
+      prev.map((s) => (s.id === section.id ? { ...s, collapsed: next } : s))
     );
-
     const { error } = await supabase
       .from("sections")
-      .update({ collapsed: nextCollapsed })
+      .update({ collapsed: next })
       .eq("id", section.id)
-      .eq("workspaceid", workspaceId);
+      .eq("workspace_id", workspaceId);
 
     if (error) {
-      console.error("Collapse update failed:", error.message);
+      console.error("Collapse failed:", error.message);
       await onRefresh?.();
     }
   }
 
   async function handleDeleteSection(sectionId) {
-    const ok = window.confirm("Delete this section?");
-    if (!ok) return;
+    if (!window.confirm("Delete this section?")) return;
 
-    const { error: linksError } = await supabase
+    const { error: le } = await supabase
       .from("links")
       .delete()
-      .eq("sectionid", sectionId)
-      .eq("workspaceid", workspaceId);
+      .eq("section_id", sectionId)
+      .eq("workspace_id", workspaceId);
 
-    if (linksError) {
-      alert(linksError.message);
-      return;
-    }
+    if (le) { alert(le.message); return; }
 
-    const { error: sectionError } = await supabase
+    const { error: se } = await supabase
       .from("sections")
       .delete()
       .eq("id", sectionId)
-      .eq("workspaceid", workspaceId);
+      .eq("workspace_id", workspaceId);
 
-    if (sectionError) {
-      alert(sectionError.message);
-      return;
-    }
+    if (se) { alert(se.message); return; }
 
     await onRefresh?.();
   }
@@ -407,7 +383,7 @@ export default function Sections({
                 <SectionCard
                   key={section.id}
                   section={section}
-                  links={links.filter((l) => l.sectionid === section.id)}
+                  links={links.filter((l) => l.section_id === section.id)}
                   onToggleCollapse={handleToggleCollapse}
                   onDeleteSection={handleDeleteSection}
                   openInNewTab={openInNewTab}
