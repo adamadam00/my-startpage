@@ -42,43 +42,42 @@ export default function Weather() {
   const [forecast, setForecast] = useState([])
   const [stale, setStale] = useState(false)
   const [open, setOpen] = useState(false)
-  const [hovering, setHovering] = useState(false)
-  const [hoveringPopup, setHoveringPopup] = useState(false)
   const ref = useRef(null)
-  const closeTimer = useRef(null)
 
   const fetchWx = () => {
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const r = await fetch(
-            `https://api.open-meteo.com/v1/forecast` +
-            `?latitude=${coords.latitude}&longitude=${coords.longitude}` +
-            `&current_weather=true` +
-            `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
-            `&timezone=auto`
-          )
-          const d = await r.json()
-          setWx(d.current_weather)
-          if (d.daily) {
-            const days = d.daily.time.slice(0, 5).map((date, i) => ({
-              date,
-              code: d.daily.weathercode[i],
-              max: Math.round(d.daily.temperature_2m_max[i]),
-              min: Math.round(d.daily.temperature_2m_min[i]),
-            }))
-            setForecast(days)
-          } else {
-            setForecast([])
-          }
-          setStale(false)
-        } catch {
-          setStale(true)
+    const doFetch = async (lat, lon) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast` +
+          `?latitude=${lat}&longitude=${lon}` +
+          `&current_weather=true` +
+          `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
+          `&timezone=auto`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+        if (d.daily) {
+          setForecast(d.daily.time.slice(0, 5).map((date, i) => ({
+            date,
+            code: d.daily.weathercode[i],
+            max: Math.round(d.daily.temperature_2m_max[i]),
+            min: Math.round(d.daily.temperature_2m_min[i]),
+          })))
         }
-      },
-      () => {}
-    )
+        setStale(false)
+      } catch {
+        setStale(true)
+      }
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => doFetch(coords.latitude, coords.longitude),
+        () => doFetch(-37.8136, 144.9631)
+      )
+    } else {
+      doFetch(-37.8136, 144.9631)
+    }
   }
 
   useEffect(() => {
@@ -87,6 +86,7 @@ export default function Weather() {
     return () => clearInterval(t)
   }, [])
 
+  // Close on outside click
   useEffect(() => {
     if (!open) return
     const handler = (e) => {
@@ -95,28 +95,6 @@ export default function Weather() {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
-
-  useEffect(() => {
-    if (hovering || hoveringPopup) {
-      if (closeTimer.current) clearTimeout(closeTimer.current)
-      setOpen(true)
-      return
-    }
-
-    closeTimer.current = setTimeout(() => {
-      setOpen(false)
-    }, 120)
-
-    return () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current)
-    }
-  }, [hovering, hoveringPopup])
-
-  useEffect(() => {
-    return () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current)
-    }
-  }, [])
 
   if (!wx) return null
 
@@ -137,9 +115,7 @@ export default function Weather() {
       <div
         className="weather-wrap"
         style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
-        title={stale ? 'Weather data may be outdated' : '5-day forecast'}
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
+        title={stale ? 'Weather data may be outdated' : 'Click for 5-day forecast'}
         onClick={() => setOpen(v => !v)}
       >
         <span className="weather-icon">{icon}</span>
@@ -149,9 +125,6 @@ export default function Weather() {
 
       {open && forecast.length > 0 && (
         <div
-          className="weather-forecast-popup"
-          onMouseEnter={() => setHoveringPopup(true)}
-          onMouseLeave={() => setHoveringPopup(false)}
           style={{
             position: 'absolute',
             top: 'calc(100% + 0.35rem)',

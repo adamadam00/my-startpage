@@ -41,14 +41,20 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
   }
 
   const add = async () => {
-    if (!text.trim()) { setAdding(false); return }
+    if (!text.trim()) {
+      setAdding(false)
+      return
+    }
     setErr('')
     const { error } = await supabase.from('notes').insert({
       user_id: userId,
       workspace_id: workspaceId,
       content: text.trim(),
     })
-    if (error) { setErr(error.message); return }
+    if (error) {
+      setErr(error.message)
+      return
+    }
     setText('')
     setAdding(false)
     onRefresh()
@@ -60,7 +66,10 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
       .from('notes')
       .update({ content: editText.trim() })
       .eq('id', id)
-    if (error) { setErr(error.message); return }
+    if (error) {
+      setErr(error.message)
+      return
+    }
     setEditing(null)
     setEditText('')
     onRefresh()
@@ -129,12 +138,16 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
                   minHeight: 64,
                   resize: 'vertical',
                   lineHeight: 1.55,
-                  background: 'var(--notes-text-bg)',
+                  background: 'transparent',
                   color: 'var(--notes-text-color)',
                 }}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) add()
-                  if (e.key === 'Escape') { setAdding(false); setText(''); setErr('') }
+                  if (e.key === 'Escape') {
+                    setAdding(false)
+                    setText('')
+                    setErr('')
+                  }
                 }}
               />
               {err && <div style={{ fontSize: '0.8em', color: 'var(--danger)', marginTop: '0.2rem' }}>{err}</div>}
@@ -173,6 +186,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
 
           {safeNotes.map((n) => {
             const value = noteValue(n)
+
             return editing?.id === n.id ? (
               <div
                 key={n.id}
@@ -196,12 +210,15 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
                       minHeight: 60,
                       resize: 'vertical',
                       lineHeight: 1.55,
-                      background: 'var(--notes-text-bg)',
+                      background: 'transparent',
                       color: 'var(--notes-text-color)',
                     }}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) update(n.id)
-                      if (e.key === 'Escape') { setEditing(null); setEditText('') }
+                      if (e.key === 'Escape') {
+                        setEditing(null)
+                        setEditText('')
+                      }
                     }}
                   />
                   <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.3rem' }}>
@@ -226,10 +243,10 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
                   className="note-content"
                   style={{
                     color: 'var(--notes-text-color)',
-                    background: 'var(--notes-text-bg)',
-                    display: 'inline',
-                    padding: '0.05rem 0.18rem',
-                    borderRadius: '0.2rem',
+                    background: 'transparent',
+                    display: 'block',
+                    width: '100%',
+                    padding: '0.05rem 0',
                     lineHeight: 1.55,
                   }}
                   onClick={() => { setEditing(n); setEditText(value) }}
@@ -237,9 +254,10 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
                 >
                   {value}
                 </span>
+
                 <div className="note-actions">
                   <button
-                    className="icon-btn"
+                    className="icon-btn note-edit"
                     style={{ fontSize: '0.9em' }}
                     onClick={() => { setEditing(n); setEditText(value) }}
                     title="Edit"
@@ -247,12 +265,10 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
                     ✎
                   </button>
                   <button
-                    className="icon-btn"
-                    style={{ fontSize: '0.9em', color: 'var(--text-muted)' }}
+                    className="icon-btn note-delete"
+                    style={{ fontSize: '0.9em' }}
                     onClick={() => remove(n.id)}
                     title="Delete"
-                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--danger)' }}
-                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}
                   >
                     ✕
                   </button>

@@ -13,7 +13,7 @@ function ClockWidget() {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
-  const hm   = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   return (
     <div className="clock-compact">
@@ -28,30 +28,6 @@ function WeatherWidget() {
   const CACHE_KEY = 'wx_cache'
   const CACHE_TTL = 25 * 60 * 1000
 
-  const WX = {
-    0:  { icon: '☀️', label: 'Clear' },
-    1:  { icon: '🌤', label: 'Mostly clear' },
-    2:  { icon: '⛅', label: 'Partly cloudy' },
-    3:  { icon: '☁️', label: 'Overcast' },
-    45: { icon: '🌫', label: 'Foggy' },
-    48: { icon: '🌫', label: 'Icy fog' },
-    51: { icon: '🌦', label: 'Light drizzle' },
-    53: { icon: '🌦', label: 'Drizzle' },
-    55: { icon: '🌧', label: 'Heavy drizzle' },
-    61: { icon: '🌧', label: 'Light rain' },
-    63: { icon: '🌧', label: 'Raining' },
-    65: { icon: '🌧', label: 'Heavy rain' },
-    71: { icon: '🌨', label: 'Light snow' },
-    73: { icon: '🌨', label: 'Snowing' },
-    75: { icon: '🌨', label: 'Heavy snow' },
-    80: { icon: '🌦', label: 'Showers' },
-    81: { icon: '🌧', label: 'Rain showers' },
-    82: { icon: '⛈', label: 'Violent rain' },
-    95: { icon: '⛈', label: 'Thunderstorm' },
-    96: { icon: '⛈', label: 'Thunderstorm' },
-    99: { icon: '⛈', label: 'Thunderstorm' },
-  }
-
   const [wx, setWx] = useState(() => {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
@@ -59,134 +35,48 @@ function WeatherWidget() {
     } catch {}
     return null
   })
-  const [forecast, setForecast] = useState(() => {
+
+  useEffect(() => {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) return c.forecast || []
+      if (c && Date.now() - c.ts < CACHE_TTL) return
     } catch {}
-    return []
-  })
-  const [open, setOpen] = useState(false)
-  const [stale, setStale] = useState(false)
-  const ref = useRef(null)
 
-  useEffect(() => {
-    const fetchWx = () => {
-      if (!navigator.geolocation) return
-      navigator.geolocation.getCurrentPosition(async ({ coords }) => {
-        try {
-          const r = await fetch(
-            `https://api.open-meteo.com/v1/forecast` +
-            `?latitude=${coords.latitude}` +
-            `&longitude=${coords.longitude}` +
-            `&current_weather=true` +
-            `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
-            `&temperature_unit=celsius` +
-            `&timezone=auto`
-          )
-          const d = await r.json()
-          const nextWx = d.current_weather || null
-          const nextForecast = d.daily
-            ? d.daily.time.slice(0, 5).map((date, i) => ({
-                date,
-                code: d.daily.weathercode[i],
-                max: Math.round(d.daily.temperature_2m_max[i]),
-                min: Math.round(d.daily.temperature_2m_min[i]),
-              }))
-            : []
-
-          setWx(nextWx)
-          setForecast(nextForecast)
-          setStale(false)
-          localStorage.setItem(CACHE_KEY, JSON.stringify({
-            data: nextWx,
-            forecast: nextForecast,
-            ts: Date.now(),
-          }))
-        } catch {
-          setStale(true)
-        }
-      }, () => {})
-    }
-
-    try {
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (!(c && Date.now() - c.ts < CACHE_TTL)) fetchWx()
-    } catch {
-      fetchWx()
-    }
-
-    const id = setInterval(fetchWx, 15 * 60 * 1000)
-    return () => clearInterval(id)
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
+      } catch {}
+    }, () => {})
   }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
 
   if (!wx) return null
 
-  const dayLabel = (dateStr) => {
-    const d = new Date(dateStr)
-    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  const icons = {
+    0: '☀️', 1: '🌤', 2: '⛅', 3: '☁️', 45: '🌫', 48: '🌫',
+    51: '🌦', 53: '🌦', 55: '🌦', 61: '🌧', 63: '🌧', 65: '🌧',
+    71: '🌨', 73: '🌨', 75: '🌨', 80: '🌦', 81: '🌦', 82: '🌦',
+    95: '⛈', 96: '⛈', 99: '⛈',
+  }
+
+  const descs = {
+    0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast',
+    45: 'Foggy', 48: 'Foggy', 51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
+    61: 'Rainy', 63: 'Rainy', 65: 'Heavy rain', 71: 'Snowy', 73: 'Snowy',
+    75: 'Heavy snow', 80: 'Showers', 81: 'Showers', 82: 'Heavy showers',
+    95: 'Stormy', 96: 'Stormy', 99: 'Stormy',
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }}>
-      <div
-        className="weather-wrap"
-        style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
-        title={stale ? 'Weather data may be outdated' : 'Click for forecast'}
-        onClick={() => setOpen(v => !v)}
-      >
-        <span className="weather-icon">{WX[wx.weathercode]?.icon || '🌡'}</span>
-        <span className="weather-temp">{Math.round(wx.temperature)}°</span>
-        <span className="weather-desc">{WX[wx.weathercode]?.label || ''}</span>
-      </div>
-
-      {open && forecast.length > 0 && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 'calc(100% + 0.35rem)',
-            left: 0,
-            zIndex: 9999,
-            background: 'var(--bg2)',
-            border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent)',
-            borderRadius: 'var(--radius)',
-            padding: '0.5rem 0.75rem',
-            minWidth: 230,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
-            fontSize: 'var(--topbar-font-size)',
-            pointerEvents: 'auto',
-          }}
-        >
-          {forecast.map((day, i) => (
-            <div
-              key={day.date}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem',
-                padding: '0.28rem 0',
-                borderBottom: i < forecast.length - 1
-                  ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)'
-                  : 'none',
-              }}
-            >
-              <span style={{ fontSize: '1.1em' }}>{WX[day.code]?.icon || '🌡'}</span>
-              <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
-              <span style={{ color: 'var(--text)' }}>{day.max}°</span>
-              <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
-            </div>
-          ))}
-        </div>
-      )}
+    <div className="weather-wrap">
+      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
   )
 }
@@ -211,14 +101,14 @@ const DEFAULT_THEME = {
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
   bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
   bgSt: {},
-  searchEngineUrl: 'https://www.google.com.au/search?q=',
+  searchEngineUrl: 'https://www.google.com/search?q=',
   settingsTitleColor: '#7878a0',
   bgGrassSky: '#020609', bgGrassGround: '#071a05',
   bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
-  sectionsCols: 3,
-  notesGap: 0, notesCardBg: '#13131a', notesCardBgOpacity: 1, notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  sectionsCols: 6,
+  notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
   settingsSide: 'right',
   bmFontSize: 13,
   bmResultBg: '',
@@ -242,30 +132,36 @@ function applyTheme(t) {
   s('--danger', t.danger); s('--success', t.success)
   s('--btn-bg', t.btnBg); s('--btn-text', t.btnText)
   s('--font', t.font)
-  if (t.fontSize)        s('--font-size',        t.fontSize + 'px')
-  if (t.topbarFontSize)  s('--topbar-font-size',  t.topbarFontSize + 'px')
+  if (t.fontSize) s('--font-size', t.fontSize + 'px')
+  if (t.topbarFontSize) s('--topbar-font-size', t.topbarFontSize + 'px')
   if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
-  if (t.notesFontSize)   s('--notes-font-size',   t.notesFontSize + 'px')
-  if (t.faviconSize)     s('--favicon-size',      t.faviconSize + 'px')
-  if (t.radius != null)  { s('--radius', t.radius + 'px'); s('--radius-sm', Math.max(2, t.radius - 4) + 'px') }
-  s('--section-radius',  (t.sectionRadius ?? 0) + 'px')
-  if (t.linkGap != null)     s('--link-gap',     t.linkGap + 'rem')
+  if (t.notesFontSize) s('--notes-font-size', t.notesFontSize + 'px')
+  if (t.faviconSize) s('--favicon-size', t.faviconSize + 'px')
+  if (t.radius != null) { s('--radius', t.radius + 'px'); s('--radius-sm', Math.max(2, t.radius - 4) + 'px') }
+  s('--section-radius', (t.sectionRadius ?? 0) + 'px')
+  if (t.linkGap != null) s('--link-gap', t.linkGap + 'rem')
   if (t.cardPadding != null) s('--card-padding', t.cardPadding + 'rem')
-  s('--section-gap',   (t.sectionGap ?? 0) + 'px')
+  s('--section-gap', (t.sectionGap ?? 0) + 'px')
   s('--section-gap-h', (t.sectionGapH ?? 0) + 'px')
-  s('--main-gap-top',  (t.mainGapTop ?? 12) + 'px')
-  s('--sections-cols',  t.sectionsCols ?? 4)
+  s('--main-gap-top', (t.mainGapTop ?? 12) + 'px')
+  s('--sections-cols', t.sectionsCols ?? 6)
   s('--favicon-opacity', t.faviconOpacity ?? 1)
-  s('--favicon-filter',  t.faviconGreyscale ? 'grayscale(1)' : 'none')
+  s('--favicon-filter', t.faviconGreyscale ? 'grayscale(1)' : 'none')
   s('--favicon-display', (t.faviconEnabled ?? true) ? 'block' : 'none')
-  s('--favicon-delay',   (t.faviconDelay ?? 0) + 's')
-  s('--favicon-fade',    (t.faviconFade  ?? 0.3) + 's')
-  s('--pattern-color',   t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
-  s('--wallpaper-dim',   (t.wallpaperDim ?? 35) / 100)
+  s('--favicon-delay', (t.faviconDelay ?? 0) + 's')
+  s('--favicon-fade', (t.faviconFade ?? 0.3) + 's')
+  s('--pattern-color', t.patternColor); s('--pattern-opacity', t.patternOpacity ?? 1)
+  s('--wallpaper-dim', (t.wallpaperDim ?? 35) / 100)
   if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
   if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
+
   let styleEl = document.getElementById('sp-overrides')
-  if (!styleEl) { styleEl = document.createElement('style'); styleEl.id = 'sp-overrides'; document.head.appendChild(styleEl) }
+  if (!styleEl) {
+    styleEl = document.createElement('style')
+    styleEl.id = 'sp-overrides'
+    document.head.appendChild(styleEl)
+  }
+
   const lph = t.linksPaddingH ?? 0.75
   if (lph >= 0) {
     styleEl.textContent = [
@@ -284,80 +180,94 @@ function applyTheme(t) {
       '}',
     ].join(' ')
   }
+
   const rgba = (hex, aa) => {
     const h = (hex || '#000000').replace('#', '')
-    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
+    const r = parseInt(h.slice(0, 2), 16)
+    const g = parseInt(h.slice(2, 4), 16)
+    const b = parseInt(h.slice(4, 6), 16)
     return 'rgba(' + r + ',' + g + ',' + b + ',' + aa + ')'
   }
+
   const hexRgb = (hex) => {
     const h = (hex || '#000000').replace('#', '')
-    return parseInt(h.slice(0,2),16) + ',' + parseInt(h.slice(2,4),16) + ',' + parseInt(h.slice(4,6),16)
+    return parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16)
   }
-  const ps    = (t.bgSt ?? {})[t.bgPreset] ?? {}
+
+  const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
   const speed = ps.speed ?? 1
-  const dur   = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
-  const c1    = ps.c1 || null
-  const c2    = ps.c2 || null
-  const c3    = ps.c3 || null
-  const blur  = ps.blur ?? null
+  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
+  const c1 = ps.c1 || null
+  const c2 = ps.c2 || null
+  const c3 = ps.c3 || null
+  const blur = ps.blur ?? null
 
   s('--plasma-speed-a', dur(20))
   s('--plasma-speed-b', dur(28))
   if (blur != null) { s('--plasma-blur-a', blur + 'px'); s('--plasma-blur-b', (blur + 20) + 'px') }
 
   if (c1) {
-    s('--plasma-c1', rgba(c1, 0.28)); s('--plasma-c2', rgba(c2||c1, 0.25)); s('--plasma-c3', rgba(c3||c1, 0.18))
-    s('--plasma-c4', rgba(c1, 0.14)); s('--plasma-c5', rgba(c2||c1, 0.14)); s('--plasma-c6', rgba(c1, 0.16))
-    s('--drift-c1',  rgba(c1, 0.20))
-    s('--drift-c2',  rgba(c2||c1, 0.16))
-    s('--pulse-c',   rgba(c1, 0.22))
-    s('--tide-c1',   rgba(c1, 0.24))
-    s('--tide-c2',   rgba(c2||c1, 0.20))
+    s('--plasma-c1', rgba(c1, 0.28)); s('--plasma-c2', rgba(c2 || c1, 0.25)); s('--plasma-c3', rgba(c3 || c1, 0.18))
+    s('--plasma-c4', rgba(c1, 0.14)); s('--plasma-c5', rgba(c2 || c1, 0.14)); s('--plasma-c6', rgba(c1, 0.16))
+    s('--drift-c1', rgba(c1, 0.20))
+    s('--drift-c2', rgba(c2 || c1, 0.16))
+    s('--pulse-c', rgba(c1, 0.22))
+    s('--tide-c1', rgba(c1, 0.24))
+    s('--tide-c2', rgba(c2 || c1, 0.20))
   }
 
   const sfGrad = ps.sfGrad ?? false
   if (sfGrad && c1) {
-    s('--starfield-bg-image',
-      'radial-gradient(ellipse 80% 70% at 25% 45%, ' + rgba(c1,0.22) + ' 0%, transparent 65%),' +
-      'radial-gradient(ellipse 70% 80% at 75% 60%, ' + rgba(c2||c1,0.16) + ' 0%, transparent 65%)')
+    s(
+      '--starfield-bg-image',
+      'radial-gradient(ellipse 80% 70% at 25% 45%, ' + rgba(c1, 0.22) + ' 0%, transparent 65%),' +
+      'radial-gradient(ellipse 70% 80% at 75% 60%, ' + rgba(c2 || c1, 0.16) + ' 0%, transparent 65%)'
+    )
   } else {
     s('--starfield-bg-image', 'none')
   }
 
-  const fogColor   = ps.fogColor   || t.patternColor || null
+  const fogColor = ps.fogColor || t.patternColor || null
   const fogOpacity = ps.fogOpacity ?? 1
   if (fogColor) {
     const rgb = hexRgb(fogColor)
-    s('--fog-c1', 'rgba(' + rgb + ',' + (0.22*fogOpacity).toFixed(3) + ')')
-    s('--fog-c2', 'rgba(' + rgb + ',' + (0.18*fogOpacity).toFixed(3) + ')')
-    s('--fog-c3', 'rgba(' + rgb + ',' + (0.15*fogOpacity).toFixed(3) + ')')
-    s('--fog-c4', 'rgba(' + rgb + ',' + (0.16*fogOpacity).toFixed(3) + ')')
-    s('--fog-c5', 'rgba(' + rgb + ',' + (0.14*fogOpacity).toFixed(3) + ')')
-    s('--fog-c6', 'rgba(' + rgb + ',' + (0.10*fogOpacity).toFixed(3) + ')')
+    s('--fog-c1', 'rgba(' + rgb + ',' + (0.22 * fogOpacity).toFixed(3) + ')')
+    s('--fog-c2', 'rgba(' + rgb + ',' + (0.18 * fogOpacity).toFixed(3) + ')')
+    s('--fog-c3', 'rgba(' + rgb + ',' + (0.15 * fogOpacity).toFixed(3) + ')')
+    s('--fog-c4', 'rgba(' + rgb + ',' + (0.16 * fogOpacity).toFixed(3) + ')')
+    s('--fog-c5', 'rgba(' + rgb + ',' + (0.14 * fogOpacity).toFixed(3) + ')')
+    s('--fog-c6', 'rgba(' + rgb + ',' + (0.10 * fogOpacity).toFixed(3) + ')')
   }
 
-  const scanColor   = ps.scanColor   || t.patternColor || null
+  const scanColor = ps.scanColor || t.patternColor || null
   const scanOpacity = ps.scanOpacity ?? 1
   if (scanColor) {
     const rgb = hexRgb(scanColor)
-    s('--scan-line-c',  'rgba(' + rgb + ',' + (0.90*scanOpacity).toFixed(3) + ')')
-    s('--scan-mid-c',   'rgba(' + rgb + ',' + (0.55*scanOpacity).toFixed(3) + ')')
-    s('--scan-glow-c',  'rgba(' + rgb + ',' + (0.20*scanOpacity).toFixed(3) + ')')
-    s('--scan-glow2-c', 'rgba(' + rgb + ',' + (0.08*scanOpacity).toFixed(3) + ')')
-    s('--scan-glow3-c', 'rgba(' + rgb + ',' + (0.04*scanOpacity).toFixed(3) + ')')
+    s('--scan-line-c', 'rgba(' + rgb + ',' + (0.90 * scanOpacity).toFixed(3) + ')')
+    s('--scan-mid-c', 'rgba(' + rgb + ',' + (0.55 * scanOpacity).toFixed(3) + ')')
+    s('--scan-glow-c', 'rgba(' + rgb + ',' + (0.20 * scanOpacity).toFixed(3) + ')')
+    s('--scan-glow2-c', 'rgba(' + rgb + ',' + (0.08 * scanOpacity).toFixed(3) + ')')
+    s('--scan-glow3-c', 'rgba(' + rgb + ',' + (0.04 * scanOpacity).toFixed(3) + ')')
   }
+
   const gSky = t.bgGrassSky || '#020609'
   const gGnd = t.bgGrassGround || '#071a05'
   const oSky = t.bgOceanSky || '#000814'
   const oWtr = t.bgOceanWater || '#001428'
+
   var sfDensity = ps.density ?? 3
-  var sfTileA   = ([1200, 900, 700, 500, 350][sfDensity - 1] || 700) + 'px'
-  var sfTileB   = ([750,  600, 450, 320, 220][sfDensity - 1] || 450) + 'px'
+  var sfTileA = ([1200, 900, 700, 500, 350][sfDensity - 1] || 700) + 'px'
+  var sfTileB = ([750, 600, 450, 320, 220][sfDensity - 1] || 450) + 'px'
   s('--sf-tile-a', sfTileA + ' ' + sfTileA)
   s('--sf-tile-b', sfTileB + ' ' + sfTileB)
 
   let bgEl = document.getElementById('sp-bg')
-  if (!bgEl) { bgEl = document.createElement('style'); bgEl.id = 'sp-bg'; document.head.appendChild(bgEl) }
+  if (!bgEl) {
+    bgEl = document.createElement('style')
+    bgEl.id = 'sp-bg'
+    document.head.appendChild(bgEl)
+  }
+
   bgEl.textContent = `
     .bg-aurora { animation-duration: ${dur(12)} !important; }
     .bg-layer.bg-starfield::before { animation-duration: ${dur(80)} !important; }
@@ -485,6 +395,7 @@ function applyTheme(t) {
       100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
     }
   `
+
   var oldPlanets = document.getElementById('sf-planets')
   if (oldPlanets) oldPlanets.remove()
   if (t.bgPreset === 'starfield' && ps.planets) {
@@ -495,32 +406,32 @@ function applyTheme(t) {
         {
           size: 220, left: '-5%', top: '52%',
           gradient: 'radial-gradient(circle at 35% 35%, #5a7fb5 0%, #2a4a7a 40%, #0f1d3a 100%)',
-          glow: '0 0 80px rgba(60,100,200,0.15)', ring: true, ringColor: 'rgba(140,170,220,0.32)'
+          glow: '0 0 80px rgba(60,100,200,0.15)', ring: true, ringColor: 'rgba(140,170,220,0.32)',
         },
         {
           size: 80, left: '83%', top: '10%',
           gradient: 'radial-gradient(circle at 40% 38%, #c8936a 0%, #7a4a22 45%, #3a1f0a 100%)',
-          glow: '0 0 40px rgba(180,100,40,0.12)', ring: false
+          glow: '0 0 40px rgba(180,100,40,0.12)', ring: false,
         },
         {
           size: 140, left: '8%', top: '8%',
           gradient: 'radial-gradient(circle at 42% 38%, #8a6ab5 0%, #4a3070 45%, #1a0f30 100%)',
-          glow: '0 0 60px rgba(120,80,200,0.12)', ring: false
+          glow: '0 0 60px rgba(120,80,200,0.12)', ring: false,
         },
       ]
       var container = document.createElement('div')
       container.id = 'sf-planets'
       container.style.cssText = 'position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1;'
-      planetDefs.slice(0, planetCount).forEach(function(p) {
+      planetDefs.slice(0, planetCount).forEach(function (p) {
         var planet = document.createElement('div')
-        var inset = 'inset -' + Math.round(p.size*0.12) + 'px -' + Math.round(p.size*0.06) + 'px ' + Math.round(p.size*0.22) + 'px rgba(0,0,0,0.65)'
+        var inset = 'inset -' + Math.round(p.size * 0.12) + 'px -' + Math.round(p.size * 0.06) + 'px ' + Math.round(p.size * 0.22) + 'px rgba(0,0,0,0.65)'
         planet.style.cssText = 'position:absolute;width:' + p.size + 'px;height:' + p.size + 'px;left:' + p.left + ';top:' + p.top + ';border-radius:50%;background:' + p.gradient + ';box-shadow:' + inset + ',' + p.glow + ';pointer-events:none;'
         if (p.ring) {
           var ring = document.createElement('div')
           var rW = Math.round(p.size * 1.85)
           var rH = Math.round(p.size * 0.38)
           var rB = Math.round(p.size * 0.065)
-          ring.style.cssText = 'position:absolute;width:' + rW + 'px;height:' + rH + 'px;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-18deg);border-radius:50%;border:' + rB + 'px solid ' + p.ringColor + ';box-shadow:0 0 ' + Math.round(p.size*0.1) + 'px ' + p.ringColor + ';pointer-events:none;'
+          ring.style.cssText = 'position:absolute;width:' + rW + 'px;height:' + rH + 'px;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-18deg);border-radius:50%;border:' + rB + 'px solid ' + p.ringColor + ';box-shadow:0 0 ' + Math.round(p.size * 0.1) + 'px ' + p.ringColor + ';pointer-events:none;'
           planet.appendChild(ring)
         }
         container.appendChild(planet)
@@ -532,9 +443,8 @@ function applyTheme(t) {
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
   s('--notes-gap', (t.notesGap ?? 0) + 'px')
   if (t.notesCardBg) s('--notes-card-bg', t.notesCardBg)
-  s('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)
   if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
-  if (t.notesTextBg) s('--notes-text-bg', t.notesTextBg)
+  if (t.notesTextBg) s('--notes-input-bg', t.notesTextBg)
   root.dataset.settingsSide = t.settingsSide || 'right'
   document.body.style.fontFamily = t.font || "'DM Mono', monospace"
   document.body.style.backgroundColor = t.bg || '#0c0c0f'
@@ -542,16 +452,15 @@ function applyTheme(t) {
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [session,  setSession]  = useState(null)
-  const sessionRef              = useRef(null)
-  const searchInputRef          = useRef(null)
+  const [session, setSession] = useState(null)
+  const sessionRef = useRef(null)
+  const searchInputRef = useRef(null)
   const [workspaces, setWorkspaces] = useState([])
-  const [activeWs,   setActiveWs]   = useState(null)
-  const [sections,   setSections]   = useState([])
-  const [links,      setLinks]      = useState([])
-  const [notes,      setNotes]      = useState([])
+  const [activeWs, setActiveWs] = useState(null)
+  const [sections, setSections] = useState([])
+  const [links, setLinks] = useState([])
+  const [notes, setNotes] = useState([])
 
   const [theme, setThemeState] = useState(() => {
     try { return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem('current_theme')) || {}) } }
@@ -596,22 +505,22 @@ export default function App() {
     })
   }
 
-  const [bgImage,         setBgImage]         = useState(() => localStorage.getItem('bg_image') || '')
-  const [search,          setSearch]          = useState('')
-  const [webSearch,       setWebSearch]       = useState('')
-  const [bmSearch,        setBmSearch]        = useState('')
-  const [searchMode,      setSearchMode]      = useState('web')
-  const [bookmarks,       setBookmarks]       = useState([])
-  const [bmFolders,       setBmFolders]       = useState([])
-  const [bmQuery,         setBmQuery]         = useState('')
-  const [settingsOpen,    setSettingsOpen]    = useState(false)
-  const [loading,         setLoading]         = useState(true)
+  const [bgImage, setBgImage] = useState(() => localStorage.getItem('bg_image') || '')
+  const [search, setSearch] = useState('')
+  const [webSearch, setWebSearch] = useState('')
+  const [bmSearch, setBmSearch] = useState('')
+  const [searchMode, setSearchMode] = useState('web')
+  const [bookmarks, setBookmarks] = useState([])
+  const [bmFolders, setBmFolders] = useState([])
+  const [bmQuery, setBmQuery] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
-  const [allCollapsed,    setAllCollapsed]    = useState(false)
+  const [allCollapsed, setAllCollapsed] = useState(false)
   const [triggerCollapse, setTriggerCollapse] = useState(0)
-  const [triggerExpand,   setTriggerExpand]   = useState(0)
-  const [notesTrigger,    setNotesTrigger]    = useState(undefined)
+  const [triggerExpand, setTriggerExpand] = useState(0)
+  const [notesTrigger, setNotesTrigger] = useState(undefined)
 
   const toggleAll = () => {
     if (allCollapsed) {
@@ -625,7 +534,7 @@ export default function App() {
     }
   }
 
-  const fileRef       = useRef(null)
+  const fileRef = useRef(null)
   const backupFileRef = useRef(null)
 
   useEffect(() => { applyTheme(theme) }, [theme])
@@ -662,7 +571,8 @@ export default function App() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null); setLoading(false)
+      setSession(data.session ?? null)
+      setLoading(false)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_e, sess) => setSession(sess ?? null))
     return () => listener.subscription.unsubscribe()
@@ -697,18 +607,18 @@ export default function App() {
         .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
-      const localRaw    = localStorage.getItem('current_theme')
-      const localTheme  = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
+      const localRaw = localStorage.getItem('current_theme')
+      const localTheme = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
       const remoteTheme = data?.theme ?? {}
-      const hasLocal    = Object.keys(localTheme).length  > 5
-      const hasRemote   = Object.keys(remoteTheme).length > 5
+      const hasLocal = Object.keys(localTheme).length > 5
+      const hasRemote = Object.keys(remoteTheme).length > 5
       console.log('[settings]', force ? 'FORCE' : 'auto', '| local:', hasLocal, '| remote:', hasRemote)
 
       if (hasRemote) {
-        const localTs  = localTheme._savedAt  || 0
+        const localTs = localTheme._savedAt || 0
         const remoteTs = remoteTheme._savedAt || 0
         if (force || !hasLocal || remoteTs > localTs) {
-          const wall   = localTheme.wallpaper ?? null
+          const wall = localTheme.wallpaper ?? null
           const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wall ? { wallpaper: wall } : {}) }
           setThemeState(merged)
           localStorage.setItem('current_theme', JSON.stringify(merged))
@@ -761,7 +671,9 @@ export default function App() {
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
       ])
-      setSections(secData || []); setLinks(linkData || []); setNotes(noteData || [])
+      setSections(secData || [])
+      setLinks(linkData || [])
+      setNotes(noteData || [])
     } catch (err) {
       console.error('Refresh network error:', err.message)
     }
@@ -824,7 +736,7 @@ export default function App() {
       .filter(b => !hiddenFolders.includes(b.folderId))
       .filter(b =>
         (b.title || '').toLowerCase().includes(q) ||
-        (b.url   || '').toLowerCase().includes(q)
+        (b.url || '').toLowerCase().includes(q)
       )
       .slice(0, 15)
   }, [bookmarks, bmQuery])
@@ -835,7 +747,8 @@ export default function App() {
     const { data, error } = await supabase
       .from('workspaces').insert({ user_id: session.user.id, name: wsName.trim() }).select().single()
     if (error) return alert(error.message)
-    setWorkspaces(prev => [...prev, data]); setActiveWs(data.id)
+    setWorkspaces(prev => [...prev, data])
+    setActiveWs(data.id)
   }
 
   const renameWorkspace = async (id, name) => {
@@ -849,7 +762,8 @@ export default function App() {
     const { error } = await supabase.from('workspaces').delete().eq('id', id)
     if (error) return alert(error.message)
     const next = workspaces.filter(w => w.id !== id)
-    setWorkspaces(next); setActiveWs(next[0]?.id ?? null)
+    setWorkspaces(next)
+    setActiveWs(next[0]?.id ?? null)
   }
 
   const handleImageUpload = (file) => {
@@ -880,297 +794,319 @@ export default function App() {
       ])
       const sectionsWithLinks = []
       for (const sec of secData || []) {
-        const { data: secLinks } = await supabase.from('links').select('*').eq('section_id', sec.id).order('position', { ascending: true })
-        sectionsWithLinks.push({ name: sec.name, position: sec.position, collapsed: sec.collapsed, links: (secLinks || []).map(l => ({ title: l.title, url: l.url, position: l.position })) })
-      }
-      backup.workspaces.push({ name: ws.name, sections: sectionsWithLinks, notes: (noteData || []).map(n => ({ content: n.content })) })
-    }
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
-    a.download = 'startpage-backup.json'; a.click()
-  }
+	const { data: secLinks } = await supabase.from('links').select('*').eq('section_id', sec.id).order('position', { ascending: true })
+			sectionsWithLinks.push({ name: sec.name, position: sec.position, collapsed: sec.collapsed, links: (secLinks || []).map(l => ({ title: l.title, url: l.url, position: l.position })) })
+		  }
+		  backup.workspaces.push({ name: ws.name, sections: sectionsWithLinks, notes: (noteData || []).map(n => ({ content: n.content })) })
+		}
+		const a = document.createElement('a')
+		a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
+		a.download = 'startpage-backup.json'; a.click()
+	  }
 
-  const exportCSV = async () => {
-    const { data: secs } = await supabase.from('sections').select('*').eq('workspace_id', activeWs).order('position')
-    const { data: lnks } = await supabase.from('links').select('*').eq('workspace_id', activeWs).order('position')
-    const rows = [['Section', 'Title', 'URL']]
-    secs?.forEach(s => lnks?.filter(l => l.section_id === s.id).forEach(l => rows.push([s.name, l.title, l.url])))
-    const dq = '""'
-    const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, dq) + '"').join(',')).join('\n')
-    const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-    a.download = 'startpage-links.csv'; a.click()
-  }
+	  const exportCSV = async () => {
+		const { data: secs } = await supabase.from('sections').select('*').eq('workspace_id', activeWs).order('position')
+		const { data: lnks } = await supabase.from('links').select('*').eq('workspace_id', activeWs).order('position')
+		const rows = [['Section', 'Title', 'URL']]
+		secs?.forEach(s => lnks?.filter(l => l.section_id === s.id).forEach(l => rows.push([s.name, l.title, l.url])))
+		const dq = '""'
+		const csv = rows.map(r => r.map(c => '"' + String(c).replace(/"/g, dq) + '"').join(',')).join('\n')
+		const a = document.createElement('a')
+		a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+		a.download = 'startpage-links.csv'; a.click()
+	  }
 
-  const resetWorkspaceLinks = async () => {
-    if (!confirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
-    await supabase.from('links').delete().eq('workspace_id', activeWs)
-    await supabase.from('sections').delete().eq('workspace_id', activeWs)
-    handleRefresh()
-  }
+	  const resetWorkspaceLinks = async () => {
+		if (!confirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
+		await supabase.from('links').delete().eq('workspace_id', activeWs)
+		await supabase.from('sections').delete().eq('workspace_id', activeWs)
+		handleRefresh()
+	  }
 
-  const handleImportBackup = (e) => {
-    const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
-    setImportingBackup(true)
-    const r = new FileReader()
-    r.onload = async (ev) => {
-      try {
-        const uid = sessionRef.current?.user?.id
-        if (!uid) throw new Error('Not logged in')
-        const text = ev.target.result
-        const ext  = f.name.split('.').pop().toLowerCase()
-        if (ext === 'csv') {
-          const lines = text.trim().split('\n').slice(1)
-          const sectionMap = {}; let pos = 0
-          for (const line of lines) {
-            const [section, title, url] = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
-            if (!section || !title || !url) continue
-            if (!sectionMap[section]) {
-              const { data: sec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: activeWs, name: section, position: pos++, collapsed: false }).select().single()
-              sectionMap[section] = { id: sec.id, lpos: 0 }
-            }
-            await supabase.from('links').insert({ user_id: uid, workspace_id: activeWs, section_id: sectionMap[section].id, title, url: url.startsWith('http') ? url : 'https://' + url, position: sectionMap[section].lpos++ })
-          }
-          await handleRefresh(); alert('CSV imported!'); return
-        }
-        const data = JSON.parse(text)
-        if (Array.isArray(data)) {
-          const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
-          let imported = 0
-          for (let i = 0; i < rows.length; i++) {
-            const grp = rows[i]
-            const { data: sec, error: secErr } = await supabase
-              .from('sections')
-              .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false })
-              .select().single()
-            if (secErr || !sec) continue
-            const lnks = (grp.bookmarks ?? grp.links ?? [])
-              .filter(b => b && (b.url || b.href))
-              .map((b, j) => ({
-                user_id: uid, workspace_id: activeWs, section_id: sec.id,
-                title: b.name ?? b.title ?? 'Link',
-                url: (b.url ?? b.href ?? '').trim(),
-                position: j,
-              }))
-            if (lnks.length) await supabase.from('links').insert(lnks)
-            imported++
-          }
-          await handleRefresh(); alert('Imported ' + imported + ' of ' + rows.length + ' section(s).'); return
-        }
-        if (data.workspaces && Array.isArray(data.workspaces)) {
-          if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
-          for (const ws of data.workspaces) {
-            const { data: newWs } = await supabase.from('workspaces').insert({ user_id: uid, name: ws.name }).select().single()
-            for (let si = 0; si < (ws.sections ?? []).length; si++) {
-              const sec = ws.sections[si]
-              const { data: newSec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: newWs.id, name: sec.name, position: sec.position ?? si, collapsed: sec.collapsed ?? false }).select().single()
-              const lnks = (sec.links ?? []).map((l, j) => ({ user_id: uid, workspace_id: newWs.id, section_id: newSec.id, title: l.title ?? l.name ?? 'Link', url: l.url, position: l.position ?? j }))
-              if (lnks.length) await supabase.from('links').insert(lnks)
-            }
-            if (ws.notes?.length) await supabase.from('notes').insert(ws.notes.map(n => ({ user_id: uid, workspace_id: newWs.id, content: n.content ?? '' })))
-          }
-          if (data.theme) { const t = { ...DEFAULT_THEME, ...data.theme }; setTheme(t) }
-          await handleRefresh(); alert('Backup imported!'); return
-        }
-        if (data.bg || data.text || data.accent) {
-          setTheme({ ...DEFAULT_THEME, ...data }); alert('Theme imported.'); return
-        }
-        alert('Unrecognised format.')
-      } catch (err) { alert('Import failed: ' + err.message) }
-      finally { setImportingBackup(false) }
-    }
-    r.readAsText(f)
-  }
+	  // ── Import ────────────────────────────────────────────────────────────────
+	  const handleImportBackup = (e) => {
+		const f = e.target.files?.[0]; if (!f) return; e.target.value = ''
+		setImportingBackup(true)
+		const r = new FileReader()
+		r.onload = async (ev) => {
+		  try {
+			const uid = sessionRef.current?.user?.id
+			if (!uid) throw new Error('Not logged in')
+			const text = ev.target.result
+			const ext  = f.name.split('.').pop().toLowerCase()
+			if (ext === 'csv') {
+			  const lines = text.trim().split('\n').slice(1)
+			  const sectionMap = {}; let pos = 0
+			  for (const line of lines) {
+				const [section, title, url] = line.split(',').map(c => c.trim().replace(/^"|"$/g, '').replace(/""/g, '"'))
+				if (!section || !title || !url) continue
+				if (!sectionMap[section]) {
+				  const { data: sec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: activeWs, name: section, position: pos++, collapsed: false }).select().single()
+				  sectionMap[section] = { id: sec.id, lpos: 0 }
+				}
+				await supabase.from('links').insert({ user_id: uid, workspace_id: activeWs, section_id: sectionMap[section].id, title, url: url.startsWith('http') ? url : 'https://' + url, position: sectionMap[section].lpos++ })
+			  }
+			  await handleRefresh(); alert('CSV imported!'); return
+			}
+			const data = JSON.parse(text)
+			if (Array.isArray(data)) {
+			  // flatten [[sec,sec,...]] or [[sec,sec],[sec,sec],...] → [sec,sec,sec,...]
+			  const rows = data.flat(2).filter(g => g && typeof g === 'object' && !Array.isArray(g))
+			  let imported = 0
+			  for (let i = 0; i < rows.length; i++) {
+				const grp = rows[i]
+				const { data: sec, error: secErr } = await supabase
+				  .from('sections')
+				  .insert({ user_id: uid, workspace_id: activeWs, name: grp.name ?? grp.title ?? 'Section', position: i, collapsed: false })
+				  .select().single()
+				if (secErr || !sec) continue
+				const lnks = (grp.bookmarks ?? grp.links ?? [])
+				  .filter(b => b && (b.url || b.href))
+				  .map((b, j) => ({
+					user_id: uid, workspace_id: activeWs, section_id: sec.id,
+					title: b.name ?? b.title ?? 'Link',
+					url: (b.url ?? b.href ?? '').trim(),
+					position: j,
+				  }))
+				if (lnks.length) await supabase.from('links').insert(lnks)
+				imported++
+			  }
+			  await handleRefresh(); alert('Imported ' + imported + ' of ' + rows.length + ' section(s).'); return
+			}
+			if (data.workspaces && Array.isArray(data.workspaces)) {
+			  if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
+			  for (const ws of data.workspaces) {
+				const { data: newWs } = await supabase.from('workspaces').insert({ user_id: uid, name: ws.name }).select().single()
+				for (let si = 0; si < (ws.sections ?? []).length; si++) {
+				  const sec = ws.sections[si]
+				  const { data: newSec } = await supabase.from('sections').insert({ user_id: uid, workspace_id: newWs.id, name: sec.name, position: sec.position ?? si, collapsed: sec.collapsed ?? false }).select().single()
+				  const lnks = (sec.links ?? []).map((l, j) => ({ user_id: uid, workspace_id: newWs.id, section_id: newSec.id, title: l.title ?? l.name ?? 'Link', url: l.url, position: l.position ?? j }))
+				  if (lnks.length) await supabase.from('links').insert(lnks)
+				}
+				if (ws.notes?.length) await supabase.from('notes').insert(ws.notes.map(n => ({ user_id: uid, workspace_id: newWs.id, content: n.content ?? '' })))
+			  }
+			  if (data.theme) { const t = { ...DEFAULT_THEME, ...data.theme }; setTheme(t) }
+			  await handleRefresh(); alert('Backup imported!'); return
+			}
+			if (data.bg || data.text || data.accent) {
+			  setTheme({ ...DEFAULT_THEME, ...data }); alert('Theme imported.'); return
+			}
+			alert('Unrecognised format.')
+		  } catch (err) { alert('Import failed: ' + err.message) }
+		  finally { setImportingBackup(false) }
+		}
+		r.readAsText(f)
+	  }
 
-  const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
-  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
+	  // ── Background ────────────────────────────────────────────────────────────
+	  const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
+	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 
-  if (loading) return <div className="center-fill">Loading…</div>
-  if (!session) return <Auth />
+	  if (loading) return <div className="center-fill">Loading…</div>
+	  if (!session) return <Auth />
 
-  return (
-    <>
-      <div className={bgClass} style={bgStyle} />
+	  return (
+		<>
+		  {/* Background */}
+		  <div className={bgClass} style={bgStyle} />
 
-      <div className="app">
+		  <div className="app">
 
-        {theme.wallpaper ? (
-          <div style={{
-            position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
-            backgroundImage: `url(${theme.wallpaper})`,
-            backgroundSize: `${theme.wallpaperScale ?? 100}%`,
-            backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
-            backgroundRepeat: 'no-repeat',
-            filter: `blur(${theme.wallpaperBlur ?? 0}px)`,
-            opacity: (theme.wallpaperOpacity ?? 100) / 100,
-          }} />
-        ) : null}
-        {theme.wallpaper && theme.wallpaperDim > 0 ? (
-          <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
-        ) : null}
+			{/* Wallpaper overlay */}
+			{theme.wallpaper ? (
+			  <div style={{
+				position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+				backgroundImage: `url(${theme.wallpaper})`,
+				backgroundSize: `${theme.wallpaperScale ?? 100}%`,
+				backgroundPosition: `${theme.wallpaperX ?? 50}% ${theme.wallpaperY ?? 50}%`,
+				backgroundRepeat: 'no-repeat',
+				filter: `blur(${theme.wallpaperBlur ?? 0}px)`,
+				opacity: (theme.wallpaperOpacity ?? 100) / 100,
+			  }} />
+			) : null}
+			{theme.wallpaper && theme.wallpaperDim > 0 ? (
+			  <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: `rgba(0,0,0,${(theme.wallpaperDim ?? 35) / 100})` }} />
+			) : null}
 
-        <div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
+			{/* ── TOPBAR ──────────────────────────────────────── */}
+			<div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
 
-          <div className="workspace-tabs">
-            {workspaces.map(ws => (
-              <button
-                key={ws.id}
-                className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-                onClick={() => setActiveWs(ws.id)}
-              >
-                {ws.name}
-                {workspaces.length > 1 && (
-                  <span
-                    className="del-ws"
-                    onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-                  >✕</span>
-                )}
-              </button>
-            ))}
-            <button
-              className="icon-btn"
-              title="New workspace"
-              onClick={() => addWorkspace()}
-              style={{ fontSize: '1.1em', lineHeight: 1 }}
-            >+</button>
-          </div>
+			  {/* Workspace tabs */}
+			  <div className="workspace-tabs">
+				{workspaces.map(ws => (
+				  <button
+					key={ws.id}
+					className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
+					onClick={() => setActiveWs(ws.id)}
+				  >
+					{ws.name}
+					{workspaces.length > 1 && (
+					  <span
+						className="del-ws"
+						onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
+					  >✕</span>
+					)}
+				  </button>
+				))}
+				<button
+				  className="icon-btn"
+				  title="New workspace"
+				  onClick={() => addWorkspace()}
+				  style={{ fontSize: '1.1em', lineHeight: 1 }}
+				>+</button>
+			  </div>
 
-          <div className="topbar-divider" />
+			  <div className="topbar-divider" />
 
-          <div className="topbar-widgets">
-            <ClockWidget />
-            <div className="topbar-divider" />
-            <WeatherWidget />
-            <div className="search-compact">
-              <div className="search-mode-bar">
-                {[
-                  { key: 'web',       label: 'Web'   },
-                  { key: 'links',     label: 'Links' },
-                  { key: 'bookmarks', label: '🔖'    },
-                ].map(({ key, label }) => (
-                  <button
-                    key={key}
-                    className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
-                    title={key.charAt(0).toUpperCase() + key.slice(1)}
-                    onClick={() => { setSearchMode(key); setSearch(''); setWebSearch(''); setBmQuery('') }}
-                  >{label}</button>
-                ))}
-              </div>
-              <input
-                className="input search-compact-input"
-                placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
-                ref={searchInputRef}
-                value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
-                onChange={e => {
-                  if (searchMode === 'web')       setWebSearch(e.target.value)
-                  else if (searchMode === 'links') setSearch(e.target.value)
-                  else                             setBmQuery(e.target.value)
-                }}
-                onKeyDown={e => {
-                  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
-                    const url = (theme.searchEngineUrl || 'https://www.google.com.au/search?q=') + encodeURIComponent(webSearch.trim())
-                    if (theme.openInNewTab ?? true) { window.open(url, '_blank', 'noopener,noreferrer') } else { window.location.href = url }
-                    setWebSearch('')
-                  }
-                  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
-                    window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
-                    setBmQuery('')
-                  }
-                  if (e.key === 'Escape') { setSearch(''); setWebSearch(''); setBmQuery('') }
-                }}
-              />
-              {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
-                <button className="icon-btn search-btn" title="Clear"
-                  onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
-              )}
-              {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
-                <div className="bm-dropdown" style={{
-                  fontSize: (theme.bmFontSize || 13) + 'px',
-                  ...(theme.bmResultBg   ? { background: theme.bmResultBg }   : {}),
-                  ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
-                }}>
-                  {filteredBookmarks.map((b, i) => (
-                    <a key={b.id || i} className="bm-result" href={b.url} target="_blank" rel="noopener noreferrer"
-                      onClick={() => setBmQuery('')}>
-                      <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
-                      <span className="bm-result-folder">{b.folder}</span>
-                      <span className="bm-result-title">{b.title}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+			  {/* Widgets: clock + weather + search */}
+			  <div className="topbar-widgets">
+				<ClockWidget />
+				<div className="topbar-divider" />
+				<WeatherWidget />
+				<div className="search-compact">
+				  <div className="search-mode-bar">
+					{[
+					  { key: 'web', icon: '🌐', title: 'Web' },
+					  { key: 'links', icon: '🔗', title: 'Links' },
+					  { key: 'bookmarks', icon: '🔖', title: 'Bookmarks' },
+					].map(({ key, icon, title }) => (
+					  <button
+						key={key}
+						type="button"
+						className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
+						title={title}
+						aria-label={title}
+						onClick={() => { setSearchMode(key); setSearch(''); setWebSearch(''); setBmQuery('') }}
+					  >
+						{icon}
+					  </button>
+					))}
+				  </div>
+				  <input
+					className="input search-compact-input"
+					placeholder={searchMode === 'web' ? 'Search the web…' : searchMode === 'links' ? 'Filter links…' : 'Search bookmarks…'}
+					ref={searchInputRef}
+					value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
+					onChange={e => {
+					  if (searchMode === 'web') setWebSearch(e.target.value)
+					  else if (searchMode === 'links') setSearch(e.target.value)
+					  else setBmQuery(e.target.value)
+					}}
+					onKeyDown={e => {
+					  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
+						const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
+						if (theme.openInNewTab ?? true) window.open(url, '_blank', 'noopener,noreferrer')
+						else window.location.href = url
+						setWebSearch('')
+					  }
+					  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
+						window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
+						setBmQuery('')
+					  }
+					  if (e.key === 'Escape') { setSearch(''); setWebSearch(''); setBmQuery('') }
+					}}
+				  />
+				  {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
+					<button className="icon-btn search-btn" title="Clear" onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
+				  )}
+				  {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
+					<div className="bm-dropdown" style={{
+					  fontSize: (theme.bmFontSize || 13) + 'px',
+					  ...(theme.bmResultBg ? { background: theme.bmResultBg } : {}),
+					  ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
+					}}>
+					  {filteredBookmarks.map((b, i) => (
+						<a
+						  key={b.id || i}
+						  className="bm-result"
+						  href={b.url}
+						  target="_blank"
+						  rel="noopener noreferrer"
+						  onClick={() => setBmQuery('')}
+						>
+						  <span className="bm-result-url">{b.url.replace(/^https?:\/\//, '').split('/')[0]}</span>
+						  <span className="bm-result-folder">{b.folder}</span>
+						  <span className="bm-result-title">{b.title}</span>
+						</a>
+					  ))}
+					</div>
+				  )}
+				</div>
+			  </div>
 
-          <div className="topbar-actions">
-            <button
-              className="btn"
-              title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
-              onClick={toggleAll}
-            >
-              {allCollapsed ? 'Expand' : 'Collapse'}
-            </button>
-            <button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
-            <button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
-          </div>
-        </div>
+			  {/* Action buttons */}
+			  <div className="topbar-actions">
+				<button
+				  className="btn"
+				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+				  onClick={toggleAll}
+				>
+				  {allCollapsed ? 'Expand' : 'Collapse'}
+				</button>
+				<button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
+				<button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
+			  </div>
+			</div>
 
-        <main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
-          <div className="main-col">
-            <Sections
-              sections={sections}
-              links={searchMode === 'links' ? filteredLinks : links}
-              userId={session.user.id}
-              workspaceId={activeWs}
-              onRefresh={handleRefresh}
-              colCount={theme.sectionsCols ?? 4}
-              triggerCollapseAll={triggerCollapse}
-              triggerExpandAll={triggerExpand}
-              openInNewTab={theme.openInNewTab ?? true}
-              faviconEnabled={theme.faviconEnabled ?? true}
-            />
-          </div>
-          <div className="side-col">
-            <Notes
-              notes={notes}
-              workspaceId={activeWs}
-              userId={session.user.id}
-              onRefresh={handleRefresh}
-              forceOpen={notesTrigger}
-            />
-          </div>
-        </main>
+			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
+			<main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
+			  <div className="main-col">
+				<Sections
+				  sections={sections}
+				  links={searchMode === 'links' ? filteredLinks : links}
+				  userId={session.user.id}
+				  workspaceId={activeWs}
+				  onRefresh={handleRefresh}
+				  colCount={Math.max(theme.sectionsCols ?? 6, 6)}
+				  triggerCollapseAll={triggerCollapse}
+				  triggerExpandAll={triggerExpand}
+				  openInNewTab={theme.openInNewTab ?? true}
+				  faviconEnabled={theme.faviconEnabled ?? true}
+				/>
+			  </div>
+			  <div className="side-col">
+				<Notes
+				  notes={notes}
+				  workspaceId={activeWs}
+				  userId={session.user.id}
+				  onRefresh={handleRefresh}
+				  forceOpen={notesTrigger}
+				/>
+			  </div>
+			</main>
 
-        {settingsOpen && (
-          <Settings
-            theme={theme}
-            setTheme={setTheme}
-            onSave={() => { persistTheme(theme, true) }}
-            onClose={() => setSettingsOpen(false)}
-            onSignOut={handleSignOut}
-            bmFolders={bmFolders}
-            bookmarkCount={bookmarks.length}
-            userEmail={session?.user?.email ?? ''}
-            onImageUpload={handleImageUpload}
-            onBgImageUpload={handleBgImageUpload}
-            onExportBackup={exportFullBackup}
-            onExportCSV={exportCSV}
-            onImportBackup={handleImportBackup}
-            onResetWorkspaceLinks={resetWorkspaceLinks}
-            onResetTheme={() => setTheme(DEFAULT_THEME)}
-            fileRef={fileRef}
-            backupFileRef={backupFileRef}
-            importingBackup={importingBackup}
-            workspaces={workspaces}
-            activeWs={activeWs}
-            onAddWorkspace={addWorkspace}
-            onRenameWorkspace={renameWorkspace}
-            onDeleteWorkspace={deleteWorkspace}
-            onSetActiveWs={setActiveWs}
-          />
-        )}
+			{/* ── SETTINGS ────────────────────────────────────── */}
+			{settingsOpen && (
+			  <Settings
+				theme={theme}
+				setTheme={setTheme}
+				onSave={() => { persistTheme(theme, true) }}
+				onClose={() => setSettingsOpen(false)}
+				onSignOut={handleSignOut}
+				bmFolders={bmFolders}
+				bookmarkCount={bookmarks.length}
+				userEmail={session?.user?.email ?? ''}
+				onImageUpload={handleImageUpload}
+				onBgImageUpload={handleBgImageUpload}
+				onExportBackup={exportFullBackup}
+				onExportCSV={exportCSV}
+				onImportBackup={handleImportBackup}
+				onResetWorkspaceLinks={resetWorkspaceLinks}
+				onResetTheme={() => setTheme(DEFAULT_THEME)}
+				fileRef={fileRef}
+				backupFileRef={backupFileRef}
+				importingBackup={importingBackup}
+				workspaces={workspaces}
+				activeWs={activeWs}
+				onAddWorkspace={addWorkspace}
+				onRenameWorkspace={renameWorkspace}
+				onDeleteWorkspace={deleteWorkspace}
+				onSetActiveWs={setActiveWs}
+			  />
+			)}
 
-      </div>
-    </>
-  )
-}
+		  </div>
+		</>
+	  )
+	}
+			
