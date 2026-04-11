@@ -34,7 +34,7 @@ function SectionCard({
     data: {
       type: "section",
       sectionId: section.id,
-      colindex: section.colindex ?? 0,
+      col_index: section.col_index ?? 0,
     },
   });
 
@@ -162,19 +162,26 @@ export default function Sections({
     const normalized = [...sections].map((s, i) => ({
       ...s,
       position: Number.isFinite(s.position) ? s.position : i,
-      colindex: Number.isFinite(s.colindex) ? s.colindex : 0,
+      col_index: Number.isFinite(s.col_index)
+        ? s.col_index
+        : Number.isFinite(s.colindex)
+          ? s.colindex
+          : 0,
     }));
 
     const incomingSignature = JSON.stringify(
       normalized.map((s) => ({
         id: s.id,
         position: s.position,
-        colindex: s.colindex,
+        col_index: s.col_index,
         collapsed: !!s.collapsed,
       }))
     );
 
-    if (isSavingLayoutRef.current && incomingSignature !== lastSavedLayoutRef.current) {
+    if (
+      isSavingLayoutRef.current &&
+      incomingSignature !== lastSavedLayoutRef.current
+    ) {
       return;
     }
 
@@ -199,7 +206,7 @@ export default function Sections({
           .from("sections")
           .update({ collapsed: collapsedValue })
           .eq("id", s.id)
-          .eq("workspaceid", workspaceId)
+          .eq("workspace_id", workspaceId)
       )
     );
 
@@ -239,13 +246,13 @@ export default function Sections({
 
     [...localSections]
       .sort((a, b) => {
-        const ca = Number.isFinite(a.colindex) ? a.colindex : 0;
-        const cb = Number.isFinite(b.colindex) ? b.colindex : 0;
+        const ca = Number.isFinite(a.col_index) ? a.col_index : 0;
+        const cb = Number.isFinite(b.col_index) ? b.col_index : 0;
         if (ca !== cb) return ca - cb;
         return (a.position ?? 0) - (b.position ?? 0);
       })
       .forEach((section) => {
-        const raw = Number.isFinite(section.colindex) ? section.colindex : 0;
+        const raw = Number.isFinite(section.col_index) ? section.col_index : 0;
         const col = Math.min(Math.max(raw, 0), safeColCount - 1);
         cols[col].items.push(section);
       });
@@ -270,11 +277,11 @@ export default function Sections({
 
   function buildUpdatedSections(itemsByCol) {
     const next = [];
-    itemsByCol.forEach((items, colindex) => {
+    itemsByCol.forEach((items, col_index) => {
       items.forEach((item, position) => {
         next.push({
           ...item,
-          colindex,
+          col_index,
           position,
         });
       });
@@ -288,11 +295,11 @@ export default function Sections({
         supabase
           .from("sections")
           .update({
-            colindex: s.colindex ?? 0,
+            col_index: s.col_index ?? 0,
             position: s.position ?? 0,
           })
           .eq("id", s.id)
-          .eq("workspaceid", workspaceId)
+          .eq("workspace_id", workspaceId)
       )
     );
 
@@ -340,7 +347,7 @@ export default function Sections({
       nextSections.map((s) => ({
         id: s.id,
         position: s.position,
-        colindex: s.colindex,
+        col_index: s.col_index,
         collapsed: !!s.collapsed,
       }))
     );
@@ -371,7 +378,7 @@ export default function Sections({
       .from("sections")
       .update({ collapsed: nextCollapsed })
       .eq("id", section.id)
-      .eq("workspaceid", workspaceId);
+      .eq("workspace_id", workspaceId);
 
     if (error) {
       console.error("Collapse update failed:", error.message);
@@ -386,8 +393,8 @@ export default function Sections({
     const { error: linksError } = await supabase
       .from("links")
       .delete()
-      .eq("sectionid", sectionId)
-      .eq("workspaceid", workspaceId);
+      .eq("section_id", sectionId)
+      .eq("workspace_id", workspaceId);
 
     if (linksError) {
       alert(linksError.message);
@@ -398,7 +405,7 @@ export default function Sections({
       .from("sections")
       .delete()
       .eq("id", sectionId)
-      .eq("workspaceid", workspaceId);
+      .eq("workspace_id", workspaceId);
 
     if (sectionError) {
       alert(sectionError.message);
@@ -427,7 +434,7 @@ export default function Sections({
                 <SectionCard
                   key={section.id}
                   section={section}
-                  links={links.filter((l) => l.sectionid === section.id)}
+                  links={links.filter((l) => l.section_id === section.id)}
                   onToggleCollapse={handleToggleCollapse}
                   onDeleteSection={handleDeleteSection}
                   openInNewTab={openInNewTab}
