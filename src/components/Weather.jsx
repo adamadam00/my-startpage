@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 
 const WX = {
-  0:  { icon: '☀️', label: 'Clear' },
-  1:  { icon: '🌤', label: 'Mostly clear' },
-  2:  { icon: '⛅', label: 'Partly cloudy' },
-  3:  { icon: '☁️', label: 'Overcast' },
+  0: { icon: '☀️', label: 'Clear' },
+  1: { icon: '🌤', label: 'Mostly clear' },
+  2: { icon: '⛅', label: 'Partly cloudy' },
+  3: { icon: '☁️', label: 'Overcast' },
   45: { icon: '🌫', label: 'Foggy' },
   48: { icon: '🌫', label: 'Icy fog' },
   51: { icon: '🌦', label: 'Light drizzle' },
@@ -23,8 +23,12 @@ const WX = {
 }
 
 const WIND_LABELS = [
-  [1, 'Calm'], [5, 'Light breeze'], [15, 'Breezy'],
-  [30, 'Windy'], [50, 'Very windy'], [Infinity, 'Gale'],
+  [1, 'Calm'],
+  [5, 'Light breeze'],
+  [15, 'Breezy'],
+  [30, 'Windy'],
+  [50, 'Very windy'],
+  [Infinity, 'Gale'],
 ]
 
 function windLabel(kmh) {
@@ -32,125 +36,92 @@ function windLabel(kmh) {
 }
 
 const REFRESH_MS = 15 * 60 * 1000
-const POS_KEY = 'wx_pos'
-const DATA_KEY = 'wx_data'
-const DATA_TTL = 10 * 60 * 1000
 
 export default function Weather() {
-  const [wx, setWx] = useState(() => {
-    try {
-      const c = JSON.parse(localStorage.getItem(DATA_KEY) || 'null')
-      if (c && Date.now() - c.ts < DATA_TTL) return c.wx
-    } catch {}
-    return null
-  })
-  const [forecast, setForecast] = useState(() => {
-    try {
-      const c = JSON.parse(localStorage.getItem(DATA_KEY) || 'null')
-      if (c && Date.now() - c.ts < DATA_TTL) return c.forecast ?? []
-    } catch {}
-    return []
-  })
+  const [wx, setWx] = useState(null)
+  const [forecast, setForecast] = useState([])
   const [stale, setStale] = useState(false)
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-  const hoverTimer = useRef(null)
 
-  const doFetch = async (lat, lon) => {
-    try {
-      const r = await fetch(
-        `https://api.open-meteo.com/v1/forecast` +
-        `?latitude=${lat}&longitude=${lon}` +
-        `&current_weather=true` +
-        `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
-        `&timezone=auto`
+  const fetchWx = () => {
+    const doFetch = async (lat, lon) => {
+      try {
+        const r = await fetch(
+          `https://api.open-meteo.com/v1/forecast` +
+            `?latitude=${lat}&longitude=${lon}` +
+            `&current_weather=true` +
+            `&daily=weathercode,temperature_2m_max,temperature_2m_min` +
+            `&timezone=auto`
+        )
+        const d = await r.json()
+        setWx(d.current_weather)
+
+        if (d.daily) {
+          setForecast(
+            d.daily.time.slice(0, 5).map((date, i) => ({
+              date,
+              code: d.daily.weathercode[i],
+              max: Math.round(d.daily.temperature_2m_max[i]),
+              min: Math.round(d.daily.temperature_2m_min[i]),
+            }))
+          )
+        }
+
+        setStale(false)
+      } catch {
+        setStale(true)
+      }
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => doFetch(coords.latitude, coords.longitude),
+        () => doFetch(-37.8136, 144.9631)
       )
-      const d = await r.json()
-      const newWx = d.current_weather
-      const newForecast = d.daily
-        ? d.daily.time.slice(0, 5).map((date, i) => ({
-            date,
-            code: d.daily.weathercode[i],
-            max: Math.round(d.daily.temperature_2m_max[i]),
-            min: Math.round(d.daily.temperature_2m_min[i]),
-          }))
-        : []
-      setWx(newWx)
-      setForecast(newForecast)
-      setStale(false)
-      localStorage.setItem(DATA_KEY, JSON.stringify({ wx: newWx, forecast: newForecast, ts: Date.now() }))
-    } catch {
-      setStale(true)
+    } else {
+      doFetch(-37.8136, 144.9631)
     }
   }
 
   useEffect(() => {
-    const cachedPos = localStorage.getItem(POS_KEY)
-    if (cachedPos) {
-      try {
-        const { lat, lon } = JSON.parse(cachedPos)
-        const cached = JSON.parse(localStorage.getItem(DATA_KEY) || 'null')
-        if (!cached || Date.now() - cached.ts >= DATA_TTL) doFetch(lat, lon)
-      } catch {}
-    }
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        ({ coords }) => {
-          const lat = coords.latitude
-          const lon = coords.longitude
-          localStorage.setItem(POS_KEY, JSON.stringify({ lat, lon }))
-          doFetch(lat, lon)
-        },
-        () => { if (!cachedPos) doFetch(-37.8136, 144.9631) },
-        { maximumAge: 600000, timeout: 5000 }
-      )
-    } else if (!cachedPos) {
-      doFetch(-37.8136, 144.9631)
-    }
-    const t = setInterval(() => {
-      const pos = localStorage.getItem(POS_KEY)
-      if (pos) { const { lat, lon } = JSON.parse(pos); doFetch(lat, lon) }
-    }, REFRESH_MS)
+    fetchWx()
+    const t = setInterval(fetchWx, REFRESH_MS)
     return () => clearInterval(t)
   }, [])
 
   useEffect(() => {
     if (!open) return
+
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false)
     }
+
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
-
-  const handleMouseEnter = () => {
-    clearTimeout(hoverTimer.current)
-    setOpen(true)
-  }
-
-  const handleMouseLeave = () => {
-    hoverTimer.current = setTimeout(() => setOpen(false), 300)
-  }
 
   if (!wx) return null
 
   const entry = WX[wx.weathercode]
   const icon = entry?.icon ?? '🌡'
   const skyLabel = entry?.label ?? 'Unknown'
+  const wLabel = windLabel(wx.windspeed)
   const isNeutralSky = [0, 1, 2, 3].includes(wx.weathercode)
-  const descriptor = (isNeutralSky && wx.windspeed >= 15) ? windLabel(wx.windspeed) : skyLabel
+  const descriptor = isNeutralSky && wx.windspeed >= 15 ? wLabel : skyLabel
 
-  const dayLabel = (dateStr, i) => {
-    if (i === 0) return 'Today'
-    return new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div ref={ref} className="weather-shell">
       <div
         className="weather-wrap"
         style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
-        onClick={() => setOpen(v => !v)}
+        title={stale ? 'Weather data may be outdated. Click for 5-day forecast.' : '5-day forecast'}
+        onClick={() => setOpen((v) => !v)}
       >
         <span className="weather-icon">{icon}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
@@ -158,16 +129,24 @@ export default function Weather() {
       </div>
 
       {open && forecast.length > 0 && (
-        <div className="weather-dropdown" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        <div className="weather-dropdown">
           {forecast.map((day, i) => {
             const wx2 = WX[day.code]
             return (
-              <div key={day.date} className="weather-dropdown-row">
-                <span className="wd-icon">{wx2?.icon ?? '🌡'}</span>
-                <span className="wd-day">{dayLabel(day.date, i)}</span>
-                <span className="wd-hi">{day.max}°</span>
-                <span className="wd-sep">/</span>
-                <span className="wd-lo">{day.min}°</span>
+              <div
+                key={day.date}
+                className="weather-forecast-row"
+                style={{
+                  borderBottom:
+                    i < forecast.length - 1
+                      ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)'
+                      : 'none',
+                }}
+              >
+                <span className="weather-forecast-icon">{wx2?.icon ?? '·'}</span>
+                <span className="weather-forecast-day">{dayLabel(day.date)}</span>
+                <span className="weather-forecast-max">{day.max}°</span>
+                <span className="weather-forecast-min">{day.min}°</span>
               </div>
             )
           })}
