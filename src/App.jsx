@@ -11,8 +11,7 @@ function ClockWidget() {
   const [now, setNow] = useState(new Date())
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
-    return (
-    <>) => clearInterval(id)
+    return () => clearInterval(id)
   }, [])
   const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
@@ -79,6 +78,12 @@ function WeatherWidget() {
       <span className="weather-temp">{Math.round(wx.temperature)}°</span>
       <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
     </div>
+  )
+}
+
+
+function BuildStamp() {
+  return (
   )
 }
 
@@ -1109,6 +1114,5 @@ export default function App() {
 		  </div>
 		</>
 	  )
-    </>
 	}
 			
