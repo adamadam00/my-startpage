@@ -1166,47 +1166,47 @@ export default function App() {
             </div>
           )}
 
-<div className="topbar-actions">
-  <button
-    className="btn"
-    title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
-    onClick={toggleAll}
-  >
-    {allCollapsed ? 'Expand' : 'Collapse'}
-  </button>
+		<div className="topbar-actions">
+		  <button
+			className="btn"
+			title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+			onClick={toggleAll}
+		  >
+			{allCollapsed ? 'Expand' : 'Collapse'}
+		  </button>
 
-  <button
-    className="icon-btn"
-    title="Refresh"
-    onClick={async () => {
-      await loadUserSettings(true)
-      handleRefresh()
-    }}
-  >
-    ↻
-  </button>
+		  <button
+			className="icon-btn"
+			title="Refresh"
+			onClick={async () => {
+			  await loadUserSettings(true)
+			  handleRefresh()
+			}}
+		  >
+			↻
+		  </button>
 
-  <button
-    className="btn"
-    title="Settings"
-    onClick={() => setSettingsOpen(true)}
-  >
-    Settings
-  </button>
+		  <button
+			className="btn"
+			title="Settings"
+			onClick={() => setSettingsOpen(true)}
+		  >
+			Settings
+		  </button>
 
-  <span
-    className="build-stamp"
-    title={`Build: ${import.meta.env.VITE_BUILD_DATE}`}
-  >
-    {new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
-      year: '2-digit',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    })}
-  </span>
-</div>
+		  <span
+			className="build-stamp"
+			title={`Build: ${import.meta.env.VITE_BUILD_DATE}`}
+		  >
+			{new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
+			  year: '2-digit',
+			  month: 'short',
+			  day: 'numeric',
+			  hour: '2-digit',
+			  minute: '2-digit',
+			})}
+		  </span>
+		</div>
 
         <main className="main-layout" style={{ gridTemplateColumns: '1fr var(--notes-width, 240px)' }}>
           {!theme.hideCards && (
