@@ -670,7 +670,6 @@ a {
 .input::placeholder {
   color: var(--text-muted);
 }
-}
 
 .section-grab {
   position: absolute;
