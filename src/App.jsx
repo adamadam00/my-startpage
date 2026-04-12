@@ -22,6 +22,16 @@ function normalizeSideWidgets(value) {
   return merged
 }
 
+<div className="build-stamp" title={import.meta.env.VITE_BUILD_DATE}>
+  {new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
+    year: '2-digit',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })}
+</div>
+
 // ─── CLOCK ────────────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())

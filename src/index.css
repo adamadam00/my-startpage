@@ -262,6 +262,8 @@ a {
   backdrop-filter: blur(12px);
   flex-shrink: 0;
   font-size: var(--topbar-font-size);
+  position: relative;
+  z-index: 201;
 }
 
 .workspace-tabs {
@@ -325,11 +327,12 @@ a {
 .topbar-widgets {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
+  gap: .6rem;
   flex: 1;
   min-width: 0;
   overflow: visible !important;
   position: relative;
+  padding: 0 0.35rem;
 }
 
 .clock-compact {
@@ -379,46 +382,44 @@ a {
 .weather-dropdown {
   position: fixed;
   z-index: 10000;
-  margin-top: 0.25rem;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
+  margin-top: 0;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.65rem 1rem;
-  min-width: 230px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border-radius: 0 0 var(--radius) var(--radius);
+  padding: 0.75rem 1rem;
+  min-width: 240px;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
   font-size: var(--topbar-font-size, 12px);
 }
 
 .weather-dropdown-row {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.38rem 0;
+  gap: 0.7rem;
+  padding: 0.42rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
 }
 
-.weather-dropdown-row:last-child { border-bottom: none; }
-.wd-icon { font-size: 1.15em; min-width: 1.4em; text-align: center; }
-.wd-day { flex: 1; color: var(--text-dim); }
-.wd-hi { color: var(--text); }
-.wd-sep { color: var(--text-dim); }
-.wd-lo { color: var(--text-dim); }
+.weather-dropdown-row:last-child {
+  border-bottom: none;
+}
 
 .search-compact {
   display: flex;
-  align-items: stretch;
-  gap: 0.5rem;
-  flex: 1;
-  min-width: 0;
+  align-items: centre;
+  gap: 0.45rem;
+  flex: 1 1 420px;
+  max-width: 720px;
+  min-width: 220px;
 }
 
 .search-mode-bar {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-shrink: 0;
+  padding: 0 0.35rem;
+  min-height: 32px;
 }
 
 .search-mode-btn {
@@ -428,7 +429,7 @@ a {
   background: var(--bg3);
   color: var(--text-dim);
   border-radius: var(--radius-sm);
-  padding: 0.35rem 0.85rem;
+  padding: 0.35rem 0.55rem;
   font-size: var(--topbar-font-size);
   font-family: var(--font);
   line-height: 1;
@@ -459,8 +460,8 @@ a {
 }
 
 .search-compact-input {
-  flex: 1;
-  min-width: 80px;
+  flex: 1 1 auto;
+  min-width: 0;
   padding: 0.28rem 0.7rem;
   font-size: var(--topbar-font-size);
 }
@@ -1021,6 +1022,16 @@ a {
   margin: auto 3px;
   flex: 0 0 14px;
   cursor: pointer;
+}
+
+.build-stamp {
+  font-size: 10px;
+  line-height: 1;
+  color: var(--text-dim);
+  opacity: 0.75;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+  align-self: center;
 }
 
 /* Notes */
