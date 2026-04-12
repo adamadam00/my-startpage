@@ -248,6 +248,7 @@ a {
   display: grid;
   place-items: center;
 }
+
 /* Topbar */
 
 .topbar {
@@ -360,6 +361,8 @@ a {
   gap: 0.4rem;
   flex-shrink: 0;
   white-space: nowrap;
+  padding-right: 0.65rem;
+  min-width: 0;
 }
 
 .weather-icon {
@@ -376,6 +379,11 @@ a {
 .weather-desc {
   font-size: var(--topbar-font-size);
   color: var(--text-dim);
+  padding-right: 0.45rem;
+  max-width: 9.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weather-dropdown {
@@ -478,6 +486,7 @@ a {
   gap: 0.6rem;
   flex-shrink: 0;
 }
+
 /* Bookmark dropdown */
 
 .bm-dropdown {
@@ -612,7 +621,7 @@ a {
   pointer-events: none;
 }
 
-.btn-xs {
+ .btn-xs {
   padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
@@ -669,6 +678,83 @@ a {
 
 .input::placeholder {
   color: var(--text-muted);
+}
+
+/* Sections */
+
+.sections-grid {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--section-gap-h, 0px);
+  padding: 0 0 3rem 0;
+  width: 100%;
+}
+
+.section-col {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  position: relative;
+  min-height: 6rem;
+}
+
+.section-col.is-over {
+  outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: -1px;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+.section-col::after {
+  content: '';
+  display: block;
+  height: 1rem;
+  flex: 0 0 1rem;
+}
+
+.section-card {
+  width: 100%;
+  margin: 0;
+  background: color-mix(in srgb, var(--card) calc(var(--card-opacity) * 100%), transparent);
+  outline: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  border: none;
+  border-radius: var(--section-radius);
+  overflow: hidden;
+}
+
+.section-card.collapsed {
+  margin: 0;
+}
+
+.section-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.42rem var(--card-padding, 0.5rem);
+  cursor: default;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s;
+}
+
+.section-header:hover {
+  background: var(--bg3);
+}
+
+.section-card:not(.collapsed) .section-header {
+  border-bottom-color: color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+}
+
+.section-card.locked .section-header {
+  cursor: default;
+}
+
+.drag-handle,
+.section-drag-handle {
+  display: none !important;
 }
 
 .section-grab {
@@ -919,7 +1005,7 @@ a {
   background: transparent;
   border: none;
   color: var(--text-dim);
-    font-size: 0.75em;
+  font-size: 0.75em;
   cursor: pointer;
   transition: color 0.12s, background 0.12s;
   min-height: 26px;
@@ -1169,7 +1255,7 @@ flex-shrink: 0;
   right: auto !important;
   left: 0 !important;
   border-left: none !important;
-   border-right: 1px solid var(--border) !important;
+  border-right: 1px solid var(--border) !important;
   box-shadow: 20px 0 60px rgba(0, 0, 0, 0.55) !important;
   animation: slide-in-left 0.2s ease !important;
 }
@@ -1419,6 +1505,7 @@ input[type='range']::-moz-range-thumb {
 }
 
 /* Mobile */
+
 @media (max-width: 768px) {
   html {
     overflow: auto;
@@ -1508,4 +1595,4 @@ input[type='range']::-moz-range-thumb {
     grid-template-columns: 1fr;
     gap: 0.2rem;
   }
-} 
+}
