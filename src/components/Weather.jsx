@@ -132,7 +132,7 @@ export default function Weather() {
             zIndex: 9999,
             background: 'var(--bg2)',
             border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent)',
-            borderRadius: 'var(--radius)',
+            borderRadius: '0 0 var(--radius) var(--radius)',
             padding: '0.5rem 0.75rem',
             minWidth: 230,
             boxShadow: '0 8px 32px rgba(0,0,0,0.45)',

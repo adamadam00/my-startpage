@@ -358,10 +358,10 @@ a {
 .weather-wrap {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   flex-shrink: 0;
   white-space: nowrap;
-  padding-right: 1rem;
+  padding-right: 1.6rem;
   min-width: 0;
 }
 
@@ -379,8 +379,8 @@ a {
 .weather-desc {
   font-size: var(--topbar-font-size);
   color: var(--text-dim);
-  padding-right: 0.7rem;
-  max-width: 11rem;
+  padding-right: 1rem;
+  max-width: 14rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
