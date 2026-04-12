@@ -1164,7 +1164,7 @@ export default function App() {
                 </div>
               )}
             </div>
-          )}
+
 
 		<div className="topbar-actions">
 		  <button
