@@ -113,7 +113,7 @@ export default function Weather() {
   return (
     <div ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} style={{ position: 'relative', overflow: 'visible' }}>
       <div
-        className="weather-wrap"
+        className="weather-wrap" onClick={() => setOpen((v) => !v)}
         style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
         title={stale ? 'Weather data may be outdated' : 'Click for 5-day forecast'}
         onClick={() => setOpen(v => !v)}
@@ -127,12 +127,12 @@ export default function Weather() {
         <div
           style={{
             position: 'absolute',
-            top: 'calc(100% + 0.7rem)',
+            top: 'calc(100% + 0.75rem)',
             left: 0,
             zIndex: 9999,
             background: 'var(--bg2)',
             border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent)',
-            borderRadius: '0 0 var(--radius) var(--radius)',
+            borderRadius: 'var(--radius)',
             padding: '0.5rem 0.75rem',
             minWidth: 230,
             boxShadow: '0 8px 32px rgba(0,0,0,0.45)',

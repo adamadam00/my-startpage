@@ -81,21 +81,6 @@ function WeatherWidget() {
   )
 }
 
-
-function BuildStamp() {
-  return (
-    <div className="build-stamp" title={import.meta.env.VITE_BUILD_DATE}>
-      {new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
-        year: '2-digit',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })}
-    </div>
-  )
-}
-
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
   bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
