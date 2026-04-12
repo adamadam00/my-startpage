@@ -93,15 +93,27 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
   return (
     <div className="card notes-panel">
       <div className="notes-header" onClick={() => setOpen((v) => !v)}>
-        <div
-          className="section-name"
-          style={{ paddingRight: 0 }}
-          title="Notes"
-        >
-          Notes
+        <div className="notes-header-left">
+          <button
+            type="button"
+            className="notes-drag-handle"
+            draggable
+            onClick={(e) => e.stopPropagation()}
+            onDragStart={(e) => {
+              e.stopPropagation()
+            }}
+            title="Drag widget"
+            aria-label="Drag widget"
+          >
+            ⋮⋮
+          </button>
+
+          <div className="section-name notes-title" style={{ paddingRight: 0 }} title="Notes">
+            Notes
+          </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+        <div className="notes-header-actions">
           {!!safeNotes.length && <span className="notes-count">{safeNotes.length}</span>}
 
           {syncing && (
@@ -186,7 +198,7 @@ export default function Notes({ notes = [], workspaceId, userId, onRefresh, forc
 
             return (
               <div key={note.id} className="note-item">
-                <div style={{ flex: 1, minWidth: 0 }}>
+                <div className="note-main">
                   {editing === note.id ? (
                     <>
                       <textarea

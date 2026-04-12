@@ -5,6 +5,23 @@ import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import Weather from './components/Weather'
+
+const SIDE_WIDGETS_KEY = 'startpage-side-widgets'
+const DEFAULT_SIDE_WIDGETS = ['notes']
+
+function normalizeSideWidgets(value) {
+  const arr = Array.isArray(value) ? value.filter(Boolean) : []
+  const uniq = [...new Set(arr)]
+  const merged = [...uniq]
+
+  for (const key of DEFAULT_SIDE_WIDGETS) {
+    if (!merged.includes(key)) merged.push(key)
+  }
+
+  return merged
+}
 
 // ─── CLOCK ────────────────────────────────────────────────────────────────────
 function ClockWidget() {
@@ -22,54 +39,7 @@ function ClockWidget() {
     </div>
   )
 }
-
-// ─── WEATHER ──────────────────────────────────────────────────────────────────
-function WeatherWidget() {
-  const CACHE_KEY = 'wxcache'
-  const CACHE_TTL = 25 * 60 * 1000
-  const [wx, setWx] = useState(() => {
-    try {
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) return c.data
-    } catch {}
-    return null
-  })
-
-  useEffect(() => {
-    try {
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) return
-    } catch {}
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(
-      async ({ coords }) => {
-        try {
-          const r = await fetch(
-            `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
-          )
-          const d = await r.json()
-          setWx(d.current_weather)
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
-        } catch {}
-      },
-      () => {},
-      { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
-    )
-  }, [])
-
-  if (!wx) return null
-
-  const icons = { 0:'☀',1:'🌤',2:'⛅',3:'☁',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'⛈',71:'❄',73:'❄',75:'❄',80:'🌦',81:'🌦',82:'⛈',95:'⛈',96:'⛈',99:'⛈' }
-  const descs = { 0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Drizzle',53:'Drizzle',55:'Drizzle',61:'Rainy',63:'Rainy',65:'Heavy rain',71:'Snowy',73:'Snowy',75:'Heavy snow',80:'Showers',81:'Showers',82:'Heavy showers',95:'Stormy',96:'Stormy',99:'Stormy' }
-
-  return (
-    <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || '•'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
-      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
-    </div>
-  )
-}
+ 
 
 // ─── DEFAULT THEME ────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
@@ -1088,7 +1058,7 @@ export default function App() {
           <div className="topbar-widgets">
             {!theme.hideClock && <ClockWidget />}
             {!theme.hideClock && !theme.hideWeather && <div className="topbar-divider" />}
-            {!theme.hideWeather && <WeatherWidget />}
+            {!theme.hideWeather && <Weather />}
           </div>
 
           {!theme.hideSearch && (
