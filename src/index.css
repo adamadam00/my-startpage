@@ -377,9 +377,10 @@ a {
 }
 
 .weather-dropdown {
-  position: fixed;
-  margin-top: 4px;
-  z-index: 9999;
+  position: fixed, z-index: 10000;
+  margin-top: 0.25rem; /* or 0rem to overlap slightly */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
