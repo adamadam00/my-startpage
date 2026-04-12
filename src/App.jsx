@@ -22,17 +22,17 @@ function normalizeSideWidgets(value) {
   return merged
 }
 
-
-
-// ─── CLOCK ────────────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
+
   const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+
   return (
     <div className="clock-compact">
       <span className="clock-compact-time">{hm}</span>
@@ -40,77 +40,131 @@ function ClockWidget() {
     </div>
   )
 }
- 
 
-// ─── DEFAULT THEME ────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
-  bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
-  card: '#13131a', cardOpacity: 1,
-  border: '#2a2a3a', borderHover: '#3d3d55', borderOpacity: 1,
+  bg: '#0c0c0f',
+  bg2: '#13131a',
+  bg3: '#1a1a24',
+  card: '#13131a',
+  cardOpacity: 1,
+  border: '#2a2a3a',
+  borderHover: '#3d3d55',
+  borderOpacity: 1,
   handleOpacity: 15,
-  text: '#e8e8f0', textDim: '#7878a0', titleColor: '#7878a0',
-  accent: '#6c8fff', danger: '#ff6b6b', success: '#6bffb8',
-  btnBg: '#3a3a4a', btnText: '#e8e8f0',
+  text: '#e8e8f0',
+  textDim: '#7878a0',
+  titleColor: '#7878a0',
+  accent: '#6c8fff',
+  danger: '#ff6b6b',
+  success: '#6bffb8',
+  btnBg: '#3a3a4a',
+  btnText: '#e8e8f0',
   font: "'DM Mono', monospace",
-  fontSize: 14, topbarFontSize: 12, clockWidgetSize: 1,
-  notesFontSize: 13, settingsFontSize: 13,
-  radius: 10, sectionRadius: 0,
-  linkGap: 0.5, cardPadding: 0.75,
-  sectionGap: 0, sectionGapH: 0, mainGapTop: 12,
+  fontSize: 14,
+  topbarFontSize: 12,
+  clockWidgetSize: 1,
+  notesFontSize: 13,
+  settingsFontSize: 13,
+  radius: 10,
+  sectionRadius: 0,
+  linkGap: 0.5,
+  cardPadding: 0.75,
+  sectionGap: 0,
+  sectionGapH: 0,
+  mainGapTop: 12,
   pageScale: 1,
-  faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13,
-  patternColor: '#2a2a3a', patternOpacity: 1,
+  faviconOpacity: 1,
+  faviconGreyscale: false,
+  faviconSize: 13,
+  patternColor: '#2a2a3a',
+  patternOpacity: 1,
   bgPreset: 'noise',
-  wallpaper: '', wallpaperFit: 'cover',
-  wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
-  wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
+  wallpaper: '',
+  wallpaperFit: 'cover',
+  wallpaperX: 50,
+  wallpaperY: 50,
+  wallpaperScale: 100,
+  wallpaperBlur: 0,
+  wallpaperDim: 35,
+  wallpaperOpacity: 100,
   linksPaddingH: 0.75,
   bgSt: {},
   searchEngineUrl: 'https://www.google.com/search?q=',
   settingsTitleColor: '#7878a0',
-  bgGrassSky: '#020609', bgGrassGround: '#071a05',
-  bgOceanSky: '#000814', bgOceanWater: '#001428',
+  bgGrassSky: '#020609',
+  bgGrassGround: '#071a05',
+  bgOceanSky: '#000814',
+  bgOceanWater: '#001428',
   sectionsCols: 6,
-  notesGap: 0, notesCardBg: '#13131a',
-  notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  notesGap: 0,
+  notesCardBg: '#13131a',
+  notesTextColor: '#e8e8f0',
+  notesTextBg: '#0c0c0f',
   settingsSide: 'right',
-  bmFontSize: 13, bmResultBg: '', bmResultText: '',
-  openInNewTab: true, faviconEnabled: true,
-  hideClock: false, hideWeather: false, hideSearch: false,
-  hideCards: false, hideNotes: false, linksOpenNewWindow: true,
+  bmFontSize: 13,
+  bmResultBg: '',
+  bmResultText: '',
+  openInNewTab: true,
+  faviconEnabled: true,
+  hideClock: false,
+  hideWeather: false,
+  hideSearch: false,
+  hideCards: false,
+  hideNotes: false,
+  linksOpenNewWindow: true,
   notesCardBgOpacity: 1,
 }
 
 function applyTheme(t) {
   if (!t) return
-  const root = document.documentElement
-  const s = (k, v) => { if (v !== undefined && v !== null) root.style.setProperty(k, String(v)) }
 
-  s('--bg', t.bg); s('--bg2', t.bg2); s('--bg3', t.bg3)
-  s('--card', t.card); s('--card-opacity', t.cardOpacity ?? 1)
-  s('--border', t.border); s('--border-hover', t.borderHover)
+  const root = document.documentElement
+  const s = (k, v) => {
+    if (v !== undefined && v !== null) root.style.setProperty(k, String(v))
+  }
+
+  s('--bg', t.bg)
+  s('--bg2', t.bg2)
+  s('--bg3', t.bg3)
+  s('--card', t.card)
+  s('--card-opacity', t.cardOpacity ?? 1)
+  s('--border', t.border)
+  s('--border-hover', t.borderHover)
   s('--border-opacity', t.borderOpacity ?? 1)
   s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
-  s('--text', t.text); s('--text-dim', t.textDim)
+  s('--text', t.text)
+  s('--text-dim', t.textDim)
   s('--text-muted', t.textMuted ?? t.textDim)
   s('--title-color', t.titleColor ?? t.textDim)
   s('--accent', t.accent)
-  if (t.accent) { s('--accent-dim', `${t.accent}33`); s('--accent-glow', `${t.accent}22`) }
-  s('--danger', t.danger); s('--success', t.success)
-  s('--btn-bg', t.btnBg); s('--btn-text', t.btnText)
+
+  if (t.accent) {
+    s('--accent-dim', `${t.accent}33`)
+    s('--accent-glow', `${t.accent}22`)
+  }
+
+  s('--danger', t.danger)
+  s('--success', t.success)
+  s('--btn-bg', t.btnBg)
+  s('--btn-text', t.btnText)
   s('--font', t.font)
+
   if (t.fontSize) s('--font-size', `${t.fontSize}px`)
   if (t.topbarFontSize) s('--topbar-font-size', `${t.topbarFontSize}px`)
   if (t.clockWidgetSize) s('--clock-widget-size', `${t.clockWidgetSize}rem`)
   if (t.notesFontSize) s('--notes-font-size', `${t.notesFontSize}px`)
   if (t.faviconSize) s('--favicon-size', `${t.faviconSize}px`)
+
   if (t.radius != null) {
     s('--radius', `${t.radius}px`)
     s('--radius-sm', `${Math.max(2, t.radius - 4)}px`)
   }
+
   s('--section-radius', `${t.sectionRadius ?? 0}px`)
+
   if (t.linkGap != null) s('--link-gap', `${t.linkGap}rem`)
   if (t.cardPadding != null) s('--card-padding', `${t.cardPadding}rem`)
+
   s('--section-gap', `${t.sectionGap ?? 0}px`)
   s('--section-gap-h', `${t.sectionGapH ?? 0}px`)
   s('--main-gap-top', `${t.mainGapTop ?? 12}px`)
@@ -124,8 +178,10 @@ function applyTheme(t) {
   s('--pattern-opacity', t.patternOpacity ?? 1)
   s('--wallpaper-dim', (t.wallpaperDim ?? 35) / 100)
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
+
   if (t.settingsFontSize) s('--settings-font-size', `${t.settingsFontSize}px`)
   if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
+
   s('--notes-gap', `${t.notesGap ?? 0}px`)
   if (t.notesCardBg) s('--notes-card-bg', t.notesCardBg)
   if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
@@ -137,44 +193,69 @@ function applyTheme(t) {
     styleEl.id = 'sp-overrides'
     document.head.appendChild(styleEl)
   }
+
   const lph = t.linksPaddingH ?? 0.75
-  styleEl.textContent = lph >= 0
-    ? `.links-list { padding-left: ${lph}rem !important; padding-right: ${lph}rem !important; margin-left: 0 !important; }`
-    : `.links-list { padding-left: 0 !important; padding-right: var(--card-padding, 0.75rem) !important; margin-left: ${lph}rem !important; }`
+  styleEl.textContent =
+    lph >= 0
+      ? `.links-list { padding-left: ${lph}rem !important; padding-right: ${lph}rem !important; margin-left: 0 !important; }`
+      : `.links-list { padding-left: 0 !important; padding-right: var(--card-padding, 0.75rem) !important; margin-left: ${lph}rem !important; }`
 
   const ps = t.bgSt ?? {}
   const speed = ps.speed ?? 1
-  const dur = (b) => speed <= 0 ? '9999s' : `${(b / speed).toFixed(1)}s`
+  const dur = (b) => (speed <= 0 ? '9999s' : `${(b / speed).toFixed(1)}s`)
 
   const rgba = (hex, aa) => {
     const h = (hex || '000000').replace('#', '')
-    const r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16)
+    const r = parseInt(h.slice(0, 2), 16)
+    const g = parseInt(h.slice(2, 4), 16)
+    const b = parseInt(h.slice(4, 6), 16)
     return `rgba(${r},${g},${b},${aa})`
   }
+
   const hexRgb = (hex) => {
     const h = (hex || '000000').replace('#', '')
-    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)]
+    return [
+      parseInt(h.slice(0, 2), 16),
+      parseInt(h.slice(2, 4), 16),
+      parseInt(h.slice(4, 6), 16),
+    ]
   }
 
-  const c1 = ps.c1 || null, c2 = ps.c2 || null, c3 = ps.c3 || null
+  const c1 = ps.c1 || null
+  const c2 = ps.c2 || null
+  const c3 = ps.c3 || null
   const blur = ps.blur ?? null
-  s('--plasma-speed-a', dur(20)); s('--plasma-speed-b', dur(28))
-  if (blur != null) { s('--plasma-blur-a', `${blur}px`); s('--plasma-blur-b', `${blur + 20}px`) }
-  if (c1) {
-    s('--plasma-c1', rgba(c1, 0.28)); s('--plasma-c2', rgba(c2||c1, 0.25))
-    s('--plasma-c3', rgba(c3||c1, 0.18)); s('--plasma-c4', rgba(c1, 0.14))
-    s('--plasma-c5', rgba(c2||c1, 0.14)); s('--plasma-c6', rgba(c1, 0.16))
-    s('--drift-c1', rgba(c1, 0.20)); s('--drift-c2', rgba(c2||c1, 0.16))
-    s('--pulse-c', rgba(c1, 0.22))
-    s('--tide-c1', rgba(c1, 0.24)); s('--tide-c2', rgba(c2||c1, 0.20))
+
+  s('--plasma-speed-a', dur(20))
+  s('--plasma-speed-b', dur(28))
+
+  if (blur != null) {
+    s('--plasma-blur-a', `${blur}px`)
+    s('--plasma-blur-b', `${blur + 20}px`)
   }
 
-  const gSky = t.bgGrassSky || '#020609', gGnd = t.bgGrassGround || '#071a05'
-  const oSky = t.bgOceanSky || '#000814', oWtr = t.bgOceanWater || '#001428'
+  if (c1) {
+    s('--plasma-c1', rgba(c1, 0.28))
+    s('--plasma-c2', rgba(c2 || c1, 0.25))
+    s('--plasma-c3', rgba(c3 || c1, 0.18))
+    s('--plasma-c4', rgba(c1, 0.14))
+    s('--plasma-c5', rgba(c2 || c1, 0.14))
+    s('--plasma-c6', rgba(c1, 0.16))
+    s('--drift-c1', rgba(c1, 0.2))
+    s('--drift-c2', rgba(c2 || c1, 0.16))
+    s('--pulse-c', rgba(c1, 0.22))
+    s('--tide-c1', rgba(c1, 0.24))
+    s('--tide-c2', rgba(c2 || c1, 0.2))
+  }
+
+  const gSky = t.bgGrassSky || '#020609'
+  const gGnd = t.bgGrassGround || '#071a05'
+  const oSky = t.bgOceanSky || '#000814'
+  const oWtr = t.bgOceanWater || '#001428'
 
   const sfDensity = ps.density ?? 3
-  const sfTileA = [1200,900,700,500,350][sfDensity - 1] || 700
-  const sfTileB = [750,600,450,320,220][sfDensity - 1] || 450
+  const sfTileA = [1200, 900, 700, 500, 350][sfDensity - 1] || 700
+  const sfTileB = [750, 600, 450, 320, 220][sfDensity - 1] || 450
   s('--sf-tile-a', `${sfTileA}px ${sfTileA}px`)
   s('--sf-tile-b', `${sfTileB}px ${sfTileB}px`)
 
@@ -182,46 +263,52 @@ function applyTheme(t) {
   if (fogColor) {
     const rgb = hexRgb(fogColor)
     const fo = ps.fogOpacity ?? 1
-    s('--fog-c1', `rgba(${rgb},${(0.22*fo).toFixed(3)})`)
-    s('--fog-c2', `rgba(${rgb},${(0.18*fo).toFixed(3)})`)
-    s('--fog-c3', `rgba(${rgb},${(0.15*fo).toFixed(3)})`)
-    s('--fog-c4', `rgba(${rgb},${(0.16*fo).toFixed(3)})`)
-    s('--fog-c5', `rgba(${rgb},${(0.14*fo).toFixed(3)})`)
-    s('--fog-c6', `rgba(${rgb},${(0.10*fo).toFixed(3)})`)
+    s('--fog-c1', `rgba(${rgb},${(0.22 * fo).toFixed(3)})`)
+    s('--fog-c2', `rgba(${rgb},${(0.18 * fo).toFixed(3)})`)
+    s('--fog-c3', `rgba(${rgb},${(0.15 * fo).toFixed(3)})`)
+    s('--fog-c4', `rgba(${rgb},${(0.16 * fo).toFixed(3)})`)
+    s('--fog-c5', `rgba(${rgb},${(0.14 * fo).toFixed(3)})`)
+    s('--fog-c6', `rgba(${rgb},${(0.1 * fo).toFixed(3)})`)
   }
+
   const scanColor = ps.scanColor || t.patternColor || null
   if (scanColor) {
     const rgb = hexRgb(scanColor)
     const so = ps.scanOpacity ?? 1
-    s('--scan-line-c', `rgba(${rgb},${(0.90*so).toFixed(3)})`)
-    s('--scan-mid-c',  `rgba(${rgb},${(0.55*so).toFixed(3)})`)
-    s('--scan-glow-c', `rgba(${rgb},${(0.20*so).toFixed(3)})`)
-    s('--scan-glow2-c',`rgba(${rgb},${(0.08*so).toFixed(3)})`)
-    s('--scan-glow3-c',`rgba(${rgb},${(0.04*so).toFixed(3)})`)
+    s('--scan-line-c', `rgba(${rgb},${(0.9 * so).toFixed(3)})`)
+    s('--scan-mid-c', `rgba(${rgb},${(0.55 * so).toFixed(3)})`)
+    s('--scan-glow-c', `rgba(${rgb},${(0.2 * so).toFixed(3)})`)
+    s('--scan-glow2-c', `rgba(${rgb},${(0.08 * so).toFixed(3)})`)
+    s('--scan-glow3-c', `rgba(${rgb},${(0.04 * so).toFixed(3)})`)
   }
 
   let bgEl = document.getElementById('sp-bg')
-  if (!bgEl) { bgEl = document.createElement('style'); bgEl.id = 'sp-bg'; document.head.appendChild(bgEl) }
+  if (!bgEl) {
+    bgEl = document.createElement('style')
+    bgEl.id = 'sp-bg'
+    document.head.appendChild(bgEl)
+  }
+
   bgEl.textContent = `
     .bg-aurora { animation-duration: ${dur(12)} !important; }
     .bg-layer.bg-starfield::before { animation-duration: ${dur(80)} !important; }
-    .bg-layer.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
+    .bg-layer.bg-starfield::after { animation-duration: ${dur(130)} !important; }
     .bg-layer.bg-fog::before { animation-duration: ${dur(42)} !important; }
-    .bg-layer.bg-fog::after  { animation-duration: ${dur(58)} !important; }
+    .bg-layer.bg-fog::after { animation-duration: ${dur(58)} !important; }
     .bg-layer.bg-scan::before { animation-duration: ${dur(7)} !important; }
     .bg-layer.bg-vortex::before { animation-duration: ${dur(70)} !important; }
-    .bg-layer.bg-vortex::after  { animation-duration: ${dur(110)} !important; }
+    .bg-layer.bg-vortex::after { animation-duration: ${dur(110)} !important; }
     .bg-gradient { animation-duration: ${dur(20)} !important; }
     .bg-mesh { animation-duration: ${dur(22)} !important; }
     .bg-nebula { animation-duration: ${dur(30)} !important; }
     .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before { animation-duration: ${dur(20)} !important; }
-    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after  { animation-duration: ${dur(28)} !important; }
+    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after { animation-duration: ${dur(28)} !important; }
     .bg-layer.bg-drift::before { animation-duration: ${dur(35)} !important; }
-    .bg-layer.bg-drift::after  { animation-duration: ${dur(50)} !important; }
+    .bg-layer.bg-drift::after { animation-duration: ${dur(50)} !important; }
     .bg-layer.bg-pulse::before { animation-duration: ${dur(8)} !important; }
-    .bg-layer.bg-pulse::after  { animation-duration: ${dur(12)} !important; }
-    .bg-layer.bg-tide::before  { animation-duration: ${dur(20)} !important; }
-    .bg-layer.bg-tide::after   { animation-duration: ${dur(30)} !important; }
+    .bg-layer.bg-pulse::after { animation-duration: ${dur(12)} !important; }
+    .bg-layer.bg-tide::before { animation-duration: ${dur(20)} !important; }
+    .bg-layer.bg-tide::after { animation-duration: ${dur(30)} !important; }
     .bg-layer.bg-grass {
       overflow: hidden;
       background-color: ${gSky};
@@ -231,7 +318,12 @@ function applyTheme(t) {
         linear-gradient(to bottom, ${gSky} 0%, ${gSky}bb 55%, ${gGnd}aa 66%, ${gGnd} 100%);
     }
     .bg-layer.bg-grass::before {
-      content: ''; position: absolute; bottom: 0; left: -5%; width: 110%; height: 42%;
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: -5%;
+      width: 110%;
+      height: 42%;
       background: ${gGnd};
       clip-path: polygon(0% 100%,0% 52%,1% 30%,2% 50%,3% 22%,4% 46%,5% 10%,6% 40%,7% 18%,8% 44%,9% 6%,10% 38%,100% 52%,100% 100%);
       animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
@@ -243,14 +335,28 @@ function applyTheme(t) {
       background-image: linear-gradient(to bottom, ${oSky} 0%, ${oSky}cc 36%, ${oWtr}cc 52%, ${oWtr} 100%);
     }
     .bg-layer.bg-ocean::before {
-      content: ''; position: absolute; bottom: -22%; left: -30%; width: 160%; height: 75%;
-      background: ${oWtr}; border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%;
-      opacity: .88; animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
+      content: '';
+      position: absolute;
+      bottom: -22%;
+      left: -30%;
+      width: 160%;
+      height: 75%;
+      background: ${oWtr};
+      border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%;
+      opacity: .88;
+      animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
     }
     .bg-layer.bg-ocean::after {
-      content: ''; position: absolute; bottom: -18%; left: -40%; width: 180%; height: 60%;
-      background: ${oWtr}; border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%;
-      opacity: .75; animation: ocean-wave-b ${dur(15)} ease-in-out infinite alternate-reverse;
+      content: '';
+      position: absolute;
+      bottom: -18%;
+      left: -40%;
+      width: 180%;
+      height: 60%;
+      background: ${oWtr};
+      border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%;
+      opacity: .75;
+      animation: ocean-wave-b ${dur(15)} ease-in-out infinite alternate-reverse;
     }
     @keyframes grass-sway { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
     @keyframes ocean-wave-a { 0% { transform: translateX(-6%) rotate(-1.5deg); } 100% { transform: translateX(6%) rotate(1.5deg); } }
@@ -259,30 +365,60 @@ function applyTheme(t) {
 
   const oldPlanets = document.getElementById('sf-planets')
   if (oldPlanets) oldPlanets.remove()
+
   if (t.bgPreset === 'starfield' && ps.planets) {
     const sfLayer = document.querySelector('.bg-layer.bg-starfield')
     if (sfLayer) {
       const planetCount = ps.planetCount ?? 2
       const planetDefs = [
-        { size:220, left:-5, top:52, gradient:'radial-gradient(circle at 35% 35%, #5a7fb5 0%, #2a4a7a 40%, #0f1d3a 100%)', glow:'0 0 80px rgba(60,100,200,0.15)', ring:true, ringColor:'rgba(140,170,220,0.32)' },
-        { size:80,  left:83, top:10, gradient:'radial-gradient(circle at 40% 38%, #c8936a 0%, #7a4a22 45%, #3a1f0a 100%)', glow:'0 0 40px rgba(180,100,40,0.12)', ring:false },
-        { size:140, left:8,  top:8,  gradient:'radial-gradient(circle at 42% 38%, #8a6ab5 0%, #4a3070 45%, #1a0f30 100%)', glow:'0 0 60px rgba(120,80,200,0.12)', ring:false },
+        {
+          size: 220,
+          left: -5,
+          top: 52,
+          gradient: 'radial-gradient(circle at 35% 35%, #5a7fb5 0%, #2a4a7a 40%, #0f1d3a 100%)',
+          glow: '0 0 80px rgba(60,100,200,0.15)',
+          ring: true,
+          ringColor: 'rgba(140,170,220,0.32)',
+        },
+        {
+          size: 80,
+          left: 83,
+          top: 10,
+          gradient: 'radial-gradient(circle at 40% 38%, #c8936a 0%, #7a4a22 45%, #3a1f0a 100%)',
+          glow: '0 0 40px rgba(180,100,40,0.12)',
+          ring: false,
+        },
+        {
+          size: 140,
+          left: 8,
+          top: 8,
+          gradient: 'radial-gradient(circle at 42% 38%, #8a6ab5 0%, #4a3070 45%, #1a0f30 100%)',
+          glow: '0 0 60px rgba(120,80,200,0.12)',
+          ring: false,
+        },
       ]
+
       const container = document.createElement('div')
       container.id = 'sf-planets'
       container.style.cssText = 'position:absolute;inset:0;overflow:visible;pointer-events:none;z-index:1'
+
       planetDefs.slice(0, planetCount).forEach((p) => {
         const planet = document.createElement('div')
-        const inset = `inset -${Math.round(p.size*0.12)}px -${Math.round(p.size*0.06)}px ${Math.round(p.size*0.22)}px rgba(0,0,0,0.65)`
+        const inset = `inset -${Math.round(p.size * 0.12)}px -${Math.round(p.size * 0.06)}px ${Math.round(p.size * 0.22)}px rgba(0,0,0,0.65)`
         planet.style.cssText = `position:absolute;width:${p.size}px;height:${p.size}px;left:${p.left}%;top:${p.top}%;border-radius:50%;background:${p.gradient};box-shadow:${inset},${p.glow};pointer-events:none`
+
         if (p.ring) {
           const ring = document.createElement('div')
-          const rW = Math.round(p.size*1.85), rH = Math.round(p.size*0.38), rB = Math.round(p.size*0.065)
+          const rW = Math.round(p.size * 1.85)
+          const rH = Math.round(p.size * 0.38)
+          const rB = Math.round(p.size * 0.065)
           ring.style.cssText = `position:absolute;width:${rW}px;height:${rH}px;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-18deg);border-radius:50%;border:${rB}px solid ${p.ringColor};pointer-events:none`
           planet.appendChild(ring)
         }
+
         container.appendChild(planet)
       })
+
       sfLayer.appendChild(container)
     }
   }
@@ -294,13 +430,11 @@ function applyTheme(t) {
   if (t.pageScale) document.body.style.zoom = t.pageScale
 }
 
-// ─── THEME HELPERS ────────────────────────────────────────────────────────────
 function normalizeTheme(remote = {}, local = {}) {
   const wallpaper = local?.wallpaper ?? remote?.wallpaper ?? ''
   return { ...DEFAULT_THEME, ...remote, ...(wallpaper ? { wallpaper } : {}) }
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
@@ -313,17 +447,22 @@ export default function App() {
   const [notes, setNotes] = useState([])
 
   const [theme, setThemeState] = useState(() => {
-    try { return normalizeTheme(JSON.parse(localStorage.getItem('currenttheme'))) }
-    catch { return DEFAULT_THEME }
+    try {
+      return normalizeTheme(JSON.parse(localStorage.getItem('currenttheme')))
+    } catch {
+      return DEFAULT_THEME
+    }
   })
 
   const saveThemeRef = useRef(null)
 
   const persistTheme = (t, immediate = false) => {
     clearTimeout(saveThemeRef.current)
+
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
       if (!uid) return
+
       const { wallpaper, ...themeData } = t
       const payload = { ...themeData, savedAt: Date.now() }
 
@@ -338,14 +477,17 @@ export default function App() {
           .from('user_settings')
           .update({ theme: payload })
           .eq('user_id', uid)
+
         if (error) console.error('settings update error', error.message)
       } else {
         const { error } = await supabase
           .from('user_settings')
           .insert({ user_id: uid, theme: payload })
+
         if (error) console.error('settings insert error', error.message)
       }
     }
+
     if (immediate) doSave()
     else saveThemeRef.current = setTimeout(doSave, 1500)
   }
@@ -388,8 +530,13 @@ export default function App() {
     }
   }
 
-  useEffect(() => { applyTheme(theme) }, [theme])
-  useEffect(() => { sessionRef.current = session }, [session])
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    sessionRef.current = session
+  }, [session])
 
   useEffect(() => {
     if (!session) return
@@ -399,6 +546,7 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return
+
     const handleKey = (e) => {
       const active = document.activeElement
       if (
@@ -419,26 +567,24 @@ export default function App() {
         e.preventDefault()
       }
     }
+
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [session])
 
-
-
-
-  // ── Auth ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null)
       setLoading(false)
     })
+
     const { data: listener } = supabase.auth.onAuthStateChange((_, sess) => {
       setSession(sess ?? null)
     })
+
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // ── Data refresh ─────────────────────────────────────────────────────────
   const handleRefresh = async (workspaceOverride = null) => {
     if (!sessionRef.current?.user?.id) return
 
@@ -494,7 +640,6 @@ export default function App() {
     }
   }
 
-  // ── Visibility / online refresh ──────────────────────────────────────────
   useEffect(() => {
     const onVisible = async () => {
       if (document.visibilityState !== 'visible') return
@@ -507,15 +652,16 @@ export default function App() {
         }
       } catch {}
     }
+
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('online', onVisible)
+
     return () => {
       document.removeEventListener('visibilitychange', onVisible)
       window.removeEventListener('online', onVisible)
     }
   }, [activeWs])
 
-  // ── Load settings from Supabase ──────────────────────────────────────────
   const loadUserSettings = async (force = false) => {
     const uid = sessionRef.current?.user?.id ?? session?.user?.id
     if (!uid) return
@@ -569,7 +715,6 @@ export default function App() {
     }
   }
 
-  // ── Bootstrap on login ────────────────────────────────────────────────────
   useEffect(() => {
     if (!session) return
 
@@ -615,7 +760,6 @@ export default function App() {
     if (activeWs && session) handleRefresh(activeWs)
   }, [activeWs])
 
-  // ── Bookmarks ─────────────────────────────────────────────────────────────
   useEffect(() => {
     try {
       const raw = localStorage.getItem('spbookmarks')
@@ -638,27 +782,29 @@ export default function App() {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
-  // ── Filters ───────────────────────────────────────────────────────────────
   const filteredLinks = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return links
-    return links.filter((l) =>
-      l.title?.toLowerCase().includes(q) || l.url?.toLowerCase().includes(q)
+    return links.filter(
+      (l) => l.title?.toLowerCase().includes(q) || l.url?.toLowerCase().includes(q)
     )
   }, [links, search])
 
   const filteredBookmarks = useMemo(() => {
     const q = bmQuery.trim().toLowerCase()
     if (!q || !bookmarks.length) return []
+
     let hidden = []
-    try { hidden = JSON.parse(localStorage.getItem('spbmhidden') || '[]') } catch {}
+    try {
+      hidden = JSON.parse(localStorage.getItem('spbmhidden') || '[]')
+    } catch {}
+
     return bookmarks
       .filter((b) => !hidden.includes(b.folderId))
       .filter((b) => b.title?.toLowerCase().includes(q) || b.url?.toLowerCase().includes(q))
       .slice(0, 15)
   }, [bookmarks, bmQuery])
 
-  // ── Workspace actions ─────────────────────────────────────────────────────
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     setSession(null)
@@ -668,11 +814,13 @@ export default function App() {
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
+
     const { data, error } = await supabase
       .from('workspaces')
       .insert({ user_id: session.user.id, name: wsName.trim() })
       .select()
       .single()
+
     if (error) return alert(error.message)
     setWorkspaces((prev) => [...prev, data])
     setActiveWs(data.id)
@@ -693,7 +841,6 @@ export default function App() {
     setActiveWs(next[0]?.id ?? null)
   }
 
-  // ── Image uploads ─────────────────────────────────────────────────────────
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -704,17 +851,19 @@ export default function App() {
   const handleBgImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
+
     reader.onload = (e) => {
       localStorage.setItem('bgimage', e.target.result)
       setBgImage(e.target.result)
       setTheme((prev) => ({ ...prev, bgPreset: 'image' }))
     }
+
     reader.readAsDataURL(file)
   }
 
-  // ── Export ────────────────────────────────────────────────────────────────
   const exportFullBackup = async () => {
     const backup = { version: 2, exportedAt: new Date().toISOString(), theme, workspaces: [] }
+
     const { data: wsData } = await supabase
       .from('workspaces')
       .select('*')
@@ -736,6 +885,7 @@ export default function App() {
       ])
 
       const sectionsWithLinks = []
+
       for (const sec of secData || []) {
         const { data: secLinks } = await supabase
           .from('links')
@@ -764,7 +914,9 @@ export default function App() {
     }
 
     const a = document.createElement('a')
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }))
+    a.href = URL.createObjectURL(
+      new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
+    )
     a.download = 'startpage-backup.json'
     a.click()
   }
@@ -784,9 +936,11 @@ export default function App() {
       .order('position', { ascending: true })
 
     const rows = [['Section', 'Title', 'URL']]
-    secs?.forEach((s) =>
-      lnks?.filter((l) => l.section_id === s.id).forEach((l) => rows.push([s.name, l.title, l.url]))
-    )
+    secs?.forEach((s) => {
+      lnks
+        ?.filter((l) => l.section_id === s.id)
+        .forEach((l) => rows.push([s.name, l.title, l.url]))
+    })
 
     const dq = '"'
     const csv = rows
@@ -806,18 +960,20 @@ export default function App() {
     handleRefresh(activeWs)
   }
 
-  // ── Import ────────────────────────────────────────────────────────────────
   const handleImportBackup = (e) => {
     const f = e.target.files?.[0]
     if (!f) return
+
     e.target.value = ''
     setImportingBackup(true)
 
     const r = new FileReader()
+
     r.onload = async (ev) => {
       try {
         const uid = sessionRef.current?.user?.id
         if (!uid) throw new Error('Not logged in')
+
         const text = ev.target.result
         const ext = f.name.split('.').pop().toLowerCase()
 
@@ -979,14 +1135,15 @@ export default function App() {
     r.readAsText(f)
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-  const bgClass = bgImage && theme.bgPreset === 'image'
-    ? 'bg-layer bg-image'
-    : `bg-layer bg-${theme.bgPreset || 'noise'}`
+  const bgClass =
+    bgImage && theme.bgPreset === 'image'
+      ? 'bg-layer bg-image'
+      : `bg-layer bg-${theme.bgPreset || 'noise'}`
 
-  const bgStyle = bgImage && theme.bgPreset === 'image'
-    ? { backgroundImage: `url(${bgImage})` }
-    : undefined
+  const bgStyle =
+    bgImage && theme.bgPreset === 'image'
+      ? { backgroundImage: `url(${bgImage})` }
+      : undefined
 
   if (loading) return <div className="center-fill">Loading…</div>
   if (!session) return <Auth />
@@ -1047,6 +1204,7 @@ export default function App() {
                 )}
               </button>
             ))}
+
             <button
               className="icon-btn"
               title="New workspace"
@@ -1065,148 +1223,204 @@ export default function App() {
             {!theme.hideWeather && <Weather />}
           </div>
 
-          {!theme.hideSearch && (
-            <div className="search-compact">
-              <div className="search-mode-bar">
-                {[
-                  { key: 'web', icon: '⌕', title: 'Web' },
-                  { key: 'links', icon: '⊞', title: 'Links' },
-                  { key: 'bookmarks', icon: '⊟', title: 'Bookmarks' },
-                ].map(({ key, icon, title }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
-                    title={title}
-                    aria-label={title}
-                    onClick={() => {
-                      setSearchMode(key)
+          {!theme.hideSearch ? (
+            <>
+              <div className="search-compact">
+                <div className="search-mode-bar">
+                  {[
+                    { key: 'web', icon: '⌕', title: 'Web' },
+                    { key: 'links', icon: '⊞', title: 'Links' },
+                    { key: 'bookmarks', icon: '⊟', title: 'Bookmarks' },
+                  ].map(({ key, icon, title }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`search-mode-btn${searchMode === key ? ' active' : ''}`}
+                      title={title}
+                      aria-label={title}
+                      onClick={() => {
+                        setSearchMode(key)
+                        setSearch('')
+                        setWebSearch('')
+                        setBmQuery('')
+                      }}
+                    >
+                      {icon}
+                    </button>
+                  ))}
+                </div>
+
+                <input
+                  className="input search-compact-input"
+                  placeholder={
+                    searchMode === 'web'
+                      ? 'Search the web'
+                      : searchMode === 'links'
+                        ? 'Filter links'
+                        : 'Search bookmarks'
+                  }
+                  ref={searchInputRef}
+                  value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
+                  onChange={(e) => {
+                    if (searchMode === 'web') setWebSearch(e.target.value)
+                    else if (searchMode === 'links') setSearch(e.target.value)
+                    else setBmQuery(e.target.value)
+                  }}
+                  onKeyDown={(e) => {
+                    if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
+                      const url =
+                        (theme.searchEngineUrl || 'https://www.google.com/search?q=') +
+                        encodeURIComponent(webSearch.trim())
+
+                      if (theme.openInNewTab ?? true) {
+                        window.open(url, '_blank', 'noopener,noreferrer')
+                      } else {
+                        window.location.href = url
+                      }
+
+                      setWebSearch('')
+                    }
+
+                    if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
+                      window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
+                      setBmQuery('')
+                    }
+
+                    if (e.key === 'Escape') {
                       setSearch('')
                       setWebSearch('')
                       setBmQuery('')
-                    }}
-                  >
-                    {icon}
-                  </button>
-                ))}
-              </div>
+                    }
+                  }}
+                />
 
-              <input
-                className="input search-compact-input"
-                placeholder={
-                  searchMode === 'web'
-                    ? 'Search the web'
-                    : searchMode === 'links'
-                      ? 'Filter links'
-                      : 'Search bookmarks'
-                }
-                ref={searchInputRef}
-                value={searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery}
-                onChange={(e) => {
-                  if (searchMode === 'web') setWebSearch(e.target.value)
-                  else if (searchMode === 'links') setSearch(e.target.value)
-                  else setBmQuery(e.target.value)
-                }}
-                onKeyDown={(e) => {
-                  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
-                    const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
-                    if (theme.openInNewTab ?? true) window.open(url, '_blank', 'noopener,noreferrer')
-                    else window.location.href = url
-                    setWebSearch('')
-                  }
-                  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
-                    window.open(filteredBookmarks[0].url, '_blank', 'noopener,noreferrer')
-                    setBmQuery('')
-                  }
-                  if (e.key === 'Escape') {
+                <button
+                  className="icon-btn search-btn"
+                  title="Clear"
+                  onClick={() => {
                     setSearch('')
                     setWebSearch('')
                     setBmQuery('')
-                  }
-                }}
-              />
-
-              <button
-                className="icon-btn search-btn"
-                title="Clear"
-                onClick={() => {
-                  setSearch('')
-                  setWebSearch('')
-                  setBmQuery('')
-                }}
-              >
-                ×
-              </button>
-
-              {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
-                <div
-                  className="bm-dropdown"
-                  style={{
-                    fontSize: `${theme.bmFontSize || 13}px`,
-                    ...(theme.bmResultBg ? { background: theme.bmResultBg } : {}),
-                    ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
                   }}
                 >
-                  {filteredBookmarks.map((b, i) => (
-                    <a
-                      key={b.id || i}
-                      className="bm-result"
-                      href={b.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => setBmQuery('')}
-                    >
-                      <span className="bm-result-url">{b.url.replace(/https?:\/\//, '').split('/')[0]}</span>
-                      <span className="bm-result-folder">{b.folder}</span>
-                      <span className="bm-result-title">{b.title}</span>
-                    </a>
-                  ))}
-                </div>
-              )}
+                  ×
+                </button>
+
+                {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
+                  <div
+                    className="bm-dropdown"
+                    style={{
+                      fontSize: `${theme.bmFontSize || 13}px`,
+                      ...(theme.bmResultBg ? { background: theme.bmResultBg } : {}),
+                      ...(theme.bmResultText ? { '--bm-text': theme.bmResultText } : {}),
+                    }}
+                  >
+                    {filteredBookmarks.map((b, i) => (
+                      <a
+                        key={b.id || i}
+                        className="bm-result"
+                        href={b.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setBmQuery('')}
+                      >
+                        <span className="bm-result-url">
+                          {b.url.replace(/https?:\/\//, '').split('/')[0]}
+                        </span>
+                        <span className="bm-result-folder">{b.folder}</span>
+                        <span className="bm-result-title">{b.title}</span>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="topbar-actions">
+                <button
+                  className="btn"
+                  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+                  onClick={toggleAll}
+                >
+                  {allCollapsed ? 'Expand' : 'Collapse'}
+                </button>
+
+                <button
+                  className="icon-btn"
+                  title="Refresh"
+                  onClick={async () => {
+                    await loadUserSettings(true)
+                    await handleRefresh()
+                  }}
+                >
+                  ↻
+                </button>
+
+                <button
+                  className="btn"
+                  title="Settings"
+                  onClick={() => setSettingsOpen(true)}
+                >
+                  Settings
+                </button>
+
+                <span
+                  className="build-stamp"
+                  title={`Build: ${import.meta.env.VITE_BUILD_DATE}`}
+                >
+                  {new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
+                    year: '2-digit',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="topbar-actions">
+              <button
+                className="btn"
+                title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
+                onClick={toggleAll}
+              >
+                {allCollapsed ? 'Expand' : 'Collapse'}
+              </button>
+
+              <button
+                className="icon-btn"
+                title="Refresh"
+                onClick={async () => {
+                  await loadUserSettings(true)
+                  await handleRefresh()
+                }}
+              >
+                ↻
+              </button>
+
+              <button
+                className="btn"
+                title="Settings"
+                onClick={() => setSettingsOpen(true)}
+              >
+                Settings
+              </button>
+
+              <span
+                className="build-stamp"
+                title={`Build: ${import.meta.env.VITE_BUILD_DATE}`}
+              >
+                {new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
+                  year: '2-digit',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
             </div>
-
-
-		<div className="topbar-actions">
-		  <button
-			className="btn"
-			title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
-			onClick={toggleAll}
-		  >
-			{allCollapsed ? 'Expand' : 'Collapse'}
-		  </button>
-
-		  <button
-			className="icon-btn"
-			title="Refresh"
-			onClick={async () => {
-			  await loadUserSettings(true)
-			  handleRefresh()
-			}}
-		  >
-			↻
-		  </button>
-
-		  <button
-			className="btn"
-			title="Settings"
-			onClick={() => setSettingsOpen(true)}
-		  >
-			Settings
-		  </button>
-
-		  <span
-			className="build-stamp"
-			title={`Build: ${import.meta.env.VITE_BUILD_DATE}`}
-		  >
-			{new Date(import.meta.env.VITE_BUILD_DATE).toLocaleString([], {
-			  year: '2-digit',
-			  month: 'short',
-			  day: 'numeric',
-			  hour: '2-digit',
-			  minute: '2-digit',
-			})}
-		  </span>
-		</div>
+          )}
+        </div>
 
         <main className="main-layout" style={{ gridTemplateColumns: '1fr var(--notes-width, 240px)' }}>
           {!theme.hideCards && (
