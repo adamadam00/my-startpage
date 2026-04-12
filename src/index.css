@@ -376,6 +376,35 @@ a {
   color: var(--text-dim);
 }
 
+.weather-dropdown {
+  position: fixed;
+  top: auto;
+  margin-top: 4px;
+  z-index: 9999;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+  min-width: 200px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  font-size: var(--topbar-font-size, 12px);
+}
+
+.weather-dropdown-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.22rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
+}
+
+.weather-dropdown-row:last-child { border-bottom: none; }
+.wd-icon { font-size: 1em; }
+.wd-day { flex: 1; color: var(--text-dim); }
+.wd-hi { color: var(--text); }
+.wd-sep { color: var(--text-dim); }
+.wd-lo { color: var(--text-dim); }
+
 .search-compact {
   display: flex;
   align-items: stretch;

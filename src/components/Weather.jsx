@@ -23,12 +23,8 @@ const WX = {
 }
 
 const WIND_LABELS = [
-  [1, 'Calm'],
-  [5, 'Light breeze'],
-  [15, 'Breezy'],
-  [30, 'Windy'],
-  [50, 'Very windy'],
-  [Infinity, 'Gale'],
+  [1, 'Calm'], [5, 'Light breeze'], [15, 'Breezy'],
+  [30, 'Windy'], [50, 'Very windy'], [Infinity, 'Gale'],
 ]
 
 function windLabel(kmh) {
@@ -58,6 +54,7 @@ export default function Weather() {
   const [stale, setStale] = useState(false)
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  const hoverTimer = useRef(null)
 
   const doFetch = async (lat, lon) => {
     try {
@@ -93,12 +90,9 @@ export default function Weather() {
       try {
         const { lat, lon } = JSON.parse(cachedPos)
         const cached = JSON.parse(localStorage.getItem(DATA_KEY) || 'null')
-        if (!cached || Date.now() - cached.ts >= DATA_TTL) {
-          doFetch(lat, lon)
-        }
+        if (!cached || Date.now() - cached.ts >= DATA_TTL) doFetch(lat, lon)
       } catch {}
     }
-
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => {
@@ -113,15 +107,10 @@ export default function Weather() {
     } else if (!cachedPos) {
       doFetch(-37.8136, 144.9631)
     }
-
     const t = setInterval(() => {
       const pos = localStorage.getItem(POS_KEY)
-      if (pos) {
-        const { lat, lon } = JSON.parse(pos)
-        doFetch(lat, lon)
-      }
+      if (pos) { const { lat, lon } = JSON.parse(pos); doFetch(lat, lon) }
     }, REFRESH_MS)
-
     return () => clearInterval(t)
   }, [])
 
@@ -134,27 +123,33 @@ export default function Weather() {
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
+  const handleMouseEnter = () => {
+    clearTimeout(hoverTimer.current)
+    setOpen(true)
+  }
+
+  const handleMouseLeave = () => {
+    hoverTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+
   if (!wx) return null
 
   const entry = WX[wx.weathercode]
   const icon = entry?.icon ?? '🌡'
   const skyLabel = entry?.label ?? 'Unknown'
-  const wLabel = windLabel(wx.windspeed)
   const isNeutralSky = [0, 1, 2, 3].includes(wx.weathercode)
-  const descriptor = (isNeutralSky && wx.windspeed >= 15) ? wLabel : skyLabel
+  const descriptor = (isNeutralSky && wx.windspeed >= 15) ? windLabel(wx.windspeed) : skyLabel
 
   const dayLabel = (dateStr, i) => {
     if (i === 0) return 'Today'
-    const d = new Date(dateStr)
-    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+    return new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   }
 
   return (
-    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }}>
+    <div ref={ref} style={{ position: 'relative' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <div
         className="weather-wrap"
         style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
-        title={stale ? 'Weather data may be outdated' : 'Click for 5-day forecast'}
         onClick={() => setOpen(v => !v)}
       >
         <span className="weather-icon">{icon}</span>
@@ -163,15 +158,16 @@ export default function Weather() {
       </div>
 
       {open && forecast.length > 0 && (
-        <div className="weather-forecast" onClick={(e) => e.stopPropagation()}>
+        <div className="weather-dropdown" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           {forecast.map((day, i) => {
             const wx2 = WX[day.code]
             return (
-              <div key={day.date} className="weather-forecast-day">
-                <span className="wf-icon">{wx2?.icon ?? '🌡'}</span>
-                <span className="wf-day">{dayLabel(day.date, i)}</span>
-                <span className="wf-hi">{day.max}°</span>
-                <span className="wf-lo">{day.min}°</span>
+              <div key={day.date} className="weather-dropdown-row">
+                <span className="wd-icon">{wx2?.icon ?? '🌡'}</span>
+                <span className="wd-day">{dayLabel(day.date, i)}</span>
+                <span className="wd-hi">{day.max}°</span>
+                <span className="wd-sep">/</span>
+                <span className="wd-lo">{day.min}°</span>
               </div>
             )
           })}
