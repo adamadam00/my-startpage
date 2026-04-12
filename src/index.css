@@ -327,12 +327,12 @@ a {
 .topbar-widgets {
   display: flex;
   align-items: center;
-  gap: .6rem;
+  gap: 1.1rem;
   flex: 1;
   min-width: 0;
   overflow: visible !important;
   position: relative;
-  padding: 0 0.35rem;
+  padding: 0 1.1rem 0 0.35rem;
 }
 
 .clock-compact {
@@ -358,11 +358,11 @@ a {
 .weather-wrap {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
-  flex-shrink: 0;
+  gap: 0.55rem;
+  flex: 0 0 auto;
   white-space: nowrap;
-  padding-right: 1.6rem;
-  min-width: 0;
+  padding-right: 2.4rem;
+  min-width: 18rem;
 }
 
 .weather-icon {
@@ -379,8 +379,8 @@ a {
 .weather-desc {
   font-size: var(--topbar-font-size);
   color: var(--text-dim);
-  padding-right: 1rem;
-  max-width: 14rem;
+  padding-right: 1.4rem;
+  max-width: 16rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1041,6 +1041,18 @@ a {
   align-self: center;
 }
 
+.topbar-meta-strip {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0.25rem 1.5rem 0;
+  min-height: 1.1rem;
+}
+
+.topbar-meta-strip .build-stamp {
+  margin-left: 0;
+}
+
 /* Notes */
 
 .notes-panel {
@@ -1570,6 +1582,11 @@ input[type='range']::-moz-range-thumb {
     padding: 0.45rem 0.75rem;
     gap: 0.5rem;
     flex-wrap: wrap;
+  }
+
+  .topbar-meta-strip {
+    padding: 0.2rem 0.75rem 0;
+    justify-content: flex-start;
   }
 
   .topbar-widgets {
