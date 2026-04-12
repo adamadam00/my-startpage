@@ -5,7 +5,6 @@ import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import './index.css'
-import { useEffect, useMemo, useRef, useState } from 'react'
 import Weather from './components/Weather'
 
 const SIDE_WIDGETS_KEY = 'startpage-side-widgets'
