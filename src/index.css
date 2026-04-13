@@ -1637,10 +1637,33 @@ background: color-mix(in srgb, var(--settings-scrollbar, var(--accent)) 82%, whi
 
 .link-item:not(:hover):not(:focus-within) .link-drag-handle { opacity: 0 !important; }
 
-/* Handle controls for live selectors - NO JSX CHANGES REQUIRED */
+/* Global handle controls — exact live selectors */
 .drag-handle,
 .section-drag-handle.drag-handle,
 .settings-drag-handle {
   color: var(--handle-color, var(--text-muted)) !important;
   font-size: var(--handle-size, 13px) !important;
-  line-height
+  line-height: 1 !important;
+}
+
+.section-drag-handle.drag-handle,
+.settings-drag-handle {
+  opacity: var(--handle-opacity-global, 0.7) !important;
+}
+
+.drag-handle:hover,
+.section-drag-handle.drag-handle:hover,
+.settings-drag-handle:hover {
+  color: var(--text) !important;
+}
+
+.drag-handle.link-drag-handle {
+  opacity: 0 !important;
+  transition: opacity 0.15s ease, color 0.12s ease !important;
+}
+
+.link-item:hover .drag-handle.link-drag-handle,
+.link-item:focus-within .drag-handle.link-drag-handle {
+  opacity: var(--handle-opacity-global, 0.7) !important;
+}
+
