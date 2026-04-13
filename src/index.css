@@ -327,12 +327,12 @@ a {
 .topbar-widgets {
   display: flex;
   align-items: center;
-  gap: .6rem;
-  flex: 1;
+  gap: 2.4rem;
+  flex: 1 1 auto;
   min-width: 0;
   overflow: visible !important;
   position: relative;
-  padding: 0 0.35rem;
+  padding: 0 3rem 0 0.35rem;
 }
 
 .clock-compact {
@@ -358,9 +358,12 @@ a {
 .weather-wrap {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  flex-shrink: 0;
+  gap: 0.8rem;
+  flex: 0 0 auto;
   white-space: nowrap;
+  padding-right: 9rem;
+  margin-right: 3rem;
+  min-width: 28rem;
 }
 
 .weather-icon {
@@ -377,6 +380,11 @@ a {
 .weather-desc {
   font-size: var(--topbar-font-size);
   color: var(--text-dim);
+  padding-right: 4rem;
+  max-width: 20rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weather-dropdown {
@@ -406,11 +414,12 @@ a {
 
 .search-compact {
   display: flex;
-  align-items: centre;
+  align-items: center;
   gap: 0.45rem;
-  flex: 1 1 420px;
-  max-width: 720px;
-  min-width: 220px;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: none;
+  min-width: 420px;
 }
 
 .search-mode-bar {
@@ -462,6 +471,7 @@ a {
 .search-compact-input {
   flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
   padding: 0.28rem 0.7rem;
   font-size: var(--topbar-font-size);
 }
