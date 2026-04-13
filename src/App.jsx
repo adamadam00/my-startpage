@@ -1124,14 +1124,15 @@ export default function App() {
 			  {/* Action buttons */}
 			  <div className="topbar-actions">
 				<button
-				  className="btn"
+				  className="icon-btn"
+				  aria-label={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  onClick={toggleAll}
 				>
-				  {allCollapsed ? 'Expand' : 'Collapse'}
+				  {allCollapsed ? '▣' : '▤'}
 				</button>
 				<button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
-				<button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
+				<button className="icon-btn" title="Settings" aria-label="Settings" onClick={() => setSettingsOpen(true)} style={{ fontSize: '1.1em', lineHeight: 1 }}>⚙</button>
 			  </div>
 			</div>
 
