@@ -1636,3 +1636,11 @@ background: color-mix(in srgb, var(--settings-scrollbar, var(--accent)) 82%, whi
 .settings-drag-handle { font-size: var(--handle-size, 13px) !important; color: var(--handle-color, var(--text-muted)) !important; opacity: var(--handle-opacity-global, 0.7) !important; line-height: 1; }
 
 .link-item:not(:hover):not(:focus-within) .link-drag-handle { opacity: 0 !important; }
+
+/* Handle controls for live selectors - NO JSX CHANGES REQUIRED */
+.drag-handle,
+.section-drag-handle.drag-handle,
+.settings-drag-handle {
+  color: var(--handle-color, var(--text-muted)) !important;
+  font-size: var(--handle-size, 13px) !important;
+  line-height
