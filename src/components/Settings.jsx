@@ -102,7 +102,7 @@ function SectionTitle({ children }) {
 function Group({
   id, title, children, defaultOpen = true, signal,
   draggable = false, isDragging = false,
-  onDragStart, onDragEnd, onDrop, onMoveUp, onMoveDown,
+  onDragStart, onDragEnd, onDrop,
 }) {
   const [open, setOpen] = useState(defaultOpen)
   const lastSignal = useRef(null)
@@ -136,32 +136,22 @@ function Group({
       }}
       style={isDragging ? { opacity: 0.55 } : undefined}
     >
-      <div className="settings-title" style={{
+      <div className="settings-title settings-group-title" style={{
         cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', fontWeight: 700, textAlign: 'center',
         color: 'var(--settings-title-color, #7878a0)', gap: '0.35rem',
       }} onClick={() => setOpen(v => !v)}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.18rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        <span style={{ flex: 1, textAlign: 'center', paddingLeft: draggable ? '1.6rem' : 0 }}>{title}</span>
+        <div className="settings-group-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {draggable && (
-            <button type="button" className="btn-xs" title="Drag to reorder" aria-label="Drag to reorder" style={{ padding: '0.14rem 0.34rem', cursor: 'grab' }}>
+            <button type="button" className="settings-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }}>
               ⋮⋮
             </button>
           )}
-          {draggable && (
-            <button type="button" className="btn-xs" title="Move up" aria-label="Move up" style={{ padding: '0.14rem 0.34rem' }} onClick={onMoveUp}>
-              ↑
-            </button>
-          )}
-          {draggable && (
-            <button type="button" className="btn-xs" title="Move down" aria-label="Move down" style={{ padding: '0.14rem 0.34rem' }} onClick={onMoveDown}>
-              ↓
-            </button>
-          )}
+          <span style={{ fontSize: '0.9em', opacity: 0.6 }}>
+            {open ? '▲' : '▼'}
+          </span>
         </div>
-        <span style={{ flex: 1, textAlign: 'center' }}>{title}</span>
-        <span style={{ fontSize: '0.75em', opacity: 0.45, marginLeft: '0.4rem' }}>
-          {open ? '▲' : '▼'}
-        </span>
       </div>
       {open && <div style={{ marginTop: '0.4rem' }}>{children}</div>}
     </div>
@@ -229,6 +219,30 @@ export default function Settings({
 
       <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)' }}>
 
+        <style>{`
+          .settings-group-title:hover .settings-group-actions,
+          .settings-group-title:focus-within .settings-group-actions,
+          .settings-section[draggable="true"] .settings-group-actions:has(.settings-drag-handle:focus-visible) { opacity: 1; }
+          .settings-group-actions { opacity: 0; transition: opacity 140ms ease; }
+          .settings-drag-handle {
+            border: 1px solid var(--border);
+            background: var(--bg2);
+            color: var(--settings-title-color, #7878a0);
+            border-radius: 999px;
+            width: 1.75rem;
+            height: 1.75rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            line-height: 1;
+            padding: 0;
+            opacity: 0.9;
+          }
+          .settings-drag-handle:hover { border-color: var(--borderHover); color: var(--text); }
+          .settings-drag-handle:active { cursor: grabbing; }
+        `}</style>
+
         <div className="settings-header">
           <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>Settings</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
@@ -258,14 +272,6 @@ export default function Settings({
             onDrop: (targetId) => {
               moveSection(draggedSection, targetId)
               setDraggedSection(null)
-            },
-            onMoveUp: (e) => {
-              e.stopPropagation()
-              if (index > 0) moveSection(sectionId, sectionOrder[index - 1])
-            },
-            onMoveDown: (e) => {
-              e.stopPropagation()
-              if (index < sectionOrder.length - 1) moveSection(sectionId, sectionOrder[index + 1])
             },
           }
 
