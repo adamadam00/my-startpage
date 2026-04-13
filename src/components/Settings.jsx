@@ -100,18 +100,24 @@ function SectionTitle({ children }) {
 }
 
 function Group({
-  id, title, children, defaultOpen = true, signal,
+  id, title, children, defaultOpen = false, signal,
   draggable = false, isDragging = false,
-  onDragStart, onDragEnd, onDrop,
+  onDragStart, onDragEnd, onDrop, onOpenChange,
+  openState,
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [open, setOpen] = useState(openState ?? defaultOpen)
   const lastSignal = useRef(null)
 
   useEffect(() => {
     if (!signal || signal === lastSignal.current) return
     setOpen(signal.open)
+    onOpenChange?.(signal.open)
     lastSignal.current = signal
-  }, [signal])
+  }, [signal, onOpenChange])
+
+  useEffect(() => {
+    if (typeof openState === 'boolean') setOpen(openState)
+  }, [openState])
 
   return (
     <div
@@ -140,18 +146,18 @@ function Group({
         cursor: 'pointer', userSelect: 'none', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between', fontWeight: 700, textAlign: 'center',
         color: 'var(--settings-title-color, #7878a0)', gap: '0.35rem',
-      }} onClick={() => setOpen(v => !v)}>
-        <span style={{ flex: 1, textAlign: 'center', paddingLeft: draggable ? '1.6rem' : 0 }}>{title}</span>
+      }} onClick={() => { const next = !open; setOpen(next); onOpenChange?.(next) }}>
         <div className="settings-group-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {draggable && (
             <button type="button" className="settings-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }}>
               ⋮⋮
             </button>
           )}
-          <span style={{ fontSize: '0.9em', opacity: 0.6 }}>
-            {open ? '▲' : '▼'}
-          </span>
         </div>
+        <span style={{ flex: 1, textAlign: 'center' }}>{title}</span>
+        <button type="button" className="settings-chevron" title={open ? 'Collapse section' : 'Expand section'} aria-label={open ? 'Collapse section' : 'Expand section'} onClick={e => { e.stopPropagation(); const next = !open; setOpen(next); onOpenChange?.(next) }}>
+          {open ? '▲' : '▼'}
+        </button>
       </div>
       {open && <div style={{ marginTop: '0.4rem' }}>{children}</div>}
     </div>
@@ -198,6 +204,26 @@ export default function Settings({
     return deduped
   }
   const sectionOrder = useMemo(() => normalizeOrder(theme.settingsSectionOrder), [theme.settingsSectionOrder])
+  const [openSections, setOpenSections] = useState(() => {
+    const src = theme.settingsOpenSections
+    if (src && typeof src === 'object') return src
+    return {}
+  })
+
+  useEffect(() => {
+    if (theme.settingsOpenSections && typeof theme.settingsOpenSections === 'object') {
+      setOpenSections(theme.settingsOpenSections)
+    }
+  }, [theme.settingsOpenSections])
+
+  const setSectionOpen = (sectionId, isOpen) => {
+    setOpenSections(prev => {
+      const next = { ...prev, [sectionId]: isOpen }
+      set('settingsOpenSections', next)
+      return next
+    })
+  }
+
   const moveSection = (fromId, toId) => {
     if (!fromId || !toId || fromId === toId) return
     const next = [...sectionOrder]
@@ -222,25 +248,32 @@ export default function Settings({
         <style>{`
           .settings-group-title:hover .settings-group-actions,
           .settings-group-title:focus-within .settings-group-actions,
-          .settings-section[draggable="true"] .settings-group-actions:has(.settings-drag-handle:focus-visible) { opacity: 1; }
+          .settings-group-title:hover .settings-chevron,
+          .settings-group-title:focus-within .settings-chevron,
+          .settings-section[draggable="true"] .settings-group-actions:has(.settings-drag-handle:focus-visible),
+          .settings-chevron:focus-visible { opacity: 1; }
           .settings-group-actions { opacity: 0; transition: opacity 140ms ease; }
           .settings-drag-handle {
-            border: 1px solid var(--border);
-            background: var(--bg2);
             color: var(--settings-title-color, #7878a0);
-            border-radius: 999px;
-            width: 1.75rem;
-            height: 1.75rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1rem;
+            font-size: 1.08rem;
             line-height: 1;
             padding: 0;
             opacity: 0.9;
           }
-          .settings-drag-handle:hover { border-color: var(--borderHover); color: var(--text); }
+          .settings-drag-handle:hover { color: var(--text); }
           .settings-drag-handle:active { cursor: grabbing; }
+          .settings-chevron {
+            color: var(--settings-title-color, #7878a0);
+            font-size: 0.9em;
+            line-height: 1;
+            opacity: 0.35;
+            padding: 0;
+            transition: opacity 140ms ease, color 140ms ease;
+          }
+          .settings-chevron:hover { color: var(--text); opacity: 1; }
         `}</style>
 
         <div className="settings-header">
@@ -267,6 +300,8 @@ export default function Settings({
             signal: groupSignal,
             draggable: true,
             isDragging: draggedSection === sectionId,
+            openState: openSections[sectionId] ?? false,
+            onOpenChange: (isOpen) => setSectionOpen(sectionId, isOpen),
             onDragStart: setDraggedSection,
             onDragEnd: () => setDraggedSection(null),
             onDrop: (targetId) => {
@@ -276,7 +311,7 @@ export default function Settings({
           }
 
           if (sectionId === 'background') return (
-            <Group title="Background" defaultOpen {...commonGroupProps}>
+            <Group title="Background" {...commonGroupProps}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', marginBottom: '0.4rem' }}>
                 {BG_PRESETS.map(p => (
                   <button key={p.value} className={`btn-xs${theme.bgPreset === p.value ? ' btn-primary' : ''}`}
