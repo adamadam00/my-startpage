@@ -149,7 +149,7 @@ function Group({
       }} onClick={() => { const next = !open; setOpen(next); onOpenChange?.(next) }}>
         <div className="settings-group-actions settings-group-actions-left" style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {draggable && (
-            <button type="button" className="settings-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }}>
+            <button type="button" className="settings-drag-handle" draggable title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }} onDragStart={e => { setDragging(true); onDragStart?.(id); try { e.dataTransfer.effectAllowed = 'move' } catch {} }} onDragEnd={e => { setDragging(false); onDragEnd?.(e) }} onDragOver={e => { if (!draggable) return; e.preventDefault() }} onDrop={e => { if (!draggable) return; e.preventDefault(); onDrop?.(id); setDragging(false) }}>
               ⋮⋮
             </button>
           )}
@@ -306,7 +306,7 @@ export default function Settings({
             key: sectionId,
             id: sectionId,
             signal: groupSignal,
-            draggable: true,
+            draggable: false,
             isDragging: draggedSection === sectionId,
             openState: openSections[sectionId] ?? false,
             onOpenChange: (isOpen) => setSectionOpen(sectionId, isOpen),

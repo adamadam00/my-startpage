@@ -53,6 +53,11 @@
   --notes-gap: 0px;
   --sections-cols: 3;
   --bm-text: var(--text);
+--settings-scrollbar-color: var(--accent);
+--link-handle-size: 13px;
+--link-handle-opacity: 0.7;
+--card-handle-size: 13px;
+--card-handle-opacity: 0.7;
 }
 
 *,
@@ -770,7 +775,7 @@ a {
   justify-content: center;
   width: 1.05rem;
   height: 1.05rem;
-  min-width: 1.05rem;
+  min-width: var(--card-handle-size, 1.05rem);
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -1599,3 +1604,27 @@ input[type='range']::-moz-range-thumb {
     gap: 0.2rem;
   }
 }
+
+.link-drag-handle {
+  font-size: var(--link-handle-size, 13px);
+  opacity: var(--link-handle-opacity, 0.7);
+  line-height: 1;
+}
+.settings-panel,
+.main-col,
+.side-col {
+scrollbar-color: var(--settings-scrollbar, var(--accent)) transparent;
+}
+
+.settings-panel::-webkit-scrollbar-thumb,
+.main-col::-webkit-scrollbar-thumb,
+.side-col::-webkit-scrollbar-thumb {
+background: var(--settings-scrollbar, var(--accent));
+}
+
+.settings-panel::-webkit-scrollbar-thumb:hover,
+.main-col::-webkit-scrollbar-thumb:hover,
+.side-col::-webkit-scrollbar-thumb:hover {
+background: color-mix(in srgb, var(--settings-scrollbar, var(--accent)) 82%, white 18%);
+}
+
