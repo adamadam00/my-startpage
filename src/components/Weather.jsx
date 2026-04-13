@@ -21,7 +21,7 @@ const WX = {
   82: { icon: '⛈', label: 'Violent rain' },
   95: { icon: '⛈', label: 'Thunderstorm' },
 }
-
+ 
 const WIND_LABELS = [
   [1, 'Calm'],
   [5, 'Light breeze'],
@@ -57,14 +57,12 @@ export default function Weather() {
         const d = await r.json()
         setWx(d.current_weather)
         if (d.daily) {
-          setForecast(
-            d.daily.time.slice(0, 5).map((date, i) => ({
-              date,
-              code: d.daily.weathercode[i],
-              max: Math.round(d.daily.temperature_2m_max[i]),
-              min: Math.round(d.daily.temperature_2m_min[i]),
-            }))
-          )
+          setForecast(d.daily.time.slice(0, 5).map((date, i) => ({
+            date,
+            code: d.daily.weathercode[i],
+            max: Math.round(d.daily.temperature_2m_max[i]),
+            min: Math.round(d.daily.temperature_2m_min[i]),
+          })))
         }
         setStale(false)
       } catch {
@@ -88,13 +86,15 @@ export default function Weather() {
     return () => clearInterval(t)
   }, [])
 
+  // Close on outside click
   useEffect(() => {
+    if (!open) return
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [open])
 
   if (!wx) return null
 
@@ -103,7 +103,7 @@ export default function Weather() {
   const skyLabel = entry?.label ?? 'Unknown'
   const wLabel = windLabel(wx.windspeed)
   const isNeutralSky = [0, 1, 2, 3].includes(wx.weathercode)
-  const descriptor = isNeutralSky && wx.windspeed >= 15 ? wLabel : skyLabel
+  const descriptor = (isNeutralSky && wx.windspeed >= 15) ? wLabel : skyLabel
 
   const dayLabel = (dateStr) => {
     const d = new Date(dateStr)
@@ -111,17 +111,12 @@ export default function Weather() {
   }
 
   return (
-    <div
-      ref={ref}
-      style={{ position: 'relative', overflow: 'visible' }}
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
-    >
+    <div ref={ref} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} style={{ position: 'relative', overflow: 'visible' }}>
       <div
-        className="weather-wrap"
+        className="weather-wrap" onClick={() => setOpen((v) => !v)}
         style={{ opacity: stale ? 0.45 : 1, cursor: 'pointer' }}
         title={stale ? 'Weather data may be outdated' : 'Click for 5-day forecast'}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
       >
         <span className="weather-icon">{icon}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
@@ -129,12 +124,38 @@ export default function Weather() {
       </div>
 
       {open && forecast.length > 0 && (
-        <div className="weather-dropdown">
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 0.75rem)',
+            left: 0,
+            zIndex: 9999,
+            background: 'var(--bg2)',
+            border: '1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent)',
+            borderRadius: '0 0 var(--radius) var(--radius)',
+            padding: '0.5rem 0.75rem',
+            minWidth: 230,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.45)',
+            fontSize: 'var(--topbar-font-size)',
+            pointerEvents: 'auto',
+          }}
+        >
           {forecast.map((day, i) => {
             const wx2 = WX[day.code]
             return (
-              <div className="weather-dropdown-row" key={day.date}>
-                <span style={{ fontSize: '1.1em', minWidth: '1.4rem' }}>{wx2?.icon ?? '🌡'}</span>
+              <div
+                key={day.date}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.28rem 0',
+                  borderBottom: i < forecast.length - 1
+                    ? '1px solid color-mix(in srgb, var(--border) 40%, transparent)'
+                    : 'none',
+                }}
+              >
+                <span style={{ fontSize: '1.1em' }}>{wx2?.icon ?? '🌡'}</span>
                 <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
                 <span style={{ color: 'var(--text)' }}>{day.max}°</span>
                 <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
