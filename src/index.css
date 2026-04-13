@@ -327,12 +327,12 @@ a {
 .topbar-widgets {
   display: flex;
   align-items: center;
-  gap: 1.1rem;
+  gap: .6rem;
   flex: 1;
   min-width: 0;
   overflow: visible !important;
   position: relative;
-  padding: 0 1.1rem 0 0.35rem;
+  padding: 0 0.35rem;
 }
 
 .clock-compact {
@@ -358,12 +358,9 @@ a {
 .weather-wrap {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  flex: 0 0 auto;
+  gap: 0.4rem;
+  flex-shrink: 0;
   white-space: nowrap;
-  padding-right: 2.4rem;
-  min-width: 18rem;
-  position: relative;
 }
 
 .weather-icon {
@@ -380,24 +377,17 @@ a {
 .weather-desc {
   font-size: var(--topbar-font-size);
   color: var(--text-dim);
-  padding-right: 1.4rem;
-  max-width: 16rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .weather-dropdown {
-  position: absolute;
-  top: calc(100% + 0.75rem);
-  left: 0;
+  position: fixed;
   z-index: 10000;
   margin-top: 0;
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 0 0 var(--radius) var(--radius);
-  padding: 0.9rem 1.1rem;
-  min-width: 280px;
+  padding: 0.75rem 1rem;
+  min-width: 240px;
   box-shadow: 0 10px 32px rgba(0,0,0,0.5);
   font-size: var(--topbar-font-size, 12px);
 }
@@ -405,9 +395,8 @@ a {
 .weather-dropdown-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.55rem 0;
+  gap: 0.7rem;
+  padding: 0.42rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
 }
 
@@ -552,15 +541,15 @@ a {
 .main-col {
   min-height: 0;
   overflow-y: auto;
-  overflow-x: visible;
-  padding: 2px 2px 2px 2px;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
 .side-col {
   min-height: 0;
   overflow-y: auto;
-  overflow-x: visible;
-  padding: 2px 2px 2px 2px;
+  overflow-x: hidden;
+  padding-right: 2px;
 }
 
 .card {
@@ -691,7 +680,7 @@ a {
   flex-direction: row;
   align-items: flex-start;
   gap: var(--section-gap-h, 0px);
-  padding: 2px 2px 3rem 2px;
+  padding: 0 0 3rem 0;
   width: 100%;
 }
 
