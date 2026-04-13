@@ -147,7 +147,7 @@ function Group({
         justifyContent: 'space-between', fontWeight: 700, textAlign: 'center',
         color: 'var(--settings-title-color, #7878a0)', gap: '0.35rem',
       }} onClick={() => { const next = !open; setOpen(next); onOpenChange?.(next) }}>
-        <div className="settings-group-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+        <div className="settings-group-actions settings-group-actions-left" style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {draggable && (
             <button type="button" className="settings-drag-handle" title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }}>
               ⋮⋮
@@ -253,7 +253,13 @@ export default function Settings({
           .settings-section[draggable="true"] .settings-group-actions:has(.settings-drag-handle:focus-visible),
           .settings-chevron:focus-visible { opacity: 1; }
           .settings-group-actions { opacity: 0; transition: opacity 140ms ease; }
+          .settings-group-actions-left { min-width: 1rem; justify-content: flex-start; }
           .settings-drag-handle {
+            appearance: none;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            border-radius: 0;
             color: var(--settings-title-color, #7878a0);
             display: inline-flex;
             align-items: center;
@@ -261,16 +267,24 @@ export default function Settings({
             font-size: 1.08rem;
             line-height: 1;
             padding: 0;
+            min-width: 1rem;
+            height: auto;
             opacity: 0.9;
           }
           .settings-drag-handle:hover { color: var(--text); }
           .settings-drag-handle:active { cursor: grabbing; }
           .settings-chevron {
+            appearance: none;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            border-radius: 0;
             color: var(--settings-title-color, #7878a0);
             font-size: 0.9em;
             line-height: 1;
             opacity: 0.35;
             padding: 0;
+            min-width: 1rem;
             transition: opacity 140ms ease, color 140ms ease;
           }
           .settings-chevron:hover { color: var(--text); opacity: 1; }
@@ -279,15 +293,9 @@ export default function Settings({
         <div className="settings-header">
           <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>Settings</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <button className="btn-xs" title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>
-              {allOpen ? '▲ Close' : '▼ Expand'}
-            </button>
-            <button className="btn-xs" title="Reset settings section order" onClick={resetSectionOrder}>
-              ↺ Order
-            </button>
-            <button className="btn-xs" title="Move panel" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
-              {side === 'right' ? '← Left' : 'Right →'}
-            </button>
+            <button className="icon-btn" title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
+            <button className="icon-btn" title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
+            <button className="icon-btn" title="Move panel" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '←' : '→'}</button>
             <button className="icon-btn" onClick={onClose} title="Close (Esc)">✕</button>
           </div>
         </div>
