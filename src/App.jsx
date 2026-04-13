@@ -27,7 +27,6 @@ function ClockWidget() {
 function WeatherWidget() {
   const CACHE_KEY = 'wx_cache'
   const CACHE_TTL = 25 * 60 * 1000
-
   const [wx, setWx] = useState(() => {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
@@ -35,22 +34,35 @@ function WeatherWidget() {
     } catch {}
     return null
   })
+  const [forecast, setForecast] = useState([])
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
 
   useEffect(() => {
     try {
       const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) return
+      if (c && Date.now() - c.ts < CACHE_TTL) {
+        setForecast(c.forecast || [])
+        return
+      }
     } catch {}
 
     if (!navigator.geolocation) return
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       try {
         const r = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&temperature_unit=celsius`
+          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`
         )
         const d = await r.json()
+        const nextForecast = d.daily ? d.daily.time.slice(0, 5).map((date, i) => ({
+          date,
+          code: d.daily.weathercode[i],
+          max: Math.round(d.daily.temperature_2m_max[i]),
+          min: Math.round(d.daily.temperature_2m_min[i]),
+        })) : []
         setWx(d.current_weather)
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, ts: Date.now() }))
+        setForecast(nextForecast)
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, forecast: nextForecast, ts: Date.now() }))
       } catch {}
     }, () => {})
   }, [])
@@ -59,24 +71,40 @@ function WeatherWidget() {
 
   const icons = {
     0: '☀️', 1: '🌤', 2: '⛅', 3: '☁️', 45: '🌫', 48: '🌫',
-    51: '🌦', 53: '🌦', 55: '🌦', 61: '🌧', 63: '🌧', 65: '🌧',
-    71: '🌨', 73: '🌨', 75: '🌨', 80: '🌦', 81: '🌦', 82: '🌦',
+    51: '🌦', 53: '🌦', 55: '🌧', 61: '🌧', 63: '🌧', 65: '🌧',
+    71: '🌨', 73: '🌨', 75: '🌨', 80: '🌦', 81: '🌧', 82: '⛈',
     95: '⛈', 96: '⛈', 99: '⛈',
   }
 
   const descs = {
     0: 'Clear', 1: 'Mostly clear', 2: 'Partly cloudy', 3: 'Overcast',
-    45: 'Foggy', 48: 'Foggy', 51: 'Drizzle', 53: 'Drizzle', 55: 'Drizzle',
-    61: 'Rainy', 63: 'Rainy', 65: 'Heavy rain', 71: 'Snowy', 73: 'Snowy',
-    75: 'Heavy snow', 80: 'Showers', 81: 'Showers', 82: 'Heavy showers',
-    95: 'Stormy', 96: 'Stormy', 99: 'Stormy',
+    45: 'Foggy', 48: 'Foggy', 51: 'Light drizzle', 53: 'Drizzle', 55: 'Heavy drizzle',
+    61: 'Light rain', 63: 'Raining', 65: 'Heavy rain', 71: 'Light snow', 73: 'Snowing',
+    75: 'Heavy snow', 80: 'Showers', 81: 'Rain showers', 82: 'Violent rain',
+    95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
   }
 
+  const dayLabel = (dateStr) => new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+
   return (
-    <div className="weather-wrap">
-      <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
-      <span className="weather-temp">{Math.round(wx.temperature)}°</span>
-      <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
+    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false) }}>
+      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''} tabIndex={0}>
+        <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
+        <span className="weather-temp">{Math.round(wx.temperature)}°</span>
+        <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
+      </div>
+      {open && forecast.length > 0 && (
+        <div className="weather-dropdown">
+          {forecast.map((day, i) => (
+            <div key={day.date} className="weather-dropdown-row">
+              <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+              <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
+              <span style={{ color: 'var(--text)' }}>{day.max}°</span>
+              <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -1041,10 +1069,10 @@ export default function App() {
 				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  onClick={toggleAll}
 				>
-				  {allCollapsed ? 'Expand' : 'Collapse'}
+				  {allCollapsed ? '▾' : '▴'}
 				</button>
 				<button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
-				<button className="btn" title="Settings" onClick={() => setSettingsOpen(true)}>Settings</button>
+				<button className="icon-btn" title="Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
 			  </div>
 			</div>
 
@@ -1110,4 +1138,3 @@ export default function App() {
 	  )
 	}
 			
- 
