@@ -791,9 +791,9 @@ a {
 }
 
 .section-grab-dots {
-  font-size: 0.8em;
+  font-size: var(--card-handle-size, 13px);
   line-height: 1;
-  opacity: 0.55;
+  opacity: var(--card-handle-opacity, 0.7);
 }
 
 .section-card:hover .section-grab,
@@ -1013,9 +1013,10 @@ a {
   background: transparent;
   border: none;
   color: var(--text-dim);
-  font-size: 0.75em;
+  font-size: var(--link-handle-size, 13px);
+  opacity: var(--link-handle-opacity, 0.7);
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition: color 0.12s, background 0.12s, opacity 0.12s;
   min-height: 26px;
 }
 

@@ -122,24 +122,6 @@ function Group({
   return (
     <div
       className="settings-section"
-      draggable={draggable}
-      onDragStart={e => {
-        if (!draggable) return
-        e.dataTransfer.effectAllowed = 'move'
-        e.dataTransfer.setData('text/plain', id)
-        onDragStart?.(id)
-      }}
-      onDragEnd={() => onDragEnd?.()}
-      onDragOver={e => {
-        if (!draggable) return
-        e.preventDefault()
-        e.dataTransfer.dropEffect = 'move'
-      }}
-      onDrop={e => {
-        if (!draggable) return
-        e.preventDefault()
-        onDrop?.(id)
-      }}
       style={isDragging ? { opacity: 0.55 } : undefined}
     >
       <div className="settings-title settings-group-title" style={{
@@ -149,7 +131,7 @@ function Group({
       }} onClick={() => { const next = !open; setOpen(next); onOpenChange?.(next) }}>
         <div className="settings-group-actions settings-group-actions-left" style={{ display: 'flex', alignItems: 'center', gap: '0.28rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
           {draggable && (
-            <button type="button" className="settings-drag-handle" draggable title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }} onDragStart={e => { setDragging(true); onDragStart?.(id); try { e.dataTransfer.effectAllowed = 'move' } catch {} }} onDragEnd={e => { setDragging(false); onDragEnd?.(e) }} onDragOver={e => { if (!draggable) return; e.preventDefault() }} onDrop={e => { if (!draggable) return; e.preventDefault(); onDrop?.(id); setDragging(false) }}>
+            <button type="button" className="settings-drag-handle" draggable title="Drag to reorder" aria-label="Drag to reorder" style={{ cursor: 'grab' }} onDragStart={e => { setDragging(true); try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id) } catch {} ; onDragStart?.(id) }} onDragEnd={e => { setDragging(false); onDragEnd?.(e) }} onDragOver={e => { if (!draggable) return; e.preventDefault() }} onDrop={e => { if (!draggable) return; e.preventDefault(); onDrop?.(id); setDragging(false) }}>
               ⋮⋮
             </button>
           )}
