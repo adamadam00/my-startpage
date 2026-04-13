@@ -685,7 +685,7 @@ a {
 }
 
 .input::placeholder {
-  color: var(--text-muted);
+  color: var(--handle-color, var(--text-muted));
 }
 
 /* Sections */
@@ -791,9 +791,10 @@ a {
 }
 
 .section-grab-dots {
-  font-size: var(--card-handle-size, 13px);
+  font-size: var(--handle-size, var(--card-handle-size, 13px));
   line-height: 1;
-  opacity: var(--card-handle-opacity, 0.7);
+  opacity: var(--handle-opacity-global, var(--card-handle-opacity, 0.7));
+  color: var(--handle-color, var(--text-muted));
 }
 
 .section-card:hover .section-grab,
@@ -1013,8 +1014,9 @@ a {
   background: transparent;
   border: none;
   color: var(--text-dim);
-  font-size: var(--link-handle-size, 13px);
-  opacity: var(--link-handle-opacity, 0.7);
+  font-size: var(--handle-size, var(--link-handle-size, 13px));
+  opacity: var(--handle-opacity-global, var(--link-handle-opacity, 0.7));
+  color: var(--handle-color, var(--text-muted));
   cursor: pointer;
   transition: color 0.12s, background 0.12s, opacity 0.12s;
   min-height: 26px;
@@ -1607,8 +1609,9 @@ input[type='range']::-moz-range-thumb {
 }
 
 .link-drag-handle {
-  font-size: var(--link-handle-size, 13px);
-  opacity: var(--link-handle-opacity, 0.7);
+  font-size: var(--handle-size, var(--link-handle-size, 13px));
+  opacity: var(--handle-opacity-global, var(--link-handle-opacity, 0.7));
+  color: var(--handle-color, var(--text-muted));
   line-height: 1;
 }
 .settings-panel,
