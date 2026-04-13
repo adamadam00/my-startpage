@@ -25,46 +25,41 @@ function ClockWidget() {
 
 // ─── WEATHER WIDGET ───────────────────────────────────────────────────────────
 function WeatherWidget() {
-  const CACHE_KEY = 'wx_cache'
-  const CACHE_TTL = 25 * 60 * 1000
-  const [wx, setWx] = useState(() => {
-    try {
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) return c.data
-    } catch {}
-    return null
-  })
+  const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
 
   useEffect(() => {
-    try {
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null')
-      if (c && Date.now() - c.ts < CACHE_TTL) {
-        setForecast(c.forecast || [])
-        return
-      }
-    } catch {}
-
-    if (!navigator.geolocation) return
-    navigator.geolocation.getCurrentPosition(async ({ coords }) => {
+    const doFetch = async (lat, lon) => {
       try {
         const r = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${coords.latitude}&longitude=${coords.longitude}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`
         )
         const d = await r.json()
-        const nextForecast = d.daily ? d.daily.time.slice(0, 5).map((date, i) => ({
-          date,
-          code: d.daily.weathercode[i],
-          max: Math.round(d.daily.temperature_2m_max[i]),
-          min: Math.round(d.daily.temperature_2m_min[i]),
-        })) : []
-        setWx(d.current_weather)
-        setForecast(nextForecast)
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ data: d.current_weather, forecast: nextForecast, ts: Date.now() }))
-      } catch {}
-    }, () => {})
+        setWx(d.current_weather ?? null)
+        if (d.daily) {
+          setForecast(d.daily.time.slice(0, 5).map((date, i) => ({
+            date,
+            code: d.daily.weathercode[i],
+            max: Math.round(d.daily.temperature_2m_max[i]),
+            min: Math.round(d.daily.temperature_2m_min[i]),
+          })))
+        } else {
+          setForecast([])
+        }
+      } catch {
+        setForecast([])
+      }
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => doFetch(coords.latitude, coords.longitude),
+        () => doFetch(-37.8136, 144.9631)
+      )
+    } else {
+      doFetch(-37.8136, 144.9631)
+    }
   }, [])
 
   if (!wx) return null
@@ -87,15 +82,15 @@ function WeatherWidget() {
   const dayLabel = (dateStr) => new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
 
   return (
-    <div ref={ref} style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)} onFocus={() => setOpen(true)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false) }}>
-      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''} tabIndex={0}>
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
       </div>
       {open && forecast.length > 0 && (
         <div className="weather-dropdown">
-          {forecast.map((day, i) => (
+          {forecast.map((day) => (
             <div key={day.date} className="weather-dropdown-row">
               <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
               <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
