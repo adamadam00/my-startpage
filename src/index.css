@@ -1632,3 +1632,7 @@ background: var(--settings-scrollbar, var(--accent));
 background: color-mix(in srgb, var(--settings-scrollbar, var(--accent)) 82%, white 18%);
 }
 
+
+.settings-drag-handle { font-size: var(--handle-size, 13px) !important; color: var(--handle-color, var(--text-muted)) !important; opacity: var(--handle-opacity-global, 0.7) !important; line-height: 1; }
+
+.link-item:not(:hover):not(:focus-within) .link-drag-handle { opacity: 0 !important; }
