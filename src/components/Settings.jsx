@@ -293,10 +293,10 @@ export default function Settings({
         <div className="settings-header">
           <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>Settings</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <button className="icon-btn" title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
-            <button className="icon-btn" title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
-            <button className="icon-btn" title="Move panel" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '←' : '→'}</button>
-            <button className="icon-btn" onClick={onClose} title="Close (Esc)">✕</button>
+            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
+            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
+            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Move panel" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '←' : '→'}</button>
+            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} onClick={onClose} title="Close (Esc)">✕</button>
           </div>
         </div>
 
@@ -514,11 +514,12 @@ export default function Settings({
               <Row label="Button text"><ColorPick label="Button text" value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
               <SectionTitle>Settings panel</SectionTitle>
               <Row label="Section title colour"><ColorPick label="Section title colour" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
+              <Row label="Scrollbar colour"><ColorPick label="Scrollbar colour" value={theme.settingsScrollbarColor || theme.accent || '#6c8fff'} onChange={v => set('settingsScrollbarColor', v)} /></Row>
             </Group>
           )
 
           if (sectionId === 'typography') return (
-            <Group title="Typography" defaultOpen={false} {...commonGroupProps}>
+            <Group title="Fonts" defaultOpen={false} {...commonGroupProps}>
               <Row label="Font family">
                 <select className="input" style={{ maxWidth: 160, fontSize: '0.8em' }}
                   value={theme.font} onChange={e => set('font', e.target.value)}>
@@ -539,6 +540,8 @@ export default function Settings({
               <Row label="Section gap (h)"><Slider label="Section gap (h)" val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
               <Row label="Link gap"><Slider label="Link gap" val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
               <Row label="Link left padding"><Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-125} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
+              <Row label="Link handle size"><Slider label="Link handle size" val={theme.linkHandleSize ?? 13} min={10} max={24} onChange={v => set('linkHandleSize', v)} unit="px" /></Row>
+              <Row label="Link handle opacity"><Slider label="Link handle opacity" val={Math.round((theme.linkHandleOpacity ?? 0.7) * 100)} min={0} max={100} onChange={v => set('linkHandleOpacity', v / 100)} unit="%" /></Row>
               <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
                 <SectionTitle>Page scale</SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
@@ -556,6 +559,8 @@ export default function Settings({
             <Group title="Cards & borders" defaultOpen={false} {...commonGroupProps}>
               <Row label="Card opacity"><Slider label="Card opacity" val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
               <Row label="Card corner radius"><Slider label="Card corner radius" val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" /></Row>
+              <Row label="Card handle size"><Slider label="Card handle size" val={theme.cardHandleSize ?? 13} min={10} max={24} onChange={v => set('cardHandleSize', v)} unit="px" /></Row>
+              <Row label="Card handle opacity"><Slider label="Card handle opacity" val={Math.round((theme.cardHandleOpacity ?? 0.7) * 100)} min={0} max={100} onChange={v => set('cardHandleOpacity', v / 100)} unit="%" /></Row>
               <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
                 {[{ l: 'Sharp', v: 0 }, { l: 'Normal', v: 10 }, { l: 'Round', v: 20 }].map(p => (
                   <button key={p.v} className={`btn-xs${theme.radius === p.v ? ' btn-primary' : ''}`} onClick={() => set('radius', p.v)}>{p.l}</button>
