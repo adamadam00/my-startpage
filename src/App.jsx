@@ -29,6 +29,15 @@ function WeatherWidget() {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
+  const closeTimer = useRef(null)
+
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    setOpen(true)
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 200)
+  }
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -98,7 +107,7 @@ function WeatherWidget() {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
@@ -1676,7 +1685,7 @@ export default function App() {
 			) : null}
 
 			{/* ── TOPBAR ──────────────────────────────────────── */}
-			<div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
+			<div className="topbar">
 
 			  {/* Workspace tabs */}
 			  <div className="workspace-tabs">
