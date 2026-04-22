@@ -4,6 +4,7 @@ import Sections from './components/Sections'
 import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
+import CacheManager from './lib/cacheManager'
 import './index.css'
  
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
@@ -28,6 +29,7 @@ function WeatherWidget() {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const doFetch = async (lat, lon) => {
@@ -49,20 +51,31 @@ function WeatherWidget() {
         }
       } catch {
         setForecast([])
+      } finally {
+        setLoading(false)
       }
     }
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => doFetch(coords.latitude, coords.longitude),
-        () => doFetch(-37.8136, 144.9631)
+        () => doFetch(-37.8136, 144.9631),
+        { timeout: 5000 } // Add timeout to geolocation
       )
     } else {
       doFetch(-37.8136, 144.9631)
     }
   }, [])
 
-  if (!wx) return null
+  // Show loading placeholder to prevent layout shift
+  if (loading || !wx) {
+    return (
+      <div className="weather-wrap" style={{ opacity: 0.5 }}>
+        <span className="weather-icon">⋯</span>
+        <span className="weather-temp">--°</span>
+      </div>
+    )
+  }
 
   const icons = {
     0: '☀️', 1: '🌤', 2: '⛅', 3: '☁️', 45: '🌫', 48: '🌫',
@@ -79,7 +92,10 @@ function WeatherWidget() {
     95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
   }
 
-  const dayLabel = (dateStr) => new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString([], { weekday: 'short' });
+  }
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
@@ -93,9 +109,10 @@ function WeatherWidget() {
           {forecast.map((day) => (
             <div key={day.date} className="weather-dropdown-row">
               <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
-              <span style={{ flex: 1, color: 'var(--text-dim)' }}>{dayLabel(day.date)}</span>
-              <span style={{ color: 'var(--text)' }}>{day.max}°</span>
-              <span style={{ color: 'var(--text-muted)' }}>{day.min}°</span>
+              <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
+              <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
+              <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
             </div>
           ))}
         </div>
@@ -106,36 +123,104 @@ function WeatherWidget() {
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
-  bg: '#0c0c0f', bg2: '#13131a', bg3: '#1a1a24',
-  card: '#13131a', cardOpacity: 1,
-  border: '#2a2a3a', borderHover: '#3d3d55', borderOpacity: 1,
+  bg: '#0a0a0f', bg2: '#12121a', bg3: '#1a1a28',
+  card: '#12121a', cardOpacity: 1, titleBg: '#0f0f18',
+  border: '#2a2a3f', borderHover: '#3d3d5a', borderOpacity: 1,
   handleOpacity: 15,
-  text: '#e8e8f0', textDim: '#7878a0', titleColor: '#7878a0',
-  accent: '#6c8fff', danger: '#ff6b6b', success: '#6bffb8',
+  cardShadowEnabled: false,
+  cardShadowSize: 8,
+  cardShadowOpacity: 0.3,
+  cardShadowColor: '#000000',
+  cardShadowCurve: 'linear',
+  cardShadowDirection: 'top-lit',
+  notesShadowEnabled: false,
+  notesShadowSize: 6,
+  notesShadowOpacity: 0.25,
+  notesShadowColor: '#000000',
+  notesShadowCurve: 'linear',
+  notesShadowDirection: 'top-lit',
+  
+  // Cards gradient
+  cardsGradientEnabled: false,
+  cardsGradientColor1: '#00ff88',
+  cardsGradientPos1: 0,
+  cardsGradientColor2: '#00ccff',
+  cardsGradientPos2: 50,
+  cardsGradientColor3: '#7b2ff7',
+  cardsGradientPos3: 100,
+  cardsGradientType: 'linear',
+  cardsGradientAngle: 180,
+  cardsGradientBlendMode: 'overlay',
+  cardsGradientOpacity: 0.5,
+  cardsGradientRadialScale: 100,
+  cardsGradientTargetPanels: true,  // Apply to UI panels (cards/notes/topbar)
+  cardsGradientTargetWallpaper: false,  // Apply to main background
+  cardsGradientTargetBorder: false,
+  cardsGradientTargetTitle: false,
+  
+  // Notes gradient
+  notesGradientEnabled: false,
+  notesGradientMatchCards: false,
+  notesGradientColor1: '#00ff88',
+  notesGradientPos1: 0,
+  notesGradientColor2: '#00ccff',
+  notesGradientPos2: 50,
+  notesGradientColor3: '#7b2ff7',
+  notesGradientPos3: 100,
+  notesGradientType: 'linear',
+  notesGradientAngle: 180,
+  notesGradientBlendMode: 'overlay',
+  notesGradientOpacity: 0.5,
+  notesGradientTargetBg: true,
+  notesGradientTargetBorder: false,
+  notesGradientTargetTitle: false,
+  
+  // Topbar gradient
+  topbarGradientEnabled: false,
+  topbarGradientMatchCards: false,
+  topbarGradientColor1: '#00ff88',
+  topbarGradientPos1: 0,
+  topbarGradientColor2: '#00ccff',
+  topbarGradientPos2: 50,
+  topbarGradientColor3: '#7b2ff7',
+  topbarGradientPos3: 100,
+  topbarGradientType: 'linear',
+  topbarGradientAngle: 90,
+  topbarGradientBlendMode: 'overlay',
+  topbarGradientOpacity: 0.3,
+  
+  text: '#e8e8f5', textDim: '#8888b0', titleColor: '#9898c0',
+  linkColor: '#5b9eff',
+  linkVisitedColor: '#c77dff',
+  accent: '#7890ff', danger: '#ff6b80', success: '#6bffc0',
+  scrollbarColor: '#1f1f32', scrollbarThumbColor: '#7890ff',
   btnBg: '#3a3a4a', btnText: '#e8e8f0',
   font: "'DM Mono', monospace",
   fontSize: 14, topbarFontSize: 12, clockWidgetSize: 1, notesFontSize: 13, settingsFontSize: 13,
   radius: 10, sectionRadius: 0,
-  linkGap: 0.5, cardPadding: 0.75,
+  linkGap: 0.5, cardPadding: 0.75, headerPadding: 0.42,
   sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
   faviconOpacity: 1, faviconGreyscale: false, faviconSize: 13,
-  patternColor: '#2a2a3a', patternOpacity: 1,
+  patternColor: '#2a2a3f', patternOpacity: 1,
   bgPreset: 'noise',
   wallpaper: '', wallpaperFit: 'cover', linksPaddingH: 0.75,
   bgAnimSpeed: 1, bgC1: '', bgC2: '', bgC3: '', bgBlur: null,
   bgSt: {},
   searchEngineUrl: 'https://www.google.com/search?q=',
-  settingsTitleColor: '#7878a0',
+  settingsTitleColor: '#8888b0',
+  settingsSubtitleColor: '#7890ff',
   bgGrassSky: '#020609', bgGrassGround: '#071a05',
   bgOceanSky: '#000814', bgOceanWater: '#001428',
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
   sectionsCols: 6,
-  notesGap: 0, notesCardBg: '#13131a', notesTextColor: '#e8e8f0', notesTextBg: '#0c0c0f',
+  notesGap: 0, notesCardBg: '#12121a', notesTextColor: '#e8e8f5', notesTextBg: '#0a0a0f', notesRadius: 4,
+  notesSharedBg: '#1a1a28',
   settingsSide: 'right',
   bmFontSize: 13,
   bmResultBg: '',
   bmResultText: '',
+  colHeaderColor: '#8888b0',
 }
 
 // ─── APPLY THEME ─────────────────────────────────────────────────────────────
@@ -144,26 +229,183 @@ function applyTheme(t) {
   const root = document.documentElement
   const s = (k, v) => { if (v !== undefined && v !== null) root.style.setProperty(k, String(v)) }
   s('--bg', t.bg); s('--bg2', t.bg2); s('--bg3', t.bg3)
-  s('--card', t.card); s('--card-opacity', t.cardOpacity ?? 1)
-  s('--border', t.border); s('--border-hover', t.borderHover)
-  s('--border-opacity', t.borderOpacity ?? 1)
+  
+  s('--card', t.card)
+  s('--topbar-bg', t.card)
+  s('--notes-card-bg', t.cardsGradientEnabled ? t.card : (t.notesCardBg || t.card))
+  s('--col-header-color', t.colHeaderColor ?? '#8888b0')
+  
+  const baseBorderColor = t.border
+  s('--card-opacity', 1)
+  s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
+  s('--title-opacity', 1)
+  s('--border', baseBorderColor)
+  s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
   s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
+  s('--handle-opacity-global', t.handleOpacityGlobal ?? 0)
+  s('--handle-size', (t.handleSize ?? 9) + 'px')
+  s('--handle-color', t.handleColor ?? '#2a2a3a')
+  s('--action-button-scale', t.actionButtonScale ?? 0.75)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
   s('--title-color', t.titleColor ?? t.textDim)
+  s('--link-color', t.linkColor ?? '#5b9eff')
+  s('--link-visited-color', t.linkVisitedColor ?? '#c77dff')
   s('--accent', t.accent)
   if (t.accent) { s('--accent-dim', t.accent + '33'); s('--accent-glow', t.accent + '22') }
   s('--danger', t.danger); s('--success', t.success)
+  s('--scrollbar-color', t.scrollbarColor ?? t.bg3)
+  s('--scrollbar-thumb-color', t.scrollbarThumbColor ?? t.accent)
   s('--btn-bg', t.btnBg); s('--btn-text', t.btnText)
+  
+  // Card shadows
+  if (t.cardShadowEnabled) {
+    const size = t.cardShadowSize ?? 8
+    const color = t.cardShadowColor ?? '#000000'
+    const opacity = t.cardShadowOpacity ?? 0.3
+    const curve = t.cardShadowCurve ?? 'linear'
+    const direction = t.cardShadowDirection ?? 'top-lit'
+    
+    // Convert opacity to hex
+    const toHex = (op) => Math.round(Math.min(op, 1) * 255).toString(16).padStart(2, '0')
+    
+    let shadow = ''
+    
+    // Top-lit: light from above, shadow below
+    if (direction === 'top-lit') {
+      if (curve === 'linear') {
+        shadow = `0 ${size * 0.5}px ${size}px ${color}${toHex(opacity)}`
+      } else if (curve === 'soft') {
+        shadow = `0 ${size * 0.15}px ${size * 0.2}px ${color}${toHex(opacity * 0.8)}, 0 ${size * 0.3}px ${size * 0.5}px ${color}${toHex(opacity * 0.4)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHex(opacity * 0.15)}`
+      } else if (curve === 'sharp') {
+        shadow = `0 ${size * 0.25}px ${size * 0.3}px ${color}${toHex(opacity * 1.4)}, 0 ${size * 0.4}px ${size * 0.6}px ${color}${toHex(opacity * 0.3)}`
+      } else if (curve === 'glow') {
+        shadow = `0 ${size * 0.3}px ${size * 0.8}px ${color}${toHex(opacity * 0.5)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHex(opacity * 0.3)}`
+      }
+    }
+    // Even: shadow all around, no directional offset
+    else if (direction === 'even') {
+      if (curve === 'linear') {
+        shadow = `0 0 ${size}px ${color}${toHex(opacity)}`
+      } else if (curve === 'soft') {
+        shadow = `0 0 ${size * 0.2}px ${color}${toHex(opacity * 0.8)}, 0 0 ${size * 0.5}px ${color}${toHex(opacity * 0.4)}, 0 0 ${size * 1.2}px ${color}${toHex(opacity * 0.15)}`
+      } else if (curve === 'sharp') {
+        shadow = `0 0 ${size * 0.3}px ${color}${toHex(opacity * 1.4)}, 0 0 ${size * 0.6}px ${color}${toHex(opacity * 0.3)}`
+      } else if (curve === 'glow') {
+        shadow = `0 0 ${size * 0.4}px ${color}${toHex(opacity * 0.6)}, 0 0 ${size * 0.8}px ${color}${toHex(opacity * 0.4)}, 0 0 ${size * 1.4}px ${color}${toHex(opacity * 0.2)}`
+      }
+    }
+    
+    s('--card-shadow', shadow)
+  } else {
+    s('--card-shadow', 'none')
+  }
+  
+  // Notes shadows
+  if (t.notesShadowEnabled) {
+    const size = t.notesShadowSize ?? 6
+    const color = t.notesShadowColor ?? '#000000'
+    const opacity = t.notesShadowOpacity ?? 0.25
+    const curve = t.notesShadowCurve ?? 'linear'
+    const direction = t.notesShadowDirection ?? 'top-lit'
+    
+    const toHex = (op) => Math.round(Math.min(op, 1) * 255).toString(16).padStart(2, '0')
+    
+    let shadow = ''
+    
+    // Top-lit: light from above, shadow below
+    if (direction === 'top-lit') {
+      if (curve === 'linear') {
+        shadow = `0 ${size * 0.5}px ${size}px ${color}${toHex(opacity)}`
+      } else if (curve === 'soft') {
+        shadow = `0 ${size * 0.15}px ${size * 0.2}px ${color}${toHex(opacity * 0.8)}, 0 ${size * 0.3}px ${size * 0.5}px ${color}${toHex(opacity * 0.4)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHex(opacity * 0.15)}`
+      } else if (curve === 'sharp') {
+        shadow = `0 ${size * 0.25}px ${size * 0.3}px ${color}${toHex(opacity * 1.4)}, 0 ${size * 0.4}px ${size * 0.6}px ${color}${toHex(opacity * 0.3)}`
+      } else if (curve === 'glow') {
+        shadow = `0 ${size * 0.3}px ${size * 0.8}px ${color}${toHex(opacity * 0.5)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHex(opacity * 0.3)}`
+      }
+    }
+    // Even: shadow all around
+    else if (direction === 'even') {
+      if (curve === 'linear') {
+        shadow = `0 0 ${size}px ${color}${toHex(opacity)}`
+      } else if (curve === 'soft') {
+        shadow = `0 0 ${size * 0.2}px ${color}${toHex(opacity * 0.8)}, 0 0 ${size * 0.5}px ${color}${toHex(opacity * 0.4)}, 0 0 ${size * 1.2}px ${color}${toHex(opacity * 0.15)}`
+      } else if (curve === 'sharp') {
+        shadow = `0 0 ${size * 0.3}px ${color}${toHex(opacity * 1.4)}, 0 0 ${size * 0.6}px ${color}${toHex(opacity * 0.3)}`
+      } else if (curve === 'glow') {
+        shadow = `0 0 ${size * 0.4}px ${color}${toHex(opacity * 0.6)}, 0 0 ${size * 0.8}px ${color}${toHex(opacity * 0.4)}, 0 0 ${size * 1.4}px ${color}${toHex(opacity * 0.2)}`
+      }
+    }
+    
+    s('--notes-shadow', shadow)
+  } else {
+    s('--notes-shadow', 'none')
+  }
+  
+  // Cards gradient - always show when enabled
+  if (t.cardsGradientEnabled) {
+    const type = t.cardsGradientType ?? 'linear'
+    const angle = t.cardsGradientAngle ?? 180
+    const radialScale = t.cardsGradientRadialScale ?? 100
+    const c1 = t.cardsGradientColor1 ?? '#00ff88'
+    const p1 = t.cardsGradientPos1 ?? 0
+    const c2 = t.cardsGradientColor2 ?? '#00ccff'
+    const p2 = t.cardsGradientPos2 ?? 50
+    const c3 = t.cardsGradientColor3 ?? '#7b2ff7'
+    const p3 = t.cardsGradientPos3 ?? 100
+    
+    let gradientBg = ''
+    if (type === 'linear') {
+      gradientBg = `linear-gradient(${angle}deg, ${c1} ${p1}%, ${c2} ${p2}%, ${c3} ${p3}%)`
+    } else if (type === 'radial') {
+      gradientBg = `radial-gradient(ellipse ${radialScale}% ${radialScale}% at 50% 50%, ${c1} ${p1}%, ${c2} ${p2}%, ${c3} ${p3}%)`
+    }
+    
+    s('--cards-gradient-bg', gradientBg)
+    
+    const blendMode = t.cardsGradientBlendMode ?? 'overlay'
+    const opacity = t.cardsGradientOpacity ?? 0.5
+
+    if (t.cardsGradientTargetPanels) {
+      s('--panels-gradient', gradientBg)
+      s('--panels-gradient-blend', blendMode)
+      s('--panels-gradient-opacity', opacity)
+    } else {
+      s('--panels-gradient', 'none')
+      s('--panels-gradient-blend', 'normal')
+      s('--panels-gradient-opacity', 1)
+    }
+    
+    if (t.cardsGradientTargetWallpaper) {
+      s('--wallpaper-gradient', gradientBg)
+      s('--wallpaper-gradient-blend', blendMode)
+      s('--wallpaper-gradient-opacity', opacity)
+    } else {
+      s('--wallpaper-gradient', 'none')
+      s('--wallpaper-gradient-blend', 'normal')
+      s('--wallpaper-gradient-opacity', 1)
+    }
+  } else {
+    s('--panels-gradient', 'none')
+    s('--wallpaper-gradient', 'none')
+  }
+  
   s('--font', t.font)
   if (t.fontSize) s('--font-size', t.fontSize + 'px')
   if (t.topbarFontSize) s('--topbar-font-size', t.topbarFontSize + 'px')
   if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
   if (t.notesFontSize) s('--notes-font-size', t.notesFontSize + 'px')
+  if (t.notesFontFamily) s('--notes-font-family', t.notesFontFamily)
+  if (t.notesWidth) s('--notes-width', t.notesWidth + 'px')
+  if (t.notesHeaderBg) s('--notes-header-bg', t.notesHeaderBg)
+  if (t.notesHeaderTitleColor) s('--notes-header-title-color', t.notesHeaderTitleColor)
+  s('--notes-word-wrap', (t.notesWordWrap ?? true) ? 'break-word' : 'normal')
   if (t.faviconSize) s('--favicon-size', t.faviconSize + 'px')
   if (t.radius != null) { s('--radius', t.radius + 'px'); s('--radius-sm', Math.max(2, t.radius - 4) + 'px') }
   s('--section-radius', (t.sectionRadius ?? 0) + 'px')
   if (t.linkGap != null) s('--link-gap', t.linkGap + 'rem')
   if (t.cardPadding != null) s('--card-padding', t.cardPadding + 'rem')
+  if (t.headerPadding != null) s('--header-padding', t.headerPadding + 'rem')
   s('--section-gap', (t.sectionGap ?? 0) + 'px')
   s('--section-gap-h', (t.sectionGapH ?? 0) + 'px')
   s('--main-gap-top', (t.mainGapTop ?? 12) + 'px')
@@ -177,6 +419,8 @@ function applyTheme(t) {
   s('--wallpaper-dim', (t.wallpaperDim ?? 35) / 100)
   if (t.settingsFontSize) s('--settings-font-size', t.settingsFontSize + 'px')
   if (t.settingsTitleColor) s('--settings-title-color', t.settingsTitleColor)
+  if (t.settingsSubtitleColor) s('--settings-subtitle-color', t.settingsSubtitleColor)
+  if (t.settingsScrollbarColor) s('--settings-scrollbar-color', t.settingsScrollbarColor)
 
   let styleEl = document.getElementById('sp-overrides')
   if (!styleEl) {
@@ -239,6 +483,24 @@ function applyTheme(t) {
     s('--tide-c2', rgba(c2 || c1, 0.20))
   }
 
+  // Apply user-defined plasma colors if set (overrides preset colors)
+  const plasmaColors = {
+    '17-plasma': [t.bgPlasmaC1, t.bgPlasmaC2, t.bgPlasmaC3],
+    '18-inferno': [t.bgInfernoC1, t.bgInfernoC2, t.bgInfernoC3],
+    '19-mint': [t.bgMintC1, t.bgMintC2, t.bgMintC3],
+    '20-dusk': [t.bgDuskC1, t.bgDuskC2, t.bgDuskC3],
+    '21-mono': [t.bgMonoC1, t.bgMonoC2, t.bgMonoC3]
+  };
+  const userColors = plasmaColors[t.bgPreset];
+  if (userColors && userColors[0]) {
+    s('--plasma-c1', rgba(userColors[0], 0.30));
+    s('--plasma-c2', rgba(userColors[1] || userColors[0], 0.26));
+    s('--plasma-c3', rgba(userColors[2] || userColors[0], 0.22));
+    s('--plasma-c4', rgba(userColors[0], 0.14));
+    s('--plasma-c5', rgba(userColors[1] || userColors[0], 0.16));
+    s('--plasma-c6', rgba(userColors[2] || userColors[0], 0.18));
+  }
+
   const sfGrad = ps.sfGrad ?? false
   if (sfGrad && c1) {
     s(
@@ -293,26 +555,34 @@ function applyTheme(t) {
 
   bgEl.textContent = `
     .bg-aurora { animation-duration: ${dur(12)} !important; }
-    .bg-layer.bg-starfield::before { animation-duration: ${dur(80)} !important; }
-    .bg-layer.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
-    .bg-layer.bg-fog::before       { animation-duration: ${dur(42)} !important; }
-    .bg-layer.bg-fog::after        { animation-duration: ${dur(58)} !important; }
-    .bg-layer.bg-scan::before      { animation-duration: ${dur(7)} !important; }
-    .bg-layer.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
-    .bg-layer.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
-    .bg-gradient                   { animation-duration: ${dur(20)} !important; }
-    .bg-mesh                       { animation-duration: ${dur(22)} !important; }
-    .bg-nebula                     { animation-duration: ${dur(30)} !important; }
+    html.bg-starfield::before { animation-duration: ${dur(80)} !important; }
+    html.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
+    html.bg-16-starfield-old::before { animation-duration: ${dur(80)} !important; }
+    html.bg-16-starfield-old::after  { animation-duration: ${dur(130)} !important; }
+    html.bg-05-gradient       { animation-duration: ${dur(25)} !important; }
+    html.bg-06-mesh           { animation-duration: ${dur(22)} !important; }
+    html.bg-07-nebula         { animation-duration: ${dur(30)} !important; }
+    html.bg-fog::before       { animation-duration: ${dur(42)} !important; }
+    html.bg-fog::after        { animation-duration: ${dur(58)} !important; }
+    html.bg-22-fog::before    { animation-duration: ${dur(42)} !important; }
+    html.bg-22-fog::after     { animation-duration: ${dur(58)} !important; }
+    html.bg-scan::before      { animation-duration: ${dur(7)} !important; }
+    html.bg-23-scan::before   { animation-duration: ${dur(7)} !important; }
+    html.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
+    html.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
     .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before { animation-duration: ${dur(20)} !important; }
     .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after  { animation-duration: ${dur(28)} !important; }
-    .bg-layer.bg-drift::before     { animation-duration: ${dur(35)} !important; }
-    .bg-layer.bg-drift::after      { animation-duration: ${dur(50)} !important; }
-    .bg-layer.bg-pulse::before     { animation-duration: ${dur(8)} !important; }
-    .bg-layer.bg-pulse::after      { animation-duration: ${dur(12)} !important; }
-    .bg-layer.bg-tide::before      { animation-duration: ${dur(20)} !important; }
-    .bg-layer.bg-tide::after       { animation-duration: ${dur(30)} !important; }
+    .bg-layer:is(.bg-17-plasma,.bg-18-inferno,.bg-19-mint,.bg-20-dusk,.bg-21-mono)::before { animation-duration: ${dur(20)} !important; }
+    .bg-layer:is(.bg-17-plasma,.bg-18-inferno,.bg-19-mint,.bg-20-dusk,.bg-21-mono)::after  { animation-duration: ${dur(28)} !important; }
+    html.bg-drift::before     { animation-duration: ${dur(35)} !important; }
+    html.bg-drift::after      { animation-duration: ${dur(50)} !important; }
+    html.bg-pulse::before     { animation-duration: ${dur(8)} !important; }
+    html.bg-pulse::after      { animation-duration: ${dur(12)} !important; }
+    html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
+    html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
+    html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
 
-    .bg-layer.bg-grass {
+    html.bg-grass {
       overflow: hidden;
       background-color: ${gSky};
       background-image:
@@ -331,7 +601,7 @@ function applyTheme(t) {
         radial-gradient(1px 1px at 65% 10%, rgba(255,255,255,.55) 0, transparent 100%),
         linear-gradient(to bottom, ${gSky} 0%, ${gSky}bb 55%, ${gGnd}aa 66%, ${gGnd} 100%);
     }
-    .bg-layer.bg-grass::before {
+    html.bg-grass::before {
       content: '';
       position: absolute; bottom: 0; left: -5%; width: 110%; height: 42%;
       background: ${gGnd};
@@ -354,7 +624,7 @@ function applyTheme(t) {
       animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
       transform-origin: bottom center;
     }
-    .bg-layer.bg-grass::after {
+    html.bg-grass::after {
       content: '';
       position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
       background-image:
@@ -373,7 +643,7 @@ function applyTheme(t) {
     @keyframes grass-sway   { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
     @keyframes firefly-blink { 0% { opacity: .3; } 100% { opacity: 1; } }
 
-    .bg-layer.bg-ocean {
+    html.bg-ocean {
       overflow: hidden;
       background-color: ${oSky};
       background-image:
@@ -393,7 +663,7 @@ function applyTheme(t) {
         radial-gradient(1px 1px at 18% 17%, rgba(255,255,255,.45) 0, transparent 100%),
         linear-gradient(to bottom, ${oSky} 0%, ${oSky}cc 36%, ${oWtr}cc 52%, ${oWtr} 100%);
     }
-    .bg-layer.bg-ocean::before {
+    html.bg-ocean::before {
       content: '';
       position: absolute; bottom: -22%; left: -30%; width: 160%; height: 75%;
       background: ${oWtr};
@@ -401,7 +671,7 @@ function applyTheme(t) {
       opacity: .88;
       animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
     }
-    .bg-layer.bg-ocean::after {
+    html.bg-ocean::after {
       content: '';
       position: absolute; bottom: -18%; left: -40%; width: 180%; height: 60%;
       background: color-mix(in srgb, ${oWtr} 85%, #000020);
@@ -422,7 +692,7 @@ function applyTheme(t) {
   var oldPlanets = document.getElementById('sf-planets')
   if (oldPlanets) oldPlanets.remove()
   if (t.bgPreset === 'starfield' && ps.planets) {
-    var sfLayer = document.querySelector('.bg-layer.bg-starfield')
+    var sfLayer = document.querySelector('html.bg-starfield')
     if (sfLayer) {
       var planetCount = ps.planetCount ?? 2
       var planetDefs = [
@@ -464,26 +734,205 @@ function applyTheme(t) {
   }
 
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
-  s('--notes-gap', (t.notesGap ?? 0) + 'px')
+  s('--bg-anim-speed', t.bgAnimSpeed ?? 1)
+  if (t.bgC1) s('--bg-c1', t.bgC1)
+  if (t.bgC2) s('--bg-c2', t.bgC2)
+  if (t.bgC3) s('--bg-c3', t.bgC3)
+
+  // Preset-specific colors (prevent bleeding between presets)
+  // Each preset stores colors under unique keys and maps to unique CSS vars
+  s('--bg-03-c1', t.bgDotsC1 || t.bgC1 || '#2a4a6a')
+  s('--bg-03-c2', t.bgDotsC2 || t.bgC2 || '#4a2a5a')
+  s('--bg-04-c1', t.bgGridC1 || '#2a4a6a')
+  s('--bg-04-c2', t.bgGridC2 || '#4a2a5a')
+  s('--bg-05-c1', t.bgGradC1 || '#1a2a4a')
+  s('--bg-05-c2', t.bgGradC2 || '#2a1a3a')
+  s('--bg-05-c3', t.bgGradC3 || '#1a3a2a')
+  s('--bg-08-c1', t.bgStarC1 || '#05050f')
+  s('--bg-08-c2', t.bgStarC2 || '#000308')
+  s('--bg-08-c3', t.bgStarC3 || '#c8d2ff')
+  s('--bg-14-c1', t.bgFogC1 || '#3a4a6e')
+  s('--bg-15-c1', t.bgScanC1 || '#6c8fff')
+  s('--bg-15-c2', t.bgScanC2 || '#05050d')
+
+  // Fog color vars - set from preset-specific keys
+  if (t.bgFogC1) {
+    const rgb = hexRgb(t.bgFogC1)
+    const op = 1
+    s('--bg-fog-bg', t.bgFogC1)
+    s('--bg-fog-c1', `rgba(${rgb},${(0.22 * op).toFixed(3)})`)
+    s('--bg-fog-c2', `rgba(${rgb},${(0.16 * op).toFixed(3)})`)
+  }
+  // Scan color vars
+  if (t.bgScanC1) {
+    const rgb = hexRgb(t.bgScanC1)
+    s('--bg-scan-c1', `rgba(${rgb},0.0)`)
+    s('--bg-scan-c2', `rgba(${rgb},0.55)`)
+    s('--bg-scan-c3', `rgba(${rgb},0.90)`)
+    s('--bg-scan-glow1', `rgba(${rgb},0.20)`)
+    s('--bg-scan-glow2', `rgba(${rgb},0.08)`)
+    s('--bg-scan-glow3', `rgba(${rgb},0.04)`)
+  }
+  if (t.bgScanC2) s('--bg-scan-bg', t.bgScanC2)
+  if (t.bgDotScale) s('--bg-dot-scale', t.bgDotScale + 'px')
+  if (t.bgGridScale) s('--bg-grid-scale', t.bgGridScale + 'px')
+  if (t.bgStarSize) s('--bg-star-size', t.bgStarSize)
+  
+  // Shape & Grid settings
+  if (t.bgShapeOpacity != null) s('--bg-shape-opacity', t.bgShapeOpacity)
+  if (t.bgGridThickness) s('--bg-grid-thickness', t.bgGridThickness + 'px')
+  if (t.bgGridOpacity != null) s('--bg-grid-opacity', t.bgGridOpacity)
+  
+  // Gradient settings
+  if (t.bgGradientAngle != null) s('--bg-gradient-angle', t.bgGradientAngle + 'deg')
+
+  // Mesh colors
+  if (t.bgMeshC1) { const r=hexRgb(t.bgMeshC1); s('--bg-mesh-c1', `rgba(${r},0.2)`) }
+  if (t.bgMeshC2) { const r=hexRgb(t.bgMeshC2); s('--bg-mesh-c2', `rgba(${r},0.18)`) }
+  if (t.bgMeshC3) { const r=hexRgb(t.bgMeshC3); s('--bg-mesh-c3', `rgba(${r},0.14)`) }
+
+  // Nebula colors  
+  if (t.bgNebulaC1) { const r=hexRgb(t.bgNebulaC1); s('--bg-nebula-c1', `rgba(${r},0.5)`) }
+  if (t.bgNebulaC2) { const r=hexRgb(t.bgNebulaC2); s('--bg-nebula-c2', `rgba(${r},0.5)`) }
+  
+  // Starfield settings
+  if (t.bgStarDensity) s('--bg-star-density', t.bgStarDensity + '%')
+  if (t.bgStarSpeed) s('--bg-star-speed', t.bgStarSpeed)
+  
+  // Plasma backgrounds
+  if (t.bgPlasmaSpeed) s('--bg-plasma-speed', t.bgPlasmaSpeed)
+  if (t.bgPlasmaBlur) s('--bg-plasma-blur', t.bgPlasmaBlur + 'px')
+  if (t.bgPlasmaFlow) s('--bg-plasma-flow', t.bgPlasmaFlow + '%')
+  if (t.bgPlasmaC1) s('--bg-plasma-c1', t.bgPlasmaC1)
+  if (t.bgPlasmaC2) s('--bg-plasma-c2', t.bgPlasmaC2)
+  if (t.bgPlasmaC3) s('--bg-plasma-c3', t.bgPlasmaC3)
+  if (t.bgInfernoSpeed) s('--bg-inferno-speed', t.bgInfernoSpeed)
+  if (t.bgInfernoIntensity) s('--bg-inferno-intensity', t.bgInfernoIntensity + '%')
+  if (t.bgInfernoGlow) s('--bg-inferno-glow', t.bgInfernoGlow + '%')
+  if (t.bgInfernoC1) s('--bg-inferno-c1', t.bgInfernoC1)
+  if (t.bgInfernoC2) s('--bg-inferno-c2', t.bgInfernoC2)
+  if (t.bgInfernoC3) s('--bg-inferno-c3', t.bgInfernoC3)
+  if (t.bgMintSpeed) s('--bg-mint-speed', t.bgMintSpeed)
+  if (t.bgMintSat) s('--bg-mint-sat', t.bgMintSat + '%')
+  if (t.bgMintFlow) s('--bg-mint-flow', t.bgMintFlow + '%')
+  if (t.bgMintC1) s('--bg-mint-c1', t.bgMintC1)
+  if (t.bgMintC2) s('--bg-mint-c2', t.bgMintC2)
+  if (t.bgMintC3) s('--bg-mint-c3', t.bgMintC3)
+  if (t.bgDuskSpeed) s('--bg-dusk-speed', t.bgDuskSpeed)
+  if (t.bgDuskGlow) s('--bg-dusk-glow', t.bgDuskGlow + '%')
+  if (t.bgDuskPurple) s('--bg-dusk-purple', t.bgDuskPurple + '%')
+  if (t.bgDuskC1) s('--bg-dusk-c1', t.bgDuskC1)
+  if (t.bgDuskC2) s('--bg-dusk-c2', t.bgDuskC2)
+  if (t.bgDuskC3) s('--bg-dusk-c3', t.bgDuskC3)
+  if (t.bgMonoSpeed) s('--bg-mono-speed', t.bgMonoSpeed)
+  if (t.bgMonoContrast) s('--bg-mono-contrast', t.bgMonoContrast + '%')
+  if (t.bgMonoBlue) s('--bg-mono-blue', t.bgMonoBlue + '%')
+  if (t.bgMonoC1) s('--bg-mono-c1', t.bgMonoC1)
+  if (t.bgMonoC2) s('--bg-mono-c2', t.bgMonoC2)
+  if (t.bgMonoC3) s('--bg-mono-c3', t.bgMonoC3)
+  
+  // Other backgrounds
+  if (t.bgSilverC1) s('--bg-silver-c1', t.bgSilverC1)
+  if (t.bgSilverC2) s('--bg-silver-c2', t.bgSilverC2)
+  if (t.bgSilverShimmer) s('--bg-silver-shimmer', t.bgSilverShimmer + '%')
+  if (t.bgWallColor) s('--bg-wall-color', t.bgWallColor)
+  if (t.bgWallTexture) s('--bg-wall-texture', t.bgWallTexture + '%')
+  if (t.bgWallRough) s('--bg-wall-rough', t.bgWallRough + '%')
+
+  // Metal settings - always set so CSS vars are never stale
+  s('--bg-metal-c1', t.bgMetalC1 || '#c8ccd8')
+  s('--bg-metal-c2', t.bgMetalC2 || '#888da0')
+  s('--bg-metal-c3', t.bgMetalC3 || '#e0e4f0')
+  s('--bg-metal-shine-opacity', (t.bgMetalShine ?? 40) / 100)
+  s('--bg-metal-grain-opacity', (t.bgMetalGrain ?? 80) / 100)
+  s('--bg-metal-angle', (t.bgMetalAngle ?? 92) + 'deg')
+
+  // Concrete - always set
+  s('--bg-concrete-color', t.bgConcreteColor || '#4a4e52')
+  s('--bg-concrete-depth', t.bgConcreteDepth ?? 0.85)
+  s('--bg-concrete-scale', t.bgConcreteScale ?? 1)
+  s('--bg-carbon-base', t.bgCarbonBase || '#0d0d0d')
+  s('--bg-carbon-sheen', t.bgCarbonSheen ?? 1.0)
+  s('--bg-carbon-scale', t.bgCarbonScale ?? 1)
+  s('--bg-wall-scale', t.bgWallScale ?? 1)
+
+  // Apply concrete texture variant
+  if (document.documentElement.className.includes('bg-27-concrete')) {
+    document.documentElement.dataset.texture = t.bgConcreteTexture || 'default'
+  }
+  
+  // Fog settings
+  if (t.bgFogSpeed) s('--bg-fog-speed', t.bgFogSpeed)
+  if (t.bgFogDensity) s('--bg-fog-density', t.bgFogDensity + '%')
+  if (t.bgFogBlur) s('--bg-fog-blur', t.bgFogBlur + 'px')
+  
+  // Scan settings
+  if (t.bgScanSpeed) s('--bg-scan-speed', t.bgScanSpeed + 's')
+  if (t.bgScanIntensity) s('--bg-scan-intensity', t.bgScanIntensity + '%')
+  if (t.bgScanThickness) s('--bg-scan-thickness', t.bgScanThickness + 'px')
+  
+  s('--notes-gap', (t.sectionGap ?? 0) + 'px')
+  s('--notes-radius', (t.notesRadius ?? 4) + 'px')
   if (t.notesCardBg) s('--notes-card-bg', t.notesCardBg)
+  s('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)
+  if (t.notesSharedBg) s('--notes-shared-bg', t.notesSharedBg)
   if (t.notesTextColor) s('--notes-text-color', t.notesTextColor)
   if (t.notesTextBg) s('--notes-input-bg', t.notesTextBg)
   root.dataset.settingsSide = t.settingsSide || 'right'
   document.body.style.fontFamily = t.font || "'DM Mono', monospace"
-  document.body.style.backgroundColor = t.bg || '#0c0c0f'
   document.body.style.color = t.text || '#e8e8f0'
   if (t.pageScale) document.body.style.zoom = t.pageScale
+
+  // Apply background class to html element (never transformed, always viewport-anchored)
+  document.documentElement.className = `bg-${t.bgPreset || 'noise'}`
+  if (t.bgPreset === '03-dots') {
+    document.documentElement.dataset.pattern = t.bgDotPattern || 'circles'
+  } else {
+    delete document.documentElement.dataset.pattern
+  }
+  if (t.bgPreset === '27-concrete') {
+    document.documentElement.dataset.texture = t.bgConcreteTexture || 'default'
+  } else {
+    delete document.documentElement.dataset.texture
+  }
 }
 
 export default function App() {
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
   const searchInputRef = useRef(null)
-  const [workspaces, setWorkspaces] = useState([])
-  const [activeWs, setActiveWs] = useState(null)
-  const [sections, setSections] = useState([])
-  const [links, setLinks] = useState([])
-  const [notes, setNotes] = useState([])
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [workspaces, setWorkspaces] = useState(() => {
+    // Load workspaces from cache immediately for instant render
+    return CacheManager.load('workspaces') || []
+  })
+  const [mode, setMode] = useState(() => {
+    try {
+      return localStorage.getItem('workspaceMode') || 'home'
+    } catch {
+      return 'home'
+    }
+  })
+  const [activeWs, setActiveWs] = useState(() => {
+    try {
+      // Try cache first, then localStorage
+      return CacheManager.load('activeWorkspace') || localStorage.getItem('activeWorkspace') || null
+    } catch {
+      return null
+    }
+  })
+  const [sections, setSections] = useState(() => {
+    // Load sections from cache immediately
+    return CacheManager.load('sections') || []
+  })
+  const [links, setLinks] = useState(() => {
+    // Load links from cache immediately
+    return CacheManager.load('links') || []
+  })
+  const [notes, setNotes] = useState(() => {
+    // Load notes from cache immediately
+    return CacheManager.load('notes') || []
+  })
 
   const [theme, setThemeState] = useState(() => {
     try { return { ...DEFAULT_THEME, ...(JSON.parse(localStorage.getItem('current_theme')) || {}) } }
@@ -491,13 +940,99 @@ export default function App() {
   })
 
   const saveThemeRef = useRef(null)
+  const contentRef = useRef(null)
+  
+  // Online/offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      // Sync when coming back online
+      if (sessionRef.current) {
+        handleRefresh()
+      }
+    }
+    const handleOffline = () => setIsOnline(false)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // Position gradient on each panel based on viewport position
+  // This is needed because background-attachment: fixed doesn't work with body's transform: scale
+  useEffect(() => {
+    const positionGradients = () => {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      const scale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--page-scale')) || 1
+      
+      // Set viewport size variables (in unscaled space)
+      document.documentElement.style.setProperty('--viewport-width', `${vw / scale}px`)
+      document.documentElement.style.setProperty('--viewport-height', `${vh / scale}px`)
+      
+      // Position each panel's background to align with its viewport position
+      const panels = document.querySelectorAll('.section-card, .note-item, .topbar')
+      panels.forEach(panel => {
+        const rect = panel.getBoundingClientRect()
+        // Negative offsets so the gradient acts as if anchored to viewport
+        const x = -rect.left / scale
+        const y = -rect.top / scale
+        panel.style.backgroundPosition = `${x}px ${y}px`
+      })
+    }
+    
+    positionGradients()
+    window.addEventListener('resize', positionGradients)
+    window.addEventListener('scroll', positionGradients, true)
+    
+    // Re-position when content changes
+    const timer = setTimeout(positionGradients, 100)
+    const interval = setInterval(positionGradients, 500)  // Catch dynamic changes
+    
+    return () => {
+      window.removeEventListener('resize', positionGradients)
+      window.removeEventListener('scroll', positionGradients, true)
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+  }, [sections, notes, theme])
 
   const persistTheme = (t, immediate = false) => {
     clearTimeout(saveThemeRef.current)
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
-      if (!uid) return
+      const wsId = activeWs
+      
+      console.log('[persistTheme] uid:', uid, 'wsId:', wsId)
+      
+      if (!uid) {
+        console.log('[persistTheme] No user ID, skipping save')
+        return
+      }
+      
       const { wallpaper, ...themeData } = t
+      
+      // Save theme to current workspace if we have one
+      if (wsId) {
+        const { error: wsErr } = await supabase
+          .from('workspaces')
+          .update({ theme: themeData })
+          .eq('id', wsId)
+        
+        if (wsErr) {
+          console.error('[workspace theme] save error:', wsErr.message)
+        } else {
+          console.log('[workspace theme] ✅ saved for workspace', wsId)
+        }
+      } else {
+        console.log('[workspace theme] ⚠️ No activeWs, skipping workspace save')
+      }
+      
+      // Also keep user_settings as global fallback
       const { data: updated, error: upErr } = await supabase
         .from('user_settings')
         .update({ theme: themeData, updated_at: new Date().toISOString() })
@@ -511,7 +1046,7 @@ export default function App() {
         if (insErr) console.error('[settings] insert error:', insErr.message)
         else console.log('[settings] created row in Supabase')
       } else {
-        console.log('[settings] updated Supabase row')
+        console.log('[settings] ✅ updated global user_settings')
       }
     }
     if (immediate) doSave()
@@ -562,6 +1097,21 @@ export default function App() {
 
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
+  
+  // Save active workspace to localStorage and cache
+  useEffect(() => {
+    if (activeWs) {
+      localStorage.setItem('activeWorkspace', activeWs)
+      CacheManager.save('activeWorkspace', activeWs)
+      console.log('[activeWs] Saved to localStorage and cache:', activeWs)
+    }
+  }, [activeWs])
+
+  // Save mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('workspaceMode', mode)
+    console.log('[Mode] Saved to localStorage:', mode)
+  }, [mode])
 
   useEffect(() => {
     if (!session) return
@@ -668,41 +1218,124 @@ export default function App() {
   }
 
   const ensureWorkspace = async () => {
+    // Check cache first
+    const cachedWorkspaces = CacheManager.load('workspaces')
+    const cachedActiveWs = CacheManager.load('activeWorkspace')
+    
+    if (cachedWorkspaces && cachedWorkspaces.length > 0) {
+      setWorkspaces(cachedWorkspaces)
+      setActiveWs(prev => prev ?? cachedActiveWs ?? cachedWorkspaces[0]?.id ?? null)
+      
+      // Refresh in background if online
+      if (isOnline) {
+        handleRefresh()
+      }
+      return
+    }
+    
+    // No cache, must fetch (only works if online)
+    if (!isOnline) {
+      console.warn('[ensureWorkspace] Offline with no cache')
+      return
+    }
+    
     const { data, error } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
     if (error) { alert(error.message); return }
+    
     if (!data?.length) {
       const { data: created, error: err } = await supabase
         .from('workspaces').insert({ user_id: session.user.id, name: 'Home' }).select().single()
       if (err) { alert(err.message); return }
-      setWorkspaces([created]); setActiveWs(created.id); return
+      
+      setWorkspaces([created])
+      setActiveWs(created.id)
+      CacheManager.save('workspaces', [created])
+      CacheManager.save('activeWorkspace', created.id)
+      return
     }
+    
     setWorkspaces(data)
-    setActiveWs(prev => prev ?? data[0]?.id ?? null)
+    const wsId = data[0]?.id ?? null
+    setActiveWs(prev => prev ?? wsId)
+    CacheManager.save('workspaces', data)
+    CacheManager.save('activeWorkspace', prev => prev ?? wsId)
   }
 
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
+    
+    // If offline, just use cache
+    if (!isOnline) {
+      console.log('[handleRefresh] Offline - using cached data')
+      return
+    }
+    
     try {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
+      
       setWorkspaces(wsData || [])
+      CacheManager.save('workspaces', wsData || []) // Cache workspaces
+      
       const currentWs = activeWs ?? wsData?.[0]?.id ?? null
       if (!currentWs) return
-      if (!activeWs) setActiveWs(currentWs)
+      
+      if (!activeWs) {
+        setActiveWs(currentWs)
+        CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
+      }
+      
       const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
       ])
+      
       setSections(secData || [])
       setLinks(linkData || [])
       setNotes(noteData || [])
+      
+      // Cache all data
+      CacheManager.save('sections', secData || [])
+      CacheManager.save('links', linkData || [])
+      CacheManager.save('notes', noteData || [])
+      CacheManager.save(`sections_${currentWs}`, secData || [])
+      CacheManager.save(`links_${currentWs}`, linkData || [])
+      CacheManager.save(`notes_${currentWs}`, noteData || [])
+      
     } catch (err) {
       console.error('Refresh network error:', err.message)
+      // On error, fall back to cache
+      const cachedSections = CacheManager.load('sections')
+      const cachedLinks = CacheManager.load('links')
+      const cachedNotes = CacheManager.load('notes')
+      if (cachedSections) setSections(cachedSections)
+      if (cachedLinks) setLinks(cachedLinks)
+      if (cachedNotes) setNotes(cachedNotes)
     }
   }
 
-  useEffect(() => { if (activeWs && session) handleRefresh() }, [activeWs])
+  useEffect(() => { 
+    if (activeWs && session) {
+      // Load workspace-specific theme
+      const loadWorkspaceTheme = async () => {
+        const { data } = await supabase
+          .from('workspaces')
+          .select('theme')
+          .eq('id', activeWs)
+          .single()
+        
+        if (data?.theme && Object.keys(data.theme).length > 5) {
+          const workspaceTheme = { ...DEFAULT_THEME, ...data.theme }
+          setThemeState(workspaceTheme)
+          localStorage.setItem('current_theme', JSON.stringify(workspaceTheme))
+          console.log('[workspace] Applied workspace theme for', activeWs)
+        }
+      }
+      
+      loadWorkspaceTheme().then(() => handleRefresh())
+    }
+  }, [activeWs])
 
   useEffect(() => {
     const loadFromStorage = () => {
@@ -767,8 +1400,26 @@ export default function App() {
   const addWorkspace = async (name) => {
     const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
+    
+    // Ask for visibility
+    const visibilityChoice = confirm(
+      `Where should "${wsName}" be visible?\n\n` +
+      `OK = Home & Work (both locations)\n` +
+      `Cancel = Choose specific location`
+    )
+    
+    let visibility = 'both'
+    if (!visibilityChoice) {
+      const isWork = confirm('Show only at Work?\n\nOK = Work only\nCancel = Home only')
+      visibility = isWork ? 'work' : 'home'
+    }
+    
     const { data, error } = await supabase
-      .from('workspaces').insert({ user_id: session.user.id, name: wsName.trim() }).select().single()
+      .from('workspaces').insert({ 
+        user_id: session.user.id, 
+        name: wsName.trim(),
+        visibility: visibility 
+      }).select().single()
     if (error) return alert(error.message)
     setWorkspaces(prev => [...prev, data])
     setActiveWs(data.id)
@@ -839,11 +1490,64 @@ export default function App() {
 		a.download = 'startpage-links.csv'; a.click()
 	  }
 
+	  const exportTheme = () => {
+		const { wallpaper, ...themeExport } = theme
+		const exportData = { ...themeExport, exportedAt: new Date().toISOString() }
+		const a = document.createElement('a')
+		a.href = URL.createObjectURL(new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' }))
+		a.download = 'startpage-theme.json'
+		a.click()
+	  }
+
+	  const [themeFileRef] = useState(() => ({ current: null }))
+
+	  const handleImportTheme = (e) => {
+		const file = e.target.files?.[0]
+		if (!file) return
+		e.target.value = ''
+		const reader = new FileReader()
+		reader.onload = (ev) => {
+		  try {
+			const data = JSON.parse(ev.target.result)
+			const imported = { ...DEFAULT_THEME, ...data }
+			delete imported.exportedAt
+			setTheme(imported)
+			alert('Theme imported successfully!')
+		  } catch (err) {
+			alert('Failed to import theme: ' + err.message)
+		  }
+		}
+		reader.readAsText(file)
+	  }
+
 	  const resetWorkspaceLinks = async () => {
 		if (!confirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
 		await supabase.from('links').delete().eq('workspace_id', activeWs)
 		await supabase.from('sections').delete().eq('workspace_id', activeWs)
 		handleRefresh()
+	  }
+
+	  const clearAllNotes = async () => {
+		if (!confirm('Delete ALL notes in this workspace? This cannot be undone!')) return
+		if (!confirm('Are you absolutely sure? All notes will be permanently deleted.')) return
+		
+		console.log('[clearAllNotes] Deleting all notes for workspace:', activeWs)
+		
+		// Delete all notes for this workspace
+		const { error } = await supabase
+		  .from('notes')
+		  .delete()
+		  .eq('workspace_id', activeWs)
+		
+		if (error) {
+		  console.error('[clearAllNotes] Error:', error)
+		  alert('Error deleting notes: ' + error.message)
+		  return
+		}
+		
+		console.log('[clearAllNotes] Success, refreshing...')
+		handleRefresh()
+		alert('All notes deleted successfully')
 	  }
 
 	  // ── Import ────────────────────────────────────────────────────────────────
@@ -924,16 +1628,34 @@ export default function App() {
 	  // ── Background ────────────────────────────────────────────────────────────
 	  const bgClass = (bgImage && theme.bgPreset === 'image') ? 'bg-layer bg-image' : `bg-layer bg-${theme.bgPreset || 'noise'}`
 	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
+	  const bgDataAttrs = theme.bgPreset === '03-dots' ? { 'data-pattern': theme.bgDotPattern || 'circles' } : {}
 
 	  if (loading) return <div className="center-fill">Loading…</div>
 	  if (!session) return <Auth />
 
 	  return (
 		<>
-		  {/* Background */}
-		  <div className={bgClass} style={bgStyle} />
-
-		  <div className="app">
+		  {/* Offline indicator */}
+		  {!isOnline && (
+			<div style={{
+			  position: 'fixed',
+			  top: 0,
+			  left: 0,
+			  right: 0,
+			  background: 'rgba(255, 107, 128, 0.95)',
+			  color: '#fff',
+			  padding: '0.5rem',
+			  textAlign: 'center',
+			  fontSize: '0.85em',
+			  fontWeight: 500,
+			  zIndex: 99999,
+			  boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+			}}>
+			  🔴 Offline - viewing cached data
+			</div>
+		  )}
+		  
+		  <div className="app" ref={contentRef}>
 
 			{/* Wallpaper overlay */}
 			{theme.wallpaper ? (
@@ -956,37 +1678,31 @@ export default function App() {
 
 			  {/* Workspace tabs */}
 			  <div className="workspace-tabs">
-				{workspaces.map(ws => (
+				{workspaces
+				  .filter(ws => {
+					const visibility = ws.visibility || 'both'
+					if (mode === 'home') return true // Home sees everything
+					return visibility === 'work' || visibility === 'both'
+				  })
+				  .map(ws => (
 				  <button
 					key={ws.id}
 					className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
 					onClick={() => setActiveWs(ws.id)}
 				  >
 					{ws.name}
-					{workspaces.length > 1 && (
-					  <span
-						className="del-ws"
-						onClick={e => { e.stopPropagation(); deleteWorkspace(ws.id) }}
-					  >✕</span>
-					)}
 				  </button>
 				))}
-				<button
-				  className="icon-btn"
-				  title="New workspace"
-				  onClick={() => addWorkspace()}
-				  style={{ fontSize: '1.1em', lineHeight: 1 }}
-				>+</button>
 			  </div>
 
 			  <div className="topbar-divider" />
 
 			  {/* Widgets: clock + weather + search */}
 			  <div className="topbar-widgets">
-				<ClockWidget />
-				<div className="topbar-divider" />
-				<WeatherWidget />
-				<div className="search-compact">
+				{!(theme.hideClock ?? false) && <ClockWidget />}
+				{!(theme.hideClock ?? false) && !(theme.hideWeather ?? false) && <div className="topbar-divider" />}
+				{!(theme.hideWeather ?? false) && <WeatherWidget />}
+				{!(theme.hideSearch ?? false) && <div className="search-compact">
 				  <div className="search-mode-bar">
 					{[
 					  { key: 'web', icon: '🌐', title: 'Web' },
@@ -1054,10 +1770,8 @@ export default function App() {
 					  ))}
 					</div>
 				  )}
-				</div>
+				</div>}
 			  </div>
-
-			  {/* Action buttons */}
 			  <div className="topbar-actions">
 				<button
 				  className="btn"
@@ -1066,14 +1780,13 @@ export default function App() {
 				>
 				  {allCollapsed ? '▾' : '▴'}
 				</button>
-				<button className="icon-btn" title="Refresh" onClick={async () => { await loadUserSettings(true); handleRefresh() }}>↻</button>
-				<button className="icon-btn" title="Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
+				<button className="icon-btn" title="Settings" onClick={() => setSettingsOpen(true)} style={{ fontSize: '1.5em' }}>⚙</button>
 			  </div>
 			</div>
 
 			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
-			<main className="main-layout" style={{ gridTemplateColumns: `1fr var(--notes-width, 240px)` }}>
-			  <div className="main-col">
+			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? `1fr var(--notes-width, 240px)` : '1fr' }}>
+			  {!(theme.hideCards ?? false) && <div className="main-col">
 				<Sections
 				  sections={sections}
 				  links={searchMode === 'links' ? filteredLinks : links}
@@ -1085,17 +1798,33 @@ export default function App() {
 				  triggerExpandAll={triggerExpand}
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
+				  onAddSection={async () => {
+					const name = window.prompt('Section name:', 'New Section')
+					if (!name?.trim()) return
+					const { error } = await supabase
+					  .from('sections')
+					  .insert({
+						user_id: session.user.id,
+						workspace_id: activeWs,
+						name: name.trim(),
+						position: sections.length,
+						collapsed: false
+					  })
+					if (error) { alert('Error creating section: ' + error.message); return }
+					await handleRefresh()
+				  }}
 				/>
-			  </div>
-			  <div className="side-col">
+			  </div>}
+			  {!(theme.hideNotes ?? false) && <div className="side-col">
 				<Notes
 				  notes={notes}
 				  workspaceId={activeWs}
+				  workspace={workspaces.find(w => w.id === activeWs)}
 				  userId={session.user.id}
 				  onRefresh={handleRefresh}
 				  forceOpen={notesTrigger}
 				/>
-			  </div>
+			  </div>}
 			</main>
 
 			{/* ── SETTINGS ────────────────────────────────────── */}
@@ -1113,14 +1842,20 @@ export default function App() {
 				onBgImageUpload={handleBgImageUpload}
 				onExportBackup={exportFullBackup}
 				onExportCSV={exportCSV}
+				onExportTheme={exportTheme}
+				onImportTheme={handleImportTheme}
 				onImportBackup={handleImportBackup}
 				onResetWorkspaceLinks={resetWorkspaceLinks}
+				onClearAllNotes={clearAllNotes}
 				onResetTheme={() => setTheme(DEFAULT_THEME)}
 				fileRef={fileRef}
 				backupFileRef={backupFileRef}
+				themeFileRef={themeFileRef}
 				importingBackup={importingBackup}
 				workspaces={workspaces}
 				activeWs={activeWs}
+				mode={mode}
+				setMode={setMode}
 				onAddWorkspace={addWorkspace}
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}

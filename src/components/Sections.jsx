@@ -7,6 +7,10 @@ import {
   useDroppable,
   useSensor,
   useSensors,
+  DragOverlay,
+  pointerWithin,
+  rectIntersection,
+  getFirstCollision,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -47,6 +51,8 @@ function getFavicon(url) {
 
 function LinkRow({
   link,
+  linkIndex,
+  totalLinks,
   openInNewTab,
   faviconEnabled,
   onRefresh,
@@ -68,6 +74,7 @@ function LinkRow({
   });
 
   const [showColors, setShowColors] = useState(false);
+  const [showActions, setShowActions] = useState(false);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -183,80 +190,117 @@ function LinkRow({
         />
       ) : null}
 
-      <a
-        className="link-title"
-        href={href}
-        target={openInNewTab ? "_blank" : "_self"}
-        rel={openInNewTab ? "noopener noreferrer" : undefined}
-        title={link.title}
-        style={link.color ? { color: link.color } : undefined}
+      <div 
+        style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
+        {...attributes}
+        {...listeners}
       >
-        {link.title}
-      </a>
+        <a
+          className="link-title"
+          href={href}
+          target={openInNewTab ? "_blank" : "_self"}
+          rel={openInNewTab ? "noopener noreferrer" : undefined}
+          title={link.title}
+          style={link.color ? { color: link.color } : undefined}
+          onClick={(e) => {
+            // Allow click to navigate, but only if not dragging
+            if (isDragging) {
+              e.preventDefault();
+            }
+          }}
+        >
+          {link.title}
+        </a>
+      </div>
 
       <div
-        className={`link-actions-overlay${showColors ? " colors-open" : ""}`}
+        className="link-actions-overlay"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           type="button"
           className="link-act"
-          title="Rename title"
-          aria-label="Rename title"
-          onClick={handleRename}
-        >
-          ✎
-        </button>
-
-        <button
-          type="button"
-          className="link-act"
-          title="Edit URL"
-          aria-label="Edit URL"
-          onClick={handleEditUrl}
-        >
-          🔗
-        </button>
-
-        <button
-          type="button"
-          className="link-act"
-          title="Text colour"
-          aria-label="Text colour"
+          title="Actions"
+          aria-label="Actions"
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
-            setShowColors((v) => !v);
+            setShowActions((v) => !v);
           }}
+          onMouseEnter={() => setShowActions(true)}
         >
-          ●
+          ⚙
         </button>
 
-        {showColors &&
-          SWATCH_COLORS.map((swatch) => (
+        {showActions && (
+          <div 
+            className={`link-actions-menu ${linkIndex >= totalLinks - 2 ? 'position-above' : ''}`}
+            onMouseLeave={() => {
+              setShowActions(false);
+              setShowColors(false);
+            }}
+          >
             <button
-              key={swatch.label}
               type="button"
-              className="color-swatch-inline"
-              title={swatch.label}
-              aria-label={swatch.label}
-              style={{
-                background: swatch.value || "linear-gradient(135deg, #666, #222)",
-                outline: !swatch.value ? "1px solid var(--border)" : "none",
-              }}
-              onClick={(e) => handleColor(e, swatch.value)}
-            />
-          ))}
+              className="link-act"
+              title="Rename title"
+              aria-label="Rename title"
+              onClick={handleRename}
+            >
+              ✎
+            </button>
 
-        <button
-          type="button"
-          className="link-act link-act-del"
-          title="Delete link"
-          aria-label="Delete link"
-          onClick={handleDelete}
-        >
-          ×
-        </button>
+            <button
+              type="button"
+              className="link-act"
+              title="Edit URL"
+              aria-label="Edit URL"
+              onClick={handleEditUrl}
+            >
+              🔗
+            </button>
+
+            <button
+              type="button"
+              className="link-act"
+              title="Text colour"
+              aria-label="Text colour"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowColors((v) => !v);
+              }}
+            >
+              ●
+            </button>
+
+            {showColors &&
+              SWATCH_COLORS.map((swatch) => (
+                <button
+                  key={swatch.label}
+                  type="button"
+                  className="color-swatch-inline"
+                  title={swatch.label}
+                  aria-label={swatch.label}
+                  style={{
+                    background: swatch.value || "linear-gradient(135deg, #666, #222)",
+                    outline: !swatch.value ? "1px solid var(--border)" : "none",
+                  }}
+                  onClick={(e) => handleColor(e, swatch.value)}
+                />
+              ))}
+
+            <button
+              type="button"
+              className="link-act link-act-del"
+              title="Delete link"
+              aria-label="Delete link"
+              onClick={handleDelete}
+            >
+              ×
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -316,10 +360,12 @@ function LinksList({
         strategy={verticalListSortingStrategy}
       >
         <div className="links-list">
-          {links.map((link) => (
+          {links.map((link, index) => (
             <LinkRow
               key={link.id}
               link={link}
+              linkIndex={index}
+              totalLinks={links.length}
               openInNewTab={openInNewTab}
               faviconEnabled={faviconEnabled}
               onRefresh={onRefresh}
@@ -333,6 +379,7 @@ function LinksList({
 
 function SectionCard({
   section,
+  isArchiveColumn,
   links,
   onToggleCollapse,
   onDeleteSection,
@@ -341,6 +388,8 @@ function SectionCard({
   openInNewTab,
   faviconEnabled,
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const {
     attributes,
     listeners,
@@ -348,6 +397,7 @@ function SectionCard({
     transform,
     transition,
     isDragging,
+    isOver,
   } = useSortable({
     id: String(section.id),
     data: {
@@ -357,20 +407,33 @@ function SectionCard({
     },
   });
 
+  // Archive cards: temporarily show content on hover even when collapsed
+  const shouldShowContent = isArchiveColumn 
+    ? (isHovered || !section.collapsed) 
+    : !section.collapsed;
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.65 : 1,
-    zIndex: isDragging ? 30 : "auto",
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 30 : (isArchiveColumn && shouldShowContent ? 10 : 1),
+    cursor: isDragging ? 'grabbing' : 'grab',
+    boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.3)' : undefined,
+    scale: isDragging ? '1.02' : '1',
+    position: 'relative',
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`section-card ${section.collapsed ? "collapsed" : ""}`}
-      data-section-id={section.id}
-    >
+    <>
+      {isOver && <div className="drop-indicator" />}
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`section-card ${!shouldShowContent || isDragging ? "collapsed" : ""}`}
+        data-section-id={section.id}
+        onMouseEnter={() => isArchiveColumn && setIsHovered(true)}
+        onMouseLeave={() => isArchiveColumn && setIsHovered(false)}
+      >
       <div className="section-header">
         <button
           type="button"
@@ -386,6 +449,9 @@ function SectionCard({
 
         <div
           className="section-header-click"
+          {...attributes}
+          {...listeners}
+          style={{ cursor: 'grab' }}
           onClick={(e) => {
             e.stopPropagation();
             onToggleCollapse(section);
@@ -397,6 +463,39 @@ function SectionCard({
         </div>
 
         <div className="section-actions" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="icon-btn"
+            type="button"
+            onClick={async () => {
+              const title = window.prompt('Link title:', 'New Link')
+              if (!title?.trim()) return
+              
+              const url = window.prompt('URL:', 'https://')
+              if (!url?.trim()) return
+              
+              const { error } = await supabase
+                .from('links')
+                .insert({
+                  user_id: section.user_id,
+                  workspace_id: section.workspace_id,
+                  section_id: section.id,
+                  title: title.trim(),
+                  url: url.trim(),
+                  position: links.length
+                })
+              
+              if (error) {
+                alert('Error adding link: ' + error.message)
+                return
+              }
+              
+              await onRefresh?.()
+            }}
+            title="Add link"
+          >
+            +
+          </button>
+
           <button
             className="icon-btn"
             type="button"
@@ -426,7 +525,7 @@ function SectionCard({
         </div>
       </div>
 
-      {!section.collapsed && (
+      {shouldShowContent && (
         <LinksList
           section={section}
           links={links}
@@ -436,6 +535,7 @@ function SectionCard({
         />
       )}
     </div>
+    </>
   );
 }
 
@@ -470,8 +570,10 @@ export default function Sections({
   triggerExpandAll,
   openInNewTab = true,
   faviconEnabled = true,
+  onAddSection,
 }) {
   const [localSections, setLocalSections] = useState([]);
+  const [activeId, setActiveId] = useState(null);
   const isSavingLayoutRef = useRef(false);
   const lastSavedLayoutRef = useRef("");
 
@@ -544,9 +646,30 @@ export default function Sections({
     collapseExpandAll(false, localSections);
   }, [triggerExpandAll]);
 
+  // Simplified collision detection - prioritize what's directly under the pointer
+  const customCollisionDetection = (args) => {
+    // Always use pointer position for most intuitive dragging
+    const pointerCollisions = pointerWithin(args);
+    
+    if (pointerCollisions.length > 0) {
+      return pointerCollisions;
+    }
+    
+    // Fallback to rect intersection
+    const rectCollisions = rectIntersection(args);
+    if (rectCollisions.length > 0) {
+      return rectCollisions;
+    }
+    
+    // Last resort: use closest center
+    return closestCenter(args);
+  };
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 4 },
+      activationConstraint: { 
+        distance: 1,
+      },
     })
   );
 
@@ -592,12 +715,16 @@ export default function Sections({
 
   function buildUpdatedSections(itemsByCol) {
     const next = [];
+    const lastColIndex = itemsByCol.length - 1;
+    
     itemsByCol.forEach((items, col_index) => {
       items.forEach((item, position) => {
         next.push({
           ...item,
           col_index,
           position,
+          // Auto-collapse if moved to archive column (last column)
+          collapsed: col_index === lastColIndex ? true : item.collapsed,
         });
       });
     });
@@ -612,6 +739,7 @@ export default function Sections({
           .update({
             col_index: s.col_index ?? 0,
             position: s.position ?? 0,
+            collapsed: s.collapsed ?? false,
           })
           .eq("id", s.id)
           .eq("workspace_id", workspaceId)
@@ -622,8 +750,18 @@ export default function Sections({
     if (failed?.error) throw failed.error;
   }
 
+  function handleDragStart(event) {
+    setActiveId(event.active.id);
+  }
+
+  function handleDragCancel() {
+    setActiveId(null);
+  }
+
   async function handleDragEnd(event) {
     const { active, over } = event;
+    setActiveId(null);
+    
     if (!active || !over) return;
 
     const activeId = String(active.id);
@@ -682,22 +820,50 @@ export default function Sections({
 
   async function handleToggleCollapse(section) {
     const nextCollapsed = !section.collapsed;
+    const isInArchiveColumn = section.col_index === (safeColCount - 1);
 
-    setLocalSections((prev) =>
-      prev.map((s) =>
-        s.id === section.id ? { ...s, collapsed: nextCollapsed } : s
-      )
-    );
+    // If this is an archive column section being OPENED, close all other archive sections
+    if (isInArchiveColumn && !nextCollapsed) {
+      setLocalSections((prev) =>
+        prev.map((s) => {
+          if (s.id === section.id) {
+            return { ...s, collapsed: false }; // Open this one
+          } else if (s.col_index === (safeColCount - 1)) {
+            return { ...s, collapsed: true }; // Close other archive sections
+          }
+          return s;
+        })
+      );
 
-    const { error } = await supabase
-      .from("sections")
-      .update({ collapsed: nextCollapsed })
-      .eq("id", section.id)
-      .eq("workspace_id", workspaceId);
+      // Update all archive column sections in database
+      const archiveSections = localSections.filter(s => s.col_index === (safeColCount - 1));
+      await Promise.all(
+        archiveSections.map(s =>
+          supabase
+            .from("sections")
+            .update({ collapsed: s.id === section.id ? false : true })
+            .eq("id", s.id)
+            .eq("workspace_id", workspaceId)
+        )
+      );
+    } else {
+      // Normal toggle for non-archive sections
+      setLocalSections((prev) =>
+        prev.map((s) =>
+          s.id === section.id ? { ...s, collapsed: nextCollapsed } : s
+        )
+      );
 
-    if (error) {
-      console.error("Collapse update failed:", error.message);
-      await onRefresh?.();
+      const { error } = await supabase
+        .from("sections")
+        .update({ collapsed: nextCollapsed })
+        .eq("id", section.id)
+        .eq("workspace_id", workspaceId);
+
+      if (error) {
+        console.error("Collapse update failed:", error.message);
+        await onRefresh?.();
+      }
     }
   }
 
@@ -751,14 +917,113 @@ export default function Sections({
     await onRefresh?.();
   }
 
+  const activeSection = activeId 
+    ? localSections.find(s => String(s.id) === String(activeId))
+    : null;
+
+  // Empty state when no sections exist
+  if (localSections.length === 0) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '4rem 2rem',
+        gap: '1.5rem',
+        minHeight: '50vh'
+      }}>
+        <div style={{
+          fontSize: '3rem',
+          opacity: 0.3
+        }}>📑</div>
+        <div style={{
+          fontSize: '1.1em',
+          color: 'var(--text)',
+          fontWeight: 500,
+          textAlign: 'center'
+        }}>
+          This workspace is empty
+        </div>
+        <div style={{
+          fontSize: '0.9em',
+          color: 'var(--text-dim)',
+          textAlign: 'center',
+          maxWidth: '400px',
+          lineHeight: 1.6
+        }}>
+          Create your first section to organize your bookmarks
+        </div>
+        <button
+          className="btn btn-primary"
+          onClick={async () => {
+            const name = window.prompt('Section name:', 'New Section')
+            if (!name?.trim()) return
+            
+            const { error } = await supabase
+              .from('sections')
+              .insert({
+                user_id: userId,
+                workspace_id: workspaceId,
+                name: name.trim(),
+                position: 0,
+                collapsed: false
+              })
+            
+            if (error) {
+              alert('Error creating section: ' + error.message)
+              return
+            }
+            
+            await onRefresh?.()
+          }}
+          style={{
+            fontSize: '0.95em',
+            padding: '0.6rem 1.5rem',
+            marginTop: '0.5rem'
+          }}
+        >
+          + Create First Section
+        </button>
+      </div>
+    )
+  }
+
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={customCollisionDetection}
+      onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
     >
+      <div className="sections-col-header-row" style={{ gridTemplateColumns: `repeat(${safeColCount}, 1fr)` }}>
+        {columns.map((col) => {
+          const isArchiveColumn = col.index === columns.length - 1
+          return (
+            <div key={col.id} className="sections-col-header">
+              {col.index === 0 && (
+                <button
+                  className="icon-btn col-header-btn"
+                  title="Add new section"
+                  onClick={onAddSection}
+                  style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
+                >+</button>
+              )}
+              {isArchiveColumn && (
+                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
+                  Archive Column
+                </span>
+              )}
+            </div>
+          )
+        })}
+      </div>
       <div className="sections-grid">
-        {columns.map((col) => (
+        {columns.map((col) => {
+          const isArchiveColumn = col.index === columns.length - 1;
+          
+          return (
           <SortableContext
             key={col.id}
             id={col.id}
@@ -770,6 +1035,7 @@ export default function Sections({
                 <SectionCard
                   key={section.id}
                   section={section}
+                  isArchiveColumn={isArchiveColumn}
                   links={[...links]
                     .filter((l) => l.section_id === section.id)
                     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))}
@@ -783,8 +1049,28 @@ export default function Sections({
               ))}
             </SectionColumn>
           </SortableContext>
-        ))}
+        )})}
       </div>
+      <DragOverlay>
+        {activeSection ? (
+          <div style={{
+            opacity: 1,
+            cursor: 'grabbing',
+          }}>
+            <div className="section-card collapsed" style={{
+              background: 'var(--card)',
+              border: '1px solid var(--accent)',
+              boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+            }}>
+              <div className="section-header">
+                <div className="section-name" style={{ padding: '0.5rem 1rem' }}>
+                  {activeSection.name}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </DragOverlay>
     </DndContext>
   );
 }

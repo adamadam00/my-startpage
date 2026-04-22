@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { supabase } from '../lib/supabase'
 
 const FONTS = [
   { label: 'DM Mono',        value: "'DM Mono', monospace"        },
@@ -10,6 +11,12 @@ const FONTS = [
   { label: 'Outfit',         value: 'Outfit, sans-serif'          },
   { label: 'Space Grotesk',  value: "'Space Grotesk', sans-serif" },
   { label: 'Figtree',        value: 'Figtree, sans-serif'         },
+  { label: 'Roboto',         value: 'Roboto, sans-serif'          },
+  { label: 'Open Sans',      value: "'Open Sans', sans-serif"     },
+  { label: 'Lato',           value: 'Lato, sans-serif'            },
+  { label: 'Noto Sans',      value: "'Noto Sans', sans-serif"     },
+  { label: 'Work Sans',      value: "'Work Sans', sans-serif"     },
+  { label: 'Manrope',        value: 'Manrope, sans-serif'         },
 ]
 
 const BG_PRESETS = [
@@ -45,7 +52,7 @@ const ANIMATED_PRESETS = [
 const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
 const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
-const DEFAULT_SECTION_ORDER = ['background','wallpaper','colours','typography','layout','cards','visibility','clock','favicons','notes','search','workspaces','importExport','danger','bookmarks']
+const DEFAULT_SECTION_ORDER = ['background','wallpaper','colours','notesColors','typography','gradient','layout','cards','notes','themePresets','visibility','clock','favicons','search','workspaces','importExport','bookmarks','danger']
 
 function Row({ label, children, dimLabel = false }) {
   return (
@@ -54,7 +61,7 @@ function Row({ label, children, dimLabel = false }) {
       gap: '1.5rem', padding: '0.28rem 0', minHeight: '1.8rem',
     }}>
       <span style={{ fontSize: '0.82em', color: dimLabel ? 'var(--text-muted)' : 'var(--text)',
-        whiteSpace: 'nowrap', flexShrink: 0 }}>{label}</span>
+        whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 600 }}>{label}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
         {children}
       </div>
@@ -93,8 +100,10 @@ function Toggle({ checked, onChange, label = '' }) {
 function SectionTitle({ children }) {
   return (
     <div className="settings-title" style={{
-      textAlign: 'center', fontWeight: 700, marginTop: '0.3rem',
-      color: 'var(--settings-title-color, #7878a0)',
+      textAlign: 'left', fontWeight: 600, marginTop: '0.3rem',
+      color: 'var(--settings-subtitle-color)',
+      paddingLeft: '0.75rem',
+      fontSize: '0.85em',
     }}>{children}</div>
   )
 }
@@ -149,14 +158,17 @@ function Group({
 export default function Settings({
   theme, setTheme, onSave, onClose,
   onImageUpload, onBgImageUpload,
-  onExportBackup, onExportCSV, onImportBackup,
+  onExportBackup, onExportCSV, onExportTheme, onImportTheme, onImportBackup,
   onResetWorkspaceLinks, onResetTheme,
-  fileRef, backupFileRef, importingBackup,
+  fileRef, backupFileRef, themeFileRef, importingBackup,
   workspaces, activeWs,
+  mode, setMode,
   onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs,
   onSignOut, userEmail,
   bmFolders, bookmarkCount,
+  onClearAllNotes,
 }) {
+  const [activeTab, setActiveTab] = useState('design')
   const [newWsName, setNewWsName] = useState('')
   const [hiddenFolders, setHiddenFolders] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sp_bm_hidden') || '[]') } catch { return [] }
@@ -172,6 +184,38 @@ export default function Settings({
   const [groupSignal, setGroupSignal] = useState(null)
   const [draggedSection, setDraggedSection] = useState(null)
   const bgFileRef = useRef(null)
+
+  // Theme presets state
+  const [presets, setPresets] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('sp_theme_presets') || '[]')
+    } catch {
+      return []
+    }
+  })
+
+  const savePreset = (slot, name) => {
+    const newPresets = [...presets]
+    newPresets[slot] = {
+      name: name || `Preset ${slot + 1}`,
+      theme: { ...theme }
+    }
+    setPresets(newPresets)
+    localStorage.setItem('sp_theme_presets', JSON.stringify(newPresets))
+  }
+
+  const loadPreset = (slot) => {
+    if (presets[slot]?.theme) {
+      setTheme(presets[slot].theme)
+    }
+  }
+
+  const deletePreset = (slot) => {
+    const newPresets = [...presets]
+    newPresets[slot] = null
+    setPresets(newPresets)
+    localStorage.setItem('sp_theme_presets', JSON.stringify(newPresets))
+  }
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
   const normalizeOrder = (order) => {
@@ -225,7 +269,7 @@ export default function Settings({
     <>
       <div className="settings-veil" onClick={onClose} />
 
-      <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)' }}>
+      <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
         <style>{`
           .settings-group-title:hover .settings-group-actions,
@@ -273,7 +317,12 @@ export default function Settings({
         `}</style>
 
         <div className="settings-header">
-          <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>Settings</span>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+            <span style={{ fontWeight: 600, fontSize: '0.95em', letterSpacing: '0.02em' }}>Settings</span>
+            <span style={{ fontSize: '0.65em', color: 'var(--text-dim)', opacity: 0.6 }}>
+              v15.04.26
+            </span>
+          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
@@ -282,8 +331,107 @@ export default function Settings({
           </div>
         </div>
 
+        {workspaces.length > 1 && (
+          <div style={{ 
+            padding: '0.5rem 0.85rem', 
+            fontSize: '0.75em', 
+            color: 'var(--text-dim)', 
+            borderBottom: '1px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.4rem'
+          }}>
+            <span style={{ opacity: 0.7 }}>Theme for:</span>
+            <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+              {workspaces.find(w => w.id === activeWs)?.name || 'Current Workspace'}
+            </span>
+          </div>
+        )}
 
-        {sectionOrder.map((sectionId, index) => {
+        <div style={{ 
+          display: 'flex', 
+          gap: '0', 
+          padding: '0.5rem 0.85rem 0', 
+          background: 'var(--bg2)',
+          borderBottom: '2px solid var(--border)'
+        }}>
+          <button 
+            onClick={() => setActiveTab('design')}
+            style={{ 
+              flex: 1,
+              padding: '0.5rem 1rem',
+              border: 'none',
+              borderBottom: activeTab === 'design' ? '2px solid var(--accent)' : '2px solid transparent',
+              background: activeTab === 'design' ? 'var(--card)' : 'transparent',
+              color: activeTab === 'design' ? 'var(--accent)' : 'var(--text-dim)',
+              fontWeight: activeTab === 'design' ? 600 : 400,
+              cursor: 'pointer',
+              fontSize: '0.85em',
+              transition: 'all 0.15s ease',
+              marginBottom: '-2px',
+              borderRadius: '4px 4px 0 0'
+            }}
+          >
+            Design
+          </button>
+          <button 
+            onClick={() => setActiveTab('layout')}
+            style={{ 
+              flex: 1,
+              padding: '0.5rem 1rem',
+              border: 'none',
+              borderBottom: activeTab === 'layout' ? '2px solid var(--accent)' : '2px solid transparent',
+              background: activeTab === 'layout' ? 'var(--card)' : 'transparent',
+              color: activeTab === 'layout' ? 'var(--accent)' : 'var(--text-dim)',
+              fontWeight: activeTab === 'layout' ? 600 : 400,
+              cursor: 'pointer',
+              fontSize: '0.85em',
+              transition: 'all 0.15s ease',
+              marginBottom: '-2px',
+              borderRadius: '4px 4px 0 0'
+            }}
+          >
+            Layout
+          </button>
+          <button 
+            onClick={() => setActiveTab('general')}
+            style={{ 
+              flex: 1,
+              padding: '0.5rem 1rem',
+              border: 'none',
+              borderBottom: activeTab === 'general' ? '2px solid var(--accent)' : '2px solid transparent',
+              background: activeTab === 'general' ? 'var(--card)' : 'transparent',
+              color: activeTab === 'general' ? 'var(--accent)' : 'var(--text-dim)',
+              fontWeight: activeTab === 'general' ? 600 : 400,
+              cursor: 'pointer',
+              fontSize: '0.85em',
+              transition: 'all 0.15s ease',
+              marginBottom: '-2px',
+              borderRadius: '4px 4px 0 0'
+            }}
+          >
+            General
+          </button>
+        </div>
+
+        <div style={{ 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          flex: 1,
+          minHeight: 0,
+          paddingRight: '14px'
+        }}>
+        {sectionOrder.filter(sectionId => {
+          // Filter sections by active tab
+          const designSections = ['background', 'wallpaper', 'colours', 'notesColors', 'typography', 'gradient']
+          const layoutSections = ['layout', 'cards', 'notes', 'themePresets', 'visibility', 'clock', 'favicons']
+          const generalSections = ['workspaces', 'search', 'importExport', 'bookmarks', 'danger']
+          
+          if (activeTab === 'design') return designSections.includes(sectionId)
+          if (activeTab === 'layout') return layoutSections.includes(sectionId)
+          if (activeTab === 'general') return generalSections.includes(sectionId)
+          return false
+        }).map((sectionId, index) => {
           const commonGroupProps = {
             key: sectionId,
             id: sectionId,
@@ -302,128 +450,170 @@ export default function Settings({
 
           if (sectionId === 'background') return (
             <Group title="Background" {...commonGroupProps}>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', marginBottom: '0.4rem' }}>
-                {BG_PRESETS.map(p => (
-                  <button key={p.value} className={`btn-xs${theme.bgPreset === p.value ? ' btn-primary' : ''}`}
-                    onClick={() => set('bgPreset', p.value)}>{p.label}</button>
+              <SectionTitle>Preset (✦ = animated)</SectionTitle>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.5rem' }}>
+                {[
+                  { label: '01-Solid',      v: '01-solid' },
+                  { label: '02-Noise',      v: '02-noise' },
+                  { label: '03-Shapes',     v: '03-dots' },
+                  { label: '04-Grid',       v: '04-grid' },
+                  { label: '✦05-Gradient',  v: '05-gradient' },
+                  { label: '✦06-Mesh',      v: '06-mesh' },
+                  { label: '✦07-Nebula',    v: '07-nebula' },
+                  { label: '✦08-Starfield', v: '16-starfield-old' },
+                  { label: '✦09-Plasma',    v: '17-plasma' },
+                  { label: '✦10-Inferno',   v: '18-inferno' },
+                  { label: '✦11-Mint',      v: '19-mint' },
+                  { label: '✦12-Dusk',      v: '20-dusk' },
+                  { label: '✦13-Mono',      v: '21-mono' },
+                  { label: '✦14-Fog',       v: '22-fog' },
+                  { label: '✦15-Scan',      v: '23-scan' },
+                  { label: '16-Silver',     v: '25-silver-radial' },
+                  { label: '17-Wall',       v: '26-wall-texture' },
+                  { label: '18-Concrete',   v: '27-concrete' },
+                  { label: '✦19-Metal',     v: '28-brushed-metal' },
+                  { label: '20-Carbon',     v: '29-carbon' },
+                ].map(p => (
+                  <button key={p.v} className={`btn-xs${theme.bgPreset === p.v ? ' btn-primary' : ''}`} onClick={() => set('bgPreset', p.v)}>
+                    {p.label}
+                  </button>
                 ))}
               </div>
 
-              {(() => {
-                const gp = (key, def) => theme.bgSt?.[theme.bgPreset]?.[key] ?? def
-                const sp = (key, val) => set('bgSt', {
-                  ...(theme.bgSt ?? {}),
-                  [theme.bgPreset]: { ...(theme.bgSt?.[theme.bgPreset] ?? {}), [key]: val }
-                })
-                return (
-                  <>
-                    {ANIMATED_PRESETS.includes(theme.bgPreset) && (
-                      <>
-                        <SectionTitle>Animation</SectionTitle>
-                        <Row label="Speed">
-                          <Slider label="Speed" val={Math.round(gp('speed', 1) * 100)} min={0} max={800} step={25}
-                            onChange={v => sp('speed', v / 100)} unit="%" />
-                        </Row>
-                      </>
-                    )}
-                    {PLASMA_PRESETS.includes(theme.bgPreset) && (
-                      <>
-                        <SectionTitle>Plasma colours</SectionTitle>
-                        <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                        <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
-                        <Row label="Colour 3"><ColorPick label="Colour 3" value={gp('c3', '#50c8ff')} onChange={v => sp('c3', v)} /></Row>
-                        <Row label="Blur radius">
-                          <Slider label="Blur radius" val={gp('blur', 45)} min={10} max={120} onChange={v => sp('blur', v)} unit="px" />
-                        </Row>
-                      </>
-                    )}
-                    {theme.bgPreset === 'fog' && (
-                      <>
-                        <SectionTitle>Fog colour</SectionTitle>
-                        <Row label="Fog colour"><ColorPick label="Fog colour" value={gp('fogColor', '#323c6e')} onChange={v => sp('fogColor', v)} /></Row>
-                        <Row label="Fog density">
-                          <Slider label="Fog density" val={Math.round(gp('fogOpacity', 1) * 100)} min={0} max={100}
-                            onChange={v => sp('fogOpacity', v / 100)} unit="%" />
-                        </Row>
-                      </>
-                    )}
-                    {theme.bgPreset === 'scan' && (
-                      <>
-                        <SectionTitle>Scan line</SectionTitle>
-                        <Row label="Line colour"><ColorPick label="Line colour" value={gp('scanColor', '#6c8fff')} onChange={v => sp('scanColor', v)} /></Row>
-                        <Row label="Brightness">
-                          <Slider label="Brightness" val={Math.round(gp('scanOpacity', 1) * 100)} min={0} max={100}
-                            onChange={v => sp('scanOpacity', v / 100)} unit="%" />
-                        </Row>
-                      </>
-                    )}
-                    {theme.bgPreset === 'starfield' && (
-                      <>
-                        <SectionTitle>Starfield gradient</SectionTitle>
-                        <Row label="Gradient overlay">
-                          <Toggle label="Gradient overlay" checked={gp('sfGrad', false)} onChange={v => sp('sfGrad', v)} />
-                        </Row>
-                        {gp('sfGrad', false) && (
-                          <>
-                            <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                            <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
-                          </>
-                        )}
-                        <SectionTitle>Stars</SectionTitle>
-                        <Row label="Star density">
-                          <Slider label="Star density" val={gp('density', 3)} min={1} max={5} step={1} onChange={v => sp('density', v)} />
-                        </Row>
-                        <SectionTitle>Planets</SectionTitle>
-                        <Row label="Show planets">
-                          <Toggle label="Show planets" checked={gp('planets', false)} onChange={v => sp('planets', v)} />
-                        </Row>
-                        {gp('planets', false) && (
-                          <Row label="Planet count">
-                            <Slider label="Planet count" val={gp('planetCount', 2)} min={1} max={3} step={1} onChange={v => sp('planetCount', v)} />
-                          </Row>
-                        )}
-                      </>
-                    )}
-                    {theme.bgPreset === 'drift' && (
-                      <>
-                        <SectionTitle>Drift colours</SectionTitle>
-                        <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                        <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#9c6fff')} onChange={v => sp('c2', v)} /></Row>
-                      </>
-                    )}
-                    {theme.bgPreset === 'pulse' && (
-                      <>
-                        <SectionTitle>Pulse colour</SectionTitle>
-                        <Row label="Colour"><ColorPick label="Colour" value={gp('c1', '#6c8fff')} onChange={v => sp('c1', v)} /></Row>
-                      </>
-                    )}
-                    {theme.bgPreset === 'tide' && (
-                      <>
-                        <SectionTitle>Tide colours</SectionTitle>
-                        <Row label="Colour 1"><ColorPick label="Colour 1" value={gp('c1', '#005080')} onChange={v => sp('c1', v)} /></Row>
-                        <Row label="Colour 2"><ColorPick label="Colour 2" value={gp('c2', '#0078c8')} onChange={v => sp('c2', v)} /></Row>
-                      </>
-                    )}
-                  </>
-                )
-              })()}
+              {['05-gradient','06-mesh','07-nebula','16-starfield-old','17-plasma','18-inferno','19-mint','20-dusk','21-mono','22-fog','23-scan','28-brushed-metal'].includes(theme.bgPreset) && (
+                <Row label="Animation speed">
+                  <Slider val={theme.bgAnimSpeed ?? 1} min={0} max={25} step={0.1} onChange={v => set('bgAnimSpeed', v)} unit="×" />
+                </Row>
+              )}
 
-              <Row label="Pattern colour">
-                <ColorPick label="Pattern colour" value={theme.patternColor} onChange={v => set('patternColor', v)} />
-              </Row>
-              <Row label="Pattern opacity">
-                <Slider label="Pattern opacity" val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100}
-                  onChange={v => set('patternOpacity', v / 100)} unit="%" />
-              </Row>
-              <Row label="Custom bg image">
-                <button className="btn-xs" onClick={() => bgFileRef.current?.click()}>Upload</button>
-                {theme.bgPreset === 'image' && (
-                  <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
-                    onClick={() => { localStorage.removeItem('bg_image'); set('bgPreset', 'noise') }}>Remove</button>
+              {theme.bgPreset === '02-noise' && (
+                <Row label="Noise opacity"><Slider val={Math.round((theme.bgNoiseOpacity ?? 0.04) * 100)} min={0} max={20} onChange={v => set('bgNoiseOpacity', v / 100)} unit="%" /></Row>
+              )}
+              {theme.bgPreset === '03-dots' && (<>
+                <SectionTitle>Pattern type</SectionTitle>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.5rem' }}>
+                  {['circles','squares','diamonds','hexagons','triangles','stars'].map(p => (
+                    <button key={p} className={`btn-xs${theme.bgDotPattern === p ? ' btn-primary' : ''}`} onClick={() => set('bgDotPattern', p)}>{p.charAt(0).toUpperCase()+p.slice(1)}</button>
+                  ))}
+                </div>
+                <Row label="Color 1"><ColorPick value={theme.bgDotsC1 || '#2a4a6a'} onChange={v => set('bgDotsC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgDotsC2 || '#4a2a5a'} onChange={v => set('bgDotsC2', v)} /></Row>
+                <Row label="Pattern size"><Slider val={theme.bgDotScale ?? 24} min={8} max={80} onChange={v => set('bgDotScale', v)} unit="px" /></Row>
+                <Row label="Opacity"><Slider val={Math.round((theme.bgShapeOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('bgShapeOpacity', v / 100)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '04-grid' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgGridC1 || '#2a4a6a'} onChange={v => set('bgGridC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgGridC2 || '#4a2a5a'} onChange={v => set('bgGridC2', v)} /></Row>
+                <Row label="Grid spacing"><Slider val={theme.bgGridScale ?? 32} min={12} max={100} onChange={v => set('bgGridScale', v)} unit="px" /></Row>
+                <Row label="Line thickness"><Slider val={theme.bgGridThickness ?? 1} min={1} max={3} onChange={v => set('bgGridThickness', v)} unit="px" /></Row>
+                <Row label="Opacity"><Slider val={Math.round((theme.bgGridOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('bgGridOpacity', v / 100)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '05-gradient' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgGradC1 || '#1a2a4a'} onChange={v => set('bgGradC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgGradC2 || '#2a1a3a'} onChange={v => set('bgGradC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgGradC3 || '#1a3a2a'} onChange={v => set('bgGradC3', v)} /></Row>
+                <Row label="Angle"><Slider val={theme.bgGradientAngle ?? 135} min={0} max={360} onChange={v => set('bgGradientAngle', v)} unit="°" /></Row>
+              </>)}
+              {theme.bgPreset === '06-mesh' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgMeshC1 || '#7890ff'} onChange={v => set('bgMeshC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgMeshC2 || '#9c6fff'} onChange={v => set('bgMeshC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgMeshC3 || '#ff6b6b'} onChange={v => set('bgMeshC3', v)} /></Row>
+              </>)}
+              {theme.bgPreset === '07-nebula' && (<>
+                <Row label="Cloud 1"><ColorPick value={theme.bgNebulaC1 || '#1a0a2e'} onChange={v => set('bgNebulaC1', v)} /></Row>
+                <Row label="Cloud 2"><ColorPick value={theme.bgNebulaC2 || '#0a1a2e'} onChange={v => set('bgNebulaC2', v)} /></Row>
+              </>)}
+              {theme.bgPreset === '17-plasma' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgPlasmaC1 || '#6c8fff'} onChange={v => set('bgPlasmaC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgPlasmaC2 || '#6bffb8'} onChange={v => set('bgPlasmaC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgPlasmaC3 || '#9c6fff'} onChange={v => set('bgPlasmaC3', v)} /></Row>
+              </>)}
+              {theme.bgPreset === '18-inferno' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgInfernoC1 || '#ff4400'} onChange={v => set('bgInfernoC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgInfernoC2 || '#ff8800'} onChange={v => set('bgInfernoC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgInfernoC3 || '#ffcc00'} onChange={v => set('bgInfernoC3', v)} /></Row>
+                <Row label="Intensity"><Slider val={theme.bgInfernoIntensity ?? 100} min={50} max={150} onChange={v => set('bgInfernoIntensity', v)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '19-mint' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgMintC1 || '#00dc8c'} onChange={v => set('bgMintC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgMintC2 || '#00beff'} onChange={v => set('bgMintC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgMintC3 || '#009664'} onChange={v => set('bgMintC3', v)} /></Row>
+                <Row label="Saturation"><Slider val={theme.bgMintSat ?? 100} min={50} max={150} onChange={v => set('bgMintSat', v)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '20-dusk' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgDuskC1 || '#b43ca0'} onChange={v => set('bgDuskC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgDuskC2 || '#dc508c'} onChange={v => set('bgDuskC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgDuskC3 || '#8c28b4'} onChange={v => set('bgDuskC3', v)} /></Row>
+                <Row label="Glow intensity"><Slider val={theme.bgDuskGlow ?? 100} min={50} max={150} onChange={v => set('bgDuskGlow', v)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '21-mono' && (<>
+                <Row label="Color 1"><ColorPick value={theme.bgMonoC1 || '#3c508c'} onChange={v => set('bgMonoC1', v)} /></Row>
+                <Row label="Color 2"><ColorPick value={theme.bgMonoC2 || '#5064b4'} onChange={v => set('bgMonoC2', v)} /></Row>
+                <Row label="Color 3"><ColorPick value={theme.bgMonoC3 || '#324678'} onChange={v => set('bgMonoC3', v)} /></Row>
+                <Row label="Contrast"><Slider val={theme.bgMonoContrast ?? 100} min={50} max={150} onChange={v => set('bgMonoContrast', v)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '16-starfield-old' && (<>
+                <Row label="Sky color"><ColorPick value={theme.bgStarC1 || '#05050f'} onChange={v => set('bgStarC1', v)} /></Row>
+                <Row label="Horizon color"><ColorPick value={theme.bgStarC2 || '#000308'} onChange={v => set('bgStarC2', v)} /></Row>
+                <Row label="Star tint"><ColorPick value={theme.bgStarC3 || '#c8d2ff'} onChange={v => set('bgStarC3', v)} /></Row>
+              </>)}
+              {theme.bgPreset === '22-fog' && (<>
+                <Row label="Mist color"><ColorPick value={theme.bgFogC1 || '#3a4a6e'} onChange={v => set('bgFogC1', v)} /></Row>
+                <Row label="Density"><Slider val={theme.bgFogDensity ?? 100} min={30} max={150} onChange={v => set('bgFogDensity', v)} unit="%" /></Row>
+                <Row label="Blur amount"><Slider val={theme.bgFogBlur ?? 85} min={40} max={120} onChange={v => set('bgFogBlur', v)} unit="px" /></Row>
+              </>)}
+              {theme.bgPreset === '23-scan' && (<>
+                <Row label="Scan line color"><ColorPick value={theme.bgScanC1 || '#6c8fff'} onChange={v => set('bgScanC1', v)} /></Row>
+                <Row label="Background tint"><ColorPick value={theme.bgScanC2 || '#05050d'} onChange={v => set('bgScanC2', v)} /></Row>
+                <Row label="Line intensity"><Slider val={theme.bgScanIntensity ?? 100} min={50} max={200} onChange={v => set('bgScanIntensity', v)} unit="%" /></Row>
+                <Row label="Line thickness"><Slider val={theme.bgScanThickness ?? 1} min={1} max={5} onChange={v => set('bgScanThickness', v)} unit="px" /></Row>
+              </>)}
+              {theme.bgPreset === '25-silver-radial' && (<>
+                <Row label="Center color"><ColorPick value={theme.bgSilverC1 || '#3a4a5a'} onChange={v => set('bgSilverC1', v)} /></Row>
+                <Row label="Edge color"><ColorPick value={theme.bgSilverC2 || '#1a2a3a'} onChange={v => set('bgSilverC2', v)} /></Row>
+                <Row label="Shimmer"><Slider val={theme.bgSilverShimmer ?? 100} min={50} max={150} onChange={v => set('bgSilverShimmer', v)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '26-wall-texture' && (<>
+                <Row label="Base color"><ColorPick value={theme.bgWallColor || '#0f0f15'} onChange={v => set('bgWallColor', v)} /></Row>
+                <Row label="Scale"><Slider val={Math.round((theme.bgWallScale ?? 1) * 100)} min={25} max={400} onChange={v => set('bgWallScale', v / 100)} unit="%" /></Row>
+                <Row label="Texture intensity"><Slider val={theme.bgWallTexture ?? 100} min={50} max={150} onChange={v => set('bgWallTexture', v)} unit="%" /></Row>
+                <Row label="Roughness"><Slider val={theme.bgWallRough ?? 100} min={50} max={150} onChange={v => set('bgWallRough', v)} unit="%" /></Row>
+              </>)}
+              {theme.bgPreset === '27-concrete' && (<>
+                <Row label="Base color"><ColorPick value={theme.bgConcreteColor || '#4a4e52'} onChange={v => set('bgConcreteColor', v)} /></Row>
+                <Row label="Scale"><Slider val={Math.round((theme.bgConcreteScale ?? 1) * 100)} min={25} max={600} onChange={v => set('bgConcreteScale', v / 100)} unit="%" /></Row>
+                <Row label="Relief depth"><Slider val={Math.round((theme.bgConcreteDepth ?? 0.85) * 100)} min={0} max={100} onChange={v => set('bgConcreteDepth', v / 100)} unit="%" /></Row>
+                <Row label="Texture">
+                  <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                    {[{l:'Default',v:'default'},{l:'Smooth',v:'smooth'},{l:'Rough',v:'rough'},{l:'Aged',v:'aged'},{l:'Brutalist',v:'brutalist'}].map(o => (
+                      <button key={o.v} className={`btn-xs${(theme.bgConcreteTexture||'default')===o.v?' btn-primary':''}`} onClick={() => set('bgConcreteTexture', o.v)}>{o.l}</button>
+                    ))}
+                  </div>
+                </Row>
+              </>)}
+              {theme.bgPreset === '28-brushed-metal' && (<>
+                <Row label="Style">
+                  <div style={{ display: 'flex', gap: '0.25rem' }}>
+                    {[{ l: 'Lines', v: 'lines' }, { l: 'Radial', v: 'radial' }].map(o => (
+                      <button key={o.v} className={`btn-xs${(theme.bgMetalType ?? 'lines') === o.v ? ' btn-primary' : ''}`} onClick={() => set('bgMetalType', o.v)}>{o.l}</button>
+                    ))}
+                  </div>
+                </Row>
+                <Row label="Light color"><ColorPick value={theme.bgMetalC1 || '#b8bcc8'} onChange={v => set('bgMetalC1', v)} /></Row>
+                <Row label="Mid tone"><ColorPick value={theme.bgMetalC2 || '#787d8c'} onChange={v => set('bgMetalC2', v)} /></Row>
+                <Row label="Highlight"><ColorPick value={theme.bgMetalC3 || '#c4c8d4'} onChange={v => set('bgMetalC3', v)} /></Row>
+                <Row label="Sheen intensity"><Slider val={theme.bgMetalShine ?? 25} min={0} max={80} onChange={v => set('bgMetalShine', v)} unit="%" /></Row>
+                {(theme.bgMetalType ?? 'lines') === 'lines' && (
+                  <Row label="Grain angle"><Slider val={theme.bgMetalAngle ?? 90} min={0} max={180} onChange={v => set('bgMetalAngle', v)} unit="°" /></Row>
                 )}
-              </Row>
-              <input ref={bgFileRef} type="file" accept="image/*" style={{ display: 'none' }}
-                onChange={e => { onBgImageUpload(e.target.files?.[0]); e.target.value = '' }} />
+                <Row label="Grain density"><Slider val={theme.bgMetalGrain ?? 80} min={0} max={100} onChange={v => set('bgMetalGrain', v)} unit="%" /></Row>
+                <Row label="Rotation speed"><Slider val={theme.bgMetalSpeed ?? 20} min={1} max={60} onChange={v => set('bgMetalSpeed', v)} unit="s" /></Row>
+              </>)}
+              {theme.bgPreset === '29-carbon' && (<>
+                <Row label="Base color"><ColorPick value={theme.bgCarbonBase || '#0d0d0d'} onChange={v => set('bgCarbonBase', v)} /></Row>
+                <Row label="Scale"><Slider val={Math.round((theme.bgCarbonScale ?? 1) * 100)} min={25} max={600} onChange={v => set('bgCarbonScale', v / 100)} unit="%" /></Row>
+                <Row label="Sheen"><Slider val={Math.round((theme.bgCarbonSheen ?? 1) * 100)} min={0} max={100} onChange={v => set('bgCarbonSheen', v / 100)} unit="%" /></Row>
+              </>)}
             </Group>
           )
 
@@ -472,39 +662,65 @@ export default function Settings({
 
           if (sectionId === 'colours') return (
             <Group title="Colours" defaultOpen={false} {...commonGroupProps}>
-              <SectionTitle>Surfaces</SectionTitle>
-              <Row label="Background"><ColorPick label="Background" value={theme.bg} onChange={v => set('bg', v)} /></Row>
-              <Row label="Surface 2"><ColorPick label="Surface 2" value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
-              <Row label="Surface 3"><ColorPick label="Surface 3" value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
-              <Row label="Card">
-                <ColorPick label="Card" value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
+              <SectionTitle>Background & Surfaces</SectionTitle>
+              <Row label="Wallpaper background"><ColorPick value={theme.bg} onChange={v => set('bg', v)} /></Row>
+              <Row label="Settings panel background"><ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
+              <Row label="Buttons and misc"><ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
+              <Row label="Card background">
+                <ColorPick value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
               </Row>
+              <Row label="Note panel background">
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} />
+                  <button className="btn-xs" onClick={() => set('notesCardBg', (theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7))}>Match cards</button>
+                </div>
+              </Row>
+              <Row label="Header row color"><ColorPick value={theme.colHeaderColor ?? '#8888b0'} onChange={v => set('colHeaderColor', v)} /></Row>
+              <Row label="Header background"><ColorPick value={theme.titleBg || theme.card || '#13131a'} onChange={v => set('titleBg', v)} /></Row>
+              
               <SectionTitle>Borders</SectionTitle>
-              <Row label="Border"><ColorPick label="Border" value={theme.border} onChange={v => set('border', v)} /></Row>
-              <Row label="Border hover"><ColorPick label="Border hover" value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
-              <Row label="Border opacity"><Slider label="Border opacity" val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" /></Row>
-              <SectionTitle>Text</SectionTitle>
-              <Row label="Text"><ColorPick label="Text" value={theme.text} onChange={v => set('text', v)} /></Row>
-              <Row label="Text dim"><ColorPick label="Text dim" value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
-              <Row label="Title / label"><ColorPick label="Title / label" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
-              <SectionTitle>Accent &amp; state</SectionTitle>
-              <Row label="Accent"><ColorPick label="Accent" value={theme.accent} onChange={v => set('accent', v)} /></Row>
-              <Row label="Danger"><ColorPick label="Danger" value={theme.danger} onChange={v => set('danger', v)} /></Row>
-              <Row label="Success"><ColorPick label="Success" value={theme.success} onChange={v => set('success', v)} /></Row>
+              <Row label="Border"><ColorPick value={theme.border} onChange={v => set('border', v)} /></Row>
+              <Row label="Border hover"><ColorPick value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
+              <Row label="Border opacity"><Slider val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" /></Row>
+              
+              <SectionTitle>Accent Colors</SectionTitle>
+              <Row label="Accent"><ColorPick value={theme.accent} onChange={v => set('accent', v)} /></Row>
+              <Row label="Link"><ColorPick value={theme.linkColor || '#5b9eff'} onChange={v => set('linkColor', v)} /></Row>
+              <Row label="Visited link"><ColorPick value={theme.linkVisitedColor || '#c77dff'} onChange={v => set('linkVisitedColor', v)} /></Row>
+              <Row label="Danger"><ColorPick value={theme.danger} onChange={v => set('danger', v)} /></Row>
+              <Row label="Success"><ColorPick value={theme.success} onChange={v => set('success', v)} /></Row>
+              
+              <SectionTitle>Scrollbar</SectionTitle>
+              <Row label="Track"><ColorPick value={theme.scrollbarColor || theme.bg3} onChange={v => set('scrollbarColor', v)} /></Row>
+              <Row label="Thumb"><ColorPick value={theme.scrollbarThumbColor || theme.accent} onChange={v => set('scrollbarThumbColor', v)} /></Row>
+              
               <SectionTitle>Buttons</SectionTitle>
-              <Row label="Button bg"><ColorPick label="Button bg" value={theme.btnBg} onChange={v => set('btnBg', v)} /></Row>
-              <Row label="Button text"><ColorPick label="Button text" value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
-              <SectionTitle>Settings panel</SectionTitle>
-              <Row label="Section title colour"><ColorPick label="Section title colour" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
-              <Row label="Scrollbar colour"><ColorPick label="Scrollbar colour" value={theme.settingsScrollbarColor || theme.accent || '#6c8fff'} onChange={v => set('settingsScrollbarColor', v)} /></Row>
-              <Row label="Handle colour"><ColorPick label="Handle colour" value={theme.handleColor || theme.settingsTitleColor || theme.accent || '#7878a0'} onChange={v => set('handleColor', v)} /></Row>
-              <Row label="Handle size"><Slider label="Handle size" val={theme.handleSize ?? 13} min={10} max={24} onChange={v => set('handleSize', v)} unit="px" /></Row>
-              <Row label="Handle opacity"><Slider label="Handle opacity" val={Math.round((theme.handleOpacityGlobal ?? 0.7) * 100)} min={0} max={100} onChange={v => set('handleOpacityGlobal', v / 100)} unit="%" /></Row>
+              <Row label="Background"><ColorPick value={theme.btnBg} onChange={v => set('btnBg', v)} /></Row>
+              <Row label="Text"><ColorPick value={theme.btnText} onChange={v => set('btnText', v)} /></Row>
             </Group>
           )
 
+          if (sectionId === 'notesColors') return (
+            <Group title="Notes Colors" defaultOpen={false} {...commonGroupProps}>
+              <Row label="Note text"><ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
+              <Row label="Note opacity"><Slider val={Math.round((theme.notesCardBgOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('notesCardBgOpacity', v / 100)} unit="%" /></Row>
+              <Row label="Shared note background"><ColorPick value={theme.notesSharedBg || '#1a1a28'} onChange={v => set('notesSharedBg', v)} /></Row>
+            </Group>
+          )
+
+          // New section for text colors and settings panel
           if (sectionId === 'typography') return (
-            <Group title="Fonts" defaultOpen={false} {...commonGroupProps}>
+            <Group title="Typography & Text Colors" defaultOpen={false} {...commonGroupProps}>
+              <SectionTitle>Text Colors</SectionTitle>
+              <Row label="Primary text"><ColorPick label="Primary text" value={theme.text} onChange={v => set('text', v)} /></Row>
+              <Row label="Secondary text"><ColorPick label="Secondary text" value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
+              <Row label="Header / Label"><ColorPick label="Header / Label" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
+              
+              <SectionTitle>Settings Panel Colors</SectionTitle>
+              <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
+              <Row label="Section subtitle"><ColorPick label="Section subtitle" value={theme.settingsSubtitleColor || '#7890ff'} onChange={v => set('settingsSubtitleColor', v)} /></Row>
+              
+              <SectionTitle>Font Settings</SectionTitle>
               <Row label="Font family">
                 <select className="input" style={{ maxWidth: 160, fontSize: '0.8em' }}
                   value={theme.font} onChange={e => set('font', e.target.value)}>
@@ -524,7 +740,7 @@ export default function Settings({
               <Row label="Section gap (v)"><Slider label="Section gap (v)" val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" /></Row>
               <Row label="Section gap (h)"><Slider label="Section gap (h)" val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
               <Row label="Link gap"><Slider label="Link gap" val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
-              <Row label="Link left padding"><Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-125} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
+              <Row label="Link left padding"><Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-140} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
                             <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
                 <SectionTitle>Page scale</SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
@@ -541,27 +757,278 @@ export default function Settings({
           if (sectionId === 'cards') return (
             <Group title="Cards & borders" defaultOpen={false} {...commonGroupProps}>
               <Row label="Card opacity"><Slider label="Card opacity" val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
-              <Row label="Card corner radius"><Slider label="Card corner radius" val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" /></Row>
-                            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
+              <Row label="Corner radius"><Slider label="Corner radius" val={theme.radius ?? 10} min={0} max={24} onChange={v => { set('radius', v); set('sectionRadius', v); set('notesRadius', v) }} unit="px" /></Row>
+              <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
                 {[{ l: 'Sharp', v: 0 }, { l: 'Normal', v: 10 }, { l: 'Round', v: 20 }].map(p => (
-                  <button key={p.v} className={`btn-xs${theme.radius === p.v ? ' btn-primary' : ''}`} onClick={() => set('radius', p.v)}>{p.l}</button>
+                  <button key={p.v} className={`btn-xs${theme.radius === p.v ? ' btn-primary' : ''}`} onClick={() => { set('radius', p.v); set('sectionRadius', p.v); set('notesRadius', p.v) }}>{p.l}</button>
                 ))}
               </div>
-              <Row label="Section corner radius"><Slider label="Section corner radius" val={theme.sectionRadius ?? 0} min={0} max={24} onChange={v => set('sectionRadius', v)} unit="px" /></Row>
+              <Row label="Card padding"><Slider label="Card padding" val={Math.round((theme.cardPadding ?? 0.75) * 100)} min={0} max={150} step={5} onChange={v => set('cardPadding', v / 100)} unit="%" /></Row>
+              <Row label="Header height"><Slider label="Header height" val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>
+              
+              <SectionTitle>Shadow</SectionTitle>
+              <Row label="Cards shadow"><Toggle checked={theme.cardShadowEnabled ?? false} onChange={v => set('cardShadowEnabled', v)} /></Row>
+              <Row label="Notes shadow"><Toggle checked={theme.notesShadowEnabled ?? false} onChange={v => { set('notesShadowEnabled', v); if (v) { set('notesShadowSize', theme.cardShadowSize ?? 8); set('notesShadowOpacity', theme.cardShadowOpacity ?? 0.3); set('notesShadowColor', theme.cardShadowColor ?? '#000000'); set('notesShadowCurve', theme.cardShadowCurve ?? 'linear'); set('notesShadowDirection', theme.cardShadowDirection ?? 'top-lit') } }} /></Row>
+              {(theme.cardShadowEnabled || theme.notesShadowEnabled) && (<>
+                <Row label="Size"><Slider val={theme.cardShadowSize ?? 8} min={0} max={60} onChange={v => { set('cardShadowSize', v); set('notesShadowSize', v) }} unit="px" /></Row>
+                <Row label="Opacity"><Slider val={Math.round((theme.cardShadowOpacity ?? 0.3) * 100)} min={0} max={100} onChange={v => { set('cardShadowOpacity', v / 100); set('notesShadowOpacity', v / 100) }} unit="%" /></Row>
+                <Row label="Color"><ColorPick value={theme.cardShadowColor || '#000000'} onChange={v => { set('cardShadowColor', v); set('notesShadowColor', v) }} /></Row>
+                <Row label="Direction">
+                  <select className="input" style={{ fontSize: '0.78em' }} value={theme.cardShadowDirection || 'top-lit'} onChange={e => { set('cardShadowDirection', e.target.value); set('notesShadowDirection', e.target.value) }}>
+                    <option value="top-lit">Top-lit</option>
+                    <option value="even">Even</option>
+                  </select>
+                </Row>
+                <Row label="Fade curve">
+                  <select className="input" style={{ fontSize: '0.78em' }} value={theme.cardShadowCurve || 'linear'} onChange={e => { set('cardShadowCurve', e.target.value); set('notesShadowCurve', e.target.value) }}>
+                    <option value="linear">Linear</option>
+                    <option value="soft">Soft</option>
+                    <option value="sharp">Sharp</option>
+                    <option value="glow">Glow</option>
+                  </select>
+                </Row>
+              </>)}
+            </Group>
+          )
+
+          if (sectionId === 'themePresets') return (
+            <Group title="Theme presets" defaultOpen={false} {...commonGroupProps}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {[0, 1, 2, 3, 4, 5].map(slot => (
+                  <div key={slot} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '0.35rem', 
+                    padding: '0.3rem 0.5rem',
+                    background: 'var(--bg3)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border)'
+                  }}>
+                    <span style={{ 
+                      fontSize: '0.75em', 
+                      color: 'var(--text-muted)', 
+                      minWidth: '1.5em' 
+                    }}>
+                      {slot + 1}
+                    </span>
+                    <span style={{ 
+                      flex: 1, 
+                      fontSize: '0.82em', 
+                      color: presets[slot] ? 'var(--text)' : 'var(--text-muted)',
+                      fontStyle: presets[slot] ? 'normal' : 'italic'
+                    }}>
+                      {presets[slot]?.name || 'Empty slot'}
+                    </span>
+                    <button 
+                      className="btn-xs btn-primary" 
+                      onClick={() => {
+                        const name = prompt('Name this preset:', presets[slot]?.name || `Preset ${slot + 1}`)
+                        if (name !== null) savePreset(slot, name.trim() || `Preset ${slot + 1}`)
+                      }}
+                      title="Save current theme"
+                    >
+                      Save
+                    </button>
+                    {presets[slot] && (
+                      <>
+                        <button 
+                          className="btn-xs" 
+                          onClick={() => loadPreset(slot)}
+                          title="Load this preset"
+                        >
+                          Load
+                        </button>
+                        <button 
+                          className="btn-xs" 
+                          style={{ color: 'var(--danger)' }}
+                          onClick={() => {
+                            if (confirm(`Delete "${presets[slot].name}"?`)) deletePreset(slot)
+                          }}
+                          title="Delete preset"
+                        >
+                          ×
+                        </button>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Group>
           )
 
           if (sectionId === 'visibility') return <Group title="Visibility" defaultOpen={false} {...commonGroupProps}><Row label="Show clock"><Toggle label="Show clock" checked={!(theme.hideClock ?? false)} onChange={v => set('hideClock', !v)} /></Row><Row label="Show weather"><Toggle label="Show weather" checked={!(theme.hideWeather ?? false)} onChange={v => set('hideWeather', !v)} /></Row><Row label="Show search bar"><Toggle label="Show search bar" checked={!(theme.hideSearch ?? false)} onChange={v => set('hideSearch', !v)} /></Row><Row label="Show cards"><Toggle label="Show cards" checked={!(theme.hideCards ?? false)} onChange={v => set('hideCards', !v)} /></Row><Row label="Show notes"><Toggle label="Show notes" checked={!(theme.hideNotes ?? false)} onChange={v => set('hideNotes', !v)} /></Row></Group>
           if (sectionId === 'clock') return <Group title="Clock" defaultOpen={false} {...commonGroupProps}><Row label="Clock widget size"><Slider label="Clock widget size" val={Math.round((theme.clockWidgetSize ?? 1) * 10)} min={5} max={30} onChange={v => set('clockWidgetSize', v / 10)} unit="×" /></Row></Group>
           if (sectionId === 'favicons') return <Group title="Favicons" defaultOpen={false} {...commonGroupProps}><Row label="Show favicons"><Toggle label="Show favicons" checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} /></Row><Row label="Favicon size"><Slider label="Favicon size" val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" /></Row><Row label="Favicon opacity"><Slider label="Favicon opacity" val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('faviconOpacity', v / 100)} unit="%" /></Row><Row label="Greyscale"><Toggle label="Greyscale" checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} /></Row><Row label="Load delay"><Slider label="Load delay" val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5} onChange={v => set('faviconDelay', v)} unit="s" /></Row><Row label="Fade-in duration"><Slider label="Fade-in duration" val={theme.faviconFade ?? 0.3} min={0} max={2} step={0.1} onChange={v => set('faviconFade', v)} unit="s" /></Row></Group>
-          if (sectionId === 'notes') return <Group title="Notes" defaultOpen={false} {...commonGroupProps}><Row label="Font size"><Slider label="Font size" val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row><Row label="Gap between notes"><Slider label="Gap between notes" val={theme.notesGap ?? 0} min={0} max={32} onChange={v => set('notesGap', v)} unit="px" /></Row><Row label="Note card background"><ColorPick label="Note card background" value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} /></Row><Row label="Note card bg opacity"><Slider label="Note card bg opacity" val={Math.round((theme.notesCardBgOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('notesCardBgOpacity', v / 100)} unit="%" /></Row><Row label="Note text colour"><ColorPick label="Note text colour" value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row><Row label="Note text background"><ColorPick label="Note text background" value={theme.notesTextBg || '#0c0c0f'} onChange={v => set('notesTextBg', v)} /></Row></Group>
+          if (sectionId === 'notes') return (
+            <Group title="Notes" defaultOpen={false} {...commonGroupProps}>
+              <Row label="Panel width"><Slider label="Panel width" val={theme.notesWidth ?? 288} min={200} max={400} onChange={v => set('notesWidth', v)} unit="px" /></Row>
+              <Row label="Font family">
+                <select className="input" style={{ fontSize: '0.78em' }} value={theme.notesFontFamily || 'inherit'} onChange={e => set('notesFontFamily', e.target.value)}>
+                  <option value="inherit">Same as app</option>
+                  <option value="'DM Mono', monospace">DM Mono</option>
+                  <option value="'Inter', sans-serif">Inter</option>
+                  <option value="'Georgia', serif">Georgia</option>
+                  <option value="'Courier New', monospace">Courier New</option>
+                  <option value="system-ui, sans-serif">System UI</option>
+                </select>
+              </Row>
+              <Row label="Font size"><Slider label="Font size" val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row>
+              <Row label="Word wrap"><Toggle label="Word wrap" checked={theme.notesWordWrap ?? true} onChange={v => set('notesWordWrap', v)} /></Row>
+              
+              <div style={{ padding: '0.75rem 0 0.25rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
+                <button 
+                  className="btn-xs" 
+                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)', width: '100%' }}
+                  onClick={onClearAllNotes}
+                >
+                  Clear All Notes
+                </button>
+              </div>
+            </Group>
+          )
+          if (sectionId === 'gradient') return (
+            <Group title="Gradient" defaultOpen={false} {...commonGroupProps}>
+              <Row label="Enable gradient"><Toggle checked={theme.cardsGradientEnabled ?? false} onChange={v => set('cardsGradientEnabled', v)} /></Row>
+              {theme.cardsGradientEnabled && (<>
+                <Row label="Color Stop 1">
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', width: '100%' }}>
+                    <ColorPick value={theme.cardsGradientColor1 || '#00ff88'} onChange={v => set('cardsGradientColor1', v)} />
+                    <Slider val={theme.cardsGradientPos1 ?? 0} min={0} max={100} onChange={v => set('cardsGradientPos1', v)} unit="%" />
+                  </div>
+                </Row>
+                <Row label="Color Stop 2">
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', width: '100%' }}>
+                    <ColorPick value={theme.cardsGradientColor2 || '#00ccff'} onChange={v => set('cardsGradientColor2', v)} />
+                    <Slider val={theme.cardsGradientPos2 ?? 50} min={0} max={100} onChange={v => set('cardsGradientPos2', v)} unit="%" />
+                  </div>
+                </Row>
+                <Row label="Color Stop 3">
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', width: '100%' }}>
+                    <ColorPick value={theme.cardsGradientColor3 || '#7b2ff7'} onChange={v => set('cardsGradientColor3', v)} />
+                    <Slider val={theme.cardsGradientPos3 ?? 100} min={0} max={100} onChange={v => set('cardsGradientPos3', v)} unit="%" />
+                  </div>
+                </Row>
+                <Row label="Type">
+                  <select className="input" style={{ fontSize: '0.78em' }} value={theme.cardsGradientType || 'linear'} onChange={e => set('cardsGradientType', e.target.value)}>
+                    <option value="linear">Linear</option>
+                    <option value="radial">Radial</option>
+                  </select>
+                </Row>
+                {theme.cardsGradientType === 'linear' && (
+                  <Row label="Angle"><Slider val={theme.cardsGradientAngle ?? 180} min={0} max={360} onChange={v => set('cardsGradientAngle', v)} unit="°" /></Row>
+                )}
+                {theme.cardsGradientType === 'radial' && (
+                  <Row label="Spread"><Slider val={theme.cardsGradientRadialScale ?? 100} min={10} max={200} onChange={v => set('cardsGradientRadialScale', v)} unit="%" /></Row>
+                )}
+                <Row label="Blend mode">
+                  <select className="input" style={{ fontSize: '0.78em' }} value={theme.cardsGradientBlendMode || 'overlay'} onChange={e => set('cardsGradientBlendMode', e.target.value)}>
+                    <option value="normal">Normal</option>
+                    <option value="overlay">Overlay</option>
+                    <option value="multiply">Multiply</option>
+                    <option value="screen">Screen</option>
+                    <option value="color">Color</option>
+                    <option value="hue">Hue</option>
+                    <option value="saturation">Saturation</option>
+                    <option value="luminosity">Luminosity</option>
+                  </select>
+                </Row>
+                <Row label="Opacity"><Slider val={Math.round((theme.cardsGradientOpacity ?? 0.5) * 100)} min={0} max={100} onChange={v => set('cardsGradientOpacity', v / 100)} unit="%" /></Row>
+                <Row label="Apply to panels"><Toggle checked={theme.cardsGradientTargetPanels ?? true} onChange={v => set('cardsGradientTargetPanels', v)} /></Row>
+                <Row label="Apply to wallpaper"><Toggle checked={theme.cardsGradientTargetWallpaper ?? false} onChange={v => set('cardsGradientTargetWallpaper', v)} /></Row>
+                <Row label="Apply to borders"><Toggle checked={theme.cardsGradientTargetBorder ?? false} onChange={v => set('cardsGradientTargetBorder', v)} /></Row>
+                <Row label="Apply to card titles"><Toggle checked={theme.cardsGradientTargetTitle ?? false} onChange={v => set('cardsGradientTargetTitle', v)} /></Row>
+              </>)}
+            </Group>
+          )
           if (sectionId === 'search') return <Group title="Search" defaultOpen={false} {...commonGroupProps}><SectionTitle>Search engine</SectionTitle><Row label="Engine URL"><input className="input" style={{ fontSize: '0.78em' }} value={theme.searchEngineUrl || 'https://www.google.com.au/search?q='} onChange={e => set('searchEngineUrl', e.target.value)} placeholder="https://www.google.com.au/search?q=" /></Row><SectionTitle>Presets</SectionTitle><div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.4rem' }}><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.google.com.au/search?q=')}>Google</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.bing.com/search?q=')}>Bing</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://duckduckgo.com/?q=')}>DuckDuckGo</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://search.brave.com/search?q=')}>Brave</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.perplexity.ai/search?q=')}>Perplexity</button></div><Row label="Open results"><select className="input" style={{ fontSize: '0.78em' }} value={(theme.openInNewTab ?? true) ? 'new' : 'same'} onChange={e => set('openInNewTab', e.target.value === 'new')}><option value="new">New tab</option><option value="same">Same tab</option></select></Row><Row label="Open links in new window"><Toggle label="Open links in new window" checked={theme.linksOpenNewWindow ?? true} onChange={v => set('linksOpenNewWindow', v)} /></Row></Group>
-          if (sectionId === 'workspaces') return <Group title="Workspaces" defaultOpen={false} {...commonGroupProps}><div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.4rem' }}>{workspaces.map(ws => (<div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.45rem', borderRadius: 'var(--radius-sm)', background: ws.id === activeWs ? 'var(--accent-dim)' : 'transparent', border: `1px solid ${ws.id === activeWs ? 'var(--accent)' : 'transparent'}` }}><span style={{ flex: 1, fontSize: '0.82em', cursor: 'pointer', color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)' }} onClick={() => onSetActiveWs(ws.id)}>{ws.name}</span><button className="btn-xs" onClick={() => { const n = prompt('Rename workspace:', ws.name); if (n?.trim()) onRenameWorkspace(ws.id, n.trim()) }}>✎</button><button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button></div>))}</div><div style={{ display: 'flex', gap: '0.35rem' }}><input className="input" style={{ flex: 1, fontSize: '0.8em' }} placeholder="New workspace name…" value={newWsName} onChange={e => setNewWsName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }} /><button className="btn-xs btn-primary" disabled={!newWsName.trim()} onClick={() => { if (newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }}>Add</button></div></Group>
-          if (sectionId === 'importExport') return <Group title="Import / Export" defaultOpen={false} {...commonGroupProps}><div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}><button className="btn-xs" onClick={onExportBackup}>↓ Full backup (JSON)</button><button className="btn-xs" onClick={onExportCSV}>↓ Links CSV</button></div><div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}><button className="btn-xs" disabled={importingBackup} onClick={() => backupFileRef.current?.click()}>{importingBackup ? '⟳ Importing…' : '↑ Import JSON / CSV'}</button></div><input ref={backupFileRef} type="file" accept="application/json,.json,.csv,text/csv" style={{ display: 'none' }} onChange={onImportBackup} /></Group>
+          if (sectionId === 'workspaces') return (
+            <Group title="Workspaces" defaultOpen={false} {...commonGroupProps}>
+              <SectionTitle>View Mode</SectionTitle>
+              <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.65rem' }}>
+                <button 
+                  className={`btn-xs${mode === 'home' ? ' btn-primary' : ''}`}
+                  onClick={() => setMode('home')}
+                >
+                  🏠 Home (see all)
+                </button>
+                <button 
+                  className={`btn-xs${mode === 'work' ? ' btn-primary' : ''}`}
+                  onClick={() => setMode('work')}
+                >
+                  💼 Work (restricted)
+                </button>
+              </div>
+              <SectionTitle>Manage Workspaces</SectionTitle>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.4rem' }}>
+                {workspaces.map(ws => (
+                  <div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.45rem', borderRadius: 'var(--radius-sm)', background: ws.id === activeWs ? 'var(--accent-dim)' : 'transparent', border: `1px solid ${ws.id === activeWs ? 'var(--accent)' : 'transparent'}` }}>
+                    <span style={{ flex: 1, fontSize: '0.82em', cursor: 'pointer', color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)' }} onClick={() => onSetActiveWs(ws.id)}>
+                      {ws.name}
+                      <span style={{ fontSize: '0.85em', opacity: 0.6, marginLeft: '0.3rem' }}>
+                        {ws.visibility === 'home' ? '🏠' : ws.visibility === 'work' ? '💼' : '🔄'}
+                      </span>
+                    </span>
+                    <select
+                      className="input"
+                      style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
+                      value={ws.visibility || 'both'}
+                      onChange={async (e) => {
+                        const { error } = await supabase
+                          .from('workspaces')
+                          .update({ visibility: e.target.value })
+                          .eq('id', ws.id)
+                        if (!error) {
+                          const updated = workspaces.map(w => 
+                            w.id === ws.id ? { ...w, visibility: e.target.value } : w
+                          )
+                          // This would need to call a parent function to update workspaces state
+                          // For now, just reload
+                          window.location.reload()
+                        }
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <option value="both">Both</option>
+                      <option value="home">Home</option>
+                      <option value="work">Work</option>
+                    </select>
+                    <button className="btn-xs" onClick={() => { const n = prompt('Rename workspace:', ws.name); if (n?.trim()) onRenameWorkspace(ws.id, n.trim()) }}>✎</button>
+                    <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button>
+                  </div>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: '0.35rem' }}>
+                <input className="input" style={{ flex: 1, fontSize: '0.8em' }} placeholder="New workspace name…" value={newWsName} onChange={e => setNewWsName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }} />
+                <button className="btn-xs btn-primary" disabled={!newWsName.trim()} onClick={() => { if (newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }}>Add</button>
+              </div>
+            </Group>
+          )
+          if (sectionId === 'importExport') return (
+            <Group title="Import / Export" defaultOpen={false} {...commonGroupProps}>
+              <SectionTitle>Data backup</SectionTitle>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                <button className="btn-xs" onClick={onExportBackup}>↓ Full backup (JSON)</button>
+                <button className="btn-xs" onClick={onExportCSV}>↓ Links CSV</button>
+              </div>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.65rem' }}>
+                <button className="btn-xs" disabled={importingBackup} onClick={() => backupFileRef.current?.click()}>
+                  {importingBackup ? '⟳ Importing…' : '↑ Import JSON / CSV'}
+                </button>
+              </div>
+              <SectionTitle>Theme only</SectionTitle>
+              <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.35rem' }}>
+                <button className="btn-xs" onClick={onExportTheme}>↓ Export theme</button>
+                <button className="btn-xs" onClick={() => themeFileRef.current?.click()}>↑ Import theme</button>
+              </div>
+              <input ref={backupFileRef} type="file" accept="application/json,.json,.csv,text/csv" style={{ display: 'none' }} onChange={onImportBackup} />
+              <input ref={themeFileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={onImportTheme} />
+            </Group>
+          )
           if (sectionId === 'danger') return <Group title="Danger zone" defaultOpen={false} {...commonGroupProps}><p style={{ fontSize: '0.78em', color: 'var(--text-dim)', lineHeight: 1.5, margin: '0.2rem 0 0.5rem' }}>Destructive — cannot be undone.</p><div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}><button className="btn btn-danger" style={{ fontSize: '0.78em', padding: '0.28rem 0.7rem' }} onClick={onResetWorkspaceLinks}>✕ Clear all sections &amp; links</button><button className="btn btn-danger" style={{ fontSize: '0.78em', padding: '0.28rem 0.7rem' }} onClick={() => { if (confirm('Reset all theme settings to defaults?')) onResetTheme() }}>↺ Reset theme to defaults</button></div></Group>
           if (sectionId === 'bookmarks') return <Group title="Bookmarks" defaultOpen={false} {...commonGroupProps}><Row label="Extension status"><span style={{ fontSize: '0.8em', color: bookmarkCount > 0 ? 'var(--success, #4caf50)' : 'var(--text-muted)' }}>{bookmarkCount > 0 ? `● ${bookmarkCount} bookmarks synced` : '○ Extension not detected'}</span></Row>{bookmarkCount > 0 && (<Row label="Re-sync"><button className="btn btn-primary" style={{ fontSize: '0.8em' }} onClick={forceSync}>↻ Force sync</button></Row>)}<Row label="Result font size"><Slider label="Result font size" val={theme.bmFontSize ?? 13} min={9} max={18} step={1} unit="px" onChange={v => setTheme(t => ({ ...t, bmFontSize: v }))} /></Row><Row label="Result background"><ColorPick label="Result background colour" value={theme.bmResultBg || '#13131a'} onChange={v => setTheme(t => ({ ...t, bmResultBg: v }))} /></Row><Row label="Result text colour"><ColorPick label="Result text colour" value={theme.bmResultText || '#e8e8f0'} onChange={v => setTheme(t => ({ ...t, bmResultText: v }))} /></Row>{bmFolders && bmFolders.length > 0 && (<><SectionTitle>Folder visibility</SectionTitle><div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}>{bmFolders.map(f => (<label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.2rem 0', paddingLeft: (f.depth * 12) + 'px', cursor: 'pointer', fontSize: '0.82em', color: hiddenFolders.includes(f.id) ? 'var(--text-muted)' : 'var(--text)', opacity: hiddenFolders.includes(f.id) ? 0.5 : 1 }}><input type="checkbox" checked={!hiddenFolders.includes(f.id)} onChange={() => toggleFolder(f.id)} style={{ accentColor: 'var(--accent)', flexShrink: 0 }} />{f.title}</label>))}</div></>)}{(!bmFolders || bmFolders.length === 0) && (<div style={{ fontSize: '0.8em', color: 'var(--text-muted)', padding: '0.5rem 0', lineHeight: 1.5 }}>Install the browser extension to enable bookmark search in the topbar.</div>)}</Group>
           return null
         })}
+        </div>
       </div>
 
       {onSignOut && (
