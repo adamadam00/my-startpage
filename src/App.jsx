@@ -106,15 +106,17 @@ function WeatherWidget() {
       </div>
       {open && forecast.length > 0 && (
         <div className="weather-dropdown">
-          {forecast.map((day) => (
-            <div key={day.date} className="weather-dropdown-row">
-              <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
-              <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
-              <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
-            </div>
-          ))}
+          <div className="weather-dropdown-inner">
+            {forecast.map((day) => (
+              <div key={day.date} className="weather-dropdown-row">
+                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

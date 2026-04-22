@@ -1055,17 +1055,22 @@ html.bg-29-carbon::after {
 
 .weather-dropdown {
   position: absolute;
-  top: calc(100% + 0.8rem);
+  top: 100%;
   left: 0;
   z-index: 10000;
   margin-top: 0;
+  padding-top: 0.8rem;
+  background: transparent;
+  font-size: var(--topbar-font-size, 12px);
+}
+
+.weather-dropdown-inner {
   background: var(--bg2);
   border: 1px solid var(--border);
   border-radius: 0 0 var(--radius) var(--radius);
   padding: 0.95rem 1.15rem;
   min-width: 240px;
   box-shadow: 0 10px 32px rgba(0,0,0,0.5);
-  font-size: var(--topbar-font-size, 12px);
 }
 
 .weather-dropdown-row {

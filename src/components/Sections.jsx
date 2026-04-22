@@ -407,9 +407,9 @@ function SectionCard({
     },
   });
 
-  // Archive cards: temporarily show content on hover even when collapsed
+  // Archive cards use click to expand (no hover) to avoid layout shift bug
   const shouldShowContent = isArchiveColumn 
-    ? (isHovered || !section.collapsed) 
+    ? !section.collapsed
     : !section.collapsed;
 
   const style = {
@@ -417,7 +417,7 @@ function SectionCard({
     transition,
     opacity: isDragging ? 0.3 : 1,
     zIndex: isDragging ? 30 : (isArchiveColumn && shouldShowContent ? 10 : 1),
-    cursor: isDragging ? 'grabbing' : 'grab',
+    cursor: isDragging ? 'grabbing' : (isArchiveColumn && section.collapsed ? 'pointer' : 'grab'),
     boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.3)' : undefined,
     scale: isDragging ? '1.02' : '1',
     position: 'relative',
@@ -431,8 +431,12 @@ function SectionCard({
         style={style}
         className={`section-card ${!shouldShowContent || isDragging ? "collapsed" : ""}`}
         data-section-id={section.id}
-        onMouseEnter={() => isArchiveColumn && setIsHovered(true)}
-        onMouseLeave={() => isArchiveColumn && setIsHovered(false)}
+        onClick={(e) => {
+          if (isArchiveColumn && section.collapsed && !isDragging) {
+            e.stopPropagation()
+            onToggleCollapse(section)
+          }
+        }}
       >
       <div className="section-header">
         <button
