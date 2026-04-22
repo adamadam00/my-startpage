@@ -920,7 +920,7 @@ html.bg-29-carbon::after {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  overflow: hidden;
+  overflow: visible;
   padding: 0.55rem 1.5rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   background-color: var(--topbar-bg, var(--card));
@@ -1057,20 +1057,21 @@ html.bg-29-carbon::after {
   position: absolute;
   top: 100%;
   left: 0;
-  z-index: 10000;
+  z-index: 99999;
   margin-top: 0;
-  padding-top: 0.8rem;
+  padding-top: 0.4rem;
   background: transparent;
   font-size: var(--topbar-font-size, 12px);
 }
 
 .weather-dropdown-inner {
-  background: var(--bg2);
+  background: var(--topbar-bg, var(--card));
   border: 1px solid var(--border);
   border-radius: 0 0 var(--radius) var(--radius);
   padding: 0.95rem 1.15rem;
   min-width: 240px;
   box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  backdrop-filter: blur(12px);
 }
 
 .weather-dropdown-row {
@@ -1692,6 +1693,27 @@ html.bg-29-carbon::after {
   margin: 0;
 }
 
+/* Archive card needs overflow visible for popup */
+.section-card:has(.archive-card-popup) {
+  overflow: visible;
+}
+
+/* Archive card floating popup - appears on hover without affecting layout */
+.archive-card-popup {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  border-top: none;
+  border-radius: 0 0 var(--section-radius) var(--section-radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .drop-indicator {
   height: 4px;
   margin: -2px 0;
@@ -2197,6 +2219,7 @@ flex-shrink: 0;
 	box-shadow: var(--notes-shadow, none);
 	z-index: 1;
 	overflow: hidden;
+	user-select: none;
 }
 
 .note-item.note-collapsed {
