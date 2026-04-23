@@ -1044,13 +1044,27 @@ export default function Settings({
             <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
               <SectionTitle>Google Calendar (iCal)</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                Get your secret iCal URL from Google Calendar → Settings → [your calendar] → "Secret address in iCal format"
+                Get each secret iCal URL from Google Calendar → Settings → [calendar name] → "Secret address in iCal format"
               </div>
-              <Row label="iCal URL">
+              <Row label="Calendar 1">
                 <input className="input" style={{ fontSize: '0.75em' }}
                   placeholder="https://calendar.google.com/calendar/ical/..."
                   value={theme.calIcalUrl || ''}
                   onChange={e => set('calIcalUrl', e.target.value)}
+                />
+              </Row>
+              <Row label="Calendar 2">
+                <input className="input" style={{ fontSize: '0.75em' }}
+                  placeholder="Optional second calendar"
+                  value={theme.calIcalUrl2 || ''}
+                  onChange={e => set('calIcalUrl2', e.target.value)}
+                />
+              </Row>
+              <Row label="Calendar 3">
+                <input className="input" style={{ fontSize: '0.75em' }}
+                  placeholder="Optional third calendar"
+                  value={theme.calIcalUrl3 || ''}
+                  onChange={e => set('calIcalUrl3', e.target.value)}
                 />
               </Row>
               <SectionTitle>Gmail (Apps Script)</SectionTitle>

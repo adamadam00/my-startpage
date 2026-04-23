@@ -263,7 +263,23 @@ function parseIcal(text) {
   return events.sort((a, b) => new Date(a.start) - new Date(b.start))
 }
 
-const ICAL_PROXY = 'https://api.allorigins.win/get?url='
+const ICAL_PROXIES = [
+  (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
+  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+]
+
+async function fetchIcal(url) {
+  for (const proxy of ICAL_PROXIES) {
+    try {
+      const res = await fetch(proxy(url), { signal: AbortSignal.timeout(8000) })
+      if (!res.ok) continue
+      const json = await res.json()
+      const text = json.contents || json.body || json
+      if (typeof text === 'string' && text.includes('BEGIN:VCALENDAR')) return text
+    } catch { continue }
+  }
+  throw new Error('All proxies failed')
+}
 
 function CalendarWidget({ theme }) {
   const [open, setOpen] = useState(false)
@@ -273,23 +289,31 @@ function CalendarWidget({ theme }) {
   const closeTimer = useRef(null)
   const fetched = useRef(false)
 
-  const icalUrl = theme.calIcalUrl
+  const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
 
   const fetchEvents = async () => {
-    if (!icalUrl || fetched.current) return
+    if (!icalUrls.length || fetched.current) return
     fetched.current = true
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(ICAL_PROXY + encodeURIComponent(icalUrl))
-      const json = await res.json()
       const now = new Date()
       const cutoff = new Date(); cutoff.setDate(cutoff.getDate() + 3); cutoff.setHours(23,59,59,999)
-      const parsed = parseIcal(json.contents).filter(ev => {
-        const s = new Date(ev.start)
-        return s >= now && s <= cutoff
+      const results = await Promise.allSettled(icalUrls.map(fetchIcal))
+      const all = []
+      results.forEach(r => {
+        if (r.status === 'fulfilled') {
+          parseIcal(r.value).forEach(ev => {
+            const s = new Date(ev.start)
+            if (s >= now && s <= cutoff) all.push(ev)
+          })
+        }
       })
-      setEvents(parsed)
+      all.sort((a, b) => new Date(a.start) - new Date(b.start))
+      setEvents(all)
+      if (all.length === 0 && results.every(r => r.status === 'rejected')) {
+        setError('Could not load calendars')
+      }
     } catch {
       setError('Could not load calendar')
     }
@@ -329,10 +353,10 @@ function CalendarWidget({ theme }) {
               Next 3 days
               <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
             </div>
-            {!icalUrl && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
-            {icalUrl && loading && <div className="cal-empty">Loading...</div>}
-            {icalUrl && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
-            {icalUrl && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
+            {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
+            {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
+            {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
             {icalUrl && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
