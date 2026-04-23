@@ -271,7 +271,10 @@ const ICAL_PROXIES = [
 async function fetchIcal(url) {
   for (const proxy of ICAL_PROXIES) {
     try {
-      const res = await fetch(proxy(url), { signal: AbortSignal.timeout(8000) })
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(), 8000)
+      const res = await fetch(proxy(url), { signal: controller.signal })
+      clearTimeout(timer)
       if (!res.ok) continue
       const json = await res.json()
       const text = json.contents || json.body || json
@@ -298,26 +301,31 @@ function CalendarWidget({ theme }) {
     setError(null)
     try {
       const now = new Date()
-      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() + 3); cutoff.setHours(23,59,59,999)
-      const results = await Promise.allSettled(icalUrls.map(fetchIcal))
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() + 3)
+      cutoff.setHours(23, 59, 59, 999)
+      const results = await Promise.allSettled(icalUrls.map(u => fetchIcal(u)))
       const all = []
       results.forEach(r => {
         if (r.status === 'fulfilled') {
-          parseIcal(r.value).forEach(ev => {
-            const s = new Date(ev.start)
-            if (s >= now && s <= cutoff) all.push(ev)
-          })
+          try {
+            parseIcal(r.value).forEach(ev => {
+              const s = new Date(ev.start)
+              if (s >= now && s <= cutoff) all.push(ev)
+            })
+          } catch { /* skip bad calendar */ }
         }
       })
       all.sort((a, b) => new Date(a.start) - new Date(b.start))
       setEvents(all)
       if (all.length === 0 && results.every(r => r.status === 'rejected')) {
-        setError('Could not load calendars')
+        setError('Could not load calendars — check your iCal URLs')
       }
-    } catch {
-      setError('Could not load calendar')
+    } catch (e) {
+      setError('Error loading calendar')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const handleMouseEnter = () => { clearTimeout(closeTimer.current); if (!open) { setOpen(true); fetchEvents() } }
