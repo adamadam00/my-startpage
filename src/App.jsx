@@ -1638,15 +1638,28 @@ export default function App() {
       const { data: created, error: err } = await supabase
         .from('workspaces').insert({ user_id: session.user.id, name: 'Home' }).select().single()
       if (err) { alert(err.message); return }
-      
       setWorkspaces([created])
       setActiveWs(created.id)
       CacheManager.save('workspaces', [created])
       CacheManager.save('activeWorkspace', created.id)
       return
     }
+
+    // Apply saved order if exists
+    const { data: settings } = await supabase.from('user_settings').select('workspace_order').eq('user_id', session.user.id).single()
+    const savedOrder = settings?.workspace_order
+    let ordered = data
+    if (savedOrder?.length) {
+      ordered = [...data].sort((a, b) => {
+        const ai = savedOrder.indexOf(a.id)
+        const bi = savedOrder.indexOf(b.id)
+        if (ai === -1) return 1
+        if (bi === -1) return -1
+        return ai - bi
+      })
+    }
     
-    setWorkspaces(data)
+    setWorkspaces(ordered)
     const wsId = data[0]?.id ?? null
     setActiveWs(prev => prev ?? wsId)
     CacheManager.save('workspaces', data)
@@ -1835,8 +1848,15 @@ export default function App() {
     setActiveWs(next[0]?.id ?? null)
   }
 
-  const reorderWorkspaces = (newOrder) => {
+  const reorderWorkspaces = async (newOrder) => {
     setWorkspaces(newOrder)
+    // Persist order to Supabase as array of IDs
+    const uid = session?.user?.id
+    if (!uid) return
+    const orderIds = newOrder.map(w => w.id)
+    await supabase.from('user_settings')
+      .update({ workspace_order: orderIds })
+      .eq('user_id', uid)
   }
 
   const handleImageUpload = (file) => {
