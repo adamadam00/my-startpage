@@ -359,7 +359,7 @@ function CalendarWidget({ theme }) {
             {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
             {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
             {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
-            {icalUrl && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
+            {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
                 {dayEvents.map((ev, i) => (
