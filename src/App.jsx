@@ -143,7 +143,8 @@ const NEWS_FEEDS = [
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
-function NewsWidget({ theme, set }) {
+function NewsWidget({ theme, setTheme }) {
+  const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [open, setOpen] = useState(false)
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(false)
@@ -1137,7 +1138,7 @@ export default function App() {
       // Also keep user_settings as global fallback
       const { data: updated, error: upErr } = await supabase
         .from('user_settings')
-        .update({ theme: themeData, updated_at: new Date().toISOString() })
+        .update({ theme: themeData })
         .eq('user_id', uid)
         .select('id')
       if (upErr) { console.error('[settings] update error:', upErr.message); return }
@@ -1807,7 +1808,7 @@ export default function App() {
 				{!(theme.hideClock ?? false) && <ClockWidget />}
 				{!(theme.hideClock ?? false) && !(theme.hideWeather ?? false) && <div className="topbar-divider" />}
 				{!(theme.hideWeather ?? false) && <WeatherWidget />}
-				{!(theme.hideNews ?? false) && <NewsWidget theme={theme} set={set} />}
+				{!(theme.hideNews ?? false) && <NewsWidget theme={theme} setTheme={setTheme} />}
 				<div className="topbar-divider" />
 				<a
 				  className="icon-btn topbar-quick-btn"
