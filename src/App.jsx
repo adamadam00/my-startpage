@@ -132,6 +132,96 @@ function WeatherWidget() {
   )
 }
 
+// ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
+const NEWS_FEEDS = [
+  { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
+  { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
+  { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
+  { id: 'reuters',  label: 'Reuters',   url: 'https://feeds.reuters.com/reuters/topNews' },
+  { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
+  { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
+]
+const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
+
+function NewsWidget({ theme, set }) {
+  const [open, setOpen] = useState(false)
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [activeFeed, setActiveFeed] = useState(null)
+  const closeTimer = useRef(null)
+
+  const disabledFeeds = theme.newsDisabledFeeds || []
+  const customFeeds = [
+    theme.newsCustom1 ? { id: 'custom1', label: theme.newsCustom1Label || 'Custom 1', url: theme.newsCustom1 } : null,
+    theme.newsCustom2 ? { id: 'custom2', label: theme.newsCustom2Label || 'Custom 2', url: theme.newsCustom2 } : null,
+    theme.newsCustom3 ? { id: 'custom3', label: theme.newsCustom3Label || 'Custom 3', url: theme.newsCustom3 } : null,
+  ].filter(Boolean)
+
+  const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
+
+  const fetchFeed = async (feed) => {
+    setLoading(true)
+    setArticles([])
+    try {
+      const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
+      const data = await res.json()
+      setArticles((data.items || []).slice(0, 10))
+    } catch {
+      setArticles([])
+    }
+    setLoading(false)
+  }
+
+  const handleOpen = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) {
+      const first = allFeeds[0]
+      if (first) { setActiveFeed(first); fetchFeed(first) }
+      setOpen(true)
+    }
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+  const handleMouseEnter = () => clearTimeout(closeTimer.current)
+
+  const switchFeed = (feed) => {
+    setActiveFeed(feed)
+    fetchFeed(feed)
+  }
+
+  if (allFeeds.length === 0) return null
+
+  return (
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseLeave={handleMouseLeave} onMouseEnter={handleMouseEnter}>
+      <button className="icon-btn topbar-quick-btn topbar-news-btn" title="News" onClick={handleOpen}>N</button>
+      {open && (
+        <div className="news-dropdown">
+          <div className="news-dropdown-inner">
+            <div className="news-feed-tabs">
+              {allFeeds.map(f => (
+                <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <div className="news-articles">
+              {loading && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: '0.82em' }}>Loading...</div>}
+              {!loading && articles.length === 0 && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: '0.82em' }}>No articles found</div>}
+              {!loading && articles.map((a, i) => (
+                <a key={i} className="news-article-row" href={a.link} target="_blank" rel="noopener noreferrer">
+                  <span className="news-article-title">{a.title}</span>
+                  {a.pubDate && <span className="news-article-date">{new Date(a.pubDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
   bg: '#0a0a0f', bg2: '#12121a', bg3: '#1a1a28',
@@ -256,7 +346,7 @@ function applyTheme(t) {
   s('--handle-opacity-global', 0.05)
   s('--handle-size', '10px')
   s('--handle-color', t.handleColor ?? '#2a2a3a')
-  s('--action-button-scale', t.actionButtonScale ?? 0.75)
+  s('--action-button-scale', 1)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
   s('--title-color', t.titleColor ?? t.textDim)
   s('--link-color', t.linkColor ?? '#5b9eff')
@@ -1713,6 +1803,7 @@ export default function App() {
 				{!(theme.hideClock ?? false) && <ClockWidget />}
 				{!(theme.hideClock ?? false) && !(theme.hideWeather ?? false) && <div className="topbar-divider" />}
 				{!(theme.hideWeather ?? false) && <WeatherWidget />}
+				{!(theme.hideNews ?? false) && <NewsWidget theme={theme} set={set} />}
 				<div className="topbar-divider" />
 				<a
 				  className="icon-btn topbar-quick-btn"

@@ -52,7 +52,7 @@ const ANIMATED_PRESETS = [
 const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
 const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
-const DEFAULT_SECTION_ORDER = ['background','wallpaper','colours','notesColors','typography','gradient','layout','cards','notes','themePresets','visibility','clock','favicons','search','workspaces','importExport','bookmarks','danger']
+const DEFAULT_SECTION_ORDER = ['background','wallpaper','colours','notesColors','typography','gradient','layout','cards','notes','themePresets','visibility','clock','favicons','search','news','workspaces','importExport','bookmarks','danger']
 
 function Row({ label, children, dimLabel = false }) {
   return (
@@ -425,7 +425,7 @@ export default function Settings({
           // Filter sections by active tab
           const designSections = ['background', 'wallpaper', 'colours', 'notesColors', 'typography', 'gradient']
           const layoutSections = ['layout', 'cards', 'notes', 'themePresets', 'visibility', 'clock', 'favicons']
-          const generalSections = ['workspaces', 'search', 'importExport', 'bookmarks', 'danger']
+          const generalSections = ['workspaces', 'search', 'news', 'importExport', 'bookmarks', 'danger']
           
           if (activeTab === 'design') return designSections.includes(sectionId)
           if (activeTab === 'layout') return layoutSections.includes(sectionId)
@@ -1021,6 +1021,45 @@ export default function Settings({
                 <Row label="Apply to borders"><Toggle checked={theme.cardsGradientTargetBorder ?? false} onChange={v => set('cardsGradientTargetBorder', v)} /></Row>
                 <Row label="Apply to card titles"><Toggle checked={theme.cardsGradientTargetTitle ?? false} onChange={v => set('cardsGradientTargetTitle', v)} /></Row>
               </>)}
+            </Group>
+          )
+          if (sectionId === 'news') return (
+            <Group title="News" defaultOpen={false} {...commonGroupProps}>
+              <Row label="Show news button"><Toggle checked={!(theme.hideNews ?? false)} onChange={v => set('hideNews', !v)} /></Row>
+              <SectionTitle>Feeds</SectionTitle>
+              {[
+                { id: 'abc',      label: 'ABC News AU' },
+                { id: 'guardian', label: 'Guardian AU' },
+                { id: 'sbs',      label: 'SBS News' },
+                { id: 'reuters',  label: 'Reuters' },
+                { id: 'verge',    label: 'The Verge' },
+                { id: 'dezeen',   label: 'Dezeen' },
+              ].map(f => {
+                const disabled = (theme.newsDisabledFeeds || []).includes(f.id)
+                return (
+                  <Row key={f.id} label={f.label}>
+                    <Toggle checked={!disabled} onChange={v => {
+                      const cur = theme.newsDisabledFeeds || []
+                      set('newsDisabledFeeds', v ? cur.filter(x => x !== f.id) : [...cur, f.id])
+                    }} />
+                  </Row>
+                )
+              })}
+              <SectionTitle>Custom feeds</SectionTitle>
+              {[1,2,3].map(n => (
+                <div key={n} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0 0.75rem 0.4rem' }}>
+                  <input className="input" style={{ fontSize: '0.78em' }}
+                    placeholder={`Label (Custom ${n})`}
+                    value={theme[`newsCustom${n}Label`] || ''}
+                    onChange={e => set(`newsCustom${n}Label`, e.target.value)}
+                  />
+                  <input className="input" style={{ fontSize: '0.78em' }}
+                    placeholder="RSS feed URL"
+                    value={theme[`newsCustom${n}`] || ''}
+                    onChange={e => set(`newsCustom${n}`, e.target.value)}
+                  />
+                </div>
+              ))}
             </Group>
           )
           if (sectionId === 'search') return <Group title="Search" defaultOpen={false} {...commonGroupProps}><SectionTitle>Search engine</SectionTitle><Row label="Engine URL"><input className="input" style={{ fontSize: '0.78em' }} value={theme.searchEngineUrl || 'https://www.google.com.au/search?q='} onChange={e => set('searchEngineUrl', e.target.value)} placeholder="https://www.google.com.au/search?q=" /></Row><SectionTitle>Presets</SectionTitle><div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.4rem' }}><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.google.com.au/search?q=')}>Google</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.bing.com/search?q=')}>Bing</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://duckduckgo.com/?q=')}>DuckDuckGo</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://search.brave.com/search?q=')}>Brave</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.perplexity.ai/search?q=')}>Perplexity</button></div><Row label="Open results"><select className="input" style={{ fontSize: '0.78em' }} value={(theme.openInNewTab ?? true) ? 'new' : 'same'} onChange={e => set('openInNewTab', e.target.value === 'new')}><option value="new">New tab</option><option value="same">Same tab</option></select></Row><Row label="Open links in new window"><Toggle label="Open links in new window" checked={theme.linksOpenNewWindow ?? true} onChange={v => set('linksOpenNewWindow', v)} /></Row></Group>

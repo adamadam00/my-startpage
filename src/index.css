@@ -1053,6 +1053,87 @@ html.bg-29-carbon::after {
   white-space: nowrap;
 }
 
+.topbar-news-btn {
+  font-size: 0.85em;
+  font-weight: 700;
+  color: var(--accent) !important;
+}
+.topbar-news-btn:hover {
+  color: var(--text) !important;
+  background: var(--bg3);
+}
+
+.news-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 99999;
+  padding-top: 0.4rem;
+  font-size: var(--topbar-font-size, 12px);
+  min-width: 340px;
+}
+.news-dropdown-inner {
+  background: var(--topbar-bg, var(--card));
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+}
+.news-feed-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex-wrap: nowrap;
+}
+.news-feed-tabs::-webkit-scrollbar { display: none; }
+.news-tab-btn {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.78em;
+  font-family: var(--font);
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+.news-tab-btn:hover { color: var(--text); }
+.news-tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.news-articles {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.news-article-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
+  text-decoration: none;
+  transition: background 0.12s;
+}
+.news-article-row:last-child { border-bottom: none; }
+.news-article-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.news-article-title {
+  flex: 1;
+  color: var(--text);
+  font-size: 0.82em;
+  line-height: 1.4;
+}
+.news-article-row:hover .news-article-title { color: var(--accent); }
+.news-article-date {
+  color: var(--text-dim);
+  font-size: 0.74em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .weather-dropdown {
   position: absolute;
   top: 100%;
@@ -2088,10 +2169,9 @@ html.bg-29-carbon::after {
   padding: 0.22rem 0.45rem;
   background: transparent;
   border: none;
-  color: var(--text-dim);
-  font-size: var(--handle-size, var(--link-handle-size, 13px));
-  opacity: var(--handle-opacity-global, var(--link-handle-opacity, 0.7));
-  color: var(--handle-color, var(--text-muted));
+  color: var(--text-muted);
+  font-size: 13px;
+  opacity: 0.8;
   cursor: pointer;
   transition: color 0.12s, background 0.12s, opacity 0.12s;
   min-height: 26px;
