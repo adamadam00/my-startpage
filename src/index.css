@@ -1086,6 +1086,37 @@ html.bg-29-carbon::after {
   border-bottom: none;
 }
 
+.topbar-quick-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm, 4px);
+  color: var(--text-dim);
+  transition: color 0.15s, background 0.15s;
+  flex-shrink: 0;
+}
+.topbar-quick-btn:hover {
+  color: var(--text);
+  background: var(--bg3);
+}
+.topbar-google-btn {
+  font-size: 0.85em;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  background: linear-gradient(135deg, #4285F4 0%, #EA4335 35%, #FBBC05 65%, #34A853 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.topbar-google-btn:hover {
+  -webkit-text-fill-color: var(--text);
+  background: var(--bg3);
+  background-clip: unset;
+  -webkit-background-clip: unset;
+}
+
 .search-compact {
   display: flex;
   align-items: center;

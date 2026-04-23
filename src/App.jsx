@@ -1713,6 +1713,25 @@ export default function App() {
 				{!(theme.hideClock ?? false) && <ClockWidget />}
 				{!(theme.hideClock ?? false) && !(theme.hideWeather ?? false) && <div className="topbar-divider" />}
 				{!(theme.hideWeather ?? false) && <WeatherWidget />}
+				<div className="topbar-divider" />
+				<button
+				  className="icon-btn topbar-quick-btn"
+				  title="New tab"
+				  onClick={() => window.open('about:blank', '_blank')}
+				>
+				  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+				    <rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+				    <line x1="6.5" y1="3.5" x2="6.5" y2="9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+				    <line x1="3.5" y1="6.5" x2="9.5" y2="6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+				  </svg>
+				</button>
+				<button
+				  className="icon-btn topbar-quick-btn topbar-google-btn"
+				  title="Google"
+				  onClick={() => window.open('https://www.google.com.au', '_blank')}
+				>
+				  G
+				</button>
 				{!(theme.hideSearch ?? false) && <div className="search-compact">
 				  <div className="search-mode-bar">
 					{[
