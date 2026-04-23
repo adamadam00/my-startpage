@@ -184,7 +184,14 @@ function NewsWidget({ theme, setTheme }) {
   const handleMouseLeave = () => {
     closeTimer.current = setTimeout(() => setOpen(false), 300)
   }
-  const handleMouseEnter = () => clearTimeout(closeTimer.current)
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) {
+      const first = allFeeds[0]
+      if (first && !activeFeed) { setActiveFeed(first); fetchFeed(first) }
+      setOpen(true)
+    }
+  }
 
   const switchFeed = (feed) => {
     setActiveFeed(feed)
