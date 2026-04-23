@@ -403,10 +403,60 @@ html.bg-16-starfield-old::before, html.bg-16-starfield-old::after {
     radial-gradient(calc(var(--bg-star-size, 1) * 1.5px) calc(var(--bg-star-size, 1) * 1.5px) at 5% 90%, rgba(255,255,255,0.90) 0%,transparent 100%),
     radial-gradient(calc(var(--bg-star-size, 1) * 1px) calc(var(--bg-star-size, 1) * 1px) at 95% 50%, var(--bg-08-c3, rgba(200,210,255,0.70)) 0%,transparent 100%),
     radial-gradient(calc(var(--bg-star-size, 1) * 1px) calc(var(--bg-star-size, 1) * 1px) at 55% 75%, var(--bg-08-c3, rgba(200,210,255,0.60)) 0%,transparent 100%);
-  background-size: 700px 700px;
-  animation: starfield-drift 80s linear infinite;
+  background-size: calc(700px / (var(--bg-star-density, 1))) calc(700px / (var(--bg-star-density, 1)));
+  animation: starfield-drift calc(80s / var(--bg-star-speed, 1)) linear infinite;
 }
-html.bg-16-starfield-old::after { background-size: 450px 450px; animation: starfield-drift 130s linear infinite reverse; opacity: 0.55; }
+html.bg-16-starfield-old::after {
+  background-size: calc(450px / (var(--bg-star-density, 1))) calc(450px / (var(--bg-star-density, 1)));
+  animation: starfield-drift calc(130s / var(--bg-star-speed, 1)) linear infinite reverse;
+  opacity: 0.55;
+}
+
+/* 29. Star Streaks - long exposure side view */
+html.bg-29-star-streaks {
+  background: var(--bg-streak-bg, #02020f);
+  overflow: hidden;
+}
+html.bg-29-star-streaks::before,
+html.bg-29-star-streaks::after {
+  content: '';
+  position: absolute;
+  inset: -20% -50%;
+  width: 200%;
+  height: 140%;
+  background-image:
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.9)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.7)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.6)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.5)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.8)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.4)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.6)) 50%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.7)) 50%, transparent 100%);
+  background-size:
+    calc(var(--bg-streak-length, 1) * 120px) 1px,
+    calc(var(--bg-streak-length, 1) * 80px) 1px,
+    calc(var(--bg-streak-length, 1) * 200px) 1px,
+    calc(var(--bg-streak-length, 1) * 60px) 1px,
+    calc(var(--bg-streak-length, 1) * 150px) 1px,
+    calc(var(--bg-streak-length, 1) * 90px) 1px,
+    calc(var(--bg-streak-length, 1) * 110px) 1px,
+    calc(var(--bg-streak-length, 1) * 70px) 1px;
+  background-repeat: no-repeat;
+  background-position:
+    -100% 15%, -100% 32%, -100% 48%, -100% 61%, -100% 74%, -100% 22%, -100% 55%, -100% 85%;
+  animation: streak-fly calc(4s / var(--bg-streak-speed, 1)) linear infinite;
+}
+html.bg-29-star-streaks::after {
+  animation-delay: calc(-2s / var(--bg-streak-speed, 1));
+  opacity: 0.6;
+  background-position:
+    -100% 8%, -100% 25%, -100% 40%, -100% 52%, -100% 67%, -100% 78%, -100% 90%, -100% 35%;
+}
+@keyframes streak-fly {
+  0%   { transform: translateX(-5%); }
+  100% { transform: translateX(55%); }
+}
 
 /* 17. Plasma - Blue/purple plasma */
 .bg-17-plasma { background: #07071a; overflow: hidden; }
@@ -1934,7 +1984,7 @@ html.bg-29-carbon::after {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.18rem;
+  gap: var(--section-gap, 0.18rem);
   position: relative;
   min-height: 18rem;
   padding: 0.5rem;

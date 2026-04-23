@@ -163,7 +163,7 @@ export default function Settings({
   fileRef, backupFileRef, themeFileRef, importingBackup,
   workspaces, activeWs,
   mode, setMode,
-  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs,
+  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs, onReorderWorkspaces,
   onSignOut, userEmail,
   bmFolders, bookmarkCount,
   onClearAllNotes,
@@ -185,36 +185,26 @@ export default function Settings({
   const [draggedSection, setDraggedSection] = useState(null)
   const bgFileRef = useRef(null)
 
-  // Theme presets state
-  const [presets, setPresets] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('sp_theme_presets') || '[]')
-    } catch {
-      return []
-    }
-  })
+  // Theme presets - stored in theme object so they persist to Supabase
+  const presets = theme.themePresetSlots || []
 
   const savePreset = (slot, name) => {
     const newPresets = [...presets]
-    newPresets[slot] = {
-      name: name || `Preset ${slot + 1}`,
-      theme: { ...theme }
-    }
-    setPresets(newPresets)
-    localStorage.setItem('sp_theme_presets', JSON.stringify(newPresets))
+    const { themePresetSlots, ...themeWithoutPresets } = theme
+    newPresets[slot] = { name: name || `Preset ${slot + 1}`, theme: themeWithoutPresets }
+    set('themePresetSlots', newPresets)
   }
 
   const loadPreset = (slot) => {
     if (presets[slot]?.theme) {
-      setTheme(presets[slot].theme)
+      setTheme(prev => ({ ...presets[slot].theme, themePresetSlots: prev.themePresetSlots }))
     }
   }
 
   const deletePreset = (slot) => {
     const newPresets = [...presets]
     newPresets[slot] = null
-    setPresets(newPresets)
-    localStorage.setItem('sp_theme_presets', JSON.stringify(newPresets))
+    set('themePresetSlots', newPresets)
   }
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
@@ -433,7 +423,8 @@ export default function Settings({
                   { label: '05-Gradient', v: '05-gradient' },
                   { label: '06-Mesh', v: '06-mesh' },
                   { label: '07-Nebula', v: '07-nebula' },
-                  { label: '08-Star-Old', v: '16-starfield-old' },
+                  { label: '08-Stars', v: '16-starfield-old' },
+                  { label: '08b-Streaks', v: '29-star-streaks' },
                   { label: '09-Plasma', v: '17-plasma' },
                   { label: '10-Inferno', v: '18-inferno' },
                   { label: '11-Mint', v: '19-mint' },
@@ -553,15 +544,27 @@ export default function Settings({
                 </>
               )}
 
-              {/* 08-Star-Old Settings */}
+              {/* 08-Stars Settings */}
               {theme.bgPreset === '16-starfield-old' && (
                 <>
                   <Row label="Sky top"><ColorPick value={theme.bgC1 || '#05050f'} onChange={v => set('bgC1', v)} /></Row>
                   <Row label="Sky bottom"><ColorPick value={theme.bgC2 || '#000308'} onChange={v => set('bgC2', v)} /></Row>
                   <Row label="Star tint"><ColorPick value={theme.bgC3 || '#c8d2ff'} onChange={v => set('bgC3', v)} /></Row>
-                  <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={3} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
-                  <Row label="Star density"><Slider val={theme.bgStarDensity ?? 100} min={50} max={150} onChange={v => set('bgStarDensity', v)} unit="%" /></Row>
-                  <Row label="Animation speed"><Slider val={theme.bgStarSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgStarSpeed', v)} unit="×" /></Row>
+                  <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={4} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
+                  <Row label="Star density"><Slider val={theme.bgStarDensity ?? 100} min={25} max={250} onChange={v => set('bgStarDensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgStarSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStarSpeed', v)} unit="×" /></Row>
+                </>
+              )}
+
+              {/* 21-Star Streaks Settings */}
+              {theme.bgPreset === '29-star-streaks' && (
+                <>
+                  <Row label="Sky color"><ColorPick value={theme.bgStreakBg || '#02020f'} onChange={v => set('bgStreakBg', v)} /></Row>
+                  <Row label="Streak color"><ColorPick value={theme.bgStreakC1 || '#ffffff'} onChange={v => set('bgStreakC1', v)} /></Row>
+                  <Row label="Streak tint"><ColorPick value={theme.bgStreakC2 || '#aac4ff'} onChange={v => set('bgStreakC2', v)} /></Row>
+                  <Row label="Density"><Slider val={theme.bgStreakDensity ?? 100} min={25} max={250} onChange={v => set('bgStreakDensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgStreakSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStreakSpeed', v)} unit="×" /></Row>
+                  <Row label="Length"><Slider val={theme.bgStreakLength ?? 100} min={20} max={300} onChange={v => set('bgStreakLength', v)} unit="%" /></Row>
                 </>
               )}
 
@@ -826,9 +829,10 @@ export default function Settings({
 
           if (sectionId === 'cards') return (
             <Group title="Cards & borders" defaultOpen={false} {...commonGroupProps}>
+              <Row label="Card opacity"><Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
               <Row label="Corner radius"><Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => { set('radius', v); set('sectionRadius', v); set('notesRadius', v) }} unit="px" /></Row>
-              <Row label="Card padding"><Slider label="Card padding" val={Math.round((theme.cardPadding ?? 0.75) * 100)} min={0} max={150} step={5} onChange={v => set('cardPadding', v / 100)} unit="%" /></Row>
-              <Row label="Header height"><Slider label="Header height" val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>
+              <Row label="Card padding"><Slider val={Math.round((theme.cardPadding ?? 0.75) * 100)} min={0} max={150} step={5} onChange={v => set('cardPadding', v / 100)} unit="%" /></Row>
+              <Row label="Header height"><Slider val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>
               
               <SectionTitle>Card Shadow</SectionTitle>
               <Row label="Enable shadow"><Toggle checked={theme.cardShadowEnabled ?? false} onChange={v => set('cardShadowEnabled', v)} /></Row>
@@ -1067,25 +1071,10 @@ export default function Settings({
                   onChange={e => set('calIcalUrl3', e.target.value)}
                 />
               </Row>
-              <SectionTitle>Gmail (Apps Script)</SectionTitle>
+              <SectionTitle>Gmail</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                Optional — requires Google Apps Script setup.
+                Gmail integration coming soon.
               </div>
-              <Row label="Script URL">
-                <input className="input" style={{ fontSize: '0.75em' }}
-                  placeholder="https://script.google.com/macros/s/.../exec"
-                  value={theme.calScriptUrl || ''}
-                  onChange={e => set('calScriptUrl', e.target.value)}
-                />
-              </Row>
-              <Row label="Secret key">
-                <input className="input" style={{ fontSize: '0.75em' }}
-                  type="password"
-                  placeholder="Your secret from the script"
-                  value={theme.calScriptKey || ''}
-                  onChange={e => set('calScriptKey', e.target.value)}
-                />
-              </Row>
               <SectionTitle>Visibility</SectionTitle>
               <Row label="Show calendar"><Toggle checked={!(theme.hideCalendar ?? false)} onChange={v => set('hideCalendar', !v)} /></Row>
               <Row label="Show Gmail"><Toggle checked={!(theme.hideGmail ?? false)} onChange={v => set('hideGmail', !v)} /></Row>
@@ -1111,31 +1100,33 @@ export default function Settings({
               </div>
               <SectionTitle>Manage Workspaces</SectionTitle>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.4rem' }}>
-                {workspaces.map(ws => (
+                {workspaces.map((ws, idx) => (
                   <div key={ws.id} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', padding: '0.25rem 0.45rem', borderRadius: 'var(--radius-sm)', background: ws.id === activeWs ? 'var(--accent-dim)' : 'transparent', border: `1px solid ${ws.id === activeWs ? 'var(--accent)' : 'transparent'}` }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                      <button className="btn-xs" style={{ padding: '0 4px', fontSize: '0.6em', lineHeight: 1 }} disabled={idx === 0}
+                        onClick={() => {
+                          const newOrder = [...workspaces]
+                          ;[newOrder[idx-1], newOrder[idx]] = [newOrder[idx], newOrder[idx-1]]
+                          onReorderWorkspaces(newOrder)
+                        }}>▲</button>
+                      <button className="btn-xs" style={{ padding: '0 4px', fontSize: '0.6em', lineHeight: 1 }} disabled={idx === workspaces.length - 1}
+                        onClick={() => {
+                          const newOrder = [...workspaces]
+                          ;[newOrder[idx], newOrder[idx+1]] = [newOrder[idx+1], newOrder[idx]]
+                          onReorderWorkspaces(newOrder)
+                        }}>▼</button>
+                    </div>
                     <span style={{ flex: 1, fontSize: '0.82em', cursor: 'pointer', color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)' }} onClick={() => onSetActiveWs(ws.id)}>
                       {ws.name}
                       <span style={{ fontSize: '0.85em', opacity: 0.6, marginLeft: '0.3rem' }}>
                         {ws.visibility === 'home' ? '🏠' : ws.visibility === 'work' ? '💼' : '🔄'}
                       </span>
                     </span>
-                    <select
-                      className="input"
-                      style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
+                    <select className="input" style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
                       value={ws.visibility || 'both'}
                       onChange={async (e) => {
-                        const { error } = await supabase
-                          .from('workspaces')
-                          .update({ visibility: e.target.value })
-                          .eq('id', ws.id)
-                        if (!error) {
-                          const updated = workspaces.map(w => 
-                            w.id === ws.id ? { ...w, visibility: e.target.value } : w
-                          )
-                          // This would need to call a parent function to update workspaces state
-                          // For now, just reload
-                          window.location.reload()
-                        }
+                        const { error } = await supabase.from('workspaces').update({ visibility: e.target.value }).eq('id', ws.id)
+                        if (!error) window.location.reload()
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >

@@ -587,8 +587,7 @@ function applyTheme(t) {
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
   
   const baseBorderColor = t.border
-  s('--card-opacity', t.cardOpacity ?? 1)
-  s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
+  s('--card-opacity', t.cardOpacity ?? 1)  s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
   s('--title-opacity', 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
@@ -1128,9 +1127,9 @@ function applyTheme(t) {
   s('--bg-05-c1', t.bgGradC1 || '#1a2a4a')
   s('--bg-05-c2', t.bgGradC2 || '#2a1a3a')
   s('--bg-05-c3', t.bgGradC3 || '#1a3a2a')
-  s('--bg-08-c1', t.bgStarC1 || '#05050f')
-  s('--bg-08-c2', t.bgStarC2 || '#000308')
-  s('--bg-08-c3', t.bgStarC3 || '#c8d2ff')
+  s('--bg-08-c1', t.bgC1 || t.bgStarC1 || '#05050f')
+  s('--bg-08-c2', t.bgC2 || t.bgStarC2 || '#000308')
+  s('--bg-08-c3', t.bgC3 || t.bgStarC3 || '#c8d2ff')
   s('--bg-14-c1', t.bgFogC1 || '#3a4a6e')
   s('--bg-15-c1', t.bgScanC1 || '#6c8fff')
   s('--bg-15-c2', t.bgScanC2 || '#05050d')
@@ -1175,9 +1174,17 @@ function applyTheme(t) {
   if (t.bgNebulaC1) { const r=hexRgb(t.bgNebulaC1); s('--bg-nebula-c1', `rgba(${r},0.5)`) }
   if (t.bgNebulaC2) { const r=hexRgb(t.bgNebulaC2); s('--bg-nebula-c2', `rgba(${r},0.5)`) }
   
-  // Starfield settings
-  if (t.bgStarDensity) s('--bg-star-density', t.bgStarDensity + '%')
-  if (t.bgStarSpeed) s('--bg-star-speed', t.bgStarSpeed)
+  // Starfield settings - density as multiplier, speed as multiplier
+  s('--bg-star-size', t.bgStarSize ?? 1)
+  s('--bg-star-density', t.bgStarDensity ? t.bgStarDensity / 100 : 1)
+  s('--bg-star-speed', t.bgStarSpeed ?? 1)
+  // Star streaks
+  s('--bg-streak-bg', t.bgStreakBg || '#02020f')
+  if (t.bgStreakC1) { const r = hexRgb(t.bgStreakC1); s('--bg-streak-c1', `rgba(${r},0.9)`) }
+  if (t.bgStreakC2) { const r = hexRgb(t.bgStreakC2); s('--bg-streak-c2', `rgba(${r},0.7)`) }
+  s('--bg-streak-speed', t.bgStreakSpeed ?? 1)
+  s('--bg-streak-length', t.bgStreakLength ? t.bgStreakLength / 100 : 1)
+  s('--bg-streak-density', t.bgStreakDensity ? t.bgStreakDensity / 100 : 1)
   
   // Plasma backgrounds
   if (t.bgPlasmaSpeed) s('--bg-plasma-speed', t.bgPlasmaSpeed)
@@ -1827,6 +1834,10 @@ export default function App() {
     setActiveWs(next[0]?.id ?? null)
   }
 
+  const reorderWorkspaces = (newOrder) => {
+    setWorkspaces(newOrder)
+  }
+
   const handleImageUpload = (file) => {
     if (!file) return
     const reader = new FileReader()
@@ -2044,6 +2055,15 @@ export default function App() {
 		  
 		  <div className="app" ref={contentRef}>
 
+			{/* Background blur overlay */}
+			{(theme.bgBlur ?? 0) > 0 ? (
+			  <div style={{
+				position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+				backdropFilter: `blur(${theme.bgBlur}px)`,
+				WebkitBackdropFilter: `blur(${theme.bgBlur}px)`,
+			  }} />
+			) : null}
+
 			{/* Wallpaper overlay */}
 			{theme.wallpaper ? (
 			  <div style={{
@@ -2091,7 +2111,7 @@ export default function App() {
 				{!(theme.hideWeather ?? false) && <WeatherWidget />}
 				{!(theme.hideNews ?? false) && <NewsWidget theme={theme} setTheme={setTheme} />}
 				{!(theme.hideCalendar ?? false) && <CalendarWidget theme={theme} />}
-				{!(theme.hideGmail ?? false) && <GmailWidget theme={theme} />}
+				{!(theme.hideGmail ?? true) && <GmailWidget theme={theme} />}
 				<div className="topbar-divider" />
 				<a
 				  className="icon-btn topbar-quick-btn"
@@ -2222,24 +2242,26 @@ export default function App() {
 				  userId={session.user.id}
 				  workspaceId={activeWs}
 				  onRefresh={handleRefresh}
-				  colCount={Math.max(theme.sectionsCols ?? 6, 6)}
+				  colCount={theme.sectionsCols ?? 6}
 				  triggerCollapseAll={triggerCollapse}
 				  triggerExpandAll={triggerExpand}
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
 				  onAddSection={async () => {
 					const name = window.prompt('Section name:', 'New Section')
-					if (!name?.trim()) return
+					if (name === null) return
+					const sectionName = name.trim() || 'New Section'
 					const { error } = await supabase
 					  .from('sections')
 					  .insert({
 						user_id: session.user.id,
 						workspace_id: activeWs,
-						name: name.trim(),
+						name: sectionName,
 						position: sections.length,
+						col_index: 0,
 						collapsed: false
 					  })
-					if (error) { alert('Error creating section: ' + error.message); return }
+					if (error) { console.error('Error creating section:', error.message); return }
 					await handleRefresh()
 				  }}
 				/>
@@ -2288,6 +2310,7 @@ export default function App() {
 				onAddWorkspace={addWorkspace}
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}
+				onReorderWorkspaces={reorderWorkspaces}
 				onSetActiveWs={setActiveWs}
 			  />
 			)}

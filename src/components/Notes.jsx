@@ -307,6 +307,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
   const [shareNote, setShareNote] = useState(false)
   const [editing, setEditing] = useState(null)
   const [editText, setEditText] = useState('')
+  const [editShareNote, setEditShareNote] = useState(false)
   const [err, setErr] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [showActions, setShowActions] = useState(null)
@@ -441,19 +442,19 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
 
   const update = async (id) => {
     if (!editText.trim()) return
-
+    let shared_to = null
+    if (editShareNote) {
+      if (isHomeWorkspace) shared_to = 'work'
+      else if (isWorkWorkspace) shared_to = 'home'
+    }
     const { error } = await supabase
       .from('notes')
-      .update({ content: editText.trim() })
+      .update({ content: editText.trim(), shared_to })
       .eq('id', id)
-
-    if (error) {
-      setErr(error.message)
-      return
-    }
-
+    if (error) { setErr(error.message); return }
     setEditing(null)
     setEditText('')
+    setEditShareNote(false)
     onRefresh?.()
   }
 
@@ -898,6 +899,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                             }
                             setEditing(note.id)
                             setEditText(value)
+                            setEditShareNote(!!note.shared_to)
                           }}
                           onDragOver={(e) => {
                             if (e.dataTransfer.types.includes('Files')) {
@@ -1314,6 +1316,12 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                       📎
                     </button>
                     <div style={{ flex: 1, minWidth: '0.2rem' }} />
+                    {(isHomeWorkspace || isWorkWorkspace) && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72em', cursor: 'pointer', flexShrink: 0 }}>
+                        <input type="checkbox" checked={editShareNote} onChange={e => setEditShareNote(e.target.checked)} style={{ cursor: 'pointer' }} />
+                        <span style={{ color: 'var(--text-dim)' }}>Share to {isHomeWorkspace ? 'Work' : 'Home'}</span>
+                      </label>
+                    )}
                     <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
                         month: 'numeric', 
