@@ -709,6 +709,11 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                 }}
               >
                 <>
+                  {/* Up/Down reorder buttons - always visible on hover */}
+                  <div className="note-reorder-btns">
+                    <button className="note-reorder-btn" title="Move up" onClick={(e) => { e.stopPropagation(); moveUp(note.id) }}>▲</button>
+                    <button className="note-reorder-btn" title="Move down" onClick={(e) => { e.stopPropagation(); moveDown(note.id) }}>▼</button>
+                  </div>
                   <div className="note-main">
                     {editing === note.id ? (
                       <div
@@ -1095,24 +1100,6 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                     )}
 
                     <div className="note-edit-toolbar" data-toolbar="true">
-                      <div 
-                        className="note-drag-handle-inline" 
-                        title="Drag to reorder"
-                        draggable="true"
-                        onDragStart={(e) => {
-                          e.stopPropagation()
-                          e.dataTransfer.effectAllowed = 'move'
-                          e.dataTransfer.setData('noteId', note.id)
-                          e.currentTarget.closest('.note-item').classList.add('is-dragging')
-                        }}
-                        onDragEnd={(e) => {
-                          e.currentTarget.closest('.note-item').classList.remove('is-dragging')
-                          document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'))
-                        }}
-                        onMouseDown={(e) => e.stopPropagation()}
-                      >
-                        ⋮⋮
-                      </div>
                       <div style={{ display: 'flex', gap: '0.15rem' }}>
                         <button
                           type="button"

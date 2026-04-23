@@ -1195,6 +1195,11 @@ html.bg-29-carbon::after {
 .topbar-google-btn {
   padding: 3px !important;
 }
+.topbar-action-lg {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 1.2em !important;
+}
 
 .search-compact {
   display: flex;
@@ -1350,10 +1355,46 @@ html.bg-29-carbon::after {
   min-height: 0;
   overflow-y: auto;
   overflow-x: visible;
-  padding-right: 20px;
-  padding-left: 12px;
-  margin-left: -12px;
+  padding-right: 4px;
+  padding-left: 4px;
   position: relative;
+}
+
+/* Note reorder buttons */
+.note-reorder-btns {
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 5;
+}
+.note-item:hover .note-reorder-btns {
+  opacity: 1;
+}
+.note-reorder-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 16px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-dim);
+  font-size: 0.55em;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.12s, background 0.12s;
+}
+.note-reorder-btn:hover {
+  color: var(--text);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .card {
@@ -2333,6 +2374,7 @@ flex-shrink: 0;
 	z-index: 1;
 	overflow: hidden;
 	user-select: none;
+	position: relative;
 }
 
 .note-item.note-collapsed {

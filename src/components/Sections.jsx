@@ -167,18 +167,6 @@ function LinkRow({
 
   return (
     <div ref={setNodeRef} style={style} className="link-item">
-      <button
-        type="button"
-        className="link-act"
-        title="Drag link"
-        aria-label={`Drag link ${link.title}`}
-        {...attributes}
-        {...listeners}
-        onClick={(e) => e.stopPropagation()}
-      >
-        ⋮⋮
-      </button>
-
       {faviconEnabled && favicon ? (
         <img
           className="link-favicon"
@@ -447,18 +435,6 @@ function SectionCard({
         onMouseLeave={handleArchiveMouseLeave}
       >
       <div className="section-header">
-        <button
-          type="button"
-          className="section-grab"
-          {...attributes}
-          {...listeners}
-          onClick={(e) => e.stopPropagation()}
-          title="Drag section"
-          aria-label={`Drag section ${section.name}`}
-        >
-          <span className="section-grab-dots">⋮⋮</span>
-        </button>
-
         <div
           className="section-header-click"
           {...attributes}

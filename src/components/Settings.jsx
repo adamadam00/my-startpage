@@ -831,11 +831,12 @@ export default function Settings({
               <Row label="Header height"><Slider label="Header height" val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>
               
               <SectionTitle>Card Shadow</SectionTitle>
-              <Row label="Enable shadow"><Toggle label="Enable shadow" checked={theme.cardShadowEnabled ?? false} onChange={v => set('cardShadowEnabled', v)} /></Row>
+              <Row label="Enable shadow"><Toggle checked={theme.cardShadowEnabled ?? false} onChange={v => set('cardShadowEnabled', v)} /></Row>
+              <Row label="Notes match cards"><Toggle checked={theme.notesShadowMatchCards ?? true} onChange={v => set('notesShadowMatchCards', v)} /></Row>
               {theme.cardShadowEnabled && (<>
-                <Row label="Shadow size"><Slider label="Shadow size" val={theme.cardShadowSize ?? 8} min={0} max={60} onChange={v => set('cardShadowSize', v)} unit="px" /></Row>
-                <Row label="Shadow opacity"><Slider label="Shadow opacity" val={Math.round((theme.cardShadowOpacity ?? 0.3) * 100)} min={0} max={100} onChange={v => set('cardShadowOpacity', v / 100)} unit="%" /></Row>
-                <Row label="Shadow color"><ColorPick label="Shadow color" value={theme.cardShadowColor || '#000000'} onChange={v => set('cardShadowColor', v)} /></Row>
+                <Row label="Shadow size"><Slider val={theme.cardShadowSize ?? 8} min={0} max={60} onChange={v => set('cardShadowSize', v)} unit="px" /></Row>
+                <Row label="Shadow opacity"><Slider val={Math.round((theme.cardShadowOpacity ?? 0.3) * 100)} min={0} max={100} onChange={v => set('cardShadowOpacity', v / 100)} unit="%" /></Row>
+                <Row label="Shadow color"><ColorPick value={theme.cardShadowColor || '#000000'} onChange={v => set('cardShadowColor', v)} /></Row>
                 <Row label="Direction">
                   <select className="input" style={{ fontSize: '0.78em' }} value={theme.cardShadowDirection || 'top-lit'} onChange={e => set('cardShadowDirection', e.target.value)}>
                     <option value="top-lit">Top-lit</option>
@@ -1144,7 +1145,6 @@ export default function Settings({
       <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>Save &amp; Close</button>
-        <button className="btn" onClick={onClose}>Close</button>
       </div>
     </>
   )
