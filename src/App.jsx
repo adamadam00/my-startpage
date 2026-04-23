@@ -384,6 +384,26 @@ function CalendarWidget({ theme }) {
 
 
 // ─── GMAIL WIDGET ───────────────────────────────────────────────────────────────
+function parseGmailAtom(xml) {
+  const emails = []
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(xml, 'text/xml')
+  const entries = doc.querySelectorAll('entry')
+  entries.forEach(entry => {
+    const title = entry.querySelector('title')?.textContent || '(no subject)'
+    const authorName = entry.querySelector('author name')?.textContent || ''
+    const id = entry.querySelector('id')?.textContent || ''
+    // Extract message ID from tag:gmail.google.com,2004:...
+    const msgId = id.split(':').pop()
+    emails.push({
+      subject: title,
+      from: authorName,
+      link: `https://mail.google.com/mail/u/0/#inbox/${msgId}`
+    })
+  })
+  return emails
+}
+
 function GmailWidget({ theme }) {
   const [open, setOpen] = useState(false)
   const [emails, setEmails] = useState([])
@@ -392,22 +412,20 @@ function GmailWidget({ theme }) {
   const closeTimer = useRef(null)
   const fetched = useRef(false)
 
-  const url = theme.calScriptUrl
-  const secret = theme.calScriptKey
-
   const fetchEmails = async () => {
-    if (!url || !secret || fetched.current) return
+    if (fetched.current) return
     fetched.current = true
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${url}?type=gmail&key=${encodeURIComponent(secret)}`)
-      if (!res.ok) throw new Error('Failed')
-      const data = await res.json()
-      setEmails(Array.isArray(data) ? data : [])
-    } catch {
-      setError('Could not load emails')
-      setEmails([])
+      const gmailAtom = 'https://mail.google.com/mail/feed/atom'
+      const res = await fetch(`/api/ical?url=${encodeURIComponent(gmailAtom)}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const xml = await res.text()
+      if (!xml.includes('<feed')) throw new Error('Not logged into Google or no access')
+      setEmails(parseGmailAtom(xml))
+    } catch (e) {
+      setError(e.message)
     }
     setLoading(false)
   }
@@ -438,13 +456,12 @@ function GmailWidget({ theme }) {
               Unread mail
               <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
             </div>
-            {!url && <div className="cal-empty">⚙ Add Apps Script URL in Settings → General → Calendar</div>}
-            {url && loading && <div className="cal-empty">Loading...</div>}
-            {url && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
-            {url && !loading && !error && emails.length === 0 && <div className="cal-empty">No unread emails 📭</div>}
-            {url && !loading && !error && emails.map((em, i) => (
+            {loading && <div className="cal-empty">Loading...</div>}
+            {!loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error} — make sure you're logged into Google</div>}
+            {!loading && !error && emails.length === 0 && <div className="cal-empty">No unread emails 📭</div>}
+            {!loading && !error && emails.map((em, i) => (
               <a key={i} className="gmail-row" href={em.link} target="_blank" rel="noopener noreferrer">
-                <div className="gmail-from">{em.from.replace(/<.*>/, '').trim()}</div>
+                <div className="gmail-from">{em.from}</div>
                 <div className="gmail-subject">{em.subject}</div>
               </a>
             ))}
