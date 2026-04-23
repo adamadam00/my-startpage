@@ -230,6 +230,172 @@ function NewsWidget({ theme, setTheme }) {
   )
 }
 
+// ─── CALENDAR WIDGET ───────────────────────────────────────────────────────────
+// ─── CALENDAR WIDGET ───────────────────────────────────────────────────────────
+function CalendarWidget({ theme }) {
+  const [open, setOpen] = useState(false)
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const closeTimer = useRef(null)
+  const fetched = useRef(false)
+
+  const url = theme.calScriptUrl
+
+  const fetchEvents = async () => {
+    if (!url || fetched.current) return
+    fetched.current = true
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(url + '?type=calendar')
+      if (!res.ok) throw new Error('Failed')
+      const data = await res.json()
+      setEvents(Array.isArray(data) ? data : [])
+    } catch {
+      setError('Could not load events')
+      setEvents([])
+    }
+    setLoading(false)
+  }
+
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) { setOpen(true); fetchEvents() }
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+
+  const grouped = {}
+  events.forEach(ev => {
+    const d = new Date(ev.start)
+    const key = d.toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })
+    if (!grouped[key]) grouped[key] = []
+    grouped[key].push(ev)
+  })
+
+  const formatTime = (iso, allDay) => {
+    if (allDay) return 'All day'
+    return new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true })
+  }
+
+  if (theme.hideCalendar) return null
+
+  return (
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button className="icon-btn topbar-quick-btn topbar-cal-btn" title="Calendar (next 3 days)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="5" y1="1" x2="5" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="11" y1="1" x2="11" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <rect x="4" y="8.5" width="2" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7.5" y="8.5" width="2" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="11" y="8.5" width="2" height="2" rx="0.5" fill="currentColor"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="cal-dropdown">
+          <div className="cal-dropdown-inner">
+            <div className="cal-header">
+              Next 3 days
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
+            </div>
+            {!url && <div className="cal-empty">⚙ Add Apps Script URL in Settings → General → Calendar</div>}
+            {url && loading && <div className="cal-empty">Loading...</div>}
+            {url && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {url && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
+            {url && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
+              <div key={day} className="cal-day-group">
+                <div className="cal-day-label">{day}</div>
+                {dayEvents.map((ev, i) => (
+                  <a key={i} className="cal-event-row" href={ev.link || 'https://calendar.google.com'} target="_blank" rel="noopener noreferrer">
+                    <span className="cal-event-time">{formatTime(ev.start, ev.allDay)}</span>
+                    <span className="cal-event-title">{ev.title}</span>
+                    {ev.location && <span className="cal-event-loc" title={ev.location}>📍</span>}
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── GMAIL WIDGET ───────────────────────────────────────────────────────────────
+function GmailWidget({ theme }) {
+  const [open, setOpen] = useState(false)
+  const [emails, setEmails] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const closeTimer = useRef(null)
+  const fetched = useRef(false)
+
+  const url = theme.calScriptUrl  // same Apps Script, different ?type
+
+  const fetchEmails = async () => {
+    if (!url || fetched.current) return
+    fetched.current = true
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch(url + '?type=gmail')
+      if (!res.ok) throw new Error('Failed')
+      const data = await res.json()
+      setEmails(Array.isArray(data) ? data : [])
+    } catch {
+      setError('Could not load emails')
+      setEmails([])
+    }
+    setLoading(false)
+  }
+
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) { setOpen(true); fetchEmails() }
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+
+  if (theme.hideGmail) return null
+
+  return (
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button className="icon-btn topbar-quick-btn topbar-gmail-btn" title="Unread Gmail">
+        <svg width="14" height="11" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <polyline points="1,2 10,9 19,2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+        </svg>
+        {emails.length > 0 && <span className="gmail-badge">{emails.length > 9 ? '9+' : emails.length}</span>}
+      </button>
+      {open && (
+        <div className="cal-dropdown gmail-dropdown">
+          <div className="cal-dropdown-inner">
+            <div className="cal-header">
+              Unread mail
+              <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
+            </div>
+            {!url && <div className="cal-empty">⚙ Add Apps Script URL in Settings → General → Calendar</div>}
+            {url && loading && <div className="cal-empty">Loading...</div>}
+            {url && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {url && !loading && !error && emails.length === 0 && <div className="cal-empty">No unread emails 📭</div>}
+            {url && !loading && !error && emails.map((em, i) => (
+              <a key={i} className="gmail-row" href={em.link} target="_blank" rel="noopener noreferrer">
+                <div className="gmail-from">{em.from.replace(/<.*>/, '').trim()}</div>
+                <div className="gmail-subject">{em.subject}</div>
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 const DEFAULT_THEME = {
   bg: '#0a0a0f', bg2: '#12121a', bg3: '#1a1a28',
@@ -1848,6 +2014,8 @@ export default function App() {
 				{!(theme.hideClock ?? false) && !(theme.hideWeather ?? false) && <div className="topbar-divider" />}
 				{!(theme.hideWeather ?? false) && <WeatherWidget />}
 				{!(theme.hideNews ?? false) && <NewsWidget theme={theme} setTheme={setTheme} />}
+				{!(theme.hideCalendar ?? false) && <CalendarWidget theme={theme} />}
+				{!(theme.hideGmail ?? false) && <GmailWidget theme={theme} />}
 				<div className="topbar-divider" />
 				<a
 				  className="icon-btn topbar-quick-btn"

@@ -52,7 +52,7 @@ const ANIMATED_PRESETS = [
 const PLASMA_PRESETS = ['plasma','inferno','mint','dusk','mono']
 
 const PAGE_SCALES = [0.75, 0.85, 0.9, 1, 1.1, 1.15, 1.25]
-const DEFAULT_SECTION_ORDER = ['background','wallpaper','colours','notesColors','typography','gradient','layout','cards','notes','themePresets','visibility','clock','favicons','search','news','workspaces','importExport','bookmarks','danger']
+const DEFAULT_SECTION_ORDER = ['background','wallpaper','colours','notesColors','typography','gradient','layout','cards','notes','themePresets','visibility','clock','favicons','search','news','calendar','workspaces','importExport','bookmarks','danger']
 
 function Row({ label, children, dimLabel = false }) {
   return (
@@ -397,7 +397,7 @@ export default function Settings({
           const backgroundSections = ['background', 'wallpaper']
           const designSections = ['colours', 'notesColors', 'typography', 'gradient']
           const layoutSections = ['layout', 'cards', 'notes', 'themePresets', 'visibility', 'clock', 'favicons']
-          const generalSections = ['workspaces', 'search', 'news', 'importExport', 'bookmarks', 'danger']
+          const generalSections = ['workspaces', 'search', 'news', 'calendar', 'importExport', 'bookmarks', 'danger']
           
           if (activeTab === 'background') return backgroundSections.includes(sectionId)
           if (activeTab === 'design') return designSections.includes(sectionId)
@@ -1038,6 +1038,24 @@ export default function Settings({
                   />
                 </div>
               ))}
+            </Group>
+          )
+          if (sectionId === 'calendar') return (
+            <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
+              <SectionTitle>Apps Script URL</SectionTitle>
+              <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+                Paste your Google Apps Script web app URL below. See setup instructions in the README.
+              </div>
+              <Row label="Script URL">
+                <input className="input" style={{ fontSize: '0.75em' }}
+                  placeholder="https://script.google.com/macros/s/.../exec"
+                  value={theme.calScriptUrl || ''}
+                  onChange={e => set('calScriptUrl', e.target.value)}
+                />
+              </Row>
+              <SectionTitle>Visibility</SectionTitle>
+              <Row label="Show calendar"><Toggle checked={!(theme.hideCalendar ?? false)} onChange={v => set('hideCalendar', !v)} /></Row>
+              <Row label="Show Gmail"><Toggle checked={!(theme.hideGmail ?? false)} onChange={v => set('hideGmail', !v)} /></Row>
             </Group>
           )
           if (sectionId === 'search') return <Group title="Search" defaultOpen={false} {...commonGroupProps}><SectionTitle>Search engine</SectionTitle><Row label="Engine URL"><input className="input" style={{ fontSize: '0.78em' }} value={theme.searchEngineUrl || 'https://www.google.com.au/search?q='} onChange={e => set('searchEngineUrl', e.target.value)} placeholder="https://www.google.com.au/search?q=" /></Row><SectionTitle>Presets</SectionTitle><div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.4rem' }}><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.google.com.au/search?q=')}>Google</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.bing.com/search?q=')}>Bing</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://duckduckgo.com/?q=')}>DuckDuckGo</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://search.brave.com/search?q=')}>Brave</button><button className="btn-xs" onClick={() => set('searchEngineUrl', 'https://www.perplexity.ai/search?q=')}>Perplexity</button></div><Row label="Open results"><select className="input" style={{ fontSize: '0.78em' }} value={(theme.openInNewTab ?? true) ? 'new' : 'same'} onChange={e => set('openInNewTab', e.target.value === 'new')}><option value="new">New tab</option><option value="same">Same tab</option></select></Row><Row label="Open links in new window"><Toggle label="Open links in new window" checked={theme.linksOpenNewWindow ?? true} onChange={v => set('linksOpenNewWindow', v)} /></Row></Group>
