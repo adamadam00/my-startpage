@@ -231,7 +231,40 @@ function NewsWidget({ theme, setTheme }) {
 }
 
 // ─── CALENDAR WIDGET ───────────────────────────────────────────────────────────
-// ─── CALENDAR WIDGET ───────────────────────────────────────────────────────────
+// ─── CALENDAR WIDGET (iCal - no auth needed) ──────────────────────────────────
+function parseIcal(text) {
+  const events = []
+  const blocks = text.split('BEGIN:VEVENT')
+  blocks.slice(1).forEach(block => {
+    const get = (key) => {
+      const m = block.match(new RegExp(key + '[^:]*:([^\\r\\n]+)'))
+      return m ? m[1].trim() : null
+    }
+    const parseDate = (str) => {
+      if (!str) return null
+      if (str.includes('T')) return new Date(str.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)/, '$1-$2-$3T$4:$5:$6$7'))
+      return new Date(str.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3T00:00:00'))
+    }
+    const dtstart = get('DTSTART')
+    const summary = get('SUMMARY')
+    if (!dtstart || !summary) return
+    const start = parseDate(dtstart)
+    const dtend = get('DTEND')
+    const end = parseDate(dtend)
+    if (!start) return
+    events.push({
+      title: summary.replace(/\\,/g, ',').replace(/\\n/g, ' '),
+      start: start.toISOString(),
+      end: end ? end.toISOString() : start.toISOString(),
+      allDay: !dtstart.includes('T'),
+      location: (get('LOCATION') || '').replace(/\\,/g, ',') || null,
+    })
+  })
+  return events.sort((a, b) => new Date(a.start) - new Date(b.start))
+}
+
+const ICAL_PROXY = 'https://api.allorigins.win/get?url='
+
 function CalendarWidget({ theme }) {
   const [open, setOpen] = useState(false)
   const [events, setEvents] = useState([])
@@ -240,46 +273,39 @@ function CalendarWidget({ theme }) {
   const closeTimer = useRef(null)
   const fetched = useRef(false)
 
-  const url = theme.calScriptUrl
-  const secret = theme.calScriptKey
+  const icalUrl = theme.calIcalUrl
 
   const fetchEvents = async () => {
-    if (!url || !secret || fetched.current) return
+    if (!icalUrl || fetched.current) return
     fetched.current = true
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${url}?type=calendar&key=${encodeURIComponent(secret)}`)
-      if (!res.ok) throw new Error('Failed')
-      const data = await res.json()
-      setEvents(Array.isArray(data) ? data : [])
+      const res = await fetch(ICAL_PROXY + encodeURIComponent(icalUrl))
+      const json = await res.json()
+      const now = new Date()
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() + 3); cutoff.setHours(23,59,59,999)
+      const parsed = parseIcal(json.contents).filter(ev => {
+        const s = new Date(ev.start)
+        return s >= now && s <= cutoff
+      })
+      setEvents(parsed)
     } catch {
-      setError('Could not load events')
-      setEvents([])
+      setError('Could not load calendar')
     }
     setLoading(false)
   }
 
-  const handleMouseEnter = () => {
-    clearTimeout(closeTimer.current)
-    if (!open) { setOpen(true); fetchEvents() }
-  }
-  const handleMouseLeave = () => {
-    closeTimer.current = setTimeout(() => setOpen(false), 300)
-  }
+  const handleMouseEnter = () => { clearTimeout(closeTimer.current); if (!open) { setOpen(true); fetchEvents() } }
+  const handleMouseLeave = () => { closeTimer.current = setTimeout(() => setOpen(false), 300) }
 
   const grouped = {}
   events.forEach(ev => {
-    const d = new Date(ev.start)
-    const key = d.toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })
+    const key = new Date(ev.start).toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })
     if (!grouped[key]) grouped[key] = []
     grouped[key].push(ev)
   })
-
-  const formatTime = (iso, allDay) => {
-    if (allDay) return 'All day'
-    return new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true })
-  }
+  const formatTime = (iso, allDay) => allDay ? 'All day' : new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true })
 
   if (theme.hideCalendar) return null
 
@@ -303,15 +329,15 @@ function CalendarWidget({ theme }) {
               Next 3 days
               <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
             </div>
-            {!url && <div className="cal-empty">⚙ Add Apps Script URL in Settings → General → Calendar</div>}
-            {url && loading && <div className="cal-empty">Loading...</div>}
-            {url && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
-            {url && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
-            {url && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
+            {!icalUrl && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
+            {icalUrl && loading && <div className="cal-empty">Loading...</div>}
+            {icalUrl && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {icalUrl && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
+            {icalUrl && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
                 {dayEvents.map((ev, i) => (
-                  <a key={i} className="cal-event-row" href={ev.link || 'https://calendar.google.com'} target="_blank" rel="noopener noreferrer">
+                  <a key={i} className="cal-event-row" href="https://calendar.google.com" target="_blank" rel="noopener noreferrer">
                     <span className="cal-event-time">{formatTime(ev.start, ev.allDay)}</span>
                     <span className="cal-event-title">{ev.title}</span>
                     {ev.location && <span className="cal-event-loc" title={ev.location}>📍</span>}
@@ -325,6 +351,7 @@ function CalendarWidget({ theme }) {
     </div>
   )
 }
+
 
 // ─── GMAIL WIDGET ───────────────────────────────────────────────────────────────
 function GmailWidget({ theme }) {

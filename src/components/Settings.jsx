@@ -1042,9 +1042,20 @@ export default function Settings({
           )
           if (sectionId === 'calendar') return (
             <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
-              <SectionTitle>Apps Script setup</SectionTitle>
+              <SectionTitle>Google Calendar (iCal)</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                Paste your Google Apps Script web app URL and the secret key you set in the script.
+                Get your secret iCal URL from Google Calendar → Settings → [your calendar] → "Secret address in iCal format"
+              </div>
+              <Row label="iCal URL">
+                <input className="input" style={{ fontSize: '0.75em' }}
+                  placeholder="https://calendar.google.com/calendar/ical/..."
+                  value={theme.calIcalUrl || ''}
+                  onChange={e => set('calIcalUrl', e.target.value)}
+                />
+              </Row>
+              <SectionTitle>Gmail (Apps Script)</SectionTitle>
+              <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
+                Optional — requires Google Apps Script setup.
               </div>
               <Row label="Script URL">
                 <input className="input" style={{ fontSize: '0.75em' }}
