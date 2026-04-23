@@ -1143,6 +1143,10 @@ export default function Settings({
         </div>
       )}
       <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
+        <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
+          onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
+          {side === 'right' ? '⇐ Left' : 'Right ⇒'}
+        </button>
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>Save &amp; Close</button>
       </div>

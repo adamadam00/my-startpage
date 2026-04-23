@@ -402,8 +402,37 @@ function applyTheme(t) {
     s('--card-shadow', 'none')
   }
   
-  // Notes shadows
-  if (t.notesShadowEnabled) {
+  // Notes shadows - match cards if toggle on
+  if (t.notesShadowMatchCards ?? true) {
+    // Copy card shadow to notes
+    const cardShadow = t.cardShadowEnabled
+      ? (document.documentElement.style.getPropertyValue('--card-shadow') || 'none')
+      : 'none'
+    // Re-compute from card settings directly
+    if (t.cardShadowEnabled) {
+      const size = t.cardShadowSize ?? 8
+      const color = t.cardShadowColor ?? '#000000'
+      const opacity = t.cardShadowOpacity ?? 0.3
+      const curve = t.cardShadowCurve ?? 'linear'
+      const direction = t.cardShadowDirection ?? 'top-lit'
+      const toHexN = (op) => Math.round(Math.min(op, 1) * 255).toString(16).padStart(2, '0')
+      let shadow = ''
+      if (direction === 'top-lit') {
+        if (curve === 'linear') shadow = `0 ${size * 0.5}px ${size}px ${color}${toHexN(opacity)}`
+        else if (curve === 'soft') shadow = `0 ${size * 0.15}px ${size * 0.2}px ${color}${toHexN(opacity * 0.8)}, 0 ${size * 0.3}px ${size * 0.5}px ${color}${toHexN(opacity * 0.4)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHexN(opacity * 0.15)}`
+        else if (curve === 'sharp') shadow = `0 ${size * 0.25}px ${size * 0.3}px ${color}${toHexN(opacity * 1.4)}, 0 ${size * 0.4}px ${size * 0.6}px ${color}${toHexN(opacity * 0.3)}`
+        else if (curve === 'glow') shadow = `0 ${size * 0.3}px ${size * 0.8}px ${color}${toHexN(opacity * 0.5)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHexN(opacity * 0.3)}`
+      } else {
+        if (curve === 'linear') shadow = `0 0 ${size}px ${color}${toHexN(opacity)}`
+        else if (curve === 'soft') shadow = `0 0 ${size * 0.2}px ${color}${toHexN(opacity * 0.8)}, 0 0 ${size * 0.5}px ${color}${toHexN(opacity * 0.4)}, 0 0 ${size * 1.2}px ${color}${toHexN(opacity * 0.15)}`
+        else if (curve === 'sharp') shadow = `0 0 ${size * 0.3}px ${color}${toHexN(opacity * 1.4)}, 0 0 ${size * 0.6}px ${color}${toHexN(opacity * 0.3)}`
+        else if (curve === 'glow') shadow = `0 0 ${size * 0.4}px ${color}${toHexN(opacity * 0.6)}, 0 0 ${size * 0.8}px ${color}${toHexN(opacity * 0.4)}, 0 0 ${size * 1.4}px ${color}${toHexN(opacity * 0.2)}`
+      }
+      s('--notes-shadow', shadow)
+    } else {
+      s('--notes-shadow', 'none')
+    }
+  } else if (t.notesShadowEnabled) {
     const size = t.notesShadowSize ?? 6
     const color = t.notesShadowColor ?? '#000000'
     const opacity = t.notesShadowOpacity ?? 0.25
@@ -1920,10 +1949,16 @@ export default function App() {
 				  className="icon-btn topbar-quick-btn"
 				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  onClick={toggleAll}
+				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
 				>
 				  {allCollapsed ? '▾' : '▴'}
 				</button>
-				<button className="icon-btn topbar-quick-btn" title="Settings" onClick={() => setSettingsOpen(true)}>⚙</button>
+				<button
+				  className="icon-btn topbar-quick-btn"
+				  title="Settings"
+				  onClick={() => setSettingsOpen(true)}
+				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
+				>⚙</button>
 			  </div>
 			</div>
 
