@@ -584,7 +584,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                 rows={4}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
-                placeholder="Write a note... (**bold**, *italic*, {red}color{/red}, - bullets, URLs auto-link)"
+                placeholder="Write a note..."
                 onKeyDown={(e) => {
                   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add()
                   if (e.key === 'Escape') {
@@ -594,66 +594,6 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                 }}
               />
               <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('**', '**')}
-                  title="Bold"
-                >
-                  <strong>B</strong>
-                </button>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('*', '*')}
-                  title="Italic"
-                >
-                  <em>I</em>
-                </button>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('{red}', '{/red}')}
-                  title="Red color"
-                  style={{ color: '#ff6b6b', fontWeight: 'bold' }}
-                >
-                  A
-                </button>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('{blue}', '{/blue}')}
-                  title="Blue color"
-                  style={{ color: '#6c8fff', fontWeight: 'bold' }}
-                >
-                  A
-                </button>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('{green}', '{/green}')}
-                  title="Green color"
-                  style={{ color: '#6bffb8', fontWeight: 'bold' }}
-                >
-                  A
-                </button>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('{yellow}', '{/yellow}')}
-                  title="Yellow color"
-                  style={{ color: '#ffd32a', fontWeight: 'bold' }}
-                >
-                  A
-                </button>
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => insertFormattingNew('- ', '')}
-                  title="Bullet point"
-                >
-                  •
-                </button>
                 <div style={{ flex: 1 }} />
                 {(isHomeWorkspace || isWorkWorkspace) && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75em', marginRight: '0.5rem', cursor: 'pointer' }}>

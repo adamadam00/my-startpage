@@ -1115,7 +1115,7 @@ export default function Settings({
                 <button className="btn-xs" onClick={onExportTheme}>↓ Export theme</button>
                 <button className="btn-xs" onClick={() => themeFileRef.current?.click()}>↑ Import theme</button>
               </div>
-              <input ref={backupFileRef} type="file" accept="application/json,.json,.csv,text/csv" style={{ display: 'none' }} onChange={onImportBackup} />
+              <input ref={backupFileRef} type="file" accept="application/json,.json,.csv,text/csv,.txt,text/plain" style={{ display: 'none' }} onChange={onImportBackup} />
               <input ref={themeFileRef} type="file" accept="application/json,.json" style={{ display: 'none' }} onChange={onImportTheme} />
             </Group>
           )
