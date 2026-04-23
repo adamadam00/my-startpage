@@ -1,39 +1,36 @@
 /**
- * STARTPAGE - Google Apps Script
+ * STARTPAGE - Google Apps Script (with secret key security)
  * ─────────────────────────────────────────────────────────────────────────────
- * SETUP INSTRUCTIONS:
- * 1. Go to https://script.google.com
- * 2. Click "New Project"
- * 3. Delete any existing code, paste this entire file
- * 4. Click Save (floppy disk icon)
- * 5. Click "Deploy" → "New deployment"
- * 6. Type: "Web app"
- * 7. Execute as: "Me"
- * 8. Who has access: "Anyone"   ← important!
- * 9. Click "Deploy"
- * 10. Copy the Web App URL (looks like https://script.google.com/macros/s/ABC.../exec)
- * 11. Paste that URL into your startpage Settings → General → Calendar & Gmail
- * ─────────────────────────────────────────────────────────────────────────────
- * NOTE: The URL acts as a secret key — don't share it publicly.
+ * SETUP:
+ * 1. Go to https://script.google.com → New Project
+ * 2. Delete existing code, paste this entire file
+ * 3. CHANGE THE SECRET below to something only you know
+ * 4. Save → Deploy → New deployment → Web app
+ * 5. Execute as: Me | Who has access: Anyone
+ * 6. Copy the Web App URL
+ * 7. In startpage: Settings → General → Calendar & Gmail
+ *    Paste BOTH the URL and your secret key
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+// !! CHANGE THIS !!
+const SECRET = 'change-me-to-something-only-you-know'
+
 function doGet(e) {
-  const type = e.parameter.type || 'calendar'
-  
-  let result
-  if (type === 'gmail') {
-    result = getUnreadEmails()
-  } else {
-    result = getCalendarEvents()
+  if (!e.parameter.key || e.parameter.key !== SECRET) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: 'Unauthorized' }))
+      .setMimeType(ContentService.MimeType.JSON)
   }
+
+  const type = e.parameter.type || 'calendar'
+  const result = type === 'gmail' ? getUnreadEmails() : getCalendarEvents()
 
   return ContentService
     .createTextOutput(JSON.stringify(result))
     .setMimeType(ContentService.MimeType.JSON)
 }
 
-// ── CALENDAR ──────────────────────────────────────────────────────────────────
 function getCalendarEvents() {
   try {
     const now = new Date()
@@ -42,9 +39,7 @@ function getCalendarEvents() {
     end.setHours(23, 59, 59, 999)
 
     const cal = CalendarApp.getDefaultCalendar()
-    const events = cal.getEvents(now, end)
-
-    return events.map(function(ev) {
+    return cal.getEvents(now, end).map(function(ev) {
       return {
         title: ev.getTitle(),
         start: ev.getStartTime().toISOString(),
@@ -59,7 +54,6 @@ function getCalendarEvents() {
   }
 }
 
-// ── GMAIL ─────────────────────────────────────────────────────────────────────
 function getUnreadEmails() {
   try {
     const threads = GmailApp.getInboxThreads(0, 20)
@@ -68,9 +62,7 @@ function getUnreadEmails() {
     return unread.slice(0, 15).map(function(thread) {
       const lastMsg = thread.getMessages().slice(-1)[0]
       const from = lastMsg.getFrom()
-      // Clean up "Name <email>" → just "Name"
       const fromClean = from.replace(/<[^>]+>/, '').replace(/"/g, '').trim() || from
-
       return {
         subject: thread.getFirstMessageSubject() || '(no subject)',
         from: fromClean,

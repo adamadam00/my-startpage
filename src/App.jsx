@@ -241,14 +241,15 @@ function CalendarWidget({ theme }) {
   const fetched = useRef(false)
 
   const url = theme.calScriptUrl
+  const secret = theme.calScriptKey
 
   const fetchEvents = async () => {
-    if (!url || fetched.current) return
+    if (!url || !secret || fetched.current) return
     fetched.current = true
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(url + '?type=calendar')
+      const res = await fetch(`${url}?type=calendar&key=${encodeURIComponent(secret)}`)
       if (!res.ok) throw new Error('Failed')
       const data = await res.json()
       setEvents(Array.isArray(data) ? data : [])
@@ -334,15 +335,16 @@ function GmailWidget({ theme }) {
   const closeTimer = useRef(null)
   const fetched = useRef(false)
 
-  const url = theme.calScriptUrl  // same Apps Script, different ?type
+  const url = theme.calScriptUrl
+  const secret = theme.calScriptKey
 
   const fetchEmails = async () => {
-    if (!url || fetched.current) return
+    if (!url || !secret || fetched.current) return
     fetched.current = true
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(url + '?type=gmail')
+      const res = await fetch(`${url}?type=gmail&key=${encodeURIComponent(secret)}`)
       if (!res.ok) throw new Error('Failed')
       const data = await res.json()
       setEmails(Array.isArray(data) ? data : [])

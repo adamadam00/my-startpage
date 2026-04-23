@@ -1042,15 +1042,23 @@ export default function Settings({
           )
           if (sectionId === 'calendar') return (
             <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
-              <SectionTitle>Apps Script URL</SectionTitle>
+              <SectionTitle>Apps Script setup</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
-                Paste your Google Apps Script web app URL below. See setup instructions in the README.
+                Paste your Google Apps Script web app URL and the secret key you set in the script.
               </div>
               <Row label="Script URL">
                 <input className="input" style={{ fontSize: '0.75em' }}
                   placeholder="https://script.google.com/macros/s/.../exec"
                   value={theme.calScriptUrl || ''}
                   onChange={e => set('calScriptUrl', e.target.value)}
+                />
+              </Row>
+              <Row label="Secret key">
+                <input className="input" style={{ fontSize: '0.75em' }}
+                  type="password"
+                  placeholder="Your secret from the script"
+                  value={theme.calScriptKey || ''}
+                  onChange={e => set('calScriptKey', e.target.value)}
                 />
               </Row>
               <SectionTitle>Visibility</SectionTitle>
