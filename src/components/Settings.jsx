@@ -355,63 +355,34 @@ export default function Settings({
           background: 'var(--bg2)',
           borderBottom: '2px solid var(--border)'
         }}>
-          <button 
-            onClick={() => setActiveTab('design')}
-            style={{ 
-              flex: 1,
-              padding: '0.5rem 1rem',
-              border: 'none',
-              borderBottom: activeTab === 'design' ? '2px solid var(--accent)' : '2px solid transparent',
-              background: activeTab === 'design' ? 'var(--card)' : 'transparent',
-              color: activeTab === 'design' ? 'var(--accent)' : 'var(--text-dim)',
-              fontWeight: activeTab === 'design' ? 600 : 400,
-              cursor: 'pointer',
-              fontSize: '0.85em',
-              transition: 'all 0.15s ease',
-              marginBottom: '-2px',
-              borderRadius: '4px 4px 0 0'
-            }}
-          >
-            Design
-          </button>
-          <button 
-            onClick={() => setActiveTab('layout')}
-            style={{ 
-              flex: 1,
-              padding: '0.5rem 1rem',
-              border: 'none',
-              borderBottom: activeTab === 'layout' ? '2px solid var(--accent)' : '2px solid transparent',
-              background: activeTab === 'layout' ? 'var(--card)' : 'transparent',
-              color: activeTab === 'layout' ? 'var(--accent)' : 'var(--text-dim)',
-              fontWeight: activeTab === 'layout' ? 600 : 400,
-              cursor: 'pointer',
-              fontSize: '0.85em',
-              transition: 'all 0.15s ease',
-              marginBottom: '-2px',
-              borderRadius: '4px 4px 0 0'
-            }}
-          >
-            Layout
-          </button>
-          <button 
-            onClick={() => setActiveTab('general')}
-            style={{ 
-              flex: 1,
-              padding: '0.5rem 1rem',
-              border: 'none',
-              borderBottom: activeTab === 'general' ? '2px solid var(--accent)' : '2px solid transparent',
-              background: activeTab === 'general' ? 'var(--card)' : 'transparent',
-              color: activeTab === 'general' ? 'var(--accent)' : 'var(--text-dim)',
-              fontWeight: activeTab === 'general' ? 600 : 400,
-              cursor: 'pointer',
-              fontSize: '0.85em',
-              transition: 'all 0.15s ease',
-              marginBottom: '-2px',
-              borderRadius: '4px 4px 0 0'
-            }}
-          >
-            General
-          </button>
+          {[
+            { id: 'background', label: 'BG' },
+            { id: 'design', label: 'Design' },
+            { id: 'layout', label: 'Layout' },
+            { id: 'general', label: 'General' },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{ 
+                flex: 1,
+                padding: '0.5rem 0.5rem',
+                border: 'none',
+                borderBottom: activeTab === tab.id ? '2px solid var(--accent)' : '2px solid transparent',
+                background: activeTab === tab.id ? 'var(--card)' : 'transparent',
+                color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-dim)',
+                fontWeight: activeTab === tab.id ? 600 : 400,
+                cursor: 'pointer',
+                fontSize: '0.82em',
+                transition: 'all 0.15s ease',
+                marginBottom: '-2px',
+                borderRadius: '4px 4px 0 0',
+                fontFamily: 'var(--font)',
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
         <div style={{ 
@@ -423,10 +394,12 @@ export default function Settings({
         }}>
         {sectionOrder.filter(sectionId => {
           // Filter sections by active tab
-          const designSections = ['background', 'wallpaper', 'colours', 'notesColors', 'typography', 'gradient']
+          const backgroundSections = ['background', 'wallpaper']
+          const designSections = ['colours', 'notesColors', 'typography', 'gradient']
           const layoutSections = ['layout', 'cards', 'notes', 'themePresets', 'visibility', 'clock', 'favicons']
           const generalSections = ['workspaces', 'search', 'news', 'importExport', 'bookmarks', 'danger']
           
+          if (activeTab === 'background') return backgroundSections.includes(sectionId)
           if (activeTab === 'design') return designSections.includes(sectionId)
           if (activeTab === 'layout') return layoutSections.includes(sectionId)
           if (activeTab === 'general') return generalSections.includes(sectionId)
@@ -884,7 +857,7 @@ export default function Settings({
           if (sectionId === 'themePresets') return (
             <Group title="Theme presets" defaultOpen={false} {...commonGroupProps}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {[0, 1, 2, 3, 4, 5].map(slot => (
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(slot => (
                   <div key={slot} style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -1026,6 +999,10 @@ export default function Settings({
           if (sectionId === 'news') return (
             <Group title="News" defaultOpen={false} {...commonGroupProps}>
               <Row label="Show news button"><Toggle checked={!(theme.hideNews ?? false)} onChange={v => set('hideNews', !v)} /></Row>
+              <SectionTitle>Appearance</SectionTitle>
+              <Row label="Font size"><Slider val={theme.newsFontSize ?? 12} min={9} max={18} onChange={v => set('newsFontSize', v)} unit="px" /></Row>
+              <Row label="Padding H"><Slider val={theme.newsPaddingH ?? 14} min={4} max={32} onChange={v => set('newsPaddingH', v)} unit="px" /></Row>
+              <Row label="Padding V"><Slider val={theme.newsPaddingV ?? 8} min={2} max={24} onChange={v => set('newsPaddingV', v)} unit="px" /></Row>
               <SectionTitle>Feeds</SectionTitle>
               {[
                 { id: 'abc',      label: 'ABC News AU' },

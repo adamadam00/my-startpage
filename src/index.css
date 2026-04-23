@@ -1060,7 +1060,6 @@ html.bg-29-carbon::after {
 }
 .topbar-news-btn:hover {
   color: var(--text) !important;
-  background: var(--bg3);
 }
 
 .news-dropdown {
@@ -1113,7 +1112,7 @@ html.bg-29-carbon::after {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  padding: 0.5rem 0.85rem;
+  padding: var(--news-padding-v, 8px) var(--news-padding-h, 14px);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
   text-decoration: none;
   transition: background 0.12s;
@@ -1123,13 +1122,13 @@ html.bg-29-carbon::after {
 .news-article-title {
   flex: 1;
   color: var(--text);
-  font-size: 0.82em;
+  font-size: var(--news-font-size, 12px);
   line-height: 1.4;
 }
 .news-article-row:hover .news-article-title { color: var(--accent); }
 .news-article-date {
   color: var(--text-dim);
-  font-size: 0.74em;
+  font-size: calc(var(--news-font-size, 12px) - 2px);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1167,31 +1166,34 @@ html.bg-29-carbon::after {
   border-bottom: none;
 }
 
+/* ── Unified topbar button style ── */
+.topbar .icon-btn,
 .topbar-quick-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-sm, 4px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: var(--bg3);
   color: var(--text-dim);
-  transition: color 0.15s, background 0.15s;
+  font-size: 0.88em;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
   flex-shrink: 0;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  line-height: 1;
 }
+.topbar .icon-btn:hover,
 .topbar-quick-btn:hover {
   color: var(--text);
-  background: var(--bg3);
+  background: color-mix(in srgb, var(--bg3) 60%, var(--accent) 40%);
+  border-color: var(--accent);
 }
 .topbar-google-btn {
-  font-size: 0.9em;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  color: #4285F4 !important;
-  text-decoration: none;
-}
-.topbar-google-btn:hover {
-  color: var(--text) !important;
-  background: var(--bg3);
+  padding: 3px !important;
 }
 
 .search-compact {
