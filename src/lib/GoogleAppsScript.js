@@ -14,7 +14,7 @@
  */
 
 // !! CHANGE THIS !!
-const SECRET = 'change-me-to-something-only-you-know'
+const SECRET = 'Choombar66!'
 
 function doGet(e) {
   if (!e.parameter.key || e.parameter.key !== SECRET) {
