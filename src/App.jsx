@@ -1016,12 +1016,13 @@ export default function App() {
   })
   const [activeWs, setActiveWs] = useState(() => {
     try {
-      // Try cache first, then localStorage
       return CacheManager.load('activeWorkspace') || localStorage.getItem('activeWorkspace') || null
     } catch {
       return null
     }
   })
+  const activeWsRef = useRef(activeWs)
+  useEffect(() => { activeWsRef.current = activeWs }, [activeWs])
   const [sections, setSections] = useState(() => {
     // Load sections from cache immediately
     return CacheManager.load('sections') || []
@@ -1106,7 +1107,7 @@ export default function App() {
     clearTimeout(saveThemeRef.current)
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
-      const wsId = activeWs
+      const wsId = activeWsRef.current  // always current value, not stale closure
       
       console.log('[persistTheme] uid:', uid, 'wsId:', wsId)
       
@@ -1418,14 +1419,17 @@ export default function App() {
 
   useEffect(() => { 
     if (activeWs && session) {
-      // Load workspace-specific theme
       const loadWorkspaceTheme = async () => {
+        const wsIdAtLoad = activeWs  // capture at call time
         const { data } = await supabase
           .from('workspaces')
           .select('theme')
           .eq('id', activeWs)
           .single()
         
+        // Discard result if workspace changed while we were fetching
+        if (activeWsRef.current !== wsIdAtLoad) return
+
         if (data?.theme && Object.keys(data.theme).length > 5) {
           const workspaceTheme = { ...DEFAULT_THEME, ...data.theme }
           setThemeState(workspaceTheme)

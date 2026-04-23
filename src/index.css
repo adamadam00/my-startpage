@@ -1567,6 +1567,8 @@ html.bg-29-carbon::after {
   overflow: visible;
   z-index: 10;
 }
+
+.note-edit-toolbar {
   position: absolute;
   top: calc(100% + 0.15rem);
   left: 0;
