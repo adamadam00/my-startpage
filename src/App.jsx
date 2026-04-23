@@ -263,25 +263,19 @@ function parseIcal(text) {
   return events.sort((a, b) => new Date(a.start) - new Date(b.start))
 }
 
-const ICAL_PROXIES = [
-  (u) => `https://api.allorigins.win/get?url=${encodeURIComponent(u)}`,
-  (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-]
-
 async function fetchIcal(url) {
-  for (const proxy of ICAL_PROXIES) {
-    try {
-      const controller = new AbortController()
-      const timer = setTimeout(() => controller.abort(), 8000)
-      const res = await fetch(proxy(url), { signal: controller.signal })
-      clearTimeout(timer)
-      if (!res.ok) continue
-      const json = await res.json()
-      const text = json.contents || json.body || json
-      if (typeof text === 'string' && text.includes('BEGIN:VCALENDAR')) return text
-    } catch { continue }
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 10000)
+    const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}`, { signal: controller.signal })
+    clearTimeout(timer)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const text = await res.text()
+    if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Not a valid iCal feed')
+    return text
+  } catch (err) {
+    throw new Error(`Failed to fetch calendar: ${err.message}`)
   }
-  throw new Error('All proxies failed')
 }
 
 function CalendarWidget({ theme }) {
