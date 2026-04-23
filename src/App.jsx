@@ -247,14 +247,14 @@ function applyTheme(t) {
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
   
   const baseBorderColor = t.border
-  s('--card-opacity', 1)
+  s('--card-opacity', t.cardOpacity ?? 1)
   s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
   s('--title-opacity', 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
-  s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
-  s('--handle-opacity-global', t.handleOpacityGlobal ?? 0)
-  s('--handle-size', (t.handleSize ?? 9) + 'px')
+  s('--handle-opacity', 0.05)
+  s('--handle-opacity-global', 0.05)
+  s('--handle-size', '10px')
   s('--handle-color', t.handleColor ?? '#2a2a3a')
   s('--action-button-scale', t.actionButtonScale ?? 0.75)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)

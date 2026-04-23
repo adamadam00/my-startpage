@@ -1858,7 +1858,6 @@ html.bg-29-carbon::after {
   transition: opacity 0.14s ease;
 }
 
-.section-card:hover .section-actions,
 .section-card:hover .section-collapse-arrow,
 .section-header:hover .section-actions,
 .section-header:hover .section-collapse-arrow,
@@ -2235,7 +2234,7 @@ flex-shrink: 0;
 	gap: 0;
 	padding: 0.55rem 0.65rem;
 	margin-bottom: var(--notes-gap);
-	background-color: var(--notes-card-bg, var(--card));
+	background-color: color-mix(in srgb, var(--notes-card-bg, var(--card)) calc(var(--notes-card-bg-opacity, 1) * 100%), transparent);
 	background-image: var(--panels-gradient, none);
 	background-size: var(--viewport-width, 100vw) var(--viewport-height, 100vh);
 	background-repeat: no-repeat;

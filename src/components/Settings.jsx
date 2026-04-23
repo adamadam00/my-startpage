@@ -786,9 +786,6 @@ export default function Settings({
               <SectionTitle>Accent Colors</SectionTitle>
               <Row label="Accent"><ColorPick value={theme.accent} onChange={v => set('accent', v)} /></Row>
               <Row label="Link"><ColorPick value={theme.linkColor || '#5b9eff'} onChange={v => set('linkColor', v)} /></Row>
-              <Row label="Visited link"><ColorPick value={theme.linkVisitedColor || '#c77dff'} onChange={v => set('linkVisitedColor', v)} /></Row>
-              <Row label="Danger"><ColorPick value={theme.danger} onChange={v => set('danger', v)} /></Row>
-              <Row label="Success"><ColorPick value={theme.success} onChange={v => set('success', v)} /></Row>
 
               <SectionTitle>Scrollbar</SectionTitle>
               <Row label="Track"><ColorPick value={theme.scrollbarColor || theme.bg3} onChange={v => set('scrollbarColor', v)} /></Row>
@@ -807,7 +804,6 @@ export default function Settings({
               <Row label="Shared note background"><ColorPick value={theme.notesSharedBg || '#1a1a28'} onChange={v => set('notesSharedBg', v)} /></Row>
             </Group>
           )
-
           // New section for text colors and settings panel
           if (sectionId === 'typography') return (
             <Group title="Typography & Text Colors" defaultOpen={false} {...commonGroupProps}>
@@ -820,8 +816,6 @@ export default function Settings({
               <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
               <Row label="Section subtitle"><ColorPick label="Section subtitle" value={theme.settingsSubtitleColor || '#7890ff'} onChange={v => set('settingsSubtitleColor', v)} /></Row>
               <Row label="Handle"><ColorPick label="Handle" value={theme.handleColor || theme.settingsTitleColor || theme.accent || '#7878a0'} onChange={v => set('handleColor', v)} /></Row>
-              <Row label="Handle size"><Slider label="Handle size" val={theme.handleSize ?? 13} min={10} max={24} onChange={v => set('handleSize', v)} unit="px" /></Row>
-              <Row label="Handle opacity"><Slider label="Handle opacity" val={Math.round((theme.handleOpacityGlobal ?? 0.7) * 100)} min={0} max={100} onChange={v => set('handleOpacityGlobal', v / 100)} unit="%" /></Row>
               
               <SectionTitle>Font Settings</SectionTitle>
               <Row label="Font family">
@@ -842,7 +836,7 @@ export default function Settings({
               <Row label="Topbar → cards gap"><Slider label="Topbar → cards gap" val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" /></Row>
               <Row label="Section gap (v)"><Slider label="Section gap (v)" val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" /></Row>
               <Row label="Section gap (h)"><Slider label="Section gap (h)" val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
-              <Row label="Link gap"><Slider label="Link gap" val={Math.round((theme.linkGap ?? 0.5) * 100)} min={0} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
+              <Row label="Link gap"><Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={-50} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
               <Row label="Link left padding"><Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-140} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
                             <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
                 <SectionTitle>Page scale</SectionTitle>
@@ -859,13 +853,7 @@ export default function Settings({
 
           if (sectionId === 'cards') return (
             <Group title="Cards & borders" defaultOpen={false} {...commonGroupProps}>
-              <Row label="Card opacity"><Slider label="Card opacity" val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
               <Row label="Corner radius"><Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => { set('radius', v); set('sectionRadius', v); set('notesRadius', v) }} unit="px" /></Row>
-                            <div style={{ display: 'flex', gap: '0.25rem', marginBottom: '0.3rem' }}>
-                {[{ l: 'Sharp', v: 0 }, { l: 'Normal', v: 10 }, { l: 'Round', v: 20 }].map(p => (
-                  <button key={p.v} className={`btn-xs${theme.radius === p.v ? ' btn-primary' : ''}`} onClick={() => { set('radius', p.v); set('sectionRadius', p.v); set('notesRadius', p.v) }}>{p.l}</button>
-                ))}
-              </div>
               <Row label="Card padding"><Slider label="Card padding" val={Math.round((theme.cardPadding ?? 0.75) * 100)} min={0} max={150} step={5} onChange={v => set('cardPadding', v / 100)} unit="%" /></Row>
               <Row label="Header height"><Slider label="Header height" val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>
               
