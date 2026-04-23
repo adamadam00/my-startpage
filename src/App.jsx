@@ -587,7 +587,8 @@ function applyTheme(t) {
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
   
   const baseBorderColor = t.border
-  s('--card-opacity', t.cardOpacity ?? 1)  s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
+  s('--card-opacity', t.cardOpacity ?? 1)
+  s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
   s('--title-opacity', 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
