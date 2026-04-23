@@ -287,9 +287,13 @@ function CalendarWidget({ theme }) {
   const fetched = useRef(false)
 
   const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
+  const urlKey = icalUrls.join('|')
+  const lastUrlKey = useRef('')
 
   const fetchEvents = async () => {
-    if (!icalUrls.length || fetched.current) return
+    if (!icalUrls.length) return
+    if (lastUrlKey.current === urlKey && fetched.current) return
+    lastUrlKey.current = urlKey
     fetched.current = true
     setLoading(true)
     setError(null)
