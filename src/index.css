@@ -1364,10 +1364,12 @@ html.bg-29-carbon::after {
 .note-reorder-btns {
   position: absolute;
   right: 3px;
-  top: 3px;
+  top: 0;
+  bottom: 0;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  justify-content: center;
+  gap: 2px;
   opacity: 0;
   transition: opacity 0.15s;
   z-index: 5;
@@ -2263,7 +2265,7 @@ html.bg-29-carbon::after {
 	min-height: 0;
 	align-self: flex-start;
 	flex: 0 0 auto;
-	padding: 0 20px;
+	padding: 0 4px;
 	padding-top: 0;
 	padding-bottom: 4rem;
 	overflow: visible;
@@ -2272,7 +2274,7 @@ html.bg-29-carbon::after {
 	outline: none;
 	border: none;
 	box-shadow: none;
-	margin: 0 -20px;
+	margin: 0;
 	position: relative;
 }
 

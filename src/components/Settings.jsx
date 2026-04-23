@@ -326,7 +326,7 @@ export default function Settings({
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
-            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Move panel" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '←' : '→'}</button>
+            <button className="icon-btn" style={{ fontSize: '0.72rem', width: '2.4rem', height: '2rem', whiteSpace: 'nowrap' }} title="Move panel to other side" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '⇐ side' : 'side ⇒'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} onClick={onClose} title="Close (Esc)">✕</button>
           </div>
         </div>
