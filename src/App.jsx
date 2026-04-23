@@ -1768,8 +1768,13 @@ export default function App() {
 					onKeyDown={e => {
 					  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
 						const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
-						if (theme.openInNewTab ?? true) window.open(url, '_blank', 'noopener,noreferrer')
-						else window.location.href = url
+						const a = document.createElement('a')
+						a.href = url
+						a.target = '_blank'
+						a.rel = 'noopener noreferrer'
+						document.body.appendChild(a)
+						a.click()
+						document.body.removeChild(a)
 						setWebSearch('')
 					  }
 					  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {

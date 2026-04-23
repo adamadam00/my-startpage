@@ -1482,7 +1482,10 @@ html.bg-29-carbon::after {
   pointer-events: none;
 }
 
-.note-edit-toolbar {
+.note-item.note-selected {
+  overflow: visible;
+  z-index: 10;
+}
   position: absolute;
   top: calc(100% + 0.15rem);
   left: 0;
