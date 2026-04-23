@@ -310,7 +310,8 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
   const [err, setErr] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [showActions, setShowActions] = useState(null)
-  const [uploading, setUploading] = useState({}) // Track uploads per note: { noteId: { fileName, progress } }
+  const [uploading, setUploading] = useState({})
+  const [collapsedNotes, setCollapsedNotes] = useState(new Set())
   const textRef = useRef(null)
   
   const workspaceVisibility = workspace?.visibility || 'both'
@@ -707,8 +708,19 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
             return (
               <div 
                 key={note.id} 
-                className={`note-item ${editing === note.id ? 'note-selected' : ''}`}
+                className={`note-item ${editing === note.id ? 'note-selected' : ''} ${collapsedNotes.has(note.id) ? 'note-collapsed' : ''}`}
                 style={note.shared_to ? { background: 'var(--notes-shared-bg)' } : {}}
+                onDoubleClick={(e) => {
+                  if (editing === note.id) return
+                  e.preventDefault()
+                  window.getSelection()?.removeAllRanges()
+                  setCollapsedNotes(prev => {
+                    const next = new Set(prev)
+                    if (next.has(note.id)) next.delete(note.id)
+                    else next.add(note.id)
+                    return next
+                  })
+                }}
                 onDragOver={(e) => {
                   // Allow file drops to pass through to contentEditable
                   if (e.dataTransfer.types.includes('Files')) {

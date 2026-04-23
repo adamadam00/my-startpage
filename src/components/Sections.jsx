@@ -389,6 +389,17 @@ function SectionCard({
   faviconEnabled,
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const hoverCloseTimer = useRef(null);
+
+  const handleArchiveMouseEnter = () => {
+    if (!isArchiveColumn) return
+    clearTimeout(hoverCloseTimer.current)
+    setIsHovered(true)
+  }
+  const handleArchiveMouseLeave = () => {
+    if (!isArchiveColumn) return
+    hoverCloseTimer.current = setTimeout(() => setIsHovered(false), 300)
+  }
   
   const {
     attributes,
@@ -407,17 +418,18 @@ function SectionCard({
     },
   });
 
-  // Archive cards use click to expand (no hover) to avoid layout shift bug
+  // Archive cards: expand on hover, but use delay on close to prevent
+  // layout-shift bug where expanding card A moves B into old C position
   const shouldShowContent = isArchiveColumn 
-    ? !section.collapsed
+    ? (isHovered || !section.collapsed)
     : !section.collapsed;
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.3 : 1,
-    zIndex: isDragging ? 30 : (isArchiveColumn && shouldShowContent ? 10 : 1),
-    cursor: isDragging ? 'grabbing' : (isArchiveColumn && section.collapsed ? 'pointer' : 'grab'),
+    zIndex: isDragging ? 30 : (isArchiveColumn && isHovered ? 100 : 1),
+    cursor: isDragging ? 'grabbing' : 'grab',
     boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.3)' : undefined,
     scale: isDragging ? '1.02' : '1',
     position: 'relative',
@@ -431,12 +443,8 @@ function SectionCard({
         style={style}
         className={`section-card ${!shouldShowContent || isDragging ? "collapsed" : ""}`}
         data-section-id={section.id}
-        onClick={(e) => {
-          if (isArchiveColumn && section.collapsed && !isDragging) {
-            e.stopPropagation()
-            onToggleCollapse(section)
-          }
-        }}
+        onMouseEnter={handleArchiveMouseEnter}
+        onMouseLeave={handleArchiveMouseLeave}
       >
       <div className="section-header">
         <button
@@ -590,6 +598,10 @@ export default function Sections({
         : Number.isFinite(s.colindex)
           ? s.colindex
           : 0,
+      // Archive column sections (last col) always start collapsed on load
+      collapsed: (Number.isFinite(s.col_index) ? s.col_index : 0) === (Math.max(1, Number(colCount || 1)) - 1)
+        ? true
+        : !!s.collapsed,
     }));
 
     const incomingSignature = JSON.stringify(
