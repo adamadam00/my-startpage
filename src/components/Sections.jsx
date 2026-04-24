@@ -445,7 +445,7 @@ function SectionCard({
             onToggleCollapse(section);
           }}
         >
-          <div className="section-name" title={section.name} style={isArchiveColumn ? { color: 'var(--archive-card-title-color, var(--title-color))' } : undefined}>
+          <div className="section-name" title={section.name}>
             {section.name}
           </div>
         </div>
@@ -564,6 +564,8 @@ export default function Sections({
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [addingSectionName, setAddingSectionName] = useState(null); // null = hidden, string = editing
+  const addSectionInputRef = useRef(null);
   const isSavingLayoutRef = useRef(false);
   const lastSavedLayoutRef = useRef("");
 
@@ -956,29 +958,37 @@ export default function Sections({
         }}>
           Create your first section to organize your bookmarks
         </div>
+        {addingSectionName !== null ? (
+          <form
+            style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginTop: '0.5rem' }}
+            onSubmit={async e => {
+              e.preventDefault()
+              const name = addingSectionName.trim() || 'New Section'
+              const { error } = await supabase.from('sections').insert({
+                user_id: userId, workspace_id: workspaceId,
+                name, position: 0, collapsed: false
+              })
+              if (error) { alert('Error: ' + error.message); return }
+              setAddingSectionName(null)
+              await onRefresh?.()
+            }}
+          >
+            <input
+              className="input"
+              style={{ fontSize: '0.9em', padding: '0.4rem 0.7rem' }}
+              value={addingSectionName}
+              onChange={e => setAddingSectionName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') setAddingSectionName(null) }}
+              autoFocus
+              placeholder="Section name…"
+            />
+            <button type="submit" className="btn btn-primary" style={{ fontSize: '0.9em', padding: '0.4rem 0.9rem' }}>Create</button>
+            <button type="button" className="icon-btn" onClick={() => setAddingSectionName(null)}>✕</button>
+          </form>
+        ) : (
         <button
           className="btn btn-primary"
-          onClick={async () => {
-            const name = window.prompt('Section name:', 'New Section')
-            if (!name?.trim()) return
-            
-            const { error } = await supabase
-              .from('sections')
-              .insert({
-                user_id: userId,
-                workspace_id: workspaceId,
-                name: name.trim(),
-                position: 0,
-                collapsed: false
-              })
-            
-            if (error) {
-              alert('Error creating section: ' + error.message)
-              return
-            }
-            
-            await onRefresh?.()
-          }}
+          onClick={() => setAddingSectionName('')}
           style={{
             fontSize: '0.95em',
             padding: '0.6rem 1.5rem',
@@ -987,6 +997,7 @@ export default function Sections({
         >
           + Create First Section
         </button>
+        )}
       </div>
     )
   }
@@ -1005,12 +1016,37 @@ export default function Sections({
           return (
             <div key={col.id} className="sections-col-header">
               {col.index === 0 && (
-                <button
-                  className="icon-btn col-header-btn"
-                  title="Add new section"
-                  onClick={onAddSection}
-                  style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
-                >+</button>
+                addingSectionName !== null ? (
+                  <form
+                    style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}
+                    onSubmit={e => {
+                      e.preventDefault()
+                      const name = addingSectionName.trim() || 'New Section'
+                      onAddSection(name)
+                      setAddingSectionName(null)
+                    }}
+                  >
+                    <input
+                      ref={addSectionInputRef}
+                      className="input"
+                      style={{ fontSize: '0.75em', padding: '0.2rem 0.4rem', width: '120px' }}
+                      value={addingSectionName}
+                      onChange={e => setAddingSectionName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Escape') setAddingSectionName(null) }}
+                      autoFocus
+                      placeholder="Section name…"
+                    />
+                    <button type="submit" className="icon-btn" style={{ fontSize: '0.9em', color: 'var(--accent)' }}>✓</button>
+                    <button type="button" className="icon-btn" style={{ fontSize: '0.9em' }} onClick={() => setAddingSectionName(null)}>✕</button>
+                  </form>
+                ) : (
+                  <button
+                    className="icon-btn col-header-btn"
+                    title="Add new section"
+                    onClick={() => setAddingSectionName('')}
+                    style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
+                  >+</button>
+                )
               )}
               {isArchiveColumn && (
                 <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>

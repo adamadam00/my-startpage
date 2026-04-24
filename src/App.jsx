@@ -1298,17 +1298,11 @@ export default function App() {
   // Override native browser dialogs globally — prevents the "block dialogs" checkbox
   useEffect(() => {
     window._nativeAlert = window.alert
-    window._nativeConfirm = window.confirm
-    window._nativePrompt = window.prompt
     window.alert = (msg) => modalAlert(String(msg))
-    window.confirm = (msg) => modalConfirm(String(msg))
-    window.prompt = (msg, def) => modalPrompt(String(msg), def || '')
     return () => {
       window.alert = window._nativeAlert
-      window.confirm = window._nativeConfirm
-      window.prompt = window._nativePrompt
     }
-  }, [modalAlert, modalConfirm, modalPrompt])
+  }, [modalAlert])
 
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
@@ -1830,14 +1824,28 @@ export default function App() {
       .slice(0, 15)
   }, [bookmarks, bmQuery])
 
-  const addWorkspace = async (name, visibility = 'both') => {
-    const wsName = typeof name === 'string' ? name.trim() : ''
-    if (!wsName) return
+  const addWorkspace = async (name) => {
+    const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
+    if (!wsName?.trim()) return
+    
+    // Ask for visibility
+    const visibilityChoice = confirm(
+      `Where should "${wsName}" be visible?\n\n` +
+      `OK = Home & Work (both locations)\n` +
+      `Cancel = Choose specific location`
+    )
+    
+    let visibility = 'both'
+    if (!visibilityChoice) {
+      const isWork = confirm('Show only at Work?\n\nOK = Work only\nCancel = Home only')
+      visibility = isWork ? 'work' : 'home'
+    }
+    
     const { data, error } = await supabase
       .from('workspaces').insert({ 
         user_id: session.user.id, 
-        name: wsName,
-        visibility
+        name: wsName.trim(),
+        visibility: visibility 
       }).select().single()
     if (error) return alert(error.message)
     setWorkspaces(prev => [...prev, data])
@@ -2281,10 +2289,8 @@ export default function App() {
 				  triggerExpandAll={triggerExpand}
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
-				  onAddSection={async () => {
-					const name = await window.prompt('Section name:', 'New Section')
-					if (!name) return
-					const sectionName = String(name).trim() || 'New Section'
+				  onAddSection={async (name) => {
+					const sectionName = (name || 'New Section').trim()
 					const { error } = await supabase
 					  .from('sections')
 					  .insert({
