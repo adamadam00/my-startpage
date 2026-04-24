@@ -445,7 +445,7 @@ function SectionCard({
             onToggleCollapse(section);
           }}
         >
-          <div className="section-name" title={section.name}>
+          <div className="section-name" title={section.name} style={isArchiveColumn ? { color: 'var(--archive-card-title-color, var(--title-color))' } : undefined}>
             {section.name}
           </div>
         </div>
@@ -1013,7 +1013,7 @@ export default function Sections({
                 >+</button>
               )}
               {isArchiveColumn && (
-                <span className="col-header-label" style={{ color: 'var(--archive-header-color)' }}>
+                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
                   Archive Column
                 </span>
               )}

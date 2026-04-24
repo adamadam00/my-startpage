@@ -314,7 +314,7 @@ export default function Settings({
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <button className="icon-btn" style={{ fontSize: '0.75rem', width: 'auto', height: '2rem', padding: '0 0.5rem', whiteSpace: 'nowrap' }} title={allOpen ? 'Collapse all sections' : 'Expand all sections'} onClick={toggleAllGroups}>{allOpen ? '▴ collapse' : '▾ expand'}</button>
+            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
             <button className="icon-btn" style={{ fontSize: '0.72rem', width: '2.4rem', height: '2rem', whiteSpace: 'nowrap' }} title="Move panel to other side" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '⇐ side' : 'side ⇒'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} onClick={onClose} title="Close (Esc)">✕</button>
@@ -790,7 +790,7 @@ export default function Settings({
               <Row label="Primary text"><ColorPick label="Primary text" value={theme.text} onChange={v => set('text', v)} /></Row>
               <Row label="Secondary text"><ColorPick label="Secondary text" value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
               <Row label="Card header color"><ColorPick label="Card header color" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
-              <Row label="Archive header color"><ColorPick label="Archive header color" value={theme.archiveHeaderColor ?? '#8888b0'} onChange={v => set('archiveHeaderColor', v)} /></Row>
+              <Row label="Archive card title color"><ColorPick label="Archive card title color" value={theme.archiveCardTitleColor ?? '#8888b0'} onChange={v => set('archiveCardTitleColor', v)} /></Row>
               
               <SectionTitle>Settings Panel Colors</SectionTitle>
               <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
@@ -1049,15 +1049,6 @@ export default function Settings({
           )
           if (sectionId === 'calendar') return (
             <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
-              <SectionTitle>Display</SectionTitle>
-              <Row label="Days to show">
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  {[3, 5, 7, 14].map(d => (
-                    <button key={d} className={`btn-xs${(theme.calDays || 3) === d ? ' btn-primary' : ''}`} onClick={() => set('calDays', d)}>{d}</button>
-                  ))}
-                </div>
-              </Row>
-              <Row label="Font size"><Slider val={theme.calFontSize ?? 12} min={9} max={18} onChange={v => set('calFontSize', v)} unit="px" /></Row>
               <SectionTitle>Google Calendar (iCal)</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 Get each secret iCal URL from Google Calendar → Settings → [calendar name] → "Secret address in iCal format"

@@ -265,23 +265,17 @@ function parseIcal(text) {
 }
 
 async function fetchIcal(url) {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), 20000)
   try {
-    const res = await fetch(`/api/ical?url=${encodeURIComponent(decodeURIComponent(url))}&t=${Date.now()}`, { signal: controller.signal })
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 10000)
+    const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}`, { signal: controller.signal })
     clearTimeout(timer)
-    if (!res.ok) {
-      let msg = `HTTP ${res.status}`
-      try { const d = await res.json(); if (d.error) msg = d.error } catch {}
-      throw new Error(msg)
-    }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
-    if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Invalid iCal response')
+    if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Not a valid iCal feed')
     return text
   } catch (err) {
-    clearTimeout(timer)
-    if (err.name === 'AbortError') throw new Error('Timed out after 20s')
-    throw new Error(err.message)
+    throw new Error(`Failed to fetch calendar: ${err.message}`)
   }
 }
 
@@ -294,13 +288,12 @@ function CalendarWidget({ theme }) {
   const fetched = useRef(false)
 
   const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
-  const calDays = theme.calDays || 3
-  const urlKey = icalUrls.join('|') + '|' + calDays
+  const urlKey = icalUrls.join('|')
   const lastUrlKey = useRef('')
 
-  const fetchEvents = async (force = false) => {
+  const fetchEvents = async () => {
     if (!icalUrls.length) return
-    if (!force && lastUrlKey.current === urlKey && fetched.current) return
+    if (lastUrlKey.current === urlKey && fetched.current) return
     lastUrlKey.current = urlKey
     fetched.current = true
     setLoading(true)
@@ -308,7 +301,7 @@ function CalendarWidget({ theme }) {
     try {
       const now = new Date()
       const cutoff = new Date()
-      cutoff.setDate(cutoff.getDate() + calDays)
+      cutoff.setDate(cutoff.getDate() + 3)
       cutoff.setHours(23, 59, 59, 999)
       const results = await Promise.allSettled(icalUrls.map(u => fetchIcal(u)))
       const all = []
@@ -324,15 +317,11 @@ function CalendarWidget({ theme }) {
       })
       all.sort((a, b) => new Date(a.start) - new Date(b.start))
       setEvents(all)
-      const failures = results.filter(r => r.status === 'rejected')
-      if (failures.length === results.length) {
-        const reason = failures[0]?.reason?.message || 'Unknown error'
-        setError(`Failed to load: ${reason}`)
-      } else if (failures.length > 0) {
-        setError(`${failures.length} of ${results.length} calendars failed`)
+      if (all.length === 0 && results.every(r => r.status === 'rejected')) {
+        setError('Could not load calendars — check your iCal URLs')
       }
     } catch (e) {
-      setError(`Error: ${e.message}`)
+      setError('Error loading calendar')
     } finally {
       setLoading(false)
     }
@@ -353,7 +342,7 @@ function CalendarWidget({ theme }) {
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <button className="icon-btn topbar-quick-btn topbar-cal-btn" title={`Calendar (next ${calDays} days)`}>
+      <button className="icon-btn topbar-quick-btn topbar-cal-btn" title="Calendar (next 3 days)">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
           <line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="1.5"/>
@@ -368,18 +357,13 @@ function CalendarWidget({ theme }) {
         <div className="cal-dropdown">
           <div className="cal-dropdown-inner">
             <div className="cal-header">
-              Next {calDays} day{calDays !== 1 ? 's' : ''}
+              Next 3 days
               <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
             </div>
             {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
             {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
-            {icalUrls.length > 0 && !loading && error && (
-              <div className="cal-empty" style={{ color: 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
-                <span>{error}</span>
-                <button className="btn-xs" onClick={() => { fetched.current = false; fetchEvents(true) }}>↻ Retry</button>
-              </div>
-            )}
-            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next {calDays} days 🎉</div>}
+            {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
             {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
@@ -589,9 +573,7 @@ const DEFAULT_THEME = {
   bmResultBg: '',
   bmResultText: '',
   colHeaderColor: '#8888b0',
-  archiveHeaderColor: '#8888b0',
-  calFontSize: 12,
-  calDays: 3,
+  archiveCardTitleColor: '#8888b0',
 }
 
 // ─── APPLY THEME ─────────────────────────────────────────────────────────────
@@ -609,8 +591,7 @@ function applyTheme(t) {
   s('--topbar-bg', t.card)
   s('--notes-card-bg', t.cardsGradientEnabled ? t.card : (t.notesCardBg || t.card))
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
-  s('--archive-header-color', t.archiveHeaderColor ?? '#8888b0')
-  s('--cal-font-size', (t.calFontSize ?? 12) + 'px')
+  s('--archive-card-title-color', t.archiveCardTitleColor ?? '#8888b0')
   
   const baseBorderColor = t.border
   s('--card-opacity', ((t.cardOpacity ?? 1) * 100) + '%')
