@@ -651,7 +651,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   {canShare && (
                     <select
                       className="input"
-                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem' }}
+                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem', maxWidth: '90px', minWidth: 0, flexShrink: 1 }}
                       value={shareNote}
                       onChange={e => setShareNote(e.target.value)}
                     >
@@ -677,13 +677,10 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
 
           {safeNotes
             .sort((a, b) => {
-              // Pinned notes go to top
               if (a.pinned && !b.pinned) return -1
               if (!a.pinned && b.pinned) return 1
-              // Shared notes go to bottom
               if (a.shared_to && !b.shared_to) return 1
               if (!a.shared_to && b.shared_to) return -1
-              // Otherwise sort by position
               return (a.position ?? 0) - (b.position ?? 0)
             })
             .map((note, sortedIndex) => {
@@ -1363,7 +1360,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     {canShare && (
                       <select
                         className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, maxWidth: '90px', minWidth: 0, overflow: 'hidden' }}
                         value={editShareNote}
                         onChange={e => setEditShareNote(e.target.value)}
                       >
@@ -1390,9 +1387,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                       onClick={() => togglePin(note.id, note.pinned)}
                       title={note.pinned ? 'Unpin note' : 'Pin to top'}
                       style={{ color: note.pinned ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}
-                    >
-                      📌
-                    </button>
+                    >📌</button>
                     <button
                       type="button"
                       className="btn-xs"
