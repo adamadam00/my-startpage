@@ -484,14 +484,16 @@ function SectionCard({
             +
           </button>
 
+          {!isArchiveColumn && (
           <button
             className="icon-btn"
             type="button"
             onClick={() => onToggleCollapse(section)}
             title={section.collapsed ? "Expand" : "Collapse"}
           >
-            {section.collapsed ? "▸" : "▾"}
+            {section.collapsed ? '▼' : '▲'}
           </button>
+          )}
 
           <button
             className="icon-btn"
