@@ -1310,17 +1310,6 @@ export default function App() {
     }
   }, [modalAlert, modalConfirm, modalPrompt])
 
-  // Mobile detection
-  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 480px)').matches)
-  const [mobilePanel, setMobilePanel] = useState('cards') // 'cards' | 'notes'
-  const touchStartX = useRef(null)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 480px)')
-    const handler = e => setIsMobile(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -1841,28 +1830,14 @@ export default function App() {
       .slice(0, 15)
   }, [bookmarks, bmQuery])
 
-  const addWorkspace = async (name) => {
-    const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
-    if (!wsName?.trim()) return
-    
-    // Ask for visibility
-    const visibilityChoice = confirm(
-      `Where should "${wsName}" be visible?\n\n` +
-      `OK = Home & Work (both locations)\n` +
-      `Cancel = Choose specific location`
-    )
-    
-    let visibility = 'both'
-    if (!visibilityChoice) {
-      const isWork = confirm('Show only at Work?\n\nOK = Work only\nCancel = Home only')
-      visibility = isWork ? 'work' : 'home'
-    }
-    
+  const addWorkspace = async (name, visibility = 'both') => {
+    const wsName = typeof name === 'string' ? name.trim() : ''
+    if (!wsName) return
     const { data, error } = await supabase
       .from('workspaces').insert({ 
         user_id: session.user.id, 
-        name: wsName.trim(),
-        visibility: visibility 
+        name: wsName,
+        visibility
       }).select().single()
     if (error) return alert(error.message)
     setWorkspaces(prev => [...prev, data])
@@ -2111,7 +2086,7 @@ export default function App() {
 			</div>
 		  )}
 		  
-		  <div className={`app${isMobile ? ' mobile' : ''}`} ref={contentRef}>
+		  <div className="app" ref={contentRef}>
 
 			{/* Background blur overlay */}
 			{(theme.bgBlur ?? 0) > 0 ? (
@@ -2139,14 +2114,13 @@ export default function App() {
 			) : null}
 
 			{/* ── TOPBAR ──────────────────────────────────────── */}
-			<div className={`topbar${isMobile ? ' topbar-mobile' : ''}`}>
+			<div className="topbar">
 
 			  {/* Workspace tabs */}
 			  <div className="workspace-tabs">
 				{workspaces
 				  .filter(ws => {
 					const v = ws.visibility || 'both'
-					if (isMobile) return v === 'mobile' || v === 'both'
 					if (mode === 'home') return v === 'home' || v === 'both'
 					if (mode === 'work') return v === 'work' || v === 'both'
 					return true
@@ -2294,66 +2268,6 @@ export default function App() {
 			</div>
 
 			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
-			{isMobile ? (
-			  <main
-			    className="main-layout mobile-layout"
-			    onTouchStart={e => { touchStartX.current = e.touches[0].clientX }}
-			    onTouchEnd={e => {
-			      if (touchStartX.current === null) return
-			      const dx = e.changedTouches[0].clientX - touchStartX.current
-			      if (Math.abs(dx) > 50) setMobilePanel(dx < 0 ? 'notes' : 'cards')
-			      touchStartX.current = null
-			    }}
-			  >
-			    <div className={`mobile-panels${mobilePanel === 'notes' ? ' show-notes' : ''}`}>
-			      <div className="mobile-panel mobile-cards-panel">
-			        <Sections
-			          sections={sections}
-			          links={searchMode === 'links' ? filteredLinks : links}
-			          userId={session.user.id}
-			          workspaceId={activeWs}
-			          onRefresh={handleRefresh}
-			          colCount={1}
-			          triggerCollapseAll={triggerCollapse}
-			          triggerExpandAll={triggerExpand}
-			          openInNewTab={theme.openInNewTab ?? true}
-			          faviconEnabled={theme.faviconEnabled ?? true}
-			          onAddSection={async () => {
-			            const name = await window.prompt('Section name:', 'New Section')
-			            if (!name) return
-			            const sectionName = String(name).trim() || 'New Section'
-			            const { error } = await supabase.from('sections').insert({
-			              user_id: session.user.id, workspace_id: activeWs,
-			              name: sectionName, position: sections.length, col_index: 0, collapsed: false
-			            })
-			            if (error) { console.error('Error creating section:', error.message); return }
-			            await handleRefresh()
-			          }}
-			        />
-			      </div>
-			      <div className="mobile-panel mobile-notes-panel">
-			        <Notes
-			          notes={notes}
-			          workspaceId={activeWs}
-			          workspace={workspaces.find(w => w.id === activeWs)}
-			          workspaces={workspaces}
-			          userId={session.user.id}
-			          onRefresh={handleRefresh}
-			          forceOpen={notesTrigger}
-			        />
-			      </div>
-			    </div>
-			    {/* Mobile panel toggle bar */}
-			    <div className="mobile-tab-bar">
-			      <button className={`mobile-tab-btn${mobilePanel === 'cards' ? ' active' : ''}`} onClick={() => setMobilePanel('cards')}>
-			        ☰ Cards
-			      </button>
-			      <button className={`mobile-tab-btn${mobilePanel === 'notes' ? ' active' : ''}`} onClick={() => setMobilePanel('notes')}>
-			        📝 Notes
-			      </button>
-			    </div>
-			  </main>
-			) : (
 			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? `1fr var(--notes-width, 240px)` : '1fr' }}>
 			  {!(theme.hideCards ?? false) && <div className="main-col">
 				<Sections
@@ -2398,7 +2312,6 @@ export default function App() {
 				/>
 			  </div>}
 			</main>
-			)}
 
 			{/* ── SETTINGS ────────────────────────────────────── */}
 			{settingsOpen && (

@@ -170,6 +170,7 @@ export default function Settings({
 }) {
   const [activeTab, setActiveTab] = useState('design')
   const [newWsName, setNewWsName] = useState('')
+  const [newWsVisibility, setNewWsVisibility] = useState('both')
   const [hiddenFolders, setHiddenFolders] = useState(() => {
     try { return JSON.parse(localStorage.getItem('sp_bm_hidden') || '[]') } catch { return [] }
   })
@@ -1124,7 +1125,7 @@ export default function Settings({
                     <span style={{ flex: 1, fontSize: '0.82em', cursor: 'pointer', color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)' }} onClick={() => onSetActiveWs(ws.id)}>
                       {ws.name}
                       <span style={{ fontSize: '0.85em', opacity: 0.6, marginLeft: '0.3rem' }}>
-                        {ws.visibility === 'home' ? '🏠' : ws.visibility === 'work' ? '💼' : ws.visibility === 'mobile' ? '📱' : '🔄'}
+                        {ws.visibility === 'home' ? '🏠' : ws.visibility === 'work' ? '💼' : '🔄'}
                       </span>
                     </span>
                     <select className="input" style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
@@ -1138,16 +1139,23 @@ export default function Settings({
                       <option value="both">Both</option>
                       <option value="home">Home</option>
                       <option value="work">Work</option>
-                      <option value="mobile">📱 Mobile</option>
                     </select>
                     <button className="btn-xs" onClick={() => { const n = prompt('Rename workspace:', ws.name); if (n?.trim()) onRenameWorkspace(ws.id, n.trim()) }}>✎</button>
                     <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button>
                   </div>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: '0.35rem' }}>
-                <input className="input" style={{ flex: 1, fontSize: '0.8em' }} placeholder="New workspace name…" value={newWsName} onChange={e => setNewWsName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }} />
-                <button className="btn-xs btn-primary" disabled={!newWsName.trim()} onClick={() => { if (newWsName.trim()) { onAddWorkspace(newWsName.trim()); setNewWsName('') } }}>Add</button>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div style={{ display: 'flex', gap: '0.35rem' }}>
+                  <input className="input" style={{ flex: 1, fontSize: '0.8em' }} placeholder="New workspace name…" value={newWsName} onChange={e => setNewWsName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace(newWsName.trim(), newWsVisibility); setNewWsName(''); setNewWsVisibility('both') } }} />
+                  <select className="input" style={{ fontSize: '0.75em', padding: '0.15rem 0.25rem', width: 'auto' }} value={newWsVisibility} onChange={e => setNewWsVisibility(e.target.value)}>
+                    <option value="both">Both</option>
+                    <option value="home">🏠 Home</option>
+                    <option value="work">💼 Work</option>
+                    <option value="mobile">📱 Mobile</option>
+                  </select>
+                  <button className="btn-xs btn-primary" disabled={!newWsName.trim()} onClick={() => { if (newWsName.trim()) { onAddWorkspace(newWsName.trim(), newWsVisibility); setNewWsName(''); setNewWsVisibility('both') } }}>Add</button>
+                </div>
               </div>
             </Group>
           )
