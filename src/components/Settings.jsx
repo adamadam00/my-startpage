@@ -314,7 +314,7 @@ export default function Settings({
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title={allOpen ? 'Collapse all' : 'Expand all'} onClick={toggleAllGroups}>{allOpen ? '▴' : '▾'}</button>
+            <button className="icon-btn" style={{ fontSize: '0.75rem', width: 'auto', height: '2rem', padding: '0 0.5rem', whiteSpace: 'nowrap' }} title={allOpen ? 'Collapse all sections' : 'Expand all sections'} onClick={toggleAllGroups}>{allOpen ? '▴ collapse' : '▾ expand'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} title="Reset settings section order" onClick={resetSectionOrder}>↺</button>
             <button className="icon-btn" style={{ fontSize: '0.72rem', width: '2.4rem', height: '2rem', whiteSpace: 'nowrap' }} title="Move panel to other side" onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>{side === 'right' ? '⇐ side' : 'side ⇒'}</button>
             <button className="icon-btn" style={{ fontSize: '1rem', width: '2rem', height: '2rem' }} onClick={onClose} title="Close (Esc)">✕</button>
@@ -754,7 +754,6 @@ export default function Settings({
                 </div>
               </Row>
               <Row label="Header row color"><ColorPick value={theme.colHeaderColor ?? '#8888b0'} onChange={v => set('colHeaderColor', v)} /></Row>
-              <Row label="Archive header color"><ColorPick value={theme.archiveHeaderColor ?? '#8888b0'} onChange={v => set('archiveHeaderColor', v)} /></Row>
               <Row label="Header background"><ColorPick value={theme.titleBg || theme.card || '#13131a'} onChange={v => set('titleBg', v)} /></Row>
               <Row label="Header opacity"><Slider val={Math.round((theme.headerOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('headerOpacity', v / 100)} unit="%" /></Row>
 
@@ -790,7 +789,8 @@ export default function Settings({
               <SectionTitle>Text Colors</SectionTitle>
               <Row label="Primary text"><ColorPick label="Primary text" value={theme.text} onChange={v => set('text', v)} /></Row>
               <Row label="Secondary text"><ColorPick label="Secondary text" value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
-              <Row label="Header / Label"><ColorPick label="Header / Label" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
+              <Row label="Card header color"><ColorPick label="Card header color" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
+              <Row label="Archive header color"><ColorPick label="Archive header color" value={theme.archiveHeaderColor ?? '#8888b0'} onChange={v => set('archiveHeaderColor', v)} /></Row>
               
               <SectionTitle>Settings Panel Colors</SectionTitle>
               <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
