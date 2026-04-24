@@ -580,6 +580,10 @@ function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
   const s = (k, v) => { if (v !== undefined && v !== null) root.style.setProperty(k, String(v)) }
+  const hexRgb = (hex) => {
+    const h = (hex || '#000000').replace('#', '')
+    return parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16)
+  }
   s('--bg', t.bg); s('--bg2', t.bg2); s('--bg3', t.bg3)
   
   s('--card', t.card)
@@ -605,7 +609,6 @@ function applyTheme(t) {
   s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
   s('--header-opacity', ((t.headerOpacity ?? 1) * 100) + '%')
   s('--title-opacity', t.headerOpacity ?? 1)
-  s('--title-opacity', 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
   s('--handle-opacity', 0.05)
@@ -850,11 +853,6 @@ function applyTheme(t) {
     const g = parseInt(h.slice(2, 4), 16)
     const b = parseInt(h.slice(4, 6), 16)
     return 'rgba(' + r + ',' + g + ',' + b + ',' + aa + ')'
-  }
-
-  const hexRgb = (hex) => {
-    const h = (hex || '#000000').replace('#', '')
-    return parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16)
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
