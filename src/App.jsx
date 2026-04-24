@@ -270,7 +270,11 @@ async function fetchIcal(url) {
   try {
     const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}`, { signal: controller.signal })
     clearTimeout(timer)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    if (!res.ok) {
+      let msg = `HTTP ${res.status}`
+      try { const d = await res.json(); if (d.error) msg = d.error } catch {}
+      throw new Error(msg)
+    }
     const text = await res.text()
     if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Invalid iCal response')
     return text
@@ -290,7 +294,8 @@ function CalendarWidget({ theme }) {
   const fetched = useRef(false)
 
   const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
-  const urlKey = icalUrls.join('|')
+  const calDays = theme.calDays || 3
+  const urlKey = icalUrls.join('|') + '|' + calDays
   const lastUrlKey = useRef('')
 
   const fetchEvents = async (force = false) => {
@@ -303,7 +308,7 @@ function CalendarWidget({ theme }) {
     try {
       const now = new Date()
       const cutoff = new Date()
-      cutoff.setDate(cutoff.getDate() + 3)
+      cutoff.setDate(cutoff.getDate() + calDays)
       cutoff.setHours(23, 59, 59, 999)
       const results = await Promise.allSettled(icalUrls.map(u => fetchIcal(u)))
       const all = []
@@ -324,7 +329,7 @@ function CalendarWidget({ theme }) {
         const reason = failures[0]?.reason?.message || 'Unknown error'
         setError(`Failed to load: ${reason}`)
       } else if (failures.length > 0) {
-        setError(`${failures.length} of ${results.length} calendars failed to load`)
+        setError(`${failures.length} of ${results.length} calendars failed`)
       }
     } catch (e) {
       setError(`Error: ${e.message}`)
@@ -363,7 +368,7 @@ function CalendarWidget({ theme }) {
         <div className="cal-dropdown">
           <div className="cal-dropdown-inner">
             <div className="cal-header">
-              Next 3 days
+              Next {calDays} day{calDays !== 1 ? 's' : ''}
               <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
             </div>
             {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
@@ -371,10 +376,10 @@ function CalendarWidget({ theme }) {
             {icalUrls.length > 0 && !loading && error && (
               <div className="cal-empty" style={{ color: 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
                 <span>{error}</span>
-                <button className="btn-xs" onClick={() => { fetched.current = false; fetchEvents(true) }} style={{ fontSize: '0.75em' }}>↻ Retry</button>
+                <button className="btn-xs" onClick={() => { fetched.current = false; fetchEvents(true) }}>↻ Retry</button>
               </div>
             )}
-            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
+            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next {calDays} days 🎉</div>}
             {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
@@ -577,6 +582,7 @@ const DEFAULT_THEME = {
   wallpaperX: 50, wallpaperY: 50, wallpaperScale: 100,
   wallpaperBlur: 0, wallpaperDim: 35, wallpaperOpacity: 100,
   sectionsCols: 6,
+  calDays: 3,
   notesGap: 0, notesCardBg: '#12121a', notesTextColor: '#e8e8f5', notesTextBg: '#0a0a0f', notesRadius: 4,
   notesSharedBg: '#1a1a28',
   settingsSide: 'right',

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { supabase } from '../lib/supabase'
 
 const FONTS = [
   { label: 'DM Mono',        value: "'DM Mono', monospace"        },
@@ -162,7 +163,7 @@ export default function Settings({
   fileRef, backupFileRef, themeFileRef, importingBackup,
   workspaces, activeWs,
   mode, setMode,
-  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs, onReorderWorkspaces, onWorkspaceVisibilityChange,
+  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs, onReorderWorkspaces,
   onSignOut, userEmail,
   bmFolders, bookmarkCount,
   onClearAllNotes,
@@ -1047,6 +1048,14 @@ export default function Settings({
           )
           if (sectionId === 'calendar') return (
             <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
+              <SectionTitle>Display</SectionTitle>
+              <Row label="Days to show">
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {[3, 5, 7, 14].map(d => (
+                    <button key={d} className={`btn-xs${(theme.calDays || 3) === d ? ' btn-primary' : ''}`} onClick={() => set('calDays', d)}>{d}</button>
+                  ))}
+                </div>
+              </Row>
               <SectionTitle>Google Calendar (iCal)</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 Get each secret iCal URL from Google Calendar → Settings → [calendar name] → "Secret address in iCal format"
@@ -1129,7 +1138,8 @@ export default function Settings({
                     <select className="input" style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
                       value={ws.visibility || 'both'}
                       onChange={async (e) => {
-                        onWorkspaceVisibilityChange?.(ws.id, e.target.value)
+                        const { error } = await supabase.from('workspaces').update({ visibility: e.target.value }).eq('id', ws.id)
+                        if (!error) window.location.reload()
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
