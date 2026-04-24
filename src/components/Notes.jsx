@@ -44,11 +44,10 @@ function NoteToolbar({ targetSelector, onUpdate }) {
   return (
     <div style={{ display: 'flex', gap: '0.15rem', flexWrap: 'wrap', alignItems: 'center' }}>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('bold')} title="Bold"><strong>B</strong></button>
-      <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('italic')} title="Italic"><em>I</em></button>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('underline')} title="Underline"><u>U</u></button>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={addBullet} title="Bullet">•</button>
       <div style={{ display: 'flex', gap: '0.1rem', marginLeft: '0.1rem' }}>
-        {['#ff6b6b','#6c8fff','#6bffb8','#ffd32a'].map(c => (
+        {['#ff6b6b','#6bffb8','#ffd32a'].map(c => (
           <button key={c} type="button" className="color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(c)} style={{ background: c }} title={c} />
         ))}
         <input type="color" className="color-picker" onMouseDown={e => e.preventDefault()} onChange={e => setColor(e.target.value)} title="Custom color" />
@@ -508,15 +507,11 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
   }
 
   const remove = async (id) => {
-    if (!window.confirm('Delete this note?')) return
     const { error } = await supabase.from('notes').delete().eq('id', id)
-    if (error) { setErr(error.message); return }
-    onRefresh?.()
-  }
-
-  const togglePin = async (id, currentlyPinned) => {
-    const { error } = await supabase.from('notes').update({ pinned: !currentlyPinned }).eq('id', id)
-    if (error) { setErr(error.message); return }
+    if (error) {
+      setErr(error.message)
+      return
+    }
     onRefresh?.()
   }
 
@@ -651,7 +646,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   {canShare && (
                     <select
                       className="input"
-                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem', maxWidth: '90px', minWidth: 0, flexShrink: 1 }}
+                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem' }}
                       value={shareNote}
                       onChange={e => setShareNote(e.target.value)}
                     >
@@ -677,10 +672,10 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
 
           {safeNotes
             .sort((a, b) => {
-              if (a.pinned && !b.pinned) return -1
-              if (!a.pinned && b.pinned) return 1
+              // Shared notes go to bottom
               if (a.shared_to && !b.shared_to) return 1
               if (!a.shared_to && b.shared_to) return -1
+              // Otherwise sort by position
               return (a.position ?? 0) - (b.position ?? 0)
             })
             .map((note, sortedIndex) => {
@@ -689,7 +684,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
             return (
               <div 
                 key={note.id} 
-                className={`note-item ${editing === note.id ? 'note-selected' : ''} ${collapsedNotes.has(note.id) ? 'note-collapsed' : ''} ${note.pinned ? 'note-pinned' : ''}`}
+                className={`note-item ${editing === note.id ? 'note-selected' : ''} ${collapsedNotes.has(note.id) ? 'note-collapsed' : ''}`}
                 style={note.shared_to ? { background: 'var(--notes-shared-bg)' } : {}}
                 onDoubleClick={(e) => {
                   if (editing === note.id) return
@@ -752,7 +747,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                 <>
                   {/* Up/Down reorder buttons - always visible on hover */}
                   <div className="note-reorder-btns">
-                    {note.pinned && <span style={{ fontSize: '0.7em', opacity: 0.7, marginRight: '0.2rem' }} title="Pinned">📌</span>}
                     <button className="note-reorder-btn" title="Move up" onClick={(e) => { e.stopPropagation(); moveUp(note.id) }}>▲</button>
                     <button className="note-reorder-btn" title="Move down" onClick={(e) => { e.stopPropagation(); moveDown(note.id) }}>▼</button>
                   </div>
@@ -1160,17 +1154,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         className="btn-xs"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
-                          document.execCommand('italic', false, null)
-                        }}
-                        title="Italic"
-                      >
-                        <em>I</em>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-xs"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
                           const selection = window.getSelection()
                           const selectedText = selection.toString()
                           
@@ -1223,19 +1206,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         }}
                         title="Red"
                         style={{ background: '#ff6b6b' }}
-                      >
-                      </button>
-                      <button
-                        type="button"
-                        className="color-dot"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          document.execCommand('foreColor', false, '#6c8fff')
-                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
-                          if (editDiv) editDiv.dispatchEvent(new Event('input', { bubbles: true }))
-                        }}
-                        title="Blue"
-                        style={{ background: '#6c8fff' }}
                       >
                       </button>
                       <button
@@ -1360,7 +1330,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     {canShare && (
                       <select
                         className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, maxWidth: '90px', minWidth: 0, overflow: 'hidden' }}
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
                         value={editShareNote}
                         onChange={e => setEditShareNote(e.target.value)}
                       >
@@ -1380,14 +1350,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         hour12: true 
                       }) : ''}
                     </span>
-                    <button
-                      type="button"
-                      className="btn-xs"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => togglePin(note.id, note.pinned)}
-                      title={note.pinned ? 'Unpin note' : 'Pin to top'}
-                      style={{ color: note.pinned ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}
-                    >📌</button>
                     <button
                       type="button"
                       className="btn-xs"
