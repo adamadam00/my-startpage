@@ -1318,6 +1318,7 @@ export default function App() {
     // Load workspaces from cache immediately for instant render
     return CacheManager.load('workspaces') || []
   })
+  const workspaceOrderRef = useRef([])
   const [mode, setMode] = useState(() => {
     try {
       return localStorage.getItem('workspaceMode') || 'home'
@@ -1590,7 +1591,7 @@ export default function App() {
     if (!uid) { console.log('[settings] no uid'); return }
     try {
       const { data, error } = await supabase
-        .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
+        .from('user_settings').select('theme, workspace_order').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
       const localRaw = localStorage.getItem('current_theme')
@@ -1620,6 +1621,11 @@ export default function App() {
         } else {
           console.log('[settings] neither local nor remote has data — using defaults')
         }
+      }
+      // Cache workspace order in ref so handleRefresh can use it
+      if (data?.workspace_order?.length) {
+        workspaceOrderRef.current = data.workspace_order
+        console.log('[workspace_order] loaded from Supabase:', data.workspace_order)
       }
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
@@ -1700,8 +1706,16 @@ export default function App() {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
       
-      setWorkspaces(wsData || [])
-      CacheManager.save('workspaces', wsData || []) // Cache workspaces
+      const rawWs = wsData || []
+      const order = workspaceOrderRef.current
+      const sortedWs = order.length
+        ? [...rawWs].sort((a, b) => {
+            const ai = order.indexOf(a.id), bi = order.indexOf(b.id)
+            if (ai === -1) return 1; if (bi === -1) return -1; return ai - bi
+          })
+        : rawWs
+      setWorkspaces(sortedWs)
+      CacheManager.save('workspaces', sortedWs)
       
       const currentWs = activeWs ?? wsData?.[0]?.id ?? null
       if (!currentWs) return
@@ -1879,9 +1893,16 @@ export default function App() {
     const uid = session?.user?.id
     if (!uid) return
     const orderIds = newOrder.map(w => w.id)
+    workspaceOrderRef.current = orderIds  // keep ref in sync immediately
     await supabase.from('user_settings')
       .update({ workspace_order: orderIds })
       .eq('user_id', uid)
+  }
+
+  const updateWorkspaceVisibility = async (id, visibility) => {
+    const { error } = await supabase.from('workspaces').update({ visibility }).eq('id', id)
+    if (error) return alert(error.message)
+    setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, visibility } : w))
   }
 
   const handleImageUpload = (file) => {
@@ -2360,6 +2381,7 @@ export default function App() {
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}
 				onReorderWorkspaces={reorderWorkspaces}
+				onWorkspaceVisibilityChange={updateWorkspaceVisibility}
 				onSetActiveWs={setActiveWs}
 			  />
 			)}

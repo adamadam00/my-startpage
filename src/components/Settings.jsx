@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { supabase } from '../lib/supabase'
 
 const FONTS = [
   { label: 'DM Mono',        value: "'DM Mono', monospace"        },
@@ -163,7 +162,7 @@ export default function Settings({
   fileRef, backupFileRef, themeFileRef, importingBackup,
   workspaces, activeWs,
   mode, setMode,
-  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs, onReorderWorkspaces,
+  onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onSetActiveWs, onReorderWorkspaces, onWorkspaceVisibilityChange,
   onSignOut, userEmail,
   bmFolders, bookmarkCount,
   onClearAllNotes,
@@ -1130,8 +1129,7 @@ export default function Settings({
                     <select className="input" style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
                       value={ws.visibility || 'both'}
                       onChange={async (e) => {
-                        const { error } = await supabase.from('workspaces').update({ visibility: e.target.value }).eq('id', ws.id)
-                        if (!error) window.location.reload()
+                        onWorkspaceVisibilityChange?.(ws.id, e.target.value)
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
