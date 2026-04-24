@@ -610,7 +610,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
             title={open ? 'Collapse notes' : 'Expand notes'}
             aria-label={open ? 'Collapse notes' : 'Expand notes'}
           >
-            {open ? '▲' : '▼'}
+            {open ? '▾' : '▸'}
           </button>
         </div>
       </div>
