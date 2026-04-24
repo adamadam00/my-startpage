@@ -1,5 +1,5 @@
 // Vercel serverless function - proxies iCal and Gmail Atom feeds
-// File location: Startpage/api/ical.js
+// File location: Startpage/api/ical.cjs
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
