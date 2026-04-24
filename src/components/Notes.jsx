@@ -44,10 +44,11 @@ function NoteToolbar({ targetSelector, onUpdate }) {
   return (
     <div style={{ display: 'flex', gap: '0.15rem', flexWrap: 'wrap', alignItems: 'center' }}>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('bold')} title="Bold"><strong>B</strong></button>
+      <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('italic')} title="Italic"><em>I</em></button>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('underline')} title="Underline"><u>U</u></button>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={addBullet} title="Bullet">•</button>
       <div style={{ display: 'flex', gap: '0.1rem', marginLeft: '0.1rem' }}>
-        {['#ff6b6b','#6bffb8','#ffd32a'].map(c => (
+        {['#ff6b6b','#6c8fff','#6bffb8','#ffd32a'].map(c => (
           <button key={c} type="button" className="color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(c)} style={{ background: c }} title={c} />
         ))}
         <input type="color" className="color-picker" onMouseDown={e => e.preventDefault()} onChange={e => setColor(e.target.value)} title="Custom color" />
@@ -1154,6 +1155,17 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         className="btn-xs"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => {
+                          document.execCommand('italic', false, null)
+                        }}
+                        title="Italic"
+                      >
+                        <em>I</em>
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-xs"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
                           const selection = window.getSelection()
                           const selectedText = selection.toString()
                           
@@ -1206,6 +1218,19 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         }}
                         title="Red"
                         style={{ background: '#ff6b6b' }}
+                      >
+                      </button>
+                      <button
+                        type="button"
+                        className="color-dot"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={(e) => {
+                          document.execCommand('foreColor', false, '#6c8fff')
+                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
+                          if (editDiv) editDiv.dispatchEvent(new Event('input', { bubbles: true }))
+                        }}
+                        title="Blue"
+                        style={{ background: '#6c8fff' }}
                       >
                       </button>
                       <button
@@ -1328,17 +1353,31 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     </button>
                     <div style={{ flex: 1, minWidth: '0.2rem' }} />
                     {canShare && (
-                      <select
-                        className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
-                        value={editShareNote}
-                        onChange={e => setEditShareNote(e.target.value)}
-                      >
-                        <option value=''>No sharing</option>
-                        {otherWorkspaces.map(w => (
-                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
-                        ))}
-                      </select>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          className="btn-xs"
+                          title={editShareNote ? `Sharing to: ${otherWorkspaces.find(w=>w.id===editShareNote)?.name}` : 'Share note'}
+                          style={{ color: editShareNote ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0, fontSize: '0.85em' }}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={e => {
+                            e.stopPropagation()
+                            const sel = e.currentTarget.nextSibling
+                            sel.style.display = sel.style.display === 'none' ? 'block' : 'none'
+                          }}
+                        >📤</button>
+                        <select
+                          className="input"
+                          style={{ position: 'absolute', top: '100%', right: 0, zIndex: 200, fontSize: '0.75em', padding: '0.2rem 0.3rem', minWidth: '120px', display: 'none', background: 'var(--bg2)', border: '1px solid var(--border)' }}
+                          value={editShareNote}
+                          onChange={e => { setEditShareNote(e.target.value); e.target.style.display = 'none' }}
+                        >
+                          <option value=''>No sharing</option>
+                          {otherWorkspaces.map(w => (
+                            <option key={w.id} value={w.id}>→ {w.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     )}
                     <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
