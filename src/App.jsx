@@ -265,17 +265,19 @@ function parseIcal(text) {
 }
 
 async function fetchIcal(url) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), 20000)
   try {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), 10000)
     const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}`, { signal: controller.signal })
     clearTimeout(timer)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
-    if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Not a valid iCal feed')
+    if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Invalid iCal response')
     return text
   } catch (err) {
-    throw new Error(`Failed to fetch calendar: ${err.message}`)
+    clearTimeout(timer)
+    if (err.name === 'AbortError') throw new Error('Timed out after 20s')
+    throw new Error(err.message)
   }
 }
 
@@ -291,9 +293,9 @@ function CalendarWidget({ theme }) {
   const urlKey = icalUrls.join('|')
   const lastUrlKey = useRef('')
 
-  const fetchEvents = async () => {
+  const fetchEvents = async (force = false) => {
     if (!icalUrls.length) return
-    if (lastUrlKey.current === urlKey && fetched.current) return
+    if (!force && lastUrlKey.current === urlKey && fetched.current) return
     lastUrlKey.current = urlKey
     fetched.current = true
     setLoading(true)
@@ -317,11 +319,15 @@ function CalendarWidget({ theme }) {
       })
       all.sort((a, b) => new Date(a.start) - new Date(b.start))
       setEvents(all)
-      if (all.length === 0 && results.every(r => r.status === 'rejected')) {
-        setError('Could not load calendars — check your iCal URLs')
+      const failures = results.filter(r => r.status === 'rejected')
+      if (failures.length === results.length) {
+        const reason = failures[0]?.reason?.message || 'Unknown error'
+        setError(`Failed to load: ${reason}`)
+      } else if (failures.length > 0) {
+        setError(`${failures.length} of ${results.length} calendars failed to load`)
       }
     } catch (e) {
-      setError('Error loading calendar')
+      setError(`Error: ${e.message}`)
     } finally {
       setLoading(false)
     }
@@ -362,7 +368,12 @@ function CalendarWidget({ theme }) {
             </div>
             {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
             {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
-            {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {icalUrls.length > 0 && !loading && error && (
+              <div className="cal-empty" style={{ color: 'var(--danger)', display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'center' }}>
+                <span>{error}</span>
+                <button className="btn-xs" onClick={() => { fetched.current = false; fetchEvents(true) }} style={{ fontSize: '0.75em' }}>↻ Retry</button>
+              </div>
+            )}
             {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
             {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
@@ -1318,7 +1329,6 @@ export default function App() {
     // Load workspaces from cache immediately for instant render
     return CacheManager.load('workspaces') || []
   })
-  const workspaceOrderRef = useRef([])
   const [mode, setMode] = useState(() => {
     try {
       return localStorage.getItem('workspaceMode') || 'home'
@@ -1591,7 +1601,7 @@ export default function App() {
     if (!uid) { console.log('[settings] no uid'); return }
     try {
       const { data, error } = await supabase
-        .from('user_settings').select('theme, workspace_order').eq('user_id', uid).maybeSingle()
+        .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
       const localRaw = localStorage.getItem('current_theme')
@@ -1621,11 +1631,6 @@ export default function App() {
         } else {
           console.log('[settings] neither local nor remote has data — using defaults')
         }
-      }
-      // Cache workspace order in ref so handleRefresh can use it
-      if (data?.workspace_order?.length) {
-        workspaceOrderRef.current = data.workspace_order
-        console.log('[workspace_order] loaded from Supabase:', data.workspace_order)
       }
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
@@ -1706,16 +1711,8 @@ export default function App() {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
       
-      const rawWs = wsData || []
-      const order = workspaceOrderRef.current
-      const sortedWs = order.length
-        ? [...rawWs].sort((a, b) => {
-            const ai = order.indexOf(a.id), bi = order.indexOf(b.id)
-            if (ai === -1) return 1; if (bi === -1) return -1; return ai - bi
-          })
-        : rawWs
-      setWorkspaces(sortedWs)
-      CacheManager.save('workspaces', sortedWs)
+      setWorkspaces(wsData || [])
+      CacheManager.save('workspaces', wsData || []) // Cache workspaces
       
       const currentWs = activeWs ?? wsData?.[0]?.id ?? null
       if (!currentWs) return
@@ -1893,16 +1890,9 @@ export default function App() {
     const uid = session?.user?.id
     if (!uid) return
     const orderIds = newOrder.map(w => w.id)
-    workspaceOrderRef.current = orderIds  // keep ref in sync immediately
     await supabase.from('user_settings')
       .update({ workspace_order: orderIds })
       .eq('user_id', uid)
-  }
-
-  const updateWorkspaceVisibility = async (id, visibility) => {
-    const { error } = await supabase.from('workspaces').update({ visibility }).eq('id', id)
-    if (error) return alert(error.message)
-    setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, visibility } : w))
   }
 
   const handleImageUpload = (file) => {
@@ -2381,7 +2371,6 @@ export default function App() {
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}
 				onReorderWorkspaces={reorderWorkspaces}
-				onWorkspaceVisibilityChange={updateWorkspaceVisibility}
 				onSetActiveWs={setActiveWs}
 			  />
 			)}
