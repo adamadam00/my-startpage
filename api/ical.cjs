@@ -20,6 +20,7 @@ module.exports = async function handler(req, res) {
       return res.status(502).json({ error: `Upstream returned HTTP ${response.status}` })
     }
     const text = await response.text()
+    console.log('[ical] first 200 chars:', text.slice(0, 200))
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
     return res.status(200).send(text)
   } catch (err) {
