@@ -1846,18 +1846,16 @@ html.bg-29-carbon::after {
   right: 0;
   display: flex;
   gap: 0.3rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.5rem;
+  padding: 0.4rem 0.5rem;
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
   min-height: 2.5rem;
-  scrollbar-width: thin;
 }
 
 .note-drag-handle-inline {
@@ -3309,18 +3307,4 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   color: var(--text-dim);
   opacity: 0.5;
   pointer-events: none;
-}
-
-/* Pinned notes */
-.note-item.note-pinned {
-  border-left: 2px solid var(--accent);
-}
-.note-item.note-pinned::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: var(--accent);
-  opacity: 0.4;
-  border-radius: var(--notes-radius) var(--notes-radius) 0 0;
 }

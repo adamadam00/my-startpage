@@ -508,11 +508,15 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
   }
 
   const remove = async (id) => {
+    if (!window.confirm('Delete this note?')) return
     const { error } = await supabase.from('notes').delete().eq('id', id)
-    if (error) {
-      setErr(error.message)
-      return
-    }
+    if (error) { setErr(error.message); return }
+    onRefresh?.()
+  }
+
+  const togglePin = async (id, currentlyPinned) => {
+    const { error } = await supabase.from('notes').update({ pinned: !currentlyPinned }).eq('id', id)
+    if (error) { setErr(error.message); return }
     onRefresh?.()
   }
 
@@ -673,10 +677,10 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
 
           {safeNotes
             .sort((a, b) => {
-              // Shared notes go to bottom
+              if (a.pinned && !b.pinned) return -1
+              if (!a.pinned && b.pinned) return 1
               if (a.shared_to && !b.shared_to) return 1
               if (!a.shared_to && b.shared_to) return -1
-              // Otherwise sort by position
               return (a.position ?? 0) - (b.position ?? 0)
             })
             .map((note, sortedIndex) => {
@@ -685,7 +689,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
             return (
               <div 
                 key={note.id} 
-                className={`note-item ${editing === note.id ? 'note-selected' : ''} ${collapsedNotes.has(note.id) ? 'note-collapsed' : ''}`}
+                className={`note-item ${editing === note.id ? 'note-selected' : ''} ${collapsedNotes.has(note.id) ? 'note-collapsed' : ''} ${note.pinned ? 'note-pinned' : ''}`}
                 style={note.shared_to ? { background: 'var(--notes-shared-bg)' } : {}}
                 onDoubleClick={(e) => {
                   if (editing === note.id) return
@@ -748,6 +752,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                 <>
                   {/* Up/Down reorder buttons - always visible on hover */}
                   <div className="note-reorder-btns">
+                    {note.pinned && <span style={{ fontSize: '0.7em', opacity: 0.7, marginRight: '0.2rem' }} title="Pinned">📌</span>}
                     <button className="note-reorder-btn" title="Move up" onClick={(e) => { e.stopPropagation(); moveUp(note.id) }}>▲</button>
                     <button className="note-reorder-btn" title="Move down" onClick={(e) => { e.stopPropagation(); moveDown(note.id) }}>▼</button>
                   </div>
@@ -1353,6 +1358,29 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     </button>
                     <div style={{ flex: 1, minWidth: '0.2rem' }} />
                     {canShare && (
+                      <select
+                        className="input"
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
+                        value={editShareNote}
+                        onChange={e => setEditShareNote(e.target.value)}
+                      >
+                        <option value=''>No sharing</option>
+                        {otherWorkspaces.map(w => (
+                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
+                        ))}
+                      </select>
+                    )}
+                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
+                        month: 'numeric', 
+                        day: 'numeric', 
+                        year: '2-digit',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true 
+                      }) : ''}
+                    </span>
+                    {canShare && (
                       <div style={{ position: 'relative', flexShrink: 0 }}>
                         <button
                           type="button"
@@ -1368,7 +1396,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         >📤</button>
                         <select
                           className="input"
-                          style={{ position: 'absolute', top: '100%', right: 0, zIndex: 200, fontSize: '0.75em', padding: '0.2rem 0.3rem', minWidth: '120px', display: 'none', background: 'var(--bg2)', border: '1px solid var(--border)' }}
+                          style={{ position: 'absolute', bottom: '100%', right: 0, zIndex: 300, fontSize: '0.78em', padding: '0.2rem 0.3rem', minWidth: '120px', display: 'none', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
                           value={editShareNote}
                           onChange={e => { setEditShareNote(e.target.value); e.target.style.display = 'none' }}
                         >
@@ -1379,16 +1407,14 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         </select>
                       </div>
                     )}
-                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
-                        month: 'numeric', 
-                        day: 'numeric', 
-                        year: '2-digit',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true 
-                      }) : ''}
-                    </span>
+                    <button
+                      type="button"
+                      className="btn-xs"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => togglePin(note.id, note.pinned)}
+                      title={note.pinned ? 'Unpin note' : 'Pin to top'}
+                      style={{ color: note.pinned ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}
+                    >📌</button>
                     <button
                       type="button"
                       className="btn-xs"
