@@ -1298,14 +1298,11 @@ export default function App() {
   // Override native browser dialogs globally — prevents the "block dialogs" checkbox
   useEffect(() => {
     window._nativeAlert = window.alert
-    window._nativeConfirm = window.confirm
     window._nativePrompt = window.prompt
     window.alert = (msg) => modalAlert(String(msg))
-    window.confirm = (msg) => modalConfirm(String(msg))
     window.prompt = (msg, def) => modalPrompt(String(msg), def || '')
     return () => {
       window.alert = window._nativeAlert
-      window.confirm = window._nativeConfirm
       window.prompt = window._nativePrompt
     }
   }, [modalAlert, modalConfirm, modalPrompt])
@@ -1831,11 +1828,11 @@ export default function App() {
   }, [bookmarks, bmQuery])
 
   const addWorkspace = async (name) => {
-    const wsName = typeof name === 'string' ? name : await modalPrompt('Workspace name?')
+    const wsName = typeof name === 'string' ? name : prompt('Workspace name?')
     if (!wsName?.trim()) return
     
     // Ask for visibility
-    const visibilityChoice = await modalConfirm(
+    const visibilityChoice = confirm(
       `Where should "${wsName}" be visible?\n\n` +
       `OK = Home & Work (both locations)\n` +
       `Cancel = Choose specific location`
@@ -1843,7 +1840,7 @@ export default function App() {
     
     let visibility = 'both'
     if (!visibilityChoice) {
-      const isWork = await modalConfirm('Show only at Work?\n\nOK = Work only\nCancel = Home only')
+      const isWork = confirm('Show only at Work?\n\nOK = Work only\nCancel = Home only')
       visibility = isWork ? 'work' : 'home'
     }
     
@@ -1865,7 +1862,7 @@ export default function App() {
   }
 
   const deleteWorkspace = async (id) => {
-    if (!await modalConfirm('Delete this workspace?')) return
+    if (!confirm('Delete this workspace?')) return
     const { error } = await supabase.from('workspaces').delete().eq('id', id)
     if (error) return alert(error.message)
     const next = workspaces.filter(w => w.id !== id)
@@ -1965,15 +1962,15 @@ export default function App() {
 	  }
 
 	  const resetWorkspaceLinks = async () => {
-		if (!await modalConfirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
+		if (!confirm('Delete ALL sections and links in this workspace? Notes are kept.')) return
 		await supabase.from('links').delete().eq('workspace_id', activeWs)
 		await supabase.from('sections').delete().eq('workspace_id', activeWs)
 		handleRefresh()
 	  }
 
 	  const clearAllNotes = async () => {
-		if (!await modalConfirm('Delete ALL notes in this workspace? This cannot be undone!')) return
-		if (!await modalConfirm('Are you absolutely sure? All notes will be permanently deleted.')) return
+		if (!confirm('Delete ALL notes in this workspace? This cannot be undone!')) return
+		if (!confirm('Are you absolutely sure? All notes will be permanently deleted.')) return
 		
 		console.log('[clearAllNotes] Deleting all notes for workspace:', activeWs)
 		
@@ -2045,7 +2042,7 @@ export default function App() {
 			  await handleRefresh(); alert('Imported ' + imported + ' of ' + rows.length + ' section(s).'); return
 			}
 			if (data.workspaces && Array.isArray(data.workspaces)) {
-			  if (!await modalConfirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
+			  if (!confirm('Add ' + data.workspaces.length + ' workspace(s)? Existing data is kept.')) return
 			  for (const ws of data.workspaces) {
 				const { data: newWs } = await supabase.from('workspaces').insert({ user_id: uid, name: ws.name }).select().single()
 				for (let si = 0; si < (ws.sections ?? []).length; si++) {
