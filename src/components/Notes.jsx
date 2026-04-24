@@ -752,7 +752,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                 <>
                   {/* Up/Down reorder buttons - always visible on hover */}
                   <div className="note-reorder-btns">
-                    {note.pinned && <span style={{ fontSize: '0.7em', opacity: 0.7, marginRight: '0.2rem' }} title="Pinned">📌</span>}
+                    {note.pinned && <span style={{ fontSize: '0.7em', opacity: 0.7, marginRight: '0.2rem' }}>📌</span>}
                     <button className="note-reorder-btn" title="Move up" onClick={(e) => { e.stopPropagation(); moveUp(note.id) }}>▲</button>
                     <button className="note-reorder-btn" title="Move down" onClick={(e) => { e.stopPropagation(); moveDown(note.id) }}>▼</button>
                   </div>
@@ -1358,17 +1358,31 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     </button>
                     <div style={{ flex: 1, minWidth: '0.2rem' }} />
                     {canShare && (
-                      <select
-                        className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
-                        value={editShareNote}
-                        onChange={e => setEditShareNote(e.target.value)}
-                      >
-                        <option value=''>No sharing</option>
-                        {otherWorkspaces.map(w => (
-                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
-                        ))}
-                      </select>
+                      <div style={{ position: 'relative', flexShrink: 0 }}>
+                        <button
+                          type="button"
+                          className="btn-xs"
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={e => {
+                            e.stopPropagation()
+                            const sel = e.currentTarget.nextSibling
+                            sel.style.display = sel.style.display === 'none' ? 'block' : 'none'
+                          }}
+                          title={editShareNote ? `Sharing → ${otherWorkspaces.find(w=>w.id===editShareNote)?.name}` : 'Share note'}
+                          style={{ color: editShareNote ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}
+                        >📤</button>
+                        <select
+                          className="input"
+                          style={{ display: 'none', position: 'absolute', bottom: 'calc(100% + 4px)', right: 0, zIndex: 500, fontSize: '0.78em', padding: '0.25rem 0.4rem', minWidth: '130px', background: 'var(--bg2)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                          value={editShareNote}
+                          onChange={e => { setEditShareNote(e.target.value); e.target.style.display = 'none' }}
+                        >
+                          <option value=''>No sharing</option>
+                          {otherWorkspaces.map(w => (
+                            <option key={w.id} value={w.id}>→ {w.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     )}
                     <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
@@ -1380,39 +1394,12 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         hour12: true 
                       }) : ''}
                     </span>
-                    {canShare && (
-                      <div style={{ position: 'relative', flexShrink: 0 }}>
-                        <button
-                          type="button"
-                          className="btn-xs"
-                          title={editShareNote ? `Sharing to: ${otherWorkspaces.find(w=>w.id===editShareNote)?.name}` : 'Share note'}
-                          style={{ color: editShareNote ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0, fontSize: '0.85em' }}
-                          onMouseDown={e => e.preventDefault()}
-                          onClick={e => {
-                            e.stopPropagation()
-                            const sel = e.currentTarget.nextSibling
-                            sel.style.display = sel.style.display === 'none' ? 'block' : 'none'
-                          }}
-                        >📤</button>
-                        <select
-                          className="input"
-                          style={{ position: 'absolute', bottom: '100%', right: 0, zIndex: 300, fontSize: '0.78em', padding: '0.2rem 0.3rem', minWidth: '120px', display: 'none', background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)' }}
-                          value={editShareNote}
-                          onChange={e => { setEditShareNote(e.target.value); e.target.style.display = 'none' }}
-                        >
-                          <option value=''>No sharing</option>
-                          {otherWorkspaces.map(w => (
-                            <option key={w.id} value={w.id}>→ {w.name}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
                     <button
                       type="button"
                       className="btn-xs"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => togglePin(note.id, note.pinned)}
-                      title={note.pinned ? 'Unpin note' : 'Pin to top'}
+                      title={note.pinned ? 'Unpin' : 'Pin to top'}
                       style={{ color: note.pinned ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}
                     >📌</button>
                     <button
