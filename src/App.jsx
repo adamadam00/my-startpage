@@ -587,8 +587,10 @@ function applyTheme(t) {
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
   
   const baseBorderColor = t.border
-  s('--card-opacity', t.cardOpacity ?? 1)
+  s('--card-opacity', ((t.cardOpacity ?? 1) * 100) + '%')
   s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
+  s('--header-opacity', ((t.headerOpacity ?? 1) * 100) + '%')
+  s('--title-opacity', t.headerOpacity ?? 1)
   s('--title-opacity', 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
@@ -1156,7 +1158,6 @@ function applyTheme(t) {
   if (t.bgScanC2) s('--bg-scan-bg', t.bgScanC2)
   if (t.bgDotScale) s('--bg-dot-scale', t.bgDotScale + 'px')
   if (t.bgGridScale) s('--bg-grid-scale', t.bgGridScale + 'px')
-  if (t.bgStarSize) s('--bg-star-size', t.bgStarSize)
   
   // Shape & Grid settings
   if (t.bgShapeOpacity != null) s('--bg-shape-opacity', t.bgShapeOpacity)
@@ -1175,17 +1176,16 @@ function applyTheme(t) {
   if (t.bgNebulaC1) { const r=hexRgb(t.bgNebulaC1); s('--bg-nebula-c1', `rgba(${r},0.5)`) }
   if (t.bgNebulaC2) { const r=hexRgb(t.bgNebulaC2); s('--bg-nebula-c2', `rgba(${r},0.5)`) }
   
-  // Starfield settings - density as multiplier, speed as multiplier
+  // Starfield - combine star speed with global anim speed
   s('--bg-star-size', t.bgStarSize ?? 1)
   s('--bg-star-density', t.bgStarDensity ? t.bgStarDensity / 100 : 1)
-  s('--bg-star-speed', t.bgStarSpeed ?? 1)
+  s('--bg-star-speed', (t.bgStarSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
   // Star streaks
   s('--bg-streak-bg', t.bgStreakBg || '#02020f')
   if (t.bgStreakC1) { const r = hexRgb(t.bgStreakC1); s('--bg-streak-c1', `rgba(${r},0.9)`) }
   if (t.bgStreakC2) { const r = hexRgb(t.bgStreakC2); s('--bg-streak-c2', `rgba(${r},0.7)`) }
-  s('--bg-streak-speed', t.bgStreakSpeed ?? 1)
+  s('--bg-streak-speed', (t.bgStreakSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
   s('--bg-streak-length', t.bgStreakLength ? t.bgStreakLength / 100 : 1)
-  s('--bg-streak-density', t.bgStreakDensity ? t.bgStreakDensity / 100 : 1)
   
   // Plasma backgrounds
   if (t.bgPlasmaSpeed) s('--bg-plasma-speed', t.bgPlasmaSpeed)

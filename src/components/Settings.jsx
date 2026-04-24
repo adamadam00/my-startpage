@@ -745,6 +745,7 @@ export default function Settings({
               <Row label="Card background">
                 <ColorPick value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
               </Row>
+              <Row label="Card opacity"><Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
               <Row label="Note panel background">
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} />
@@ -753,6 +754,7 @@ export default function Settings({
               </Row>
               <Row label="Header row color"><ColorPick value={theme.colHeaderColor ?? '#8888b0'} onChange={v => set('colHeaderColor', v)} /></Row>
               <Row label="Header background"><ColorPick value={theme.titleBg || theme.card || '#13131a'} onChange={v => set('titleBg', v)} /></Row>
+              <Row label="Header opacity"><Slider val={Math.round((theme.headerOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('headerOpacity', v / 100)} unit="%" /></Row>
 
               <SectionTitle>Borders</SectionTitle>
               <Row label="Border"><ColorPick value={theme.border} onChange={v => set('border', v)} /></Row>
@@ -829,7 +831,6 @@ export default function Settings({
 
           if (sectionId === 'cards') return (
             <Group title="Cards & borders" defaultOpen={false} {...commonGroupProps}>
-              <Row label="Card opacity"><Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
               <Row label="Corner radius"><Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => { set('radius', v); set('sectionRadius', v); set('notesRadius', v) }} unit="px" /></Row>
               <Row label="Card padding"><Slider val={Math.round((theme.cardPadding ?? 0.75) * 100)} min={0} max={150} step={5} onChange={v => set('cardPadding', v / 100)} unit="%" /></Row>
               <Row label="Header height"><Slider val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>

@@ -683,7 +683,11 @@ export default function Sections({
       })
       .forEach((section) => {
         const raw = Number.isFinite(section.col_index) ? section.col_index : 0;
-        const col = Math.min(Math.max(raw, 0), safeColCount - 1);
+        // Archive sections (originally in last col) always stay in last col
+        const wasArchive = raw >= safeColCount - 1 && safeColCount > 1
+        const col = wasArchive
+          ? safeColCount - 1
+          : Math.min(Math.max(raw, 0), safeColCount - 2 < 0 ? 0 : safeColCount - 2)
         cols[col].items.push(section);
       });
 
