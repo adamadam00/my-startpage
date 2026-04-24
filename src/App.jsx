@@ -2134,9 +2134,10 @@ export default function App() {
 			  <div className="workspace-tabs">
 				{workspaces
 				  .filter(ws => {
-					const visibility = ws.visibility || 'both'
-					if (mode === 'home') return true // Home sees everything
-					return visibility === 'work' || visibility === 'both'
+					const v = ws.visibility || 'both'
+					if (mode === 'home') return v === 'home' || v === 'both'
+					if (mode === 'work') return v === 'work' || v === 'both'
+					return true
 				  })
 				  .map(ws => (
 				  <button
