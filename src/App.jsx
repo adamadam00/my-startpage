@@ -1293,7 +1293,7 @@ function applyTheme(t) {
 }
 
 export default function App() {
-  const { Modal, alert: modalAlert, confirm: modalConfirm, prompt: modalPrompt } = useModal()
+  const { Modal, alert: modalAlert } = useModal()
 
   useEffect(() => {
     window._nativeAlert = window.alert
@@ -1303,7 +1303,6 @@ export default function App() {
 
   // Mobile detection
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 520px)').matches)
-  const [mobilePanel, setMobilePanel] = useState('cards')
   const touchStartX = useRef(null)
   const touchStartY = useRef(null)
   useEffect(() => {
@@ -1319,11 +1318,6 @@ export default function App() {
   }
   const handleTouchEnd = e => {
     if (touchStartX.current === null) return
-    const dx = e.changedTouches[0].clientX - touchStartX.current
-    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
-    if (Math.abs(dx) > 40 && dy < 80) {
-      setMobilePanel(dx < 0 ? 'notes' : 'cards')
-    }
     touchStartX.current = null
     touchStartY.current = null
   }
@@ -2146,14 +2140,61 @@ export default function App() {
 			) : null}
 
 			{/* ── TOPBAR ──────────────────────────────────────── */}
-			<div className={`topbar${isMobile ? ' topbar-mobile' : ''}`}>
-
+			{isMobile ? (
+			  <div className="topbar topbar-mobile">
+			    {/* Row 1: Clock, Weather, Search */}
+			    <div className="mobile-topbar-row1">
+			      <ClockWidget />
+			      <WeatherWidget />
+			      <div className="search-compact" style={{ flex: 1 }}>
+			        <input
+			          className="input search-compact-input"
+			          placeholder="Search the web…"
+			          value={webSearch}
+			          onChange={e => setWebSearch(e.target.value)}
+			          onKeyDown={e => {
+			            if (e.key === 'Enter' && webSearch.trim()) {
+			              const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
+			              window.open(url, '_blank', 'noopener,noreferrer')
+			              setWebSearch('')
+			            }
+			          }}
+			        />
+			        {webSearch && <button className="icon-btn search-btn" onClick={() => setWebSearch('')}>✕</button>}
+			      </div>
+			    </div>
+			    {/* Row 2: Widgets + Actions */}
+			    <div className="mobile-topbar-row2">
+			      {!(theme.hideNews ?? false) && <NewsWidget theme={theme} setTheme={setTheme} />}
+			      {!(theme.hideCalendar ?? false) && <CalendarWidget theme={theme} />}
+			      {!(theme.hideGmail ?? true) && <GmailWidget theme={theme} />}
+			      <a className="icon-btn topbar-quick-btn" href="https://www.google.com.au" target="_blank" rel="noreferrer" title="Google" style={{ flexShrink: 0 }}>
+			        <svg width="14" height="14" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+			          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+			          <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+			          <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+			          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+			        </svg>
+			      </a>
+			      <div style={{ flex: 1 }} />
+			      {/* Workspace tabs — compact */}
+			      {workspaces.filter(ws => { const v = ws.visibility||'both'; return v==='home'||v==='both' }).map(ws => (
+			        <button key={ws.id} className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
+			          style={{ fontSize: '0.7em', padding: '0.15rem 0.4rem', flexShrink: 0 }}
+			          onClick={() => setActiveWs(ws.id)}>{ws.name}</button>
+			      ))}
+			      <button className="icon-btn topbar-quick-btn" title="Settings" onClick={() => setSettingsOpen(true)}
+			        style={{ fontSize: '1.2rem', width: '34px', height: '34px', flexShrink: 0 }}>⚙</button>
+			    </div>
+			  </div>
+			) : (
+			<div className="topbar">
 			  {/* Workspace tabs */}
 			  <div className="workspace-tabs">
 				{workspaces
 				  .filter(ws => {
 					const v = ws.visibility || 'both'
-					if (isMobile) return v === 'mobile' || v === 'both'
+					if (isMobile) return v === 'home' || v === 'both'
 					if (mode === 'home') return v === 'home' || v === 'both'
 					if (mode === 'work') return v === 'work' || v === 'both'
 					return true
@@ -2299,56 +2340,47 @@ export default function App() {
 				>⚙</button>
 			  </div>
 			</div>
+			  </div>
+			</div>
+			)}
 
-			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
+{/* ── MAIN LAYOUT ─────────────────────────────────── */}
 			{isMobile ? (
-			  <div className="mobile-main"
-			    onTouchStart={handleTouchStart}
-			    onTouchEnd={handleTouchEnd}
-			  >
-			    <div className={`mobile-track${mobilePanel === 'notes' ? ' show-notes' : ''}`}>
-			      <div className="mobile-panel">
-			        <Sections
-			          sections={sections}
-			          links={searchMode === 'links' ? filteredLinks : links}
-			          userId={session.user.id}
-			          workspaceId={activeWs}
-			          onRefresh={handleRefresh}
-			          colCount={1}
-			          triggerCollapseAll={triggerCollapse}
-			          triggerExpandAll={triggerExpand}
-			          openInNewTab={theme.openInNewTab ?? true}
-			          faviconEnabled={theme.faviconEnabled ?? true}
-			          onAddSection={async (name) => {
-			            const sectionName = (name || 'New Section').trim()
-			            const { error } = await supabase.from('sections').insert({
-			              user_id: session.user.id, workspace_id: activeWs,
-			              name: sectionName, position: sections.length, col_index: 0, collapsed: false
-			            })
-			            if (error) { console.error(error.message); return }
-			            await handleRefresh()
-			          }}
-			        />
-			      </div>
-			      <div className="mobile-panel">
-			        <Notes
-			          notes={notes}
-			          workspaceId={activeWs}
-			          workspace={workspaces.find(w => w.id === activeWs)}
-			          workspaces={workspaces}
-			          userId={session.user.id}
-			          onRefresh={handleRefresh}
-			          forceOpen={notesTrigger}
-			        />
-			      </div>
+			  <div className="mobile-main">
+			    {/* Flat links strip */}
+			    <div className="mobile-links-strip">
+			      {sections.map((section, si) => {
+			        const sectionLinks = links.filter(l => l.section_id === section.id)
+			        if (!sectionLinks.length) return null
+			        return (
+			          <div key={section.id} className="mobile-links-group">
+			            {si > 0 && <div className="mobile-links-divider" />}
+			            {sectionLinks.map(link => (
+			              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer"
+			                className="mobile-link-btn" title={link.title}>
+			                {(theme.faviconEnabled ?? true) && link.favicon && (
+			                  <img src={link.favicon} alt="" width="14" height="14"
+			                    style={{ borderRadius: 2, flexShrink: 0 }}
+			                    onError={e => e.target.style.display='none'} />
+			                )}
+			                <span>{link.title}</span>
+			              </a>
+			            ))}
+			          </div>
+			        )
+			      })}
 			    </div>
-			    <div className="mobile-tab-bar">
-			      <button className={`mobile-tab-btn${mobilePanel === 'cards' ? ' active' : ''}`} onClick={() => setMobilePanel('cards')}>
-			        ☰ Cards
-			      </button>
-			      <button className={`mobile-tab-btn${mobilePanel === 'notes' ? ' active' : ''}`} onClick={() => setMobilePanel('notes')}>
-			        📝 Notes
-			      </button>
+			    {/* Notes full height */}
+			    <div className="mobile-notes">
+			      <Notes
+			        notes={notes}
+			        workspaceId={activeWs}
+			        workspace={workspaces.find(w => w.id === activeWs)}
+			        workspaces={workspaces}
+			        userId={session.user.id}
+			        onRefresh={handleRefresh}
+			        forceOpen={notesTrigger}
+			      />
 			    </div>
 			  </div>
 			) : (
