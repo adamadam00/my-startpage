@@ -1,6 +1,62 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 
+// Shared formatting toolbar for both new and edit notes
+function NoteToolbar({ targetSelector, onUpdate }) {
+  const exec = (cmd, val = null) => {
+    document.execCommand(cmd, false, val)
+    setTimeout(() => {
+      const el = document.querySelector(targetSelector)
+      if (el) el.dispatchEvent(new Event('input', { bubbles: true }))
+    }, 10)
+  }
+  const addBullet = () => {
+    const sel = window.getSelection()
+    const txt = sel?.toString() || ''
+    if (txt.includes('\n')) {
+      const lines = txt.split('\n')
+      const html = lines.map(l => l.trim() ? `<li>${l}</li>` : '').filter(Boolean).join('')
+      const range = sel.getRangeAt(0)
+      range.deleteContents()
+      const ul = document.createElement('ul')
+      ul.className = 'note-bullets'
+      ul.innerHTML = html
+      range.insertNode(ul)
+    } else {
+      document.execCommand('insertUnorderedList', false, null)
+      setTimeout(() => {
+        const el = document.querySelector(targetSelector)
+        if (el) el.querySelectorAll('ul:not(.note-bullets)').forEach(u => u.classList.add('note-bullets'))
+      }, 0)
+    }
+    setTimeout(() => {
+      const el = document.querySelector(targetSelector)
+      if (el) el.dispatchEvent(new Event('input', { bubbles: true }))
+    }, 20)
+  }
+  const setColor = (color) => {
+    document.execCommand('foreColor', false, color)
+    setTimeout(() => {
+      const el = document.querySelector(targetSelector)
+      if (el) el.dispatchEvent(new Event('input', { bubbles: true }))
+    }, 10)
+  }
+  return (
+    <div style={{ display: 'flex', gap: '0.15rem', flexWrap: 'wrap', alignItems: 'center' }}>
+      <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('bold')} title="Bold"><strong>B</strong></button>
+      <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('italic')} title="Italic"><em>I</em></button>
+      <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('underline')} title="Underline"><u>U</u></button>
+      <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={addBullet} title="Bullet">•</button>
+      <div style={{ display: 'flex', gap: '0.1rem', marginLeft: '0.1rem' }}>
+        {['#ff6b6b','#6c8fff','#6bffb8','#ffd32a'].map(c => (
+          <button key={c} type="button" className="color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(c)} style={{ background: c }} title={c} />
+        ))}
+        <input type="color" className="color-picker" onMouseDown={e => e.preventDefault()} onChange={e => setColor(e.target.value)} title="Custom color" />
+      </div>
+    </div>
+  )
+}
+
 // Component for individual file attachment with image preview
 function FileAttachment({ file, noteId, onRefresh }) {
   const [imageUrl, setImageUrl] = useState(null)
@@ -299,15 +355,15 @@ const parseFormatting = (text) => {
 }
 
 
-export default function Notes({ notes = [], workspaceId, workspace, userId, onRefresh, forceOpen }) {
+export default function Notes({ notes = [], workspaceId, workspace, workspaces = [], userId, onRefresh, forceOpen }) {
   const safeNotes = Array.isArray(notes) ? notes : []
   const [open, setOpen] = useState(true)
   const [adding, setAdding] = useState(false)
   const [text, setText] = useState('')
-  const [shareNote, setShareNote] = useState(false)
+  const [shareNote, setShareNote] = useState('')   // ws id to share to, '' = none
   const [editing, setEditing] = useState(null)
   const [editText, setEditText] = useState('')
-  const [editShareNote, setEditShareNote] = useState(false)
+  const [editShareNote, setEditShareNote] = useState('')  // ws id, '' = none
   const [err, setErr] = useState('')
   const [syncing, setSyncing] = useState(false)
   const [showActions, setShowActions] = useState(null)
@@ -315,9 +371,8 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
   const [collapsedNotes, setCollapsedNotes] = useState(new Set())
   const textRef = useRef(null)
   
-  const workspaceVisibility = workspace?.visibility || 'both'
-  const isHomeWorkspace = workspaceVisibility === 'home'
-  const isWorkWorkspace = workspaceVisibility === 'work'
+  const otherWorkspaces = workspaces.filter(w => w.id !== workspaceId)
+  const canShare = otherWorkspaces.length > 0
 
   useEffect(() => {
     if (forceOpen === undefined) return
@@ -415,12 +470,8 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
     
     await Promise.all(shiftPromises)
 
-    // Determine shared_to based on workspace and shareNote checkbox
-    let shared_to = null
-    if (shareNote) {
-      if (isHomeWorkspace) shared_to = 'work'
-      else if (isWorkWorkspace) shared_to = 'home'
-    }
+    // Determine shared_to based on selected workspace
+    const shared_to = shareNote || null
 
     // Add new note at position 0 (top)
     const { error } = await supabase.from('notes').insert({
@@ -438,17 +489,13 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
 
     setText('')
     setAdding(false)
-    setShareNote(false)
+    setShareNote('')
     onRefresh?.()
   }
 
   const update = async (id) => {
     if (!editText.trim()) return
-    let shared_to = null
-    if (editShareNote) {
-      if (isHomeWorkspace) shared_to = 'work'
-      else if (isWorkWorkspace) shared_to = 'home'
-    }
+    const shared_to = editShareNote || null
     const { error } = await supabase
       .from('notes')
       .update({ content: editText.trim(), shared_to })
@@ -456,7 +503,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
     if (error) { setErr(error.message); return }
     setEditing(null)
     setEditText('')
-    setEditShareNote(false)
+    setEditShareNote('')
     onRefresh?.()
   }
 
@@ -591,24 +638,29 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                 data-placeholder="Write a note..."
                 onKeyDown={(e) => {
                   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add()
-                  if (e.key === 'Escape') { setAdding(false); setText(''); setShareNote(false) }
+                  if (e.key === 'Escape') { setAdding(false); setText(''); setShareNote('') }
                 }}
               />
-              <div className="note-edit-toolbar" style={{ position: 'relative', marginTop: '0.3rem' }} data-toolbar="true">
-                <div style={{ display: 'flex', gap: '0.15rem' }}>
-                  <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('bold')}><strong>B</strong></button>
-                  <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('italic')}><em>I</em></button>
-                  <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('underline')}><u>U</u></button>
+              <div className="note-edit-toolbar" style={{ position: 'relative', marginTop: '0.3rem', overflow: 'visible' }} data-toolbar="true">
+                <NoteToolbar targetSelector=".note-new .note-editing" />
+                <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.3rem', alignItems: 'center' }}>
+                  {canShare && (
+                    <select
+                      className="input"
+                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem' }}
+                      value={shareNote}
+                      onChange={e => setShareNote(e.target.value)}
+                    >
+                      <option value=''>No sharing</option>
+                      {otherWorkspaces.map(w => (
+                        <option key={w.id} value={w.id}>Share to: {w.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <div style={{ flex: 1 }} />
+                  <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote('') }}>×</button>
+                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
                 </div>
-                <div style={{ flex: 1 }} />
-                {(isHomeWorkspace || isWorkWorkspace) && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75em', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={shareNote} onChange={e => setShareNote(e.target.checked)} style={{ cursor: 'pointer' }} />
-                    <span style={{ color: 'var(--text-dim)' }}>Share to {isHomeWorkspace ? 'Work' : 'Home'}</span>
-                  </label>
-                )}
-                <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote(false) }}>×</button>
-                <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
               </div>
             </div>
           )}
@@ -883,7 +935,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                             }
                             setEditing(note.id)
                             setEditText(value)
-                            setEditShareNote(!!note.shared_to)
+                            setEditShareNote(note.shared_to || '')
                           }}
                           onDragOver={(e) => {
                             if (e.dataTransfer.types.includes('Files')) {
@@ -1019,7 +1071,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                           {note.shared_to && (
                             <span 
                               style={{ fontSize: '0.8em', marginRight: '0.3rem' }}
-                              title={`Shared to ${note.shared_to === 'work' ? 'Work' : 'Home'}`}
+                              title={`Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}
                             >
                               🔄
                             </span>
@@ -1300,11 +1352,18 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
                       📎
                     </button>
                     <div style={{ flex: 1, minWidth: '0.2rem' }} />
-                    {(isHomeWorkspace || isWorkWorkspace) && (
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.72em', cursor: 'pointer', flexShrink: 0 }}>
-                        <input type="checkbox" checked={editShareNote} onChange={e => setEditShareNote(e.target.checked)} style={{ cursor: 'pointer' }} />
-                        <span style={{ color: 'var(--text-dim)' }}>Share to {isHomeWorkspace ? 'Work' : 'Home'}</span>
-                      </label>
+                    {canShare && (
+                      <select
+                        className="input"
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
+                        value={editShareNote}
+                        onChange={e => setEditShareNote(e.target.value)}
+                      >
+                        <option value=''>No sharing</option>
+                        {otherWorkspaces.map(w => (
+                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
+                        ))}
+                      </select>
                     )}
                     <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 

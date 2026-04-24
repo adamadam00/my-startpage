@@ -593,19 +593,10 @@ function applyTheme(t) {
   
   const baseBorderColor = t.border
   s('--card-opacity', ((t.cardOpacity ?? 1) * 100) + '%')
-  // Also set card color with opacity baked in for reliable opacity
-  if (t.card && t.cardOpacity != null && t.cardOpacity < 1) {
-    const r = hexRgb(t.card)
-    s('--card-with-opacity', `rgba(${r}, ${t.cardOpacity})`)
-  } else {
-    s('--card-with-opacity', t.card || '#12121a')
-  }
-  if (t.titleBg && t.headerOpacity != null && t.headerOpacity < 1) {
-    const r = hexRgb(t.titleBg || t.card || '#12121a')
-    s('--title-bg-with-opacity', `rgba(${r}, ${t.headerOpacity})`)
-  } else {
-    s('--title-bg-with-opacity', t.titleBg || t.card || '#12121a')
-  }
+  const cardR = hexRgb(t.card || '#12121a')
+  s('--card-with-opacity', `rgba(${cardR}, ${t.cardOpacity ?? 1})`)
+  const titleR = hexRgb(t.titleBg || t.card || '#12121a')
+  s('--title-bg-with-opacity', `rgba(${titleR}, ${t.headerOpacity ?? 1})`)
   s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
   s('--header-opacity', ((t.headerOpacity ?? 1) * 100) + '%')
   s('--title-opacity', t.headerOpacity ?? 1)
@@ -1198,6 +1189,7 @@ function applyTheme(t) {
   if (t.bgStreakC2) { const r = hexRgb(t.bgStreakC2); s('--bg-streak-c2', `rgba(${r},0.7)`) }
   s('--bg-streak-speed', (t.bgStreakSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
   s('--bg-streak-length', t.bgStreakLength ? t.bgStreakLength / 100 : 1)
+  s('--bg-streak-opacity', t.bgStreakOpacity ?? 1)
   
   // Plasma backgrounds
   if (t.bgPlasmaSpeed) s('--bg-plasma-speed', t.bgPlasmaSpeed)
@@ -1719,23 +1711,27 @@ export default function App() {
         CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
       }
       
-      const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
+      const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+        supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
       ])
+      
+      // Merge own notes + shared notes (deduplicate by id)
+      const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
       
       setSections(secData || [])
       setLinks(linkData || [])
-      setNotes(noteData || [])
+      setNotes(allNotes)
       
       // Cache all data
       CacheManager.save('sections', secData || [])
       CacheManager.save('links', linkData || [])
-      CacheManager.save('notes', noteData || [])
+      CacheManager.save('notes', allNotes)
       CacheManager.save(`sections_${currentWs}`, secData || [])
       CacheManager.save(`links_${currentWs}`, linkData || [])
-      CacheManager.save(`notes_${currentWs}`, noteData || [])
+      CacheManager.save(`notes_${currentWs}`, allNotes)
       
     } catch (err) {
       console.error('Refresh network error:', err.message)
@@ -2322,6 +2318,7 @@ export default function App() {
 				  notes={notes}
 				  workspaceId={activeWs}
 				  workspace={workspaces.find(w => w.id === activeWs)}
+				  workspaces={workspaces}
 				  userId={session.user.id}
 				  onRefresh={handleRefresh}
 				  forceOpen={notesTrigger}

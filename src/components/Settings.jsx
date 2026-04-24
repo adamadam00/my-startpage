@@ -562,6 +562,7 @@ export default function Settings({
                   <Row label="Sky color"><ColorPick value={theme.bgStreakBg || '#02020f'} onChange={v => set('bgStreakBg', v)} /></Row>
                   <Row label="Streak color"><ColorPick value={theme.bgStreakC1 || '#ffffff'} onChange={v => set('bgStreakC1', v)} /></Row>
                   <Row label="Streak tint"><ColorPick value={theme.bgStreakC2 || '#aac4ff'} onChange={v => set('bgStreakC2', v)} /></Row>
+                  <Row label="Opacity"><Slider val={Math.round((theme.bgStreakOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('bgStreakOpacity', v / 100)} unit="%" /></Row>
                   <Row label="Density"><Slider val={theme.bgStreakDensity ?? 100} min={25} max={250} onChange={v => set('bgStreakDensity', v)} unit="%" /></Row>
                   <Row label="Speed"><Slider val={theme.bgStreakSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStreakSpeed', v)} unit="×" /></Row>
                   <Row label="Length"><Slider val={theme.bgStreakLength ?? 100} min={20} max={300} onChange={v => set('bgStreakLength', v)} unit="%" /></Row>
