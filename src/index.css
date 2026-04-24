@@ -417,57 +417,94 @@ html.bg-29-star-streaks {
   background: var(--bg-streak-bg, #02020f);
   overflow: hidden;
 }
-html.bg-29-star-streaks::before,
-html.bg-29-star-streaks::after {
+/* Each pseudo-element is a separate wave of streaks at different speeds */
+html.bg-29-star-streaks::before {
   content: '';
   position: fixed;
-  top: 0; left: -100%;
-  width: 100%; height: 100%;
+  top: 0; left: 0; width: 100%; height: 100%;
   background-image:
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.9)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.7)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.6)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.5)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.85)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.4)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.65)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.75)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.5)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.45)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c1, rgba(255,255,255,0.7)) 50%, transparent 100%),
-    linear-gradient(90deg, transparent 0%, var(--bg-streak-c2, rgba(170,196,255,0.8)) 50%, transparent 100%);
+    /* Long bright streak */
+    linear-gradient(90deg, transparent 0%, transparent 30%, var(--bg-streak-c1, rgba(255,255,255,0.9)) 50%, transparent 70%, transparent 100%),
+    /* Medium tinted streak */
+    linear-gradient(90deg, transparent 0%, transparent 20%, var(--bg-streak-c2, rgba(170,196,255,0.7)) 50%, transparent 80%, transparent 100%),
+    /* Short bright */
+    linear-gradient(90deg, transparent 0%, transparent 40%, var(--bg-streak-c1, rgba(255,255,255,0.6)) 55%, transparent 70%, transparent 100%),
+    /* Faint long */
+    linear-gradient(90deg, transparent 0%, transparent 10%, var(--bg-streak-c2, rgba(170,196,255,0.4)) 50%, transparent 90%, transparent 100%),
+    /* Medium bright */
+    linear-gradient(90deg, transparent 0%, transparent 35%, var(--bg-streak-c1, rgba(255,255,255,0.75)) 55%, transparent 75%, transparent 100%),
+    /* Short tinted */
+    linear-gradient(90deg, transparent 0%, transparent 45%, var(--bg-streak-c2, rgba(170,196,255,0.55)) 58%, transparent 72%, transparent 100%);
   background-size:
-    calc(var(--bg-streak-length, 1) * 180px) 2px,
-    calc(var(--bg-streak-length, 1) * 120px) 1px,
-    calc(var(--bg-streak-length, 1) * 260px) 2px,
-    calc(var(--bg-streak-length, 1) * 80px)  1px,
-    calc(var(--bg-streak-length, 1) * 220px) 3px,
-    calc(var(--bg-streak-length, 1) * 140px) 1px,
-    calc(var(--bg-streak-length, 1) * 100px) 2px,
     calc(var(--bg-streak-length, 1) * 300px) 2px,
-    calc(var(--bg-streak-length, 1) * 160px) 1px,
-    calc(var(--bg-streak-length, 1) * 90px)  1px,
-    calc(var(--bg-streak-length, 1) * 200px) 2px,
-    calc(var(--bg-streak-length, 1) * 240px) 3px;
+    calc(var(--bg-streak-length, 1) * 180px) 1px,
+    calc(var(--bg-streak-length, 1) * 120px) 2px,
+    calc(var(--bg-streak-length, 1) * 400px) 1px,
+    calc(var(--bg-streak-length, 1) * 220px) 2px,
+    calc(var(--bg-streak-length, 1) * 90px)  1px;
   background-repeat: no-repeat;
   background-position:
-    0% 8%,  0% 16%, 0% 24%, 0% 33%,
-    0% 42%, 0% 51%, 0% 59%, 0% 67%,
-    0% 74%, 0% 81%, 0% 88%, 0% 95%;
-  animation: streak-fly calc(3s / var(--bg-streak-speed, 1)) linear infinite;
+    -100% 12%,
+    -100% 28%,
+    -100% 44%,
+    -100% 58%,
+    -100% 72%,
+    -100% 86%;
+  animation:
+    streak-a calc(2.8s / var(--bg-streak-speed, 1)) linear calc(0s) infinite,
+    streak-b calc(4.1s / var(--bg-streak-speed, 1)) linear calc(-1.2s / var(--bg-streak-speed, 1)) infinite,
+    streak-c calc(3.5s / var(--bg-streak-speed, 1)) linear calc(-0.6s / var(--bg-streak-speed, 1)) infinite,
+    streak-a calc(5.2s / var(--bg-streak-speed, 1)) linear calc(-2.1s / var(--bg-streak-speed, 1)) infinite,
+    streak-b calc(3.9s / var(--bg-streak-speed, 1)) linear calc(-0.9s / var(--bg-streak-speed, 1)) infinite,
+    streak-c calc(2.4s / var(--bg-streak-speed, 1)) linear calc(-1.8s / var(--bg-streak-speed, 1)) infinite;
+  animation-composition: replace;
   z-index: 0;
 }
 html.bg-29-star-streaks::after {
-  animation-delay: calc(-1.5s / var(--bg-streak-speed, 1));
-  opacity: 0.5;
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image:
+    linear-gradient(90deg, transparent 0%, transparent 25%, var(--bg-streak-c1, rgba(255,255,255,0.8)) 50%, transparent 75%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, transparent 38%, var(--bg-streak-c2, rgba(170,196,255,0.6)) 55%, transparent 72%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, transparent 15%, var(--bg-streak-c1, rgba(255,255,255,0.5)) 50%, transparent 85%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, transparent 42%, var(--bg-streak-c2, rgba(170,196,255,0.45)) 56%, transparent 70%, transparent 100%),
+    linear-gradient(90deg, transparent 0%, transparent 30%, var(--bg-streak-c1, rgba(255,255,255,0.65)) 52%, transparent 74%, transparent 100%);
+  background-size:
+    calc(var(--bg-streak-length, 1) * 160px) 2px,
+    calc(var(--bg-streak-length, 1) * 260px) 1px,
+    calc(var(--bg-streak-length, 1) * 350px) 2px,
+    calc(var(--bg-streak-length, 1) * 140px) 1px,
+    calc(var(--bg-streak-length, 1) * 200px) 2px;
+  background-repeat: no-repeat;
   background-position:
-    0% 4%,  0% 12%, 0% 20%, 0% 29%,
-    0% 38%, 0% 47%, 0% 55%, 0% 63%,
-    0% 70%, 0% 78%, 0% 85%, 0% 92%;
+    -100% 20%,
+    -100% 36%,
+    -100% 52%,
+    -100% 66%,
+    -100% 80%;
+  animation:
+    streak-b calc(3.3s / var(--bg-streak-speed, 1)) linear calc(-0.4s / var(--bg-streak-speed, 1)) infinite,
+    streak-c calc(4.7s / var(--bg-streak-speed, 1)) linear calc(-2.3s / var(--bg-streak-speed, 1)) infinite,
+    streak-a calc(2.6s / var(--bg-streak-speed, 1)) linear calc(-1.5s / var(--bg-streak-speed, 1)) infinite,
+    streak-b calc(3.8s / var(--bg-streak-speed, 1)) linear calc(-0.7s / var(--bg-streak-speed, 1)) infinite,
+    streak-a calc(5.5s / var(--bg-streak-speed, 1)) linear calc(-2.8s / var(--bg-streak-speed, 1)) infinite;
+  animation-composition: replace;
+  opacity: 0.7;
+  z-index: 0;
 }
-@keyframes streak-fly {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(200%); }
+/* Three different travel distances for variety */
+@keyframes streak-a {
+  0%   { background-position-x: -100%, -100%, -100%, -100%, -100%, -100%; }
+  100% { background-position-x: 200%,  200%,  200%,  200%,  200%,  200%; }
+}
+@keyframes streak-b {
+  0%   { background-position-x: -80%,  -80%,  -80%,  -80%,  -80%,  -80%; }
+  100% { background-position-x: 180%,  180%,  180%,  180%,  180%,  180%; }
+}
+@keyframes streak-c {
+  0%   { background-position-x: -120%, -120%, -120%, -120%, -120%, -120%; }
+  100% { background-position-x: 220%,  220%,  220%,  220%,  220%,  220%; }
 }
 
 /* 17. Plasma - Blue/purple plasma */
@@ -1588,7 +1625,7 @@ html.bg-29-carbon::after {
 }
 
 .card {
-  background: color-mix(in srgb, var(--card) var(--card-opacity, 100%), transparent);
+  background: var(--card-with-opacity, var(--card));
   border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   border-radius: var(--radius);
   padding: var(--card-padding);
@@ -2080,7 +2117,7 @@ html.bg-29-carbon::after {
   user-select: none;
   border-bottom: 1px solid transparent;
   transition: background 0.15s;
-  background: color-mix(in srgb, var(--title-bg, var(--card)) calc(var(--title-opacity, 1) * 100%), transparent);
+  background: var(--title-bg-with-opacity, var(--title-bg, var(--card)));
 }
 
 .section-header:hover {

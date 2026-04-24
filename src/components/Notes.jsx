@@ -396,7 +396,9 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
   }
 
   const add = async () => {
-    if (!text.trim()) {
+    // Get content from contentEditable div if available, fallback to text state
+    const content = textRef.current?.innerHTML?.trim() || text.trim()
+    if (!content) {
       setAdding(false)
       return
     }
@@ -424,7 +426,7 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
     const { error } = await supabase.from('notes').insert({
       user_id: userId,
       workspace_id: workspaceId,
-      content: text.trim(),
+      content: content,
       position: 0,
       shared_to: shared_to,
     })
@@ -579,52 +581,34 @@ export default function Notes({ notes = [], workspaceId, workspace, userId, onRe
         >
           {adding && (
             <div className="note-new">
-              <textarea
+              <div
                 ref={textRef}
-                className="input"
-                rows={4}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder="Write a note..."
+                className="input note-editing"
+                contentEditable
+                suppressContentEditableWarning
+                style={{ minHeight: '80px', padding: '0.5rem', outline: 'none', lineHeight: 1.5 }}
+                onInput={(e) => setText(e.currentTarget.innerHTML)}
+                data-placeholder="Write a note..."
                 onKeyDown={(e) => {
                   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') add()
-                  if (e.key === 'Escape') {
-                    setAdding(false)
-                    setText('')
-                  }
+                  if (e.key === 'Escape') { setAdding(false); setText(''); setShareNote(false) }
                 }}
               />
-              <div style={{ display: 'flex', gap: '0.25rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
+              <div className="note-edit-toolbar" style={{ position: 'relative', marginTop: '0.3rem' }} data-toolbar="true">
+                <div style={{ display: 'flex', gap: '0.15rem' }}>
+                  <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('bold')}><strong>B</strong></button>
+                  <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('italic')}><em>I</em></button>
+                  <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('underline')}><u>U</u></button>
+                </div>
                 <div style={{ flex: 1 }} />
                 {(isHomeWorkspace || isWorkWorkspace) && (
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75em', marginRight: '0.5rem', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={shareNote}
-                      onChange={(e) => setShareNote(e.target.checked)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span style={{ color: 'var(--text-dim)' }}>
-                      Share to {isHomeWorkspace ? 'Work' : 'Home'}
-                    </span>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75em', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={shareNote} onChange={e => setShareNote(e.target.checked)} style={{ cursor: 'pointer' }} />
+                    <span style={{ color: 'var(--text-dim)' }}>Share to {isHomeWorkspace ? 'Work' : 'Home'}</span>
                   </label>
                 )}
-                <button
-                  type="button"
-                  className="btn-xs"
-                  onClick={() => {
-                    setAdding(false)
-                    setText('')
-                    setShareNote(false)
-                  }}
-                  title="Cancel"
-                  style={{ marginRight: '0.3rem' }}
-                >
-                  ×
-                </button>
-                <button type="button" className="btn btn-primary btn-xs" onClick={add}>
-                  Save
-                </button>
+                <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote(false) }}>×</button>
+                <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
               </div>
             </div>
           )}

@@ -588,6 +588,19 @@ function applyTheme(t) {
   
   const baseBorderColor = t.border
   s('--card-opacity', ((t.cardOpacity ?? 1) * 100) + '%')
+  // Also set card color with opacity baked in for reliable opacity
+  if (t.card && t.cardOpacity != null && t.cardOpacity < 1) {
+    const r = hexRgb(t.card)
+    s('--card-with-opacity', `rgba(${r}, ${t.cardOpacity})`)
+  } else {
+    s('--card-with-opacity', t.card || '#12121a')
+  }
+  if (t.titleBg && t.headerOpacity != null && t.headerOpacity < 1) {
+    const r = hexRgb(t.titleBg || t.card || '#12121a')
+    s('--title-bg-with-opacity', `rgba(${r}, ${t.headerOpacity})`)
+  } else {
+    s('--title-bg-with-opacity', t.titleBg || t.card || '#12121a')
+  }
   s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
   s('--header-opacity', ((t.headerOpacity ?? 1) * 100) + '%')
   s('--title-opacity', t.headerOpacity ?? 1)

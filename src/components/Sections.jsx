@@ -674,7 +674,12 @@ export default function Sections({
       items: [],
     }));
 
-    [...localSections]
+    const maxColIndex = localSections.reduce((max, s) => {
+      const ci = Number.isFinite(s.col_index) ? s.col_index : 0
+      return Math.max(max, ci)
+    }, 0)
+
+    ;[...localSections]
       .sort((a, b) => {
         const ca = Number.isFinite(a.col_index) ? a.col_index : 0;
         const cb = Number.isFinite(b.col_index) ? b.col_index : 0;
@@ -683,11 +688,10 @@ export default function Sections({
       })
       .forEach((section) => {
         const raw = Number.isFinite(section.col_index) ? section.col_index : 0;
-        // Archive sections (originally in last col) always stay in last col
-        const wasArchive = raw >= safeColCount - 1 && safeColCount > 1
-        const col = wasArchive
+        const isArchive = maxColIndex > 0 && raw >= maxColIndex
+        const col = isArchive
           ? safeColCount - 1
-          : Math.min(Math.max(raw, 0), safeColCount - 2 < 0 ? 0 : safeColCount - 2)
+          : Math.min(raw, Math.max(safeColCount - 2, 0))
         cols[col].items.push(section);
       });
 
