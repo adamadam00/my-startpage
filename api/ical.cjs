@@ -14,14 +14,28 @@ module.exports = async function handler(req, res) {
       headers: {
         'User-Agent': 'Mozilla/5.0 (compatible)',
         'Accept': 'text/calendar, text/plain, */*',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
       }
     })
-    if (!response.ok) {
-      return res.status(502).json({ error: `Upstream returned HTTP ${response.status}` })
+    // 304 means Google wants to return cached — just re-fetch without conditional headers
+    if (response.status === 304 || !response.ok) {
+      const retry = await fetch(decoded, {
+        cache: 'no-store',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible)',
+          'Accept': 'text/calendar, text/plain, */*',
+        }
+      })
+      if (!retry.ok) return res.status(502).json({ error: `Upstream returned HTTP ${retry.status}` })
+      const text = await retry.text()
+      res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+      res.setHeader('Cache-Control', 'no-store')
+      return res.status(200).send(text)
     }
     const text = await response.text()
-    console.log('[ical] first 200 chars:', text.slice(0, 200))
     res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+    res.setHeader('Cache-Control', 'no-store')
     return res.status(200).send(text)
   } catch (err) {
     console.error('[ical]', err.message, '|', decoded.slice(0, 80))
