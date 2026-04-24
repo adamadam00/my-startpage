@@ -5,6 +5,7 @@ import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import CacheManager from './lib/cacheManager'
+import { useModal } from './lib/useModal'
 import './index.css'
  
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
@@ -29,6 +30,15 @@ function WeatherWidget() {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
+  const closeTimer = useRef(null)
+
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    setOpen(true)
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 200)
+  }
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -98,7 +108,7 @@ function WeatherWidget() {
   }
 
   return (
-    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
@@ -106,15 +116,357 @@ function WeatherWidget() {
       </div>
       {open && forecast.length > 0 && (
         <div className="weather-dropdown">
-          {forecast.map((day) => (
-            <div key={day.date} className="weather-dropdown-row">
-              <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
-              <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
-              <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
-              <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+          <div className="weather-dropdown-inner">
+            {forecast.map((day) => (
+              <div key={day.date} className="weather-dropdown-row">
+                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
+const NEWS_FEEDS = [
+  { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
+  { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
+  { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
+  { id: 'reuters',  label: 'Reuters',   url: 'https://feeds.reuters.com/reuters/topNews' },
+  { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
+  { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
+]
+const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
+
+function NewsWidget({ theme, setTheme }) {
+  const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
+  const [open, setOpen] = useState(false)
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [activeFeed, setActiveFeed] = useState(null)
+  const closeTimer = useRef(null)
+
+  const disabledFeeds = theme.newsDisabledFeeds || []
+  const customFeeds = [
+    theme.newsCustom1 ? { id: 'custom1', label: theme.newsCustom1Label || 'Custom 1', url: theme.newsCustom1 } : null,
+    theme.newsCustom2 ? { id: 'custom2', label: theme.newsCustom2Label || 'Custom 2', url: theme.newsCustom2 } : null,
+    theme.newsCustom3 ? { id: 'custom3', label: theme.newsCustom3Label || 'Custom 3', url: theme.newsCustom3 } : null,
+  ].filter(Boolean)
+
+  const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
+
+  const fetchFeed = async (feed) => {
+    setLoading(true)
+    setArticles([])
+    try {
+      const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
+      const data = await res.json()
+      setArticles((data.items || []).slice(0, 10))
+    } catch {
+      setArticles([])
+    }
+    setLoading(false)
+  }
+
+  const handleOpen = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) {
+      const first = allFeeds[0]
+      if (first) { setActiveFeed(first); fetchFeed(first) }
+      setOpen(true)
+    }
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) {
+      const first = allFeeds[0]
+      if (first && !activeFeed) { setActiveFeed(first); fetchFeed(first) }
+      setOpen(true)
+    }
+  }
+
+  const switchFeed = (feed) => {
+    setActiveFeed(feed)
+    fetchFeed(feed)
+  }
+
+  if (allFeeds.length === 0) return null
+
+  return (
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseLeave={handleMouseLeave} onMouseEnter={handleMouseEnter}>
+      <button className="icon-btn topbar-quick-btn topbar-news-btn" title="News" onClick={handleOpen}>N</button>
+      {open && (
+        <div className="news-dropdown">
+          <div className="news-dropdown-inner">
+            <div className="news-feed-tabs">
+              {allFeeds.map(f => (
+                <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
+                  {f.label}
+                </button>
+              ))}
             </div>
-          ))}
+            <div className="news-articles">
+              {loading && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: '0.82em' }}>Loading...</div>}
+              {!loading && articles.length === 0 && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: '0.82em' }}>No articles found</div>}
+              {!loading && articles.map((a, i) => (
+                <a key={i} className="news-article-row" href={a.link} target="_blank" rel="noopener noreferrer">
+                  <span className="news-article-title">{a.title}</span>
+                  {a.pubDate && <span className="news-article-date">{new Date(a.pubDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>}
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── CALENDAR WIDGET ───────────────────────────────────────────────────────────
+// ─── CALENDAR WIDGET (iCal - no auth needed) ──────────────────────────────────
+function parseIcal(text) {
+  const events = []
+  const blocks = text.split('BEGIN:VEVENT')
+  blocks.slice(1).forEach(block => {
+    const get = (key) => {
+      const m = block.match(new RegExp(key + '[^:]*:([^\\r\\n]+)'))
+      return m ? m[1].trim() : null
+    }
+    const parseDate = (str) => {
+      if (!str) return null
+      if (str.includes('T')) return new Date(str.replace(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})(Z?)/, '$1-$2-$3T$4:$5:$6$7'))
+      return new Date(str.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3T00:00:00'))
+    }
+    const dtstart = get('DTSTART')
+    const summary = get('SUMMARY')
+    if (!dtstart || !summary) return
+    const start = parseDate(dtstart)
+    const dtend = get('DTEND')
+    const end = parseDate(dtend)
+    if (!start) return
+    events.push({
+      title: summary.replace(/\\,/g, ',').replace(/\\n/g, ' '),
+      start: start.toISOString(),
+      end: end ? end.toISOString() : start.toISOString(),
+      allDay: !dtstart.includes('T'),
+      location: (get('LOCATION') || '').replace(/\\,/g, ',') || null,
+    })
+  })
+  return events.sort((a, b) => new Date(a.start) - new Date(b.start))
+}
+
+async function fetchIcal(url) {
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 10000)
+    const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}`, { signal: controller.signal })
+    clearTimeout(timer)
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const text = await res.text()
+    if (!text.includes('BEGIN:VCALENDAR')) throw new Error('Not a valid iCal feed')
+    return text
+  } catch (err) {
+    throw new Error(`Failed to fetch calendar: ${err.message}`)
+  }
+}
+
+function CalendarWidget({ theme }) {
+  const [open, setOpen] = useState(false)
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const closeTimer = useRef(null)
+  const fetched = useRef(false)
+
+  const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
+  const urlKey = icalUrls.join('|')
+  const lastUrlKey = useRef('')
+
+  const fetchEvents = async () => {
+    if (!icalUrls.length) return
+    if (lastUrlKey.current === urlKey && fetched.current) return
+    lastUrlKey.current = urlKey
+    fetched.current = true
+    setLoading(true)
+    setError(null)
+    try {
+      const now = new Date()
+      const cutoff = new Date()
+      cutoff.setDate(cutoff.getDate() + 3)
+      cutoff.setHours(23, 59, 59, 999)
+      const results = await Promise.allSettled(icalUrls.map(u => fetchIcal(u)))
+      const all = []
+      results.forEach(r => {
+        if (r.status === 'fulfilled') {
+          try {
+            parseIcal(r.value).forEach(ev => {
+              const s = new Date(ev.start)
+              if (s >= now && s <= cutoff) all.push(ev)
+            })
+          } catch { /* skip bad calendar */ }
+        }
+      })
+      all.sort((a, b) => new Date(a.start) - new Date(b.start))
+      setEvents(all)
+      if (all.length === 0 && results.every(r => r.status === 'rejected')) {
+        setError('Could not load calendars — check your iCal URLs')
+      }
+    } catch (e) {
+      setError('Error loading calendar')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleMouseEnter = () => { clearTimeout(closeTimer.current); if (!open) { setOpen(true); fetchEvents() } }
+  const handleMouseLeave = () => { closeTimer.current = setTimeout(() => setOpen(false), 300) }
+
+  const grouped = {}
+  events.forEach(ev => {
+    const key = new Date(ev.start).toLocaleDateString('en-AU', { weekday: 'short', month: 'short', day: 'numeric' })
+    if (!grouped[key]) grouped[key] = []
+    grouped[key].push(ev)
+  })
+  const formatTime = (iso, allDay) => allDay ? 'All day' : new Date(iso).toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', hour12: true })
+
+  if (theme.hideCalendar) return null
+
+  return (
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button className="icon-btn topbar-quick-btn topbar-cal-btn" title="Calendar (next 3 days)">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="1.5"/>
+          <line x1="5" y1="1" x2="5" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <line x1="11" y1="1" x2="11" y2="4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+          <rect x="4" y="8.5" width="2" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="7.5" y="8.5" width="2" height="2" rx="0.5" fill="currentColor"/>
+          <rect x="11" y="8.5" width="2" height="2" rx="0.5" fill="currentColor"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="cal-dropdown">
+          <div className="cal-dropdown-inner">
+            <div className="cal-header">
+              Next 3 days
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
+            </div>
+            {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
+            {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
+            {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
+            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
+            {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
+              <div key={day} className="cal-day-group">
+                <div className="cal-day-label">{day}</div>
+                {dayEvents.map((ev, i) => (
+                  <a key={i} className="cal-event-row" href="https://calendar.google.com" target="_blank" rel="noopener noreferrer">
+                    <span className="cal-event-time">{formatTime(ev.start, ev.allDay)}</span>
+                    <span className="cal-event-title">{ev.title}</span>
+                    {ev.location && <span className="cal-event-loc" title={ev.location}>📍</span>}
+                  </a>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+// ─── GMAIL WIDGET ───────────────────────────────────────────────────────────────
+function parseGmailAtom(xml) {
+  const emails = []
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(xml, 'text/xml')
+  const entries = doc.querySelectorAll('entry')
+  entries.forEach(entry => {
+    const title = entry.querySelector('title')?.textContent || '(no subject)'
+    const authorName = entry.querySelector('author name')?.textContent || ''
+    const id = entry.querySelector('id')?.textContent || ''
+    // Extract message ID from tag:gmail.google.com,2004:...
+    const msgId = id.split(':').pop()
+    emails.push({
+      subject: title,
+      from: authorName,
+      link: `https://mail.google.com/mail/u/0/#inbox/${msgId}`
+    })
+  })
+  return emails
+}
+
+function GmailWidget({ theme }) {
+  const [open, setOpen] = useState(false)
+  const [emails, setEmails] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const closeTimer = useRef(null)
+  const fetched = useRef(false)
+
+  const fetchEmails = async () => {
+    if (fetched.current) return
+    fetched.current = true
+    setLoading(true)
+    setError(null)
+    try {
+      const gmailAtom = 'https://mail.google.com/mail/feed/atom'
+      const res = await fetch(`/api/ical?url=${encodeURIComponent(gmailAtom)}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const xml = await res.text()
+      if (!xml.includes('<feed')) throw new Error('Not logged into Google or no access')
+      setEmails(parseGmailAtom(xml))
+    } catch (e) {
+      setError(e.message)
+    }
+    setLoading(false)
+  }
+
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) { setOpen(true); fetchEmails() }
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+
+  if (theme.hideGmail) return null
+
+  return (
+    <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button className="icon-btn topbar-quick-btn topbar-gmail-btn" title="Unread Gmail">
+        <svg width="14" height="11" viewBox="0 0 20 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="18" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+          <polyline points="1,2 10,9 19,2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+        </svg>
+        {emails.length > 0 && <span className="gmail-badge">{emails.length > 9 ? '9+' : emails.length}</span>}
+      </button>
+      {open && (
+        <div className="cal-dropdown gmail-dropdown">
+          <div className="cal-dropdown-inner">
+            <div className="cal-header">
+              Unread mail
+              <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
+            </div>
+            {loading && <div className="cal-empty">Loading...</div>}
+            {!loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error} — make sure you're logged into Google</div>}
+            {!loading && !error && emails.length === 0 && <div className="cal-empty">No unread emails 📭</div>}
+            {!loading && !error && emails.map((em, i) => (
+              <a key={i} className="gmail-row" href={em.link} target="_blank" rel="noopener noreferrer">
+                <div className="gmail-from">{em.from}</div>
+                <div className="gmail-subject">{em.subject}</div>
+              </a>
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -228,6 +580,10 @@ function applyTheme(t) {
   if (!t) return
   const root = document.documentElement
   const s = (k, v) => { if (v !== undefined && v !== null) root.style.setProperty(k, String(v)) }
+  const hexRgb = (hex) => {
+    const h = (hex || '#000000').replace('#', '')
+    return parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16)
+  }
   s('--bg', t.bg); s('--bg2', t.bg2); s('--bg3', t.bg3)
   
   s('--card', t.card)
@@ -236,16 +592,21 @@ function applyTheme(t) {
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
   
   const baseBorderColor = t.border
-  s('--card-opacity', 1)
+  s('--card-opacity', ((t.cardOpacity ?? 1) * 100) + '%')
+  const cardR = hexRgb(t.card || '#12121a')
+  s('--card-with-opacity', `rgba(${cardR}, ${t.cardOpacity ?? 1})`)
+  const titleR = hexRgb(t.titleBg || t.card || '#12121a')
+  s('--title-bg-with-opacity', `rgba(${titleR}, ${t.headerOpacity ?? 1})`)
   s('--title-bg', (t.cardsGradientEnabled && t.cardsGradientTargetTitle) ? 'rgba(0,0,0,0.1)' : (t.titleBg ?? t.card))
-  s('--title-opacity', 1)
+  s('--header-opacity', ((t.headerOpacity ?? 1) * 100) + '%')
+  s('--title-opacity', t.headerOpacity ?? 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
-  s('--handle-opacity', (t.handleOpacity ?? 15) / 100)
-  s('--handle-opacity-global', t.handleOpacityGlobal ?? 0)
-  s('--handle-size', (t.handleSize ?? 9) + 'px')
+  s('--handle-opacity', 0.05)
+  s('--handle-opacity-global', 0.05)
+  s('--handle-size', '10px')
   s('--handle-color', t.handleColor ?? '#2a2a3a')
-  s('--action-button-scale', t.actionButtonScale ?? 0.75)
+  s('--action-button-scale', 1)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
   s('--title-color', t.titleColor ?? t.textDim)
   s('--link-color', t.linkColor ?? '#5b9eff')
@@ -300,8 +661,37 @@ function applyTheme(t) {
     s('--card-shadow', 'none')
   }
   
-  // Notes shadows
-  if (t.notesShadowEnabled) {
+  // Notes shadows - match cards if toggle on
+  if (t.notesShadowMatchCards ?? true) {
+    // Copy card shadow to notes
+    const cardShadow = t.cardShadowEnabled
+      ? (document.documentElement.style.getPropertyValue('--card-shadow') || 'none')
+      : 'none'
+    // Re-compute from card settings directly
+    if (t.cardShadowEnabled) {
+      const size = t.cardShadowSize ?? 8
+      const color = t.cardShadowColor ?? '#000000'
+      const opacity = t.cardShadowOpacity ?? 0.3
+      const curve = t.cardShadowCurve ?? 'linear'
+      const direction = t.cardShadowDirection ?? 'top-lit'
+      const toHexN = (op) => Math.round(Math.min(op, 1) * 255).toString(16).padStart(2, '0')
+      let shadow = ''
+      if (direction === 'top-lit') {
+        if (curve === 'linear') shadow = `0 ${size * 0.5}px ${size}px ${color}${toHexN(opacity)}`
+        else if (curve === 'soft') shadow = `0 ${size * 0.15}px ${size * 0.2}px ${color}${toHexN(opacity * 0.8)}, 0 ${size * 0.3}px ${size * 0.5}px ${color}${toHexN(opacity * 0.4)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHexN(opacity * 0.15)}`
+        else if (curve === 'sharp') shadow = `0 ${size * 0.25}px ${size * 0.3}px ${color}${toHexN(opacity * 1.4)}, 0 ${size * 0.4}px ${size * 0.6}px ${color}${toHexN(opacity * 0.3)}`
+        else if (curve === 'glow') shadow = `0 ${size * 0.3}px ${size * 0.8}px ${color}${toHexN(opacity * 0.5)}, 0 ${size * 0.5}px ${size * 1.2}px ${color}${toHexN(opacity * 0.3)}`
+      } else {
+        if (curve === 'linear') shadow = `0 0 ${size}px ${color}${toHexN(opacity)}`
+        else if (curve === 'soft') shadow = `0 0 ${size * 0.2}px ${color}${toHexN(opacity * 0.8)}, 0 0 ${size * 0.5}px ${color}${toHexN(opacity * 0.4)}, 0 0 ${size * 1.2}px ${color}${toHexN(opacity * 0.15)}`
+        else if (curve === 'sharp') shadow = `0 0 ${size * 0.3}px ${color}${toHexN(opacity * 1.4)}, 0 0 ${size * 0.6}px ${color}${toHexN(opacity * 0.3)}`
+        else if (curve === 'glow') shadow = `0 0 ${size * 0.4}px ${color}${toHexN(opacity * 0.6)}, 0 0 ${size * 0.8}px ${color}${toHexN(opacity * 0.4)}, 0 0 ${size * 1.4}px ${color}${toHexN(opacity * 0.2)}`
+      }
+      s('--notes-shadow', shadow)
+    } else {
+      s('--notes-shadow', 'none')
+    }
+  } else if (t.notesShadowEnabled) {
     const size = t.notesShadowSize ?? 6
     const color = t.notesShadowColor ?? '#000000'
     const opacity = t.notesShadowOpacity ?? 0.25
@@ -454,11 +844,6 @@ function applyTheme(t) {
     const g = parseInt(h.slice(2, 4), 16)
     const b = parseInt(h.slice(4, 6), 16)
     return 'rgba(' + r + ',' + g + ',' + b + ',' + aa + ')'
-  }
-
-  const hexRgb = (hex) => {
-    const h = (hex || '#000000').replace('#', '')
-    return parseInt(h.slice(0, 2), 16) + ',' + parseInt(h.slice(2, 4), 16) + ',' + parseInt(h.slice(4, 6), 16)
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
@@ -748,9 +1133,9 @@ function applyTheme(t) {
   s('--bg-05-c1', t.bgGradC1 || '#1a2a4a')
   s('--bg-05-c2', t.bgGradC2 || '#2a1a3a')
   s('--bg-05-c3', t.bgGradC3 || '#1a3a2a')
-  s('--bg-08-c1', t.bgStarC1 || '#05050f')
-  s('--bg-08-c2', t.bgStarC2 || '#000308')
-  s('--bg-08-c3', t.bgStarC3 || '#c8d2ff')
+  s('--bg-08-c1', t.bgC1 || t.bgStarC1 || '#05050f')
+  s('--bg-08-c2', t.bgC2 || t.bgStarC2 || '#000308')
+  s('--bg-08-c3', t.bgC3 || t.bgStarC3 || '#c8d2ff')
   s('--bg-14-c1', t.bgFogC1 || '#3a4a6e')
   s('--bg-15-c1', t.bgScanC1 || '#6c8fff')
   s('--bg-15-c2', t.bgScanC2 || '#05050d')
@@ -776,7 +1161,6 @@ function applyTheme(t) {
   if (t.bgScanC2) s('--bg-scan-bg', t.bgScanC2)
   if (t.bgDotScale) s('--bg-dot-scale', t.bgDotScale + 'px')
   if (t.bgGridScale) s('--bg-grid-scale', t.bgGridScale + 'px')
-  if (t.bgStarSize) s('--bg-star-size', t.bgStarSize)
   
   // Shape & Grid settings
   if (t.bgShapeOpacity != null) s('--bg-shape-opacity', t.bgShapeOpacity)
@@ -795,9 +1179,17 @@ function applyTheme(t) {
   if (t.bgNebulaC1) { const r=hexRgb(t.bgNebulaC1); s('--bg-nebula-c1', `rgba(${r},0.5)`) }
   if (t.bgNebulaC2) { const r=hexRgb(t.bgNebulaC2); s('--bg-nebula-c2', `rgba(${r},0.5)`) }
   
-  // Starfield settings
-  if (t.bgStarDensity) s('--bg-star-density', t.bgStarDensity + '%')
-  if (t.bgStarSpeed) s('--bg-star-speed', t.bgStarSpeed)
+  // Starfield - combine star speed with global anim speed
+  s('--bg-star-size', t.bgStarSize ?? 1)
+  s('--bg-star-density', t.bgStarDensity ? t.bgStarDensity / 100 : 1)
+  s('--bg-star-speed', (t.bgStarSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
+  // Star streaks
+  s('--bg-streak-bg', t.bgStreakBg || '#02020f')
+  if (t.bgStreakC1) { const r = hexRgb(t.bgStreakC1); s('--bg-streak-c1', `rgba(${r},0.9)`) }
+  if (t.bgStreakC2) { const r = hexRgb(t.bgStreakC2); s('--bg-streak-c2', `rgba(${r},0.7)`) }
+  s('--bg-streak-speed', (t.bgStreakSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
+  s('--bg-streak-length', t.bgStreakLength ? t.bgStreakLength / 100 : 1)
+  s('--bg-streak-opacity', t.bgStreakOpacity ?? 1)
   
   // Plasma backgrounds
   if (t.bgPlasmaSpeed) s('--bg-plasma-speed', t.bgPlasmaSpeed)
@@ -873,6 +1265,9 @@ function applyTheme(t) {
   
   s('--notes-gap', (t.sectionGap ?? 0) + 'px')
   s('--notes-radius', (t.notesRadius ?? 4) + 'px')
+  s('--news-font-size', (t.newsFontSize ?? 12) + 'px')
+  s('--news-padding-h', (t.newsPaddingH ?? 14) + 'px')
+  s('--news-padding-v', (t.newsPaddingV ?? 8) + 'px')
   if (t.notesCardBg) s('--notes-card-bg', t.notesCardBg)
   s('--notes-card-bg-opacity', t.notesCardBgOpacity ?? 1)
   if (t.notesSharedBg) s('--notes-shared-bg', t.notesSharedBg)
@@ -898,6 +1293,23 @@ function applyTheme(t) {
 }
 
 export default function App() {
+  const { Modal, alert: modalAlert, confirm: modalConfirm, prompt: modalPrompt } = useModal()
+
+  // Override native browser dialogs globally — prevents the "block dialogs" checkbox
+  useEffect(() => {
+    window._nativeAlert = window.alert
+    window._nativeConfirm = window.confirm
+    window._nativePrompt = window.prompt
+    window.alert = (msg) => modalAlert(String(msg))
+    window.confirm = (msg) => modalConfirm(String(msg))
+    window.prompt = (msg, def) => modalPrompt(String(msg), def || '')
+    return () => {
+      window.alert = window._nativeAlert
+      window.confirm = window._nativeConfirm
+      window.prompt = window._nativePrompt
+    }
+  }, [modalAlert, modalConfirm, modalPrompt])
+
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -906,7 +1318,6 @@ export default function App() {
     // Load workspaces from cache immediately for instant render
     return CacheManager.load('workspaces') || []
   })
-  const workspaceOrderRef = useRef([])
   const [mode, setMode] = useState(() => {
     try {
       return localStorage.getItem('workspaceMode') || 'home'
@@ -916,12 +1327,13 @@ export default function App() {
   })
   const [activeWs, setActiveWs] = useState(() => {
     try {
-      // Try cache first, then localStorage
       return CacheManager.load('activeWorkspace') || localStorage.getItem('activeWorkspace') || null
     } catch {
       return null
     }
   })
+  const activeWsRef = useRef(activeWs)
+  useEffect(() => { activeWsRef.current = activeWs }, [activeWs])
   const [sections, setSections] = useState(() => {
     // Load sections from cache immediately
     return CacheManager.load('sections') || []
@@ -1002,18 +1414,11 @@ export default function App() {
     }
   }, [sections, notes, theme])
 
-  const applyWorkspaceOrder = (wsArray, order) => {
-    if (!order?.length) return wsArray
-    const ordered = order.map(id => wsArray.find(w => w.id === id)).filter(Boolean)
-    const rest = wsArray.filter(w => !order.includes(w.id))
-    return [...ordered, ...rest]
-  }
-
   const persistTheme = (t, immediate = false) => {
     clearTimeout(saveThemeRef.current)
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
-      const wsId = activeWs
+      const wsId = activeWsRef.current  // always current value, not stale closure
       
       console.log('[persistTheme] uid:', uid, 'wsId:', wsId)
       
@@ -1043,7 +1448,7 @@ export default function App() {
       // Also keep user_settings as global fallback
       const { data: updated, error: upErr } = await supabase
         .from('user_settings')
-        .update({ theme: themeData, updated_at: new Date().toISOString() })
+        .update({ theme: themeData })
         .eq('user_id', uid)
         .select('id')
       if (upErr) { console.error('[settings] update error:', upErr.message); return }
@@ -1185,7 +1590,7 @@ export default function App() {
     if (!uid) { console.log('[settings] no uid'); return }
     try {
       const { data, error } = await supabase
-        .from('user_settings').select('theme, workspace_order').eq('user_id', uid).maybeSingle()
+        .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
       const localRaw = localStorage.getItem('current_theme')
@@ -1215,12 +1620,6 @@ export default function App() {
         } else {
           console.log('[settings] neither local nor remote has data — using defaults')
         }
-      }
-
-      // Load and apply saved workspace order
-      if (data?.workspace_order?.length) {
-        workspaceOrderRef.current = data.workspace_order
-        console.log('[workspace_order] ✅ loaded from Supabase:', data.workspace_order)
       }
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
@@ -1260,15 +1659,28 @@ export default function App() {
       const { data: created, error: err } = await supabase
         .from('workspaces').insert({ user_id: session.user.id, name: 'Home' }).select().single()
       if (err) { alert(err.message); return }
-      
       setWorkspaces([created])
       setActiveWs(created.id)
       CacheManager.save('workspaces', [created])
       CacheManager.save('activeWorkspace', created.id)
       return
     }
+
+    // Apply saved order if exists
+    const { data: settings } = await supabase.from('user_settings').select('workspace_order').eq('user_id', session.user.id).single()
+    const savedOrder = settings?.workspace_order
+    let ordered = data
+    if (savedOrder?.length) {
+      ordered = [...data].sort((a, b) => {
+        const ai = savedOrder.indexOf(a.id)
+        const bi = savedOrder.indexOf(b.id)
+        if (ai === -1) return 1
+        if (bi === -1) return -1
+        return ai - bi
+      })
+    }
     
-    setWorkspaces(applyWorkspaceOrder(data, workspaceOrderRef.current))
+    setWorkspaces(ordered)
     const wsId = data[0]?.id ?? null
     setActiveWs(prev => prev ?? wsId)
     CacheManager.save('workspaces', data)
@@ -1288,9 +1700,8 @@ export default function App() {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
       
-      const sortedWs = applyWorkspaceOrder(wsData || [], workspaceOrderRef.current)
-      setWorkspaces(sortedWs)
-      CacheManager.save('workspaces', sortedWs)
+      setWorkspaces(wsData || [])
+      CacheManager.save('workspaces', wsData || []) // Cache workspaces
       
       const currentWs = activeWs ?? wsData?.[0]?.id ?? null
       if (!currentWs) return
@@ -1300,23 +1711,27 @@ export default function App() {
         CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
       }
       
-      const [{ data: secData }, { data: linkData }, { data: noteData }] = await Promise.all([
+      const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+        supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
       ])
+      
+      // Merge own notes + shared notes (deduplicate by id)
+      const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
       
       setSections(secData || [])
       setLinks(linkData || [])
-      setNotes(noteData || [])
+      setNotes(allNotes)
       
       // Cache all data
       CacheManager.save('sections', secData || [])
       CacheManager.save('links', linkData || [])
-      CacheManager.save('notes', noteData || [])
+      CacheManager.save('notes', allNotes)
       CacheManager.save(`sections_${currentWs}`, secData || [])
       CacheManager.save(`links_${currentWs}`, linkData || [])
-      CacheManager.save(`notes_${currentWs}`, noteData || [])
+      CacheManager.save(`notes_${currentWs}`, allNotes)
       
     } catch (err) {
       console.error('Refresh network error:', err.message)
@@ -1332,14 +1747,17 @@ export default function App() {
 
   useEffect(() => { 
     if (activeWs && session) {
-      // Load workspace-specific theme
       const loadWorkspaceTheme = async () => {
+        const wsIdAtLoad = activeWs  // capture at call time
         const { data } = await supabase
           .from('workspaces')
           .select('theme')
           .eq('id', activeWs)
           .single()
         
+        // Discard result if workspace changed while we were fetching
+        if (activeWsRef.current !== wsIdAtLoad) return
+
         if (data?.theme && Object.keys(data.theme).length > 5) {
           const workspaceTheme = { ...DEFAULT_THEME, ...data.theme }
           setThemeState(workspaceTheme)
@@ -1455,26 +1873,15 @@ export default function App() {
     setActiveWs(next[0]?.id ?? null)
   }
 
-  const reorderWorkspaces = async (newOrderIds) => {
-    workspaceOrderRef.current = newOrderIds
-    setWorkspaces(prev => applyWorkspaceOrder(prev, newOrderIds))
-    const uid = sessionRef.current?.user?.id
+  const reorderWorkspaces = async (newOrder) => {
+    setWorkspaces(newOrder)
+    // Persist order to Supabase as array of IDs
+    const uid = session?.user?.id
     if (!uid) return
-    const { error } = await supabase
-      .from('user_settings')
-      .update({ workspace_order: newOrderIds })
+    const orderIds = newOrder.map(w => w.id)
+    await supabase.from('user_settings')
+      .update({ workspace_order: orderIds })
       .eq('user_id', uid)
-    if (error) {
-      // Row might not exist yet — try insert
-      await supabase.from('user_settings').insert({ user_id: uid, workspace_order: newOrderIds })
-    }
-    console.log('[workspace_order] ✅ saved:', newOrderIds)
-  }
-
-  const updateWorkspaceVisibility = async (id, visibility) => {
-    const { error } = await supabase.from('workspaces').update({ visibility }).eq('id', id)
-    if (error) return alert(error.message)
-    setWorkspaces(prev => prev.map(w => w.id === id ? { ...w, visibility } : w))
   }
 
   const handleImageUpload = (file) => {
@@ -1672,6 +2079,7 @@ export default function App() {
 
 	  return (
 		<>
+		  <Modal />
 		  {/* Offline indicator */}
 		  {!isOnline && (
 			<div style={{
@@ -1694,6 +2102,15 @@ export default function App() {
 		  
 		  <div className="app" ref={contentRef}>
 
+			{/* Background blur overlay */}
+			{(theme.bgBlur ?? 0) > 0 ? (
+			  <div style={{
+				position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+				backdropFilter: `blur(${theme.bgBlur}px)`,
+				WebkitBackdropFilter: `blur(${theme.bgBlur}px)`,
+			  }} />
+			) : null}
+
 			{/* Wallpaper overlay */}
 			{theme.wallpaper ? (
 			  <div style={{
@@ -1711,15 +2128,16 @@ export default function App() {
 			) : null}
 
 			{/* ── TOPBAR ──────────────────────────────────────── */}
-			<div className="topbar" style={{ position: 'relative', zIndex: 2 }}>
+			<div className="topbar">
 
 			  {/* Workspace tabs */}
 			  <div className="workspace-tabs">
 				{workspaces
 				  .filter(ws => {
-					const visibility = ws.visibility || 'both'
-					if (mode === 'home') return true // Home sees everything
-					return visibility === 'work' || visibility === 'both'
+					const v = ws.visibility || 'both'
+					if (mode === 'home') return v === 'home' || v === 'both'
+					if (mode === 'work') return v === 'work' || v === 'both'
+					return true
 				  })
 				  .map(ws => (
 				  <button
@@ -1739,6 +2157,37 @@ export default function App() {
 				{!(theme.hideClock ?? false) && <ClockWidget />}
 				{!(theme.hideClock ?? false) && !(theme.hideWeather ?? false) && <div className="topbar-divider" />}
 				{!(theme.hideWeather ?? false) && <WeatherWidget />}
+				{!(theme.hideNews ?? false) && <NewsWidget theme={theme} setTheme={setTheme} />}
+				{!(theme.hideCalendar ?? false) && <CalendarWidget theme={theme} />}
+				{!(theme.hideGmail ?? true) && <GmailWidget theme={theme} />}
+				<div className="topbar-divider" />
+				<a
+				  className="icon-btn topbar-quick-btn"
+				  title="New tab"
+				  href="about:blank"
+				  target="_blank"
+				  rel="noreferrer"
+				>
+				  <svg width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+				    <rect x="1" y="1" width="10" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+				    <line x1="6.5" y1="3.5" x2="6.5" y2="9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+				    <line x1="3.5" y1="6.5" x2="9.5" y2="6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+				  </svg>
+				</a>
+				<a
+				  className="icon-btn topbar-quick-btn topbar-google-btn"
+				  title="Google"
+				  href="https://www.google.com.au"
+				  target="_blank"
+				  rel="noreferrer"
+				>
+				  <svg width="16" height="16" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+				    <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+				    <path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+				    <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71s.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9s.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+				    <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.958L3.964 6.29C4.672 4.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+				  </svg>
+				</a>
 				{!(theme.hideSearch ?? false) && <div className="search-compact">
 				  <div className="search-mode-bar">
 					{[
@@ -1771,8 +2220,13 @@ export default function App() {
 					onKeyDown={e => {
 					  if (searchMode === 'web' && e.key === 'Enter' && webSearch.trim()) {
 						const url = (theme.searchEngineUrl || 'https://www.google.com/search?q=') + encodeURIComponent(webSearch.trim())
-						if (theme.openInNewTab ?? true) window.open(url, '_blank', 'noopener,noreferrer')
-						else window.location.href = url
+						const a = document.createElement('a')
+						a.href = url
+						a.target = '_blank'
+						a.rel = 'noopener noreferrer'
+						document.body.appendChild(a)
+						a.click()
+						document.body.removeChild(a)
 						setWebSearch('')
 					  }
 					  if (searchMode === 'bookmarks' && e.key === 'Enter' && filteredBookmarks.length) {
@@ -1811,13 +2265,19 @@ export default function App() {
 			  </div>
 			  <div className="topbar-actions">
 				<button
-				  className="btn"
+				  className="icon-btn topbar-quick-btn"
 				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  onClick={toggleAll}
+				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
 				>
 				  {allCollapsed ? '▾' : '▴'}
 				</button>
-				<button className="icon-btn" title="Settings" onClick={() => setSettingsOpen(true)} style={{ fontSize: '1.5em' }}>⚙</button>
+				<button
+				  className="icon-btn topbar-quick-btn"
+				  title="Settings"
+				  onClick={() => setSettingsOpen(true)}
+				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
+				>⚙</button>
 			  </div>
 			</div>
 
@@ -1830,24 +2290,26 @@ export default function App() {
 				  userId={session.user.id}
 				  workspaceId={activeWs}
 				  onRefresh={handleRefresh}
-				  colCount={Math.max(theme.sectionsCols ?? 6, 6)}
+				  colCount={theme.sectionsCols ?? 6}
 				  triggerCollapseAll={triggerCollapse}
 				  triggerExpandAll={triggerExpand}
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
 				  onAddSection={async () => {
-					const name = window.prompt('Section name:', 'New Section')
-					if (!name?.trim()) return
+					const name = await window.prompt('Section name:', 'New Section')
+					if (!name) return
+					const sectionName = String(name).trim() || 'New Section'
 					const { error } = await supabase
 					  .from('sections')
 					  .insert({
 						user_id: session.user.id,
 						workspace_id: activeWs,
-						name: name.trim(),
+						name: sectionName,
 						position: sections.length,
+						col_index: 0,
 						collapsed: false
 					  })
-					if (error) { alert('Error creating section: ' + error.message); return }
+					if (error) { console.error('Error creating section:', error.message); return }
 					await handleRefresh()
 				  }}
 				/>
@@ -1857,6 +2319,7 @@ export default function App() {
 				  notes={notes}
 				  workspaceId={activeWs}
 				  workspace={workspaces.find(w => w.id === activeWs)}
+				  workspaces={workspaces}
 				  userId={session.user.id}
 				  onRefresh={handleRefresh}
 				  forceOpen={notesTrigger}
@@ -1897,7 +2360,6 @@ export default function App() {
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}
 				onReorderWorkspaces={reorderWorkspaces}
-				onWorkspaceVisibilityChange={updateWorkspaceVisibility}
 				onSetActiveWs={setActiveWs}
 			  />
 			)}
