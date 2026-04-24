@@ -5,6 +5,7 @@ import Notes from './components/Notes'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import CacheManager from './lib/cacheManager'
+import { useModal } from './lib/useModal'
 import './index.css'
  
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
@@ -1302,6 +1303,23 @@ function applyTheme(t) {
 }
 
 export default function App() {
+  const { Modal, alert: modalAlert, confirm: modalConfirm, prompt: modalPrompt } = useModal()
+
+  // Override native browser dialogs globally — prevents the "block dialogs" checkbox
+  useEffect(() => {
+    window._nativeAlert = window.alert
+    window._nativeConfirm = window.confirm
+    window._nativePrompt = window.prompt
+    window.alert = (msg) => modalAlert(String(msg))
+    window.confirm = (msg) => modalConfirm(String(msg))
+    window.prompt = (msg, def) => modalPrompt(String(msg), def || '')
+    return () => {
+      window.alert = window._nativeAlert
+      window.confirm = window._nativeConfirm
+      window.prompt = window._nativePrompt
+    }
+  }, [modalAlert, modalConfirm, modalPrompt])
+
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -2067,6 +2085,7 @@ export default function App() {
 
 	  return (
 		<>
+		  <Modal />
 		  {/* Offline indicator */}
 		  {!isOnline && (
 			<div style={{
@@ -2282,9 +2301,9 @@ export default function App() {
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
 				  onAddSection={async () => {
-					const name = window.prompt('Section name:', 'New Section')
-					if (name === null) return
-					const sectionName = name.trim() || 'New Section'
+					const name = await window.prompt('Section name:', 'New Section')
+					if (!name) return
+					const sectionName = String(name).trim() || 'New Section'
 					const { error } = await supabase
 					  .from('sections')
 					  .insert({
