@@ -789,8 +789,7 @@ export default function Settings({
               <SectionTitle>Text Colors</SectionTitle>
               <Row label="Primary text"><ColorPick label="Primary text" value={theme.text} onChange={v => set('text', v)} /></Row>
               <Row label="Secondary text"><ColorPick label="Secondary text" value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
-              <Row label="Card header color"><ColorPick label="Card header color" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
-              <Row label="Archive card title color"><ColorPick label="Archive card title color" value={theme.archiveCardTitleColor ?? '#8888b0'} onChange={v => set('archiveCardTitleColor', v)} /></Row>
+              <Row label="Header / Label"><ColorPick label="Header / Label" value={theme.titleColor || theme.textDim} onChange={v => set('titleColor', v)} /></Row>
               
               <SectionTitle>Settings Panel Colors</SectionTitle>
               <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
@@ -1125,7 +1124,7 @@ export default function Settings({
                     <span style={{ flex: 1, fontSize: '0.82em', cursor: 'pointer', color: ws.id === activeWs ? 'var(--accent)' : 'var(--text-dim)' }} onClick={() => onSetActiveWs(ws.id)}>
                       {ws.name}
                       <span style={{ fontSize: '0.85em', opacity: 0.6, marginLeft: '0.3rem' }}>
-                        {ws.visibility === 'home' ? '🏠' : ws.visibility === 'work' ? '💼' : '🔄'}
+                        {ws.visibility === 'home' ? '🏠' : ws.visibility === 'work' ? '💼' : ws.visibility === 'mobile' ? '📱' : '🔄'}
                       </span>
                     </span>
                     <select className="input" style={{ fontSize: '0.7em', padding: '0.15rem 0.25rem', width: 'auto' }}
@@ -1139,6 +1138,7 @@ export default function Settings({
                       <option value="both">Both</option>
                       <option value="home">Home</option>
                       <option value="work">Work</option>
+                      <option value="mobile">📱 Mobile</option>
                     </select>
                     <button className="btn-xs" onClick={() => { const n = prompt('Rename workspace:', ws.name); if (n?.trim()) onRenameWorkspace(ws.id, n.trim()) }}>✎</button>
                     <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button>
