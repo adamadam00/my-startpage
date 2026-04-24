@@ -29,8 +29,8 @@ self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return
   if (!url.protocol.startsWith('http')) return
 
-  // Supabase + auth — always network, never cache
-  if (url.hostname.includes('supabase') || url.pathname.includes('/auth/')) {
+  // Supabase + auth + API functions — always network, never cache
+  if (url.hostname.includes('supabase') || url.pathname.includes('/auth/') || url.pathname.startsWith('/api/')) {
     return  // let it fall through to network
   }
 
