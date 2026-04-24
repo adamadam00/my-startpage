@@ -1086,18 +1086,21 @@ export default function Settings({
           if (sectionId === 'workspaces') return (
             <Group title="Workspaces" defaultOpen={false} {...commonGroupProps}>
               <SectionTitle>View Mode</SectionTitle>
+              <div style={{ fontSize: '0.75em', color: 'var(--text-dim)', padding: '0 0 0.4rem', lineHeight: 1.5 }}>
+                Switch mode to show only relevant workspaces.
+              </div>
               <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.65rem' }}>
                 <button 
                   className={`btn-xs${mode === 'home' ? ' btn-primary' : ''}`}
                   onClick={() => setMode('home')}
                 >
-                  🏠 Home (see all)
+                  🏠 Home mode
                 </button>
                 <button 
                   className={`btn-xs${mode === 'work' ? ' btn-primary' : ''}`}
                   onClick={() => setMode('work')}
                 >
-                  💼 Work (restricted)
+                  💼 Work mode
                 </button>
               </div>
               <SectionTitle>Manage Workspaces</SectionTitle>
