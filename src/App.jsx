@@ -144,6 +144,13 @@ const NEWS_FEEDS = [
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
+function getFavicon(url) {
+  try {
+    const domain = new URL(url).hostname
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`
+  } catch { return null }
+}
+
 function NewsWidget({ theme, setTheme }) {
   const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [open, setOpen] = useState(false)
@@ -210,6 +217,7 @@ function NewsWidget({ theme, setTheme }) {
             <div className="news-feed-tabs">
               {allFeeds.map(f => (
                 <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
+                  {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width: 12, height: 12, marginRight: '0.3rem', verticalAlign: 'middle', borderRadius: 2, flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
                   {f.label}
                 </button>
               ))}
@@ -268,7 +276,7 @@ async function fetchIcal(url) {
   try {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 10000)
-    const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}&t=${Date.now()}`, { signal: controller.signal })
+    const res = await fetch(`/api/ical?url=${encodeURIComponent(url)}`, { signal: controller.signal })
     clearTimeout(timer)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const text = await res.text()
