@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "../lib/supabase";
-
+ 
 const SWATCH_COLORS = [
   { label: "Reset", value: "" },
   { label: "Red", value: "#ff6b6b" },
