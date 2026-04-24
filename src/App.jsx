@@ -1295,14 +1295,38 @@ function applyTheme(t) {
 export default function App() {
   const { Modal, alert: modalAlert, confirm: modalConfirm, prompt: modalPrompt } = useModal()
 
-  // Override native browser dialogs globally — prevents the "block dialogs" checkbox
   useEffect(() => {
     window._nativeAlert = window.alert
     window.alert = (msg) => modalAlert(String(msg))
-    return () => {
-      window.alert = window._nativeAlert
-    }
+    return () => { window.alert = window._nativeAlert }
   }, [modalAlert])
+
+  // Mobile detection
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 520px)').matches)
+  const [mobilePanel, setMobilePanel] = useState('cards')
+  const touchStartX = useRef(null)
+  const touchStartY = useRef(null)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 520px)')
+    const h = e => setIsMobile(e.matches)
+    mq.addEventListener('change', h)
+    return () => mq.removeEventListener('change', h)
+  }, [])
+
+  const handleTouchStart = e => {
+    touchStartX.current = e.touches[0].clientX
+    touchStartY.current = e.touches[0].clientY
+  }
+  const handleTouchEnd = e => {
+    if (touchStartX.current === null) return
+    const dx = e.changedTouches[0].clientX - touchStartX.current
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current)
+    if (Math.abs(dx) > 40 && dy < 80) {
+      setMobilePanel(dx < 0 ? 'notes' : 'cards')
+    }
+    touchStartX.current = null
+    touchStartY.current = null
+  }
 
   const [session, setSession] = useState(null)
   const sessionRef = useRef(null)
@@ -2122,13 +2146,14 @@ export default function App() {
 			) : null}
 
 			{/* ── TOPBAR ──────────────────────────────────────── */}
-			<div className="topbar">
+			<div className={`topbar${isMobile ? ' topbar-mobile' : ''}`}>
 
 			  {/* Workspace tabs */}
 			  <div className="workspace-tabs">
 				{workspaces
 				  .filter(ws => {
 					const v = ws.visibility || 'both'
+					if (isMobile) return v === 'mobile' || v === 'both'
 					if (mode === 'home') return v === 'home' || v === 'both'
 					if (mode === 'work') return v === 'work' || v === 'both'
 					return true
@@ -2276,6 +2301,57 @@ export default function App() {
 			</div>
 
 			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
+			{isMobile ? (
+			  <div className="mobile-main"
+			    onTouchStart={handleTouchStart}
+			    onTouchEnd={handleTouchEnd}
+			  >
+			    <div className={`mobile-track${mobilePanel === 'notes' ? ' show-notes' : ''}`}>
+			      <div className="mobile-panel">
+			        <Sections
+			          sections={sections}
+			          links={searchMode === 'links' ? filteredLinks : links}
+			          userId={session.user.id}
+			          workspaceId={activeWs}
+			          onRefresh={handleRefresh}
+			          colCount={1}
+			          triggerCollapseAll={triggerCollapse}
+			          triggerExpandAll={triggerExpand}
+			          openInNewTab={theme.openInNewTab ?? true}
+			          faviconEnabled={theme.faviconEnabled ?? true}
+			          onAddSection={async (name) => {
+			            const sectionName = (name || 'New Section').trim()
+			            const { error } = await supabase.from('sections').insert({
+			              user_id: session.user.id, workspace_id: activeWs,
+			              name: sectionName, position: sections.length, col_index: 0, collapsed: false
+			            })
+			            if (error) { console.error(error.message); return }
+			            await handleRefresh()
+			          }}
+			        />
+			      </div>
+			      <div className="mobile-panel">
+			        <Notes
+			          notes={notes}
+			          workspaceId={activeWs}
+			          workspace={workspaces.find(w => w.id === activeWs)}
+			          workspaces={workspaces}
+			          userId={session.user.id}
+			          onRefresh={handleRefresh}
+			          forceOpen={notesTrigger}
+			        />
+			      </div>
+			    </div>
+			    <div className="mobile-tab-bar">
+			      <button className={`mobile-tab-btn${mobilePanel === 'cards' ? ' active' : ''}`} onClick={() => setMobilePanel('cards')}>
+			        ☰ Cards
+			      </button>
+			      <button className={`mobile-tab-btn${mobilePanel === 'notes' ? ' active' : ''}`} onClick={() => setMobilePanel('notes')}>
+			        📝 Notes
+			      </button>
+			    </div>
+			  </div>
+			) : (
 			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? `1fr var(--notes-width, 240px)` : '1fr' }}>
 			  {!(theme.hideCards ?? false) && <div className="main-col">
 				<Sections
@@ -2290,17 +2366,11 @@ export default function App() {
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
 				  onAddSection={async (name) => {
-					const sectionName = (name || 'New Section').trim()
-					const { error } = await supabase
-					  .from('sections')
-					  .insert({
-						user_id: session.user.id,
-						workspace_id: activeWs,
-						name: sectionName,
-						position: sections.length,
-						col_index: 0,
-						collapsed: false
-					  })
+					const sectionName = (typeof name === 'string' ? name : '').trim() || 'New Section'
+					const { error } = await supabase.from('sections').insert({
+					  user_id: session.user.id, workspace_id: activeWs,
+					  name: sectionName, position: sections.length, col_index: 0, collapsed: false
+					})
 					if (error) { console.error('Error creating section:', error.message); return }
 					await handleRefresh()
 				  }}
@@ -2318,6 +2388,7 @@ export default function App() {
 				/>
 			  </div>}
 			</main>
+			)}
 
 			{/* ── SETTINGS ────────────────────────────────────── */}
 			{settingsOpen && (
