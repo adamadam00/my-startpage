@@ -696,7 +696,6 @@ export default function Settings({
 
           if (sectionId === 'wallpaper') return (
             <Group title="Wallpaper overlay" defaultOpen={false} {...commonGroupProps}>
-              <Row label="Background color"><ColorPick value={theme.bg} onChange={v => set('bg', v)} /></Row>
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.3rem' }}>
                 <button className="btn-xs" onClick={() => fileRef.current?.click()}>Upload wallpaper</button>
                 {theme.wallpaper && (
@@ -741,13 +740,21 @@ export default function Settings({
           if (sectionId === 'colours') return (
             <Group title="Colours" defaultOpen={false} {...commonGroupProps}>
               <SectionTitle>Background & Surfaces</SectionTitle>
+              <Row label="Wallpaper background"><ColorPick value={theme.bg} onChange={v => set('bg', v)} /></Row>
               <Row label="Settings panel background"><ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
               <Row label="Buttons and misc"><ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
-              <Row label="Card & Topbar background">
+              <Row label="Card background">
                 <ColorPick value={(theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7)} onChange={v => set('card', v)} />
               </Row>
               <Row label="Card opacity"><Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
+              <Row label="Note panel background">
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} />
+                  <button className="btn-xs" onClick={() => set('notesCardBg', (theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7))}>Match cards</button>
+                </div>
+              </Row>
               <Row label="Header row color"><ColorPick value={theme.colHeaderColor ?? '#8888b0'} onChange={v => set('colHeaderColor', v)} /></Row>
+              <Row label="Archive header color"><ColorPick value={theme.archiveHeaderColor ?? '#8888b0'} onChange={v => set('archiveHeaderColor', v)} /></Row>
               <Row label="Header background"><ColorPick value={theme.titleBg || theme.card || '#13131a'} onChange={v => set('titleBg', v)} /></Row>
               <Row label="Header opacity"><Slider val={Math.round((theme.headerOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('headerOpacity', v / 100)} unit="%" /></Row>
 
@@ -772,12 +779,6 @@ export default function Settings({
 
           if (sectionId === 'notesColors') return (
             <Group title="Notes Colors" defaultOpen={false} {...commonGroupProps}>
-              <Row label="Note panel background">
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <ColorPick value={theme.notesCardBg || '#13131a'} onChange={v => set('notesCardBg', v)} />
-                  <button className="btn-xs" onClick={() => set('notesCardBg', (theme.card || '#13131a').replace(/[^#0-9a-fA-F]/g, '').slice(0, 7))}>Match cards</button>
-                </div>
-              </Row>
               <Row label="Note text"><ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
               <Row label="Note opacity"><Slider val={Math.round((theme.notesCardBgOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('notesCardBgOpacity', v / 100)} unit="%" /></Row>
               <Row label="Shared note background"><ColorPick value={theme.notesSharedBg || '#1a1a28'} onChange={v => set('notesSharedBg', v)} /></Row>
@@ -1048,6 +1049,15 @@ export default function Settings({
           )
           if (sectionId === 'calendar') return (
             <Group title="Calendar & Gmail" defaultOpen={false} {...commonGroupProps}>
+              <SectionTitle>Display</SectionTitle>
+              <Row label="Days to show">
+                <div style={{ display: 'flex', gap: '0.25rem' }}>
+                  {[3, 5, 7, 14].map(d => (
+                    <button key={d} className={`btn-xs${(theme.calDays || 3) === d ? ' btn-primary' : ''}`} onClick={() => set('calDays', d)}>{d}</button>
+                  ))}
+                </div>
+              </Row>
+              <Row label="Font size"><Slider val={theme.calFontSize ?? 12} min={9} max={18} onChange={v => set('calFontSize', v)} unit="px" /></Row>
               <SectionTitle>Google Calendar (iCal)</SectionTitle>
               <div style={{ padding: '0 0.75rem 0.5rem', fontSize: '0.75em', color: 'var(--text-dim)', lineHeight: 1.5 }}>
                 Get each secret iCal URL from Google Calendar → Settings → [calendar name] → "Secret address in iCal format"

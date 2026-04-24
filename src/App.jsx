@@ -144,13 +144,6 @@ const NEWS_FEEDS = [
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
-function getFavicon(url) {
-  try {
-    const domain = new URL(url).hostname
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`
-  } catch { return null }
-}
-
 function NewsWidget({ theme, setTheme }) {
   const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [open, setOpen] = useState(false)
@@ -217,7 +210,6 @@ function NewsWidget({ theme, setTheme }) {
             <div className="news-feed-tabs">
               {allFeeds.map(f => (
                 <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
-                  {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width: 12, height: 12, marginRight: '0.3rem', verticalAlign: 'middle', borderRadius: 2, flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
                   {f.label}
                 </button>
               ))}
@@ -581,6 +573,8 @@ const DEFAULT_THEME = {
   bmResultBg: '',
   bmResultText: '',
   colHeaderColor: '#8888b0',
+  archiveHeaderColor: '#8888b0',
+  calFontSize: 12,
 }
 
 // ─── APPLY THEME ─────────────────────────────────────────────────────────────
@@ -598,6 +592,8 @@ function applyTheme(t) {
   s('--topbar-bg', t.card)
   s('--notes-card-bg', t.cardsGradientEnabled ? t.card : (t.notesCardBg || t.card))
   s('--col-header-color', t.colHeaderColor ?? '#8888b0')
+  s('--archive-header-color', t.archiveHeaderColor ?? '#8888b0')
+  s('--cal-font-size', (t.calFontSize ?? 12) + 'px')
   
   const baseBorderColor = t.border
   s('--card-opacity', ((t.cardOpacity ?? 1) * 100) + '%')

@@ -1325,7 +1325,7 @@ html.bg-29-carbon::after {
 .cal-day-group:last-child { border-bottom: none; }
 .cal-day-label {
   padding: 0.4rem 0.85rem 0.2rem;
-  font-size: 0.75em;
+  font-size: calc(var(--cal-font-size, 12px) - 1px);
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -1345,14 +1345,14 @@ html.bg-29-carbon::after {
 .cal-event-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .cal-event-time {
   color: var(--accent);
-  font-size: 0.78em;
+  font-size: var(--cal-font-size, 12px);
   white-space: nowrap;
   min-width: 60px;
   flex-shrink: 0;
 }
 .cal-event-title {
   color: var(--text);
-  font-size: 0.82em;
+  font-size: var(--cal-font-size, 12px);
   flex: 1;
   line-height: 1.3;
 }

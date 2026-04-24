@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { supabase } from "../lib/supabase";
- 
+
 const SWATCH_COLORS = [
   { label: "Reset", value: "" },
   { label: "Red", value: "#ff6b6b" },
@@ -1013,7 +1013,7 @@ export default function Sections({
                 >+</button>
               )}
               {isArchiveColumn && (
-                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
+                <span className="col-header-label" style={{ color: 'var(--archive-header-color)' }}>
                   Archive Column
                 </span>
               )}
