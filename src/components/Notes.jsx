@@ -508,7 +508,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
   }
 
   const remove = async (id) => {
-    if (!window.confirm('Delete this note?')) return
     const { error } = await supabase.from('notes').delete().eq('id', id)
     if (error) {
       setErr(error.message)
@@ -648,7 +647,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   {canShare && (
                     <select
                       className="input"
-                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem' }}
+                      style={{ fontSize: '0.72em', padding: '0.15rem 0.25rem', maxWidth: '110px', minWidth: 0 }}
                       value={shareNote}
                       onChange={e => setShareNote(e.target.value)}
                     >
@@ -1356,7 +1355,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     {canShare && (
                       <select
                         className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, maxWidth: '110px', minWidth: 0 }}
                         value={editShareNote}
                         onChange={e => setEditShareNote(e.target.value)}
                       >
