@@ -508,6 +508,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
   }
 
   const remove = async (id) => {
+    if (!window.confirm('Delete this note?')) return
     const { error } = await supabase.from('notes').delete().eq('id', id)
     if (error) {
       setErr(error.message)
@@ -610,7 +611,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
             title={open ? 'Collapse notes' : 'Expand notes'}
             aria-label={open ? 'Collapse notes' : 'Expand notes'}
           >
-            {open ? '▲' : '▼'}
+            {open ? '▾' : '▸'}
           </button>
         </div>
       </div>

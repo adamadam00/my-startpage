@@ -1325,7 +1325,7 @@ html.bg-29-carbon::after {
 .cal-day-group:last-child { border-bottom: none; }
 .cal-day-label {
   padding: 0.4rem 0.85rem 0.2rem;
-  font-size: calc(var(--cal-font-size, 12px) - 1px);
+  font-size: 0.75em;
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -1345,14 +1345,14 @@ html.bg-29-carbon::after {
 .cal-event-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .cal-event-time {
   color: var(--accent);
-  font-size: var(--cal-font-size, 12px);
+  font-size: 0.78em;
   white-space: nowrap;
   min-width: 60px;
   flex-shrink: 0;
 }
 .cal-event-title {
   color: var(--text);
-  font-size: var(--cal-font-size, 12px);
+  font-size: 0.82em;
   flex: 1;
   line-height: 1.3;
 }
@@ -1846,16 +1846,14 @@ html.bg-29-carbon::after {
   right: 0;
   display: flex;
   gap: 0.3rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.5rem;
+  padding: 0.4rem 0.5rem;
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow-x: auto;
-  overflow-y: hidden;
   min-height: 2.5rem;
   scrollbar-width: thin;
 }
