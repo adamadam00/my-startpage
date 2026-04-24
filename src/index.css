@@ -2057,7 +2057,7 @@ html.bg-29-carbon::after {
 .section-card {
   width: 100%;
   margin: 0;
-  background-color: var(--card);
+  background-color: var(--card-with-opacity, var(--card));
   background-image: var(--panels-gradient, none);
   background-size: var(--viewport-width, 100vw) var(--viewport-height, 100vh);
   background-repeat: no-repeat;
@@ -2118,8 +2118,7 @@ html.bg-29-carbon::after {
   user-select: none;
   border-bottom: 1px solid transparent;
   transition: background 0.15s;
-  background: var(--title-bg-with-opacity, var(--title-bg, var(--card)));
-}
+  background: var(--title-bg-with-opacity, var(--title-bg, var(--card)));}
 
 .section-header:hover {
   background: color-mix(in srgb, var(--title-bg, var(--card)) 85%, var(--bg3) 15%);
