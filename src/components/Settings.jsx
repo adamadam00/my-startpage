@@ -441,7 +441,6 @@ export default function Settings({
                   { label: '22-Aurora', v: '30-aurora' },
                   { label: '23-DeepOcean', v: '31-deep-ocean' },
                   { label: '24-LavaLamp', v: '32-lava-lamp' },
-                  { label: '25-BladeRunner', v: '33-blade-runner' },
                 ].map(p => (
                   <button
                     key={p.v}
@@ -611,22 +610,8 @@ export default function Settings({
                   <Row label="Blob color 2"><ColorPick value={theme.bgLavaC2 || '#ff8020'} onChange={v => set('bgLavaC2', v)} /></Row>
                   <Row label="Blob color 3"><ColorPick value={theme.bgLavaC3 || '#c020ff'} onChange={v => set('bgLavaC3', v)} /></Row>
                   <Row label="Blob size"><Slider val={theme.bgLavaSize ?? 100} min={40} max={180} onChange={v => set('bgLavaSize', v)} unit="%" /></Row>
-                  <Row label="Glow intensity"><Slider val={theme.bgLavaGlow ?? 60} min={10} max={120} onChange={v => set('bgLavaGlow', v)} unit="px" /></Row>
+                  <Row label="Glow softness"><Slider val={theme.bgLavaGlow ?? 60} min={10} max={120} onChange={v => set('bgLavaGlow', v)} unit="px" /></Row>
                   <Row label="Opacity"><Slider val={Math.round((theme.bgLavaOpacity ?? 0.8) * 100)} min={20} max={100} onChange={v => set('bgLavaOpacity', v / 100)} unit="%" /></Row>
-                </>
-              )}
-
-              {/* 25-Blade Runner Settings */}
-              {theme.bgPreset === '33-blade-runner' && (
-                <>
-                  <Row label="Sky color"><ColorPick value={theme.bgBladeBg || '#040608'} onChange={v => set('bgBladeBg', v)} /></Row>
-                  <Row label="Rain color"><ColorPick value={theme.bgBladeRainC || '#a0c8ff'} onChange={v => set('bgBladeRainC', v)} /></Row>
-                  <Row label="City glow color"><ColorPick value={theme.bgBladeGlowC || '#ff4020'} onChange={v => set('bgBladeGlowC', v)} /></Row>
-                  <Row label="Neon accent color"><ColorPick value={theme.bgBladeNeonC || '#00d4ff'} onChange={v => set('bgBladeNeonC', v)} /></Row>
-                  <Row label="Rain density"><Slider val={theme.bgBladeDensity ?? 60} min={10} max={100} onChange={v => set('bgBladeDensity', v)} unit="%" /></Row>
-                  <Row label="Rain opacity"><Slider val={Math.round((theme.bgBladeRainOpacity ?? 0.35) * 100)} min={5} max={80} onChange={v => set('bgBladeRainOpacity', v / 100)} unit="%" /></Row>
-                  <Row label="Rain angle"><Slider val={theme.bgBladeAngle ?? 8} min={0} max={30} onChange={v => set('bgBladeAngle', v)} unit="°" /></Row>
-                  <Row label="City glow intensity"><Slider val={Math.round((theme.bgBladeGlowIntensity ?? 0.5) * 100)} min={0} max={100} onChange={v => set('bgBladeGlowIntensity', v / 100)} unit="%" /></Row>
                 </>
               )}
 
