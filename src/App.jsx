@@ -894,17 +894,18 @@ function applyTheme(t) {
     const ac3 = t.bgAuroraC3 || '#8c28ff'
     const ai  = (t.bgAuroraIntensity ?? 100) / 100
     s('--aurora-bg',     t.bgAuroraBg || '#01050f')
-    s('--aurora-c1a',    hRgba(ac1, (0.30*ai).toFixed(3)))
-    s('--aurora-c2a',    hRgba(ac2, (0.26*ai).toFixed(3)))
-    s('--aurora-c3a',    hRgba(ac3, (0.20*ai).toFixed(3)))
-    s('--aurora-c1b',    hRgba(ac1, (0.16*ai).toFixed(3)))
-    s('--aurora-c2b',    hRgba(ac2, (0.18*ai).toFixed(3)))
-    s('--aurora-c3b',    hRgba(ac3, (0.14*ai).toFixed(3)))
-    s('--aurora-c1c',    hRgba(ac1, (0.10*ai).toFixed(3)))
-    s('--aurora-c2c',    hRgba(ac2, (0.12*ai).toFixed(3)))
     s('--aurora-blur',   (t.bgAuroraBlur ?? 22) + 'px')
     s('--aurora-blur-b', ((t.bgAuroraBlur ?? 22) + 14) + 'px')
-    s('--aurora-opacity', t.bgAuroraOpacity ?? 0.85)
+    // opacity baked into colors so no compositing context is created
+    const ao = t.bgAuroraOpacity ?? 0.85
+    s('--aurora-c1a',    hRgba(ac1, (0.30*ai*ao).toFixed(3)))
+    s('--aurora-c2a',    hRgba(ac2, (0.26*ai*ao).toFixed(3)))
+    s('--aurora-c3a',    hRgba(ac3, (0.20*ai*ao).toFixed(3)))
+    s('--aurora-c1b',    hRgba(ac1, (0.16*ai*ao).toFixed(3)))
+    s('--aurora-c2b',    hRgba(ac2, (0.18*ai*ao).toFixed(3)))
+    s('--aurora-c3b',    hRgba(ac3, (0.14*ai*ao).toFixed(3)))
+    s('--aurora-c1c',    hRgba(ac1, (0.10*ai*ao).toFixed(3)))
+    s('--aurora-c2c',    hRgba(ac2, (0.12*ai*ao).toFixed(3)))
     s('--aurora-speed-a', dur(18))
     s('--aurora-speed-b', dur(26))
     s('--aurora-speed-c', dur(11))

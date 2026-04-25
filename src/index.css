@@ -3322,7 +3322,7 @@ html.bg-30-aurora {
   overflow: hidden;
 }
 html.bg-30-aurora::before {
-  content: ''; position: absolute; inset: -80px; z-index: 0;
+  content: ''; position: absolute; inset: -120px; z-index: 0;
   background:
     radial-gradient(ellipse 200% 30% at 35% 10%,  var(--aurora-c1a, rgba(0,220,120,0.30)) 0%, transparent 58%),
     radial-gradient(ellipse 160% 22% at 70% 14%,  var(--aurora-c2a, rgba(30,120,255,0.26)) 0%, transparent 52%),
@@ -3344,11 +3344,10 @@ html.bg-30-aurora::before {
     radial-gradient(1.5px 1.5px at 84% 65%, rgba(255,255,255,0.50) 0, transparent 100%),
     radial-gradient(1px 1px at 93% 30%, rgba(255,255,255,0.65) 0, transparent 100%);
   filter: blur(var(--aurora-blur, 22px));
-  opacity: var(--aurora-opacity, 0.85);
   animation: aurora30a var(--aurora-speed-a, 18s) ease-in-out infinite alternate;
 }
 html.bg-30-aurora::after {
-  content: ''; position: absolute; inset: -80px; z-index: 0;
+  content: ''; position: absolute; inset: -120px; z-index: 0;
   background:
     radial-gradient(ellipse 180% 14% at 45% 10%,  var(--aurora-c3b, rgba(255,80,220,0.14)) 0%, transparent 60%),
     radial-gradient(ellipse 140% 20% at 20% 16%,  var(--aurora-c2a, rgba(30,120,255,0.18)) 0%, transparent 55%),
@@ -3360,7 +3359,6 @@ html.bg-30-aurora::after {
     radial-gradient(ellipse 4%   52% at 50%  2%,  var(--aurora-c1a, rgba(0,220,120,0.14)) 0%, transparent 62%),
     radial-gradient(ellipse 3%   40% at 78%  2%,  var(--aurora-c2a, rgba(30,120,255,0.12)) 0%, transparent 55%);
   filter: blur(var(--aurora-blur-b, 36px));
-  opacity: var(--aurora-opacity, 0.85);
   animation: aurora30b var(--aurora-speed-b, 26s) ease-in-out infinite alternate-reverse;
 }
 @keyframes aurora30a {
