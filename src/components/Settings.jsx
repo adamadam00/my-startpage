@@ -437,6 +437,9 @@ export default function Settings({
                   { label: '18-Wall', v: '26-wall-texture' },
                   { label: '19-Concrete', v: '27-concrete' },
                   { label: '20-Metal', v: '28-brushed-metal' },
+                  { label: '21-Streaks', v: '29-star-streaks' },
+                  { label: '22-Aurora', v: '30-aurora' },
+                  { label: '23-DeepOcean', v: '31-deep-ocean' },
                 ].map(p => (
                   <button
                     key={p.v}
@@ -566,6 +569,33 @@ export default function Settings({
                   <Row label="Density"><Slider val={theme.bgStreakDensity ?? 100} min={25} max={250} onChange={v => set('bgStreakDensity', v)} unit="%" /></Row>
                   <Row label="Speed"><Slider val={theme.bgStreakSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStreakSpeed', v)} unit="×" /></Row>
                   <Row label="Length"><Slider val={theme.bgStreakLength ?? 100} min={20} max={300} onChange={v => set('bgStreakLength', v)} unit="%" /></Row>
+                </>
+              )}
+
+              {/* 22-Aurora Settings */}
+              {theme.bgPreset === '30-aurora' && (
+                <>
+                  <Row label="Sky color"><ColorPick value={theme.bgAuroraBg || '#01050f'} onChange={v => set('bgAuroraBg', v)} /></Row>
+                  <Row label="Band color 1 (green)"><ColorPick value={theme.bgAuroraC1 || '#00dc78'} onChange={v => set('bgAuroraC1', v)} /></Row>
+                  <Row label="Band color 2 (blue)"><ColorPick value={theme.bgAuroraC2 || '#1e78ff'} onChange={v => set('bgAuroraC2', v)} /></Row>
+                  <Row label="Band color 3 (purple)"><ColorPick value={theme.bgAuroraC3 || '#8c28ff'} onChange={v => set('bgAuroraC3', v)} /></Row>
+                  <Row label="Intensity"><Slider val={theme.bgAuroraIntensity ?? 100} min={20} max={200} onChange={v => set('bgAuroraIntensity', v)} unit="%" /></Row>
+                  <Row label="Blur / softness"><Slider val={theme.bgAuroraBlur ?? 22} min={5} max={60} onChange={v => set('bgAuroraBlur', v)} unit="px" /></Row>
+                  <Row label="Opacity"><Slider val={Math.round((theme.bgAuroraOpacity ?? 0.85) * 100)} min={20} max={100} onChange={v => set('bgAuroraOpacity', v / 100)} unit="%" /></Row>
+                </>
+              )}
+
+              {/* 23-Deep Ocean Settings */}
+              {theme.bgPreset === '31-deep-ocean' && (
+                <>
+                  <Row label="Deep water color"><ColorPick value={theme.bgOceanDeepBg || '#000814'} onChange={v => set('bgOceanDeepBg', v)} /></Row>
+                  <Row label="Caustic light color"><ColorPick value={theme.bgOceanCausticC || '#0078c8'} onChange={v => set('bgOceanCausticC', v)} /></Row>
+                  <Row label="Mid-water color"><ColorPick value={theme.bgOceanMidC || '#003c78'} onChange={v => set('bgOceanMidC', v)} /></Row>
+                  <Row label="Bioluminescence color"><ColorPick value={theme.bgOceanBioC || '#00ffb4'} onChange={v => set('bgOceanBioC', v)} /></Row>
+                  <Row label="Particle color"><ColorPick value={theme.bgOceanParticleC || '#64dcff'} onChange={v => set('bgOceanParticleC', v)} /></Row>
+                  <Row label="Intensity"><Slider val={theme.bgOceanIntensity ?? 100} min={20} max={180} onChange={v => set('bgOceanIntensity', v)} unit="%" /></Row>
+                  <Row label="Caustic blur"><Slider val={theme.bgOceanBlur ?? 8} min={0} max={30} onChange={v => set('bgOceanBlur', v)} unit="px" /></Row>
+                  <Row label="Particle opacity"><Slider val={Math.round((theme.bgOceanParticleOpacity ?? 0.9) * 100)} min={10} max={100} onChange={v => set('bgOceanParticleOpacity', v / 100)} unit="%" /></Row>
                 </>
               )}
 
@@ -1136,8 +1166,8 @@ export default function Settings({
                       onClick={(e) => e.stopPropagation()}
                     >
                       <option value="both">Both</option>
-                      <option value="home">🏠 Home</option>
-                      <option value="work">💼 Work</option>
+                      <option value="home">Home</option>
+                      <option value="work">Work</option>
                     </select>
                     <button className="btn-xs" onClick={() => { const n = prompt('Rename workspace:', ws.name); if (n?.trim()) onRenameWorkspace(ws.id, n.trim()) }}>✎</button>
                     <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => onDeleteWorkspace(ws.id)} disabled={workspaces.length <= 1}>✕</button>
