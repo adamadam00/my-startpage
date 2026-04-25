@@ -1261,8 +1261,8 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         >🗑</button>
                       </div>
                     </div>
-                )}
                   </>
+                )}
                 </>
               </div>
             )
