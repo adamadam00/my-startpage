@@ -886,43 +886,101 @@ function applyTheme(t) {
     s('--plasma-c6', rgba(userColors[2] || userColors[0], 0.18));
   }
 
-  // ── bg-30-aurora CSS vars ─────────────────────────────────
+  // ── New background CSS vars ───────────────────────────────
+  const hRgba = (hex, a) => { const r = hexRgb(hex || '#000000'); return `rgba(${r},${a})` }
+
+  // bg-30-aurora
   if (t.bgPreset === '30-aurora') {
-    const hexToRgba = (hex, a) => { const r = hexRgb(hex); return `rgba(${r},${a})` }
     const ac1 = t.bgAuroraC1 || '#00dc78'
     const ac2 = t.bgAuroraC2 || '#1e78ff'
     const ac3 = t.bgAuroraC3 || '#8c28ff'
-    s('--aurora-bg',        t.bgAuroraBg || '#01050f')
-    s('--aurora-c1a',       hexToRgba(ac1, t.bgAuroraIntensity ? (t.bgAuroraIntensity/100*0.30).toFixed(3) : '0.28'))
-    s('--aurora-c2a',       hexToRgba(ac2, t.bgAuroraIntensity ? (t.bgAuroraIntensity/100*0.26).toFixed(3) : '0.24'))
-    s('--aurora-c3a',       hexToRgba(ac3, t.bgAuroraIntensity ? (t.bgAuroraIntensity/100*0.20).toFixed(3) : '0.18'))
-    s('--aurora-c1b',       hexToRgba(ac1, t.bgAuroraIntensity ? (t.bgAuroraIntensity/100*0.16).toFixed(3) : '0.14'))
-    s('--aurora-c2b',       hexToRgba(ac2, t.bgAuroraIntensity ? (t.bgAuroraIntensity/100*0.18).toFixed(3) : '0.16'))
-    s('--aurora-blur',      (t.bgAuroraBlur ?? 22) + 'px')
-    s('--aurora-blur-b',    ((t.bgAuroraBlur ?? 22) + 10) + 'px')
-    s('--aurora-opacity',   t.bgAuroraOpacity ?? 0.85)
-    s('--aurora-speed-a',   dur(18))
-    s('--aurora-speed-b',   dur(26))
+    const ai  = (t.bgAuroraIntensity ?? 100) / 100
+    s('--aurora-bg',     t.bgAuroraBg || '#01050f')
+    s('--aurora-c1a',    hRgba(ac1, (0.30*ai).toFixed(3)))
+    s('--aurora-c2a',    hRgba(ac2, (0.26*ai).toFixed(3)))
+    s('--aurora-c3a',    hRgba(ac3, (0.20*ai).toFixed(3)))
+    s('--aurora-c1b',    hRgba(ac1, (0.16*ai).toFixed(3)))
+    s('--aurora-c2b',    hRgba(ac2, (0.18*ai).toFixed(3)))
+    s('--aurora-c3b',    hRgba(ac3, (0.14*ai).toFixed(3)))
+    s('--aurora-c1c',    hRgba(ac1, (0.10*ai).toFixed(3)))
+    s('--aurora-c2c',    hRgba(ac2, (0.12*ai).toFixed(3)))
+    s('--aurora-blur',   (t.bgAuroraBlur ?? 22) + 'px')
+    s('--aurora-blur-b', ((t.bgAuroraBlur ?? 22) + 14) + 'px')
+    s('--aurora-opacity', t.bgAuroraOpacity ?? 0.85)
+    s('--aurora-speed-a', dur(18))
+    s('--aurora-speed-b', dur(26))
+    s('--aurora-speed-c', dur(11))
   }
 
-  // ── bg-31-deep-ocean CSS vars ──────────────────────────────
+  // bg-31-deep-ocean
   if (t.bgPreset === '31-deep-ocean') {
-    const hexToRgba = (hex, a) => { const r = hexRgb(hex); return `rgba(${r},${a})` }
-    const oc  = t.bgOceanDeepBg      || '#000814'
-    const occ = t.bgOceanCausticC    || '#0078c8'
-    const omc = t.bgOceanMidC        || '#003c78'
-    const obc = t.bgOceanBioC        || '#00ffb4'
-    const opc = t.bgOceanParticleC   || '#64dcff'
     const oi  = (t.bgOceanIntensity ?? 100) / 100
-    s('--ocean-bg',              oc)
-    s('--ocean-caustic',         hexToRgba(occ, (0.18 * oi).toFixed(3)))
-    s('--ocean-mid',             hexToRgba(omc, (0.28 * oi).toFixed(3)))
-    s('--ocean-bio',             hexToRgba(obc, (0.08 * oi).toFixed(3)))
-    s('--ocean-particle',        hexToRgba(opc, (0.55 * oi).toFixed(3)))
-    s('--ocean-particle-opacity', t.bgOceanParticleOpacity ?? 0.9)
+    const occ = t.bgOceanCausticC  || '#0078c8'
+    const omc = t.bgOceanMidC      || '#003c78'
+    const obc = t.bgOceanBioC      || '#00ffb4'
+    const opc = t.bgOceanParticleC || '#64dcff'
+    // density: higher % = smaller tiles = more particles
+    const dens = t.bgOceanDensity ?? 50
+    const tileA = Math.round(360 - dens * 2.4) + 'px'
+    const tileB = Math.round(260 - dens * 1.8) + 'px'
+    const tileC = Math.round(480 - dens * 3.0) + 'px'
+    s('--ocean-bg',              t.bgOceanDeepBg || '#000814')
+    s('--ocean-caustic',         hRgba(occ, (0.18*oi).toFixed(3)))
+    s('--ocean-mid',             hRgba(omc, (0.28*oi).toFixed(3)))
+    s('--ocean-bio',             hRgba(obc, ((t.bgOceanBioOpacity ?? 0.6)).toFixed(3)))
+    s('--ocean-particle',        hRgba(opc, (t.bgOceanParticleOpacity ?? 0.9).toFixed(3)))
+    s('--ocean-tile-a',          tileA + ' ' + Math.round(tileA.replace('px','')*1.6) + 'px')
+    s('--ocean-tile-b',          tileB + ' ' + Math.round(tileB.replace('px','')*1.5) + 'px')
+    s('--ocean-tile-c',          tileC + ' ' + Math.round(tileC.replace('px','')*1.7) + 'px')
     s('--ocean-blur',            (t.bgOceanBlur ?? 8) + 'px')
     s('--ocean-speed-a',         dur(14))
     s('--ocean-speed-b',         dur(12))
+  }
+
+  // bg-32-lava-lamp
+  if (t.bgPreset === '32-lava-lamp') {
+    const lc1 = t.bgLavaC1 || '#ff4080'
+    const lc2 = t.bgLavaC2 || '#ff8020'
+    const lc3 = t.bgLavaC3 || '#c020ff'
+    const sz  = (t.bgLavaSize ?? 100) / 100
+    const gl  = t.bgLavaGlow ?? 60
+    const lo  = t.bgLavaOpacity ?? 0.8
+    s('--lava-bg',    t.bgLavaBg || '#080410')
+    s('--lava-c1',    hRgba(lc1, (0.55*lo).toFixed(3)))
+    s('--lava-c2',    hRgba(lc2, (0.50*lo).toFixed(3)))
+    s('--lava-c3',    hRgba(lc3, (0.48*lo).toFixed(3)))
+    s('--lava-c1g',   hRgba(lc1, (0.22*lo).toFixed(3)))
+    s('--lava-c2g',   hRgba(lc2, (0.20*lo).toFixed(3)))
+    s('--lava-c3g',   hRgba(lc3, (0.18*lo).toFixed(3)))
+    s('--lava-glow',  gl + 'px')
+    s('--lava-sz',    sz)
+    s('--lava-speed-a', dur(22))
+    s('--lava-speed-b', dur(16))
+  }
+
+  // bg-33-blade-runner
+  if (t.bgPreset === '33-blade-runner') {
+    const brc  = t.bgBladeRainC       || '#a0c8ff'
+    const bgc  = t.bgBladeGlowC       || '#ff4020'
+    const bnc  = t.bgBladeNeonC       || '#00d4ff'
+    const bro  = t.bgBladeRainOpacity ?? 0.35
+    const bgi  = t.bgBladeGlowIntensity ?? 0.5
+    const bden = t.bgBladeDensity ?? 60
+    const bang = t.bgBladeAngle ?? 8
+    // density controls streak spacing
+    const streakW = Math.round(4 - bden * 0.025)
+    const tileW   = Math.round(160 - bden * 1.0)
+    s('--blade-bg',         t.bgBladeBg || '#040608')
+    s('--blade-rain',       hRgba(brc, bro.toFixed(3)))
+    s('--blade-rain-dim',   hRgba(brc, (bro*0.5).toFixed(3)))
+    s('--blade-glow',       hRgba(bgc, (0.35*bgi).toFixed(3)))
+    s('--blade-glow-b',     hRgba(bgc, (0.18*bgi).toFixed(3)))
+    s('--blade-neon',       hRgba(bnc, (0.25*bgi).toFixed(3)))
+    s('--blade-streak-w',   Math.max(1, streakW) + 'px')
+    s('--blade-tile-w',     Math.max(20, tileW) + 'px')
+    s('--blade-angle',      bang + 'deg')
+    s('--blade-speed-a',    dur(1.2))
+    s('--blade-speed-b',    dur(2.0))
   }
 
   const sfGrad = ps.sfGrad ?? false
@@ -1009,6 +1067,10 @@ function applyTheme(t) {
     html.bg-30-aurora::after  { animation-duration: ${dur(26)} !important; }
     html.bg-31-deep-ocean::before { animation-duration: ${dur(14)} !important; }
     html.bg-31-deep-ocean::after  { animation-duration: ${dur(12)} !important; }
+    html.bg-32-lava-lamp::before { animation-duration: ${dur(22)} !important; }
+    html.bg-32-lava-lamp::after  { animation-duration: ${dur(16)} !important; }
+    html.bg-33-blade-runner::after { animation-duration: ${dur(1.2)} !important; }
+    html.bg-33-blade-runner::before { animation-duration: ${dur(2.0)} !important; }
 
     html.bg-grass {
       overflow: hidden;
