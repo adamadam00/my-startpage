@@ -583,6 +583,8 @@ export default function Settings({
                   <Row label="Intensity"><Slider val={theme.bgAuroraIntensity ?? 100} min={20} max={200} onChange={v => set('bgAuroraIntensity', v)} unit="%" /></Row>
                   <Row label="Blur / softness"><Slider val={theme.bgAuroraBlur ?? 22} min={2} max={60} onChange={v => set('bgAuroraBlur', v)} unit="px" /></Row>
                   <Row label="Opacity"><Slider val={Math.round((theme.bgAuroraOpacity ?? 0.85) * 100)} min={20} max={100} onChange={v => set('bgAuroraOpacity', v / 100)} unit="%" /></Row>
+                  <Row label="Star brightness"><Slider val={Math.round((theme.bgAuroraStarOpacity ?? 0.65) * 100)} min={0} max={100} onChange={v => set('bgAuroraStarOpacity', v / 100)} unit="%" /></Row>
+                  <Row label="Star size"><Slider val={theme.bgAuroraStarSize ?? 1.5} min={0.5} max={4} step={0.5} onChange={v => set('bgAuroraStarSize', v)} unit="px" /></Row>
                 </>
               )}
 

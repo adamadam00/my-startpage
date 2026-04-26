@@ -895,6 +895,8 @@ function applyTheme(t) {
     const ai  = (t.bgAuroraIntensity ?? 100) / 100
     s('--aurora-bg',     t.bgAuroraBg || '#01050f')
     s('--aurora-blur',   (t.bgAuroraBlur ?? 22) + 'px')
+    s('--aurora-star-op', (t.bgAuroraStarOpacity ?? 0.65).toFixed(2))
+    s('--aurora-star-sz', (t.bgAuroraStarSize ?? 1.5).toFixed(1) + 'px')
     s('--aurora-blur-b', ((t.bgAuroraBlur ?? 22) + 14) + 'px')
     // opacity baked into colors so no compositing context is created
     const ao = t.bgAuroraOpacity ?? 0.85
