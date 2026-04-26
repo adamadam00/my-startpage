@@ -3313,207 +3313,230 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 
 
 /* ═══════════════════════════════════════════════════════════════
-   BACKGROUNDS 30-32 — transform only, no filter, oversized like starfield
+   BACKGROUNDS 30-32 — exact plasma pattern
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── 30 · AURORA ────────────────────────────────────────────── */
-html.bg-30-aurora {
-  background: var(--aurora-bg, #01050f);
-  overflow: hidden;
+/* ── 30 · AURORA ── */
+.bg-30-aurora { background: #01050f; overflow: hidden; }
+.bg-30-aurora {
+  --aurora-c1: rgba(0,220,120,0.32);
+  --aurora-c2: rgba(30,120,255,0.26);
+  --aurora-c3: rgba(140,40,255,0.22);
+  --aurora-c4: rgba(0,180,255,0.18);
+  --aurora-c5: rgba(255,80,220,0.14);
+  --aurora-c6: rgba(0,200,100,0.16);
 }
-/* Stars layer — tiled, static, on html background */
-html.bg-30-aurora::after {
-  content: ''; position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
-  z-index: -1;
-  opacity: var(--aurora-star-op, 0.75);
-  background-image:
-    radial-gradient(1.5px 1.5px at 12% 18%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 28% 74%, white 0, transparent 100%),
-    radial-gradient(2px   2px   at 44%  8%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 60% 51%, white 0, transparent 100%),
-    radial-gradient(1.5px 1.5px at 76% 83%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 92% 37%, white 0, transparent 100%),
-    radial-gradient(2px   2px   at  5% 62%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 21% 29%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 37% 91%, white 0, transparent 100%),
-    radial-gradient(1.5px 1.5px at 53% 44%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 69%  3%, white 0, transparent 100%),
-    radial-gradient(2px   2px   at 85% 67%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at  8% 95%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 33% 56%, white 0, transparent 100%),
-    radial-gradient(1.5px 1.5px at 50% 22%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 66% 78%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 82% 14%, white 0, transparent 100%),
-    radial-gradient(2px   2px   at 98% 59%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 15% 42%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 41% 87%, white 0, transparent 100%),
-    radial-gradient(1.5px 1.5px at 57% 31%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 73%  6%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 89% 48%, white 0, transparent 100%),
-    radial-gradient(2px   2px   at 25% 69%, white 0, transparent 100%),
-    radial-gradient(1px   1px   at 48% 15%, white 0, transparent 100%);
-  background-size:
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%),
-    var(--aurora-star-tile,100%) var(--aurora-star-tile,100%);
-}
-/* Aurora bands — oversized, transform only, no filter */
-html.bg-30-aurora::before {
-  content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
-  z-index: -1;
-  opacity: var(--aurora-opacity, 0.9);
-  background-image:
-    /* Wide curtain bands across top */
-    radial-gradient(ellipse 60% 35% at 25% 12%,  var(--aurora-c1a, rgba(0,220,120,0.38)) 0%, transparent 72%),
-    radial-gradient(ellipse 55% 28% at 55% 16%,  var(--aurora-c2a, rgba(30,120,255,0.32)) 0%, transparent 68%),
-    radial-gradient(ellipse 50% 22% at 80% 10%,  var(--aurora-c3a, rgba(140,40,255,0.28)) 0%, transparent 65%),
-    radial-gradient(ellipse 45% 18% at 10% 20%,  var(--aurora-c2a, rgba(30,120,255,0.22)) 0%, transparent 62%),
-    radial-gradient(ellipse 40% 15% at 70% 22%,  var(--aurora-c1a, rgba(0,220,120,0.20)) 0%, transparent 60%),
-    /* Vertical rays — tall narrow ellipses from top */
-    radial-gradient(ellipse  6% 70% at  8% 5%,   var(--aurora-c1a, rgba(0,220,120,0.22)) 0%, transparent 85%),
-    radial-gradient(ellipse  5% 60% at 16% 5%,   var(--aurora-c2a, rgba(30,120,255,0.18)) 0%, transparent 82%),
-    radial-gradient(ellipse  7% 75% at 24% 5%,   var(--aurora-c3a, rgba(140,40,255,0.20)) 0%, transparent 87%),
-    radial-gradient(ellipse  5% 65% at 32% 5%,   var(--aurora-c1a, rgba(0,220,120,0.16)) 0%, transparent 83%),
-    radial-gradient(ellipse  8% 80% at 40% 5%,   var(--aurora-c2a, rgba(30,120,255,0.22)) 0%, transparent 88%),
-    radial-gradient(ellipse  5% 62% at 48% 5%,   var(--aurora-c3a, rgba(140,40,255,0.16)) 0%, transparent 82%),
-    radial-gradient(ellipse  7% 72% at 56% 5%,   var(--aurora-c1a, rgba(0,220,120,0.20)) 0%, transparent 86%),
-    radial-gradient(ellipse  5% 65% at 64% 5%,   var(--aurora-c2a, rgba(30,120,255,0.17)) 0%, transparent 83%),
-    radial-gradient(ellipse  8% 78% at 72% 5%,   var(--aurora-c3a, rgba(140,40,255,0.20)) 0%, transparent 87%),
-    radial-gradient(ellipse  5% 60% at 80% 5%,   var(--aurora-c1a, rgba(0,220,120,0.16)) 0%, transparent 82%),
-    radial-gradient(ellipse  7% 70% at 88% 5%,   var(--aurora-c2a, rgba(30,120,255,0.18)) 0%, transparent 85%),
-    radial-gradient(ellipse  5% 62% at 96% 5%,   var(--aurora-c3a, rgba(140,40,255,0.15)) 0%, transparent 82%),
+.bg-30-aurora::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    /* Curtain bands */
+    radial-gradient(ellipse 180% 35% at 30% -20%, var(--aurora-c1) 0%, transparent 65%),
+    radial-gradient(ellipse 160% 28% at 65% -15%, var(--aurora-c2) 0%, transparent 65%),
+    radial-gradient(ellipse 140% 22% at 50%  -5%, var(--aurora-c3) 0%, transparent 65%),
+    radial-gradient(ellipse 120% 18% at 15% -10%, var(--aurora-c4) 0%, transparent 60%),
+    /* Vertical rays */
+    radial-gradient(ellipse 4% 70% at 10% -10%, var(--aurora-c1) 0%, transparent 80%),
+    radial-gradient(ellipse 5% 80% at 22% -10%, var(--aurora-c2) 0%, transparent 82%),
+    radial-gradient(ellipse 4% 72% at 34% -10%, var(--aurora-c3) 0%, transparent 80%),
+    radial-gradient(ellipse 6% 85% at 46% -10%, var(--aurora-c1) 0%, transparent 84%),
+    radial-gradient(ellipse 4% 70% at 58% -10%, var(--aurora-c2) 0%, transparent 80%),
+    radial-gradient(ellipse 5% 78% at 70% -10%, var(--aurora-c3) 0%, transparent 82%),
+    radial-gradient(ellipse 4% 72% at 82% -10%, var(--aurora-c4) 0%, transparent 80%),
+    radial-gradient(ellipse 5% 75% at 94% -10%, var(--aurora-c1) 0%, transparent 81%),
     /* Anomaly patches */
-    radial-gradient(ellipse 14% 18% at 20% 28%,  var(--aurora-c2a, rgba(30,120,255,0.16)) 0%, transparent 72%),
-    radial-gradient(ellipse 10% 14% at 65% 24%,  var(--aurora-c1a, rgba(0,220,120,0.14)) 0%, transparent 68%),
-    radial-gradient(ellipse 12% 16% at 88% 30%,  var(--aurora-c3a, rgba(140,40,255,0.16)) 0%, transparent 70%);
-  animation: aurora30-morph var(--aurora-speed-a, 22s) linear infinite;
+    radial-gradient(ellipse 16% 14% at 25% 20%, var(--aurora-c5) 0%, transparent 62%),
+    radial-gradient(ellipse 12% 10% at 75% 15%, var(--aurora-c6) 0%, transparent 58%);
+  filter: blur(28px);
+  animation: aurora30a 22s ease-in-out infinite alternate;
 }
-@keyframes aurora30-morph {
-  0%   { transform: translate(  0%,  0%); }
-  100% { transform: translate(-20%,  0%); }
+.bg-30-aurora::after {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 160% 30% at 55% -18%, var(--aurora-c2) 0%, transparent 65%),
+    radial-gradient(ellipse 140% 25% at 20% -12%, var(--aurora-c3) 0%, transparent 63%),
+    radial-gradient(ellipse 120% 20% at 85% -8%,  var(--aurora-c1) 0%, transparent 60%),
+    radial-gradient(ellipse 5% 75% at 16% -10%, var(--aurora-c3) 0%, transparent 82%),
+    radial-gradient(ellipse 4% 68% at 28% -10%, var(--aurora-c1) 0%, transparent 80%),
+    radial-gradient(ellipse 6% 82% at 40% -10%, var(--aurora-c2) 0%, transparent 84%),
+    radial-gradient(ellipse 4% 70% at 52% -10%, var(--aurora-c3) 0%, transparent 80%),
+    radial-gradient(ellipse 5% 76% at 64% -10%, var(--aurora-c1) 0%, transparent 82%),
+    radial-gradient(ellipse 4% 72% at 76% -10%, var(--aurora-c2) 0%, transparent 80%),
+    radial-gradient(ellipse 5% 78% at 88% -10%, var(--aurora-c3) 0%, transparent 82%),
+    radial-gradient(ellipse 14% 12% at 60% 18%, var(--aurora-c4) 0%, transparent 60%),
+    radial-gradient(ellipse 10% 10% at 38% 22%, var(--aurora-c5) 0%, transparent 58%);
+  filter: blur(40px);
+  animation: aurora30b 30s ease-in-out infinite alternate-reverse;
+}
+/* Stars — separate element, no animation, no filter */
+.bg-30-aurora .aurora-stars {
+  display: none;
+}
+@keyframes aurora30a {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  20%  { transform: translate( 60px, -25px) scale(1.06); }
+  40%  { transform: translate(-40px,  35px) scale(0.96); }
+  60%  { transform: translate( 80px,  20px) scale(1.04); }
+  80%  { transform: translate(-20px, -40px) scale(1.08); }
+  100% { transform: translate(-60px,  50px) scale(0.97); }
+}
+@keyframes aurora30b {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  25%  { transform: translate(-70px,  45px) scale(1.05); }
+  50%  { transform: translate( 45px, -55px) scale(0.95); }
+  75%  { transform: translate( 85px,  30px) scale(1.07); }
+  100% { transform: translate(-45px,  60px) scale(0.97); }
 }
 
-
-/* ── 31 · DEEP OCEAN ────────────────────────────────────────── */
-html.bg-31-deep-ocean {
-  background: var(--ocean-bg, #000814);
-  overflow: hidden;
-}
-html.bg-31-deep-ocean::before {
-  content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
-  z-index: -1;
-  background-image:
-    /* Caustic light shafts */
-    radial-gradient(ellipse  8% 80% at 12% 2%,  var(--ocean-caustic, rgba(0,120,200,0.22)) 0%, transparent 80%),
-    radial-gradient(ellipse  6% 65% at 24% 2%,  var(--ocean-caustic, rgba(0,140,220,0.18)) 0%, transparent 75%),
-    radial-gradient(ellipse 10% 85% at 36% 2%,  var(--ocean-caustic, rgba(0,100,180,0.20)) 0%, transparent 82%),
-    radial-gradient(ellipse  7% 70% at 48% 2%,  var(--ocean-caustic, rgba(0,130,210,0.17)) 0%, transparent 78%),
-    radial-gradient(ellipse 11% 90% at 60% 2%,  var(--ocean-caustic, rgba(60,180,255,0.22)) 0%, transparent 84%),
-    radial-gradient(ellipse  6% 68% at 72% 2%,  var(--ocean-caustic, rgba(0,120,200,0.16)) 0%, transparent 76%),
-    radial-gradient(ellipse  9% 78% at 84% 2%,  var(--ocean-caustic, rgba(0,140,220,0.20)) 0%, transparent 80%),
-    radial-gradient(ellipse  7% 65% at 96% 2%,  var(--ocean-caustic, rgba(0,100,180,0.16)) 0%, transparent 75%),
-    /* Mid water scatter */
-    radial-gradient(ellipse 80% 45% at 50% 30%, var(--ocean-mid, rgba(0,60,120,0.32)) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 35% at 15% 55%, var(--ocean-mid, rgba(0,40,100,0.22)) 0%, transparent 62%),
-    radial-gradient(ellipse 65% 30% at 85% 50%, var(--ocean-mid, rgba(0,50,110,0.20)) 0%, transparent 58%),
-    /* Depth */
-    radial-gradient(ellipse 100% 40% at 50% 98%, rgba(0,0,6,0.92) 0%, transparent 70%),
-    /* Sea floor bio glow */
-    radial-gradient(ellipse 22% 12% at 15% 92%, var(--ocean-bio, rgba(0,255,180,0.08)) 0%, transparent 65%),
-    radial-gradient(ellipse 18% 10% at 42% 96%, var(--ocean-bio, rgba(0,220,255,0.06)) 0%, transparent 58%),
-    radial-gradient(ellipse 26% 14% at 68% 90%, var(--ocean-bio, rgba(100,255,200,0.08)) 0%, transparent 62%),
-    radial-gradient(ellipse 20% 10% at 88% 94%, var(--ocean-bio, rgba(0,180,255,0.07)) 0%, transparent 56%);
-  animation: ocean31-drift var(--ocean-speed-a, 18s) linear infinite;
-}
-html.bg-31-deep-ocean::after {
+/* Stars on body so they appear above aurora layers */
+.bg-30-aurora body::before {
   content: ''; position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
-  z-index: -1;
+  pointer-events: none;
+  background-image:
+    radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,0.85) 0, transparent 100%),
+    radial-gradient(1px 1px at 23% 72%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(3px 3px at 38%  8%, rgba(255,255,255,0.90) 0, transparent 100%),
+    radial-gradient(1px 1px at 52% 55%, rgba(255,255,255,0.60) 0, transparent 100%),
+    radial-gradient(2px 2px at 67% 88%, rgba(255,255,255,0.80) 0, transparent 100%),
+    radial-gradient(1px 1px at 81% 32%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(2px 2px at 94% 65%, rgba(255,255,255,0.85) 0, transparent 100%),
+    radial-gradient(1px 1px at  5% 48%, rgba(255,255,255,0.60) 0, transparent 100%),
+    radial-gradient(3px 3px at 18% 91%, rgba(255,255,255,0.90) 0, transparent 100%),
+    radial-gradient(1px 1px at 31% 26%, rgba(255,255,255,0.70) 0, transparent 100%),
+    radial-gradient(2px 2px at 44% 78%, rgba(255,255,255,0.80) 0, transparent 100%),
+    radial-gradient(1px 1px at 57%  4%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(1px 1px at 70% 44%, rgba(255,255,255,0.60) 0, transparent 100%),
+    radial-gradient(3px 3px at 83% 19%, rgba(255,255,255,0.90) 0, transparent 100%),
+    radial-gradient(1px 1px at 96% 82%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(2px 2px at 12% 37%, rgba(255,255,255,0.80) 0, transparent 100%),
+    radial-gradient(1px 1px at 26% 61%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(1px 1px at 39% 95%, rgba(255,255,255,0.55) 0, transparent 100%),
+    radial-gradient(2px 2px at 48% 18%, rgba(255,255,255,0.80) 0, transparent 100%),
+    radial-gradient(1px 1px at 61% 70%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(3px 3px at 74% 12%, rgba(255,255,255,0.90) 0, transparent 100%),
+    radial-gradient(1px 1px at 87% 52%, rgba(255,255,255,0.60) 0, transparent 100%),
+    radial-gradient(2px 2px at  2% 83%, rgba(255,255,255,0.80) 0, transparent 100%),
+    radial-gradient(1px 1px at 15% 58%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(1px 1px at 29%  2%, rgba(255,255,255,0.70) 0, transparent 100%),
+    radial-gradient(2px 2px at 42% 44%, rgba(255,255,255,0.85) 0, transparent 100%),
+    radial-gradient(1px 1px at 55% 89%, rgba(255,255,255,0.60) 0, transparent 100%),
+    radial-gradient(1px 1px at 68% 28%, rgba(255,255,255,0.65) 0, transparent 100%),
+    radial-gradient(3px 3px at 77% 75%, rgba(255,255,255,0.90) 0, transparent 100%),
+    radial-gradient(1px 1px at 90% 38%, rgba(255,255,255,0.65) 0, transparent 100%);
+  background-size: var(--aurora-star-tile, 100%) var(--aurora-star-tile, 100%);
+  opacity: var(--aurora-star-op, 0.8);
+}
+
+
+/* ── 31 · DEEP OCEAN ── */
+.bg-31-deep-ocean { background: #000814; overflow: hidden; }
+.bg-31-deep-ocean {
+  --ocean-c1: rgba(0,120,200,0.22);
+  --ocean-c2: rgba(0,60,120,0.32);
+  --ocean-c3: rgba(0,255,180,0.08);
+  --ocean-c4: rgba(0,140,220,0.18);
+  --ocean-c5: rgba(0,40,100,0.22);
+  --ocean-c6: rgba(100,255,200,0.08);
+}
+.bg-31-deep-ocean::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse  8% 85% at 12%  -5%, var(--ocean-c1) 0%, transparent 80%),
+    radial-gradient(ellipse  6% 68% at 24%  -5%, var(--ocean-c4) 0%, transparent 75%),
+    radial-gradient(ellipse 10% 90% at 36%  -5%, var(--ocean-c1) 0%, transparent 82%),
+    radial-gradient(ellipse  7% 72% at 48%  -5%, var(--ocean-c4) 0%, transparent 78%),
+    radial-gradient(ellipse 11% 88% at 60%  -5%, var(--ocean-c1) 0%, transparent 84%),
+    radial-gradient(ellipse  6% 70% at 72%  -5%, var(--ocean-c4) 0%, transparent 76%),
+    radial-gradient(ellipse  9% 80% at 84%  -5%, var(--ocean-c1) 0%, transparent 80%),
+    radial-gradient(ellipse  7% 68% at 96%  -5%, var(--ocean-c4) 0%, transparent 75%),
+    radial-gradient(ellipse 80% 50% at 50%  25%, var(--ocean-c2) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 15%  55%, var(--ocean-c5) 0%, transparent 65%),
+    radial-gradient(ellipse 65% 35% at 85%  50%, var(--ocean-c5) 0%, transparent 62%),
+    radial-gradient(ellipse 22% 12% at 15%  92%, var(--ocean-c3) 0%, transparent 65%),
+    radial-gradient(ellipse 18% 10% at 45%  96%, var(--ocean-c6) 0%, transparent 60%),
+    radial-gradient(ellipse 26% 14% at 75%  90%, var(--ocean-c3) 0%, transparent 65%),
+    radial-gradient(ellipse 100% 45% at 50% 100%, rgba(0,0,6,0.92) 0%, transparent 70%);
+  filter: blur(12px);
+  animation: ocean31a 20s ease-in-out infinite alternate;
+}
+.bg-31-deep-ocean::after {
+  content: ''; position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
   background-image:
     radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(100,220,255,0.55)) 0%, transparent 100%),
     radial-gradient(circle 1px at 50% 50%, var(--ocean-particle, rgba(150,240,255,0.45)) 0%, transparent 100%),
-    radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(80,200,255,0.35)) 0%, transparent 100%);
+    radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(80,200,255,0.35))  0%, transparent 100%);
   background-size:
     var(--ocean-tile-a, 180px 290px),
     var(--ocean-tile-b, 120px 210px),
     var(--ocean-tile-c, 250px 420px);
   background-position: 40px 0px, 85px 70px, 15px 140px;
-  animation: ocean31-rise var(--ocean-speed-b, 12s) linear infinite;
+  animation: ocean31p var(--ocean-speed-b, 12s) linear infinite;
 }
-@keyframes ocean31-drift {
-  0%   { transform: translate(  0%, 0%); }
-  100% { transform: translate(-20%, 0%); }
+@keyframes ocean31a {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  20%  { transform: translate(-40px,   0px) scale(1.05); }
+  40%  { transform: translate( 25px,   0px) scale(0.97); }
+  60%  { transform: translate(-55px,   0px) scale(1.08); }
+  80%  { transform: translate( 30px,   0px) scale(0.96); }
+  100% { transform: translate(-30px,   0px) scale(1.03); }
 }
-@keyframes ocean31-rise {
+@keyframes ocean31p {
   from { background-position: 40px 0px,    85px 70px,   15px 140px; }
   to   { background-position: 40px -290px, 85px -210px, 15px -420px; }
 }
 
 
-/* ── 32 · LAVA LAMP ─────────────────────────────────────────── */
-html.bg-32-lava-lamp {
-  background: var(--lava-bg, #080410);
-  overflow: hidden;
+/* ── 32 · LAVA LAMP ── */
+.bg-32-lava-lamp { background: #080410; overflow: hidden; }
+.bg-32-lava-lamp {
+  --lava-c1: rgba(255,64,128,0.60);
+  --lava-c2: rgba(255,128,32,0.55);
+  --lava-c3: rgba(192,32,255,0.52);
+  --lava-c1g: rgba(255,64,128,0.22);
+  --lava-c2g: rgba(255,128,32,0.20);
+  --lava-c3g: rgba(192,32,255,0.18);
 }
-html.bg-32-lava-lamp::before {
-  content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
-  z-index: -1;
-  opacity: var(--lava-opacity, 0.85);
-  background-image:
-    radial-gradient(ellipse 28% 22% at 22% 30%, var(--lava-c1, rgba(255,64,128,0.65)) 0%, transparent 72%),
-    radial-gradient(ellipse 24% 20% at 58% 62%, var(--lava-c2, rgba(255,128,32,0.60)) 0%, transparent 70%),
-    radial-gradient(ellipse 22% 18% at 82% 22%, var(--lava-c3, rgba(192,32,255,0.58)) 0%, transparent 68%),
-    radial-gradient(ellipse 18% 14% at 38% 78%, var(--lava-c1, rgba(255,64,128,0.45)) 0%, transparent 65%),
-    radial-gradient(ellipse 20% 16% at 72% 88%, var(--lava-c2, rgba(255,128,32,0.42)) 0%, transparent 63%),
-    radial-gradient(ellipse 16% 14% at 12% 55%, var(--lava-c3, rgba(192,32,255,0.48)) 0%, transparent 66%),
-    radial-gradient(ellipse 44% 34% at 32% 42%, var(--lava-c1g, rgba(255,64,128,0.24)) 0%, transparent 78%),
-    radial-gradient(ellipse 40% 30% at 72% 68%, var(--lava-c2g, rgba(255,128,32,0.22)) 0%, transparent 76%),
-    radial-gradient(ellipse 36% 28% at 50% 22%, var(--lava-c3g, rgba(192,32,255,0.20)) 0%, transparent 74%);
-  animation: lava32-float var(--lava-speed-a, 20s) linear infinite;
+.bg-32-lava-lamp::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 55% 45% at 25% 35%, var(--lava-c1) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 40% at 72% 65%, var(--lava-c2) 0%, transparent 68%),
+    radial-gradient(ellipse 45% 35% at 55% 20%, var(--lava-c3) 0%, transparent 65%),
+    radial-gradient(ellipse 35% 28% at 82% 28%, var(--lava-c1) 0%, transparent 62%),
+    radial-gradient(ellipse 32% 25% at 15% 75%, var(--lava-c2) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 45% 80%, var(--lava-c3) 0%, transparent 63%),
+    radial-gradient(ellipse 75% 55% at 30% 40%, var(--lava-c1g) 0%, transparent 75%),
+    radial-gradient(ellipse 70% 50% at 70% 62%, var(--lava-c2g) 0%, transparent 73%);
+  filter: blur(55px);
+  animation: lava32a 22s ease-in-out infinite alternate;
 }
-html.bg-32-lava-lamp::after {
-  content: ''; position: absolute; inset: -50%; width: 200%; height: 200%;
-  z-index: -1;
-  opacity: var(--lava-opacity, 0.85);
-  background-image:
-    radial-gradient(ellipse 26% 22% at 65% 28%, var(--lava-c3, rgba(192,32,255,0.62)) 0%, transparent 72%),
-    radial-gradient(ellipse 22% 18% at 25% 65%, var(--lava-c1, rgba(255,64,128,0.56)) 0%, transparent 68%),
-    radial-gradient(ellipse 24% 20% at 85% 58%, var(--lava-c2, rgba(255,128,32,0.54)) 0%, transparent 70%),
-    radial-gradient(ellipse 16% 14% at 45% 18%, var(--lava-c3, rgba(192,32,255,0.44)) 0%, transparent 65%),
-    radial-gradient(ellipse 18% 16% at 15% 82%, var(--lava-c1, rgba(255,64,128,0.48)) 0%, transparent 66%),
-    radial-gradient(ellipse 38% 30% at 55% 52%, var(--lava-c3g, rgba(192,32,255,0.22)) 0%, transparent 76%),
-    radial-gradient(ellipse 34% 26% at 28% 38%, var(--lava-c1g, rgba(255,64,128,0.20)) 0%, transparent 74%);
-  animation: lava32-sink var(--lava-speed-b, 16s) linear infinite;
+.bg-32-lava-lamp::after {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 50% 42% at 62% 30%, var(--lava-c3) 0%, transparent 68%),
+    radial-gradient(ellipse 45% 38% at 22% 62%, var(--lava-c1) 0%, transparent 66%),
+    radial-gradient(ellipse 48% 40% at 85% 55%, var(--lava-c2) 0%, transparent 67%),
+    radial-gradient(ellipse 30% 25% at 42% 18%, var(--lava-c3) 0%, transparent 62%),
+    radial-gradient(ellipse 35% 28% at 12% 85%, var(--lava-c1) 0%, transparent 63%),
+    radial-gradient(ellipse 65% 48% at 55% 50%, var(--lava-c3g) 0%, transparent 73%),
+    radial-gradient(ellipse 60% 44% at 28% 38%, var(--lava-c1g) 0%, transparent 72%);
+  filter: blur(65px);
+  animation: lava32b 28s ease-in-out infinite alternate-reverse;
 }
-@keyframes lava32-float {
-  0%   { transform: translate(  0%,   0%); }
-  100% { transform: translate(-20%, -20%); }
+@keyframes lava32a {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  20%  { transform: translate( 55px, -40px) scale(1.06); }
+  40%  { transform: translate(-35px,  60px) scale(0.95); }
+  60%  { transform: translate( 70px,  30px) scale(1.04); }
+  80%  { transform: translate(-25px, -50px) scale(1.08); }
+  100% { transform: translate(-55px,  65px) scale(0.97); }
 }
-@keyframes lava32-sink {
-  0%   { transform: translate(  0%,  0%); }
-  100% { transform: translate( 20%, 20%); }
+@keyframes lava32b {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  25%  { transform: translate(-65px,  50px) scale(1.05); }
+  50%  { transform: translate( 40px, -65px) scale(0.95); }
+  75%  { transform: translate( 75px,  35px) scale(1.07); }
+  100% { transform: translate(-40px,  60px) scale(0.97); }
 }
 
