@@ -161,7 +161,6 @@ html::after {
   mix-blend-mode: var(--wallpaper-gradient-blend, normal);
   opacity: var(--wallpaper-gradient-opacity, 1);
   pointer-events: none;
-  z-index: 0;
 }
 
 .bg-solid {
@@ -3322,10 +3321,7 @@ html.bg-30-aurora {
   overflow: hidden;
 }
 html.bg-30-aurora::before {
-  content: ''; position: absolute; inset: -120px; z-index: 0;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 200% 30% at 35% 10%,  var(--aurora-c1a, rgba(0,220,120,0.30)) 0%, transparent 58%),
     radial-gradient(ellipse 160% 22% at 70% 14%,  var(--aurora-c2a, rgba(30,120,255,0.26)) 0%, transparent 52%),
@@ -3350,10 +3346,7 @@ html.bg-30-aurora::before {
   animation: aurora30a var(--aurora-speed-a, 18s) ease-in-out infinite alternate;
 }
 html.bg-30-aurora::after {
-  content: ''; position: absolute; inset: -120px; z-index: 0;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 180% 14% at 45% 10%,  var(--aurora-c3b, rgba(255,80,220,0.14)) 0%, transparent 60%),
     radial-gradient(ellipse 140% 20% at 20% 16%,  var(--aurora-c2a, rgba(30,120,255,0.18)) 0%, transparent 55%),
@@ -3392,10 +3385,7 @@ html.bg-31-deep-ocean {
   overflow: hidden;
 }
 html.bg-31-deep-ocean::before {
-  content: ''; position: absolute; inset: -60px; z-index: 0;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  content: ''; position: absolute; inset: -60px;
   background:
     radial-gradient(ellipse 12% 85% at 18% 10%, var(--ocean-caustic, rgba(0,120,200,0.18)) 0%, transparent 78%),
     radial-gradient(ellipse  8% 65% at 35% 10%, var(--ocean-caustic, rgba(0,140,220,0.14)) 0%, transparent 68%),
@@ -3410,10 +3400,7 @@ html.bg-31-deep-ocean::before {
   animation: ocean31a var(--ocean-speed-a, 14s) ease-in-out infinite alternate;
 }
 html.bg-31-deep-ocean::after {
-  content: ''; position: fixed; inset: 0; z-index: 0;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  content: ''; position: absolute; inset: -60px;
   background:
     radial-gradient(ellipse 28% 12% at 12% 92%, var(--ocean-bio, rgba(0,255,180,0.06)) 0%, transparent 65%),
     radial-gradient(ellipse 20% 10% at 40% 96%, var(--ocean-bio, rgba(0,220,255,0.05)) 0%, transparent 58%),
@@ -3438,7 +3425,7 @@ html.bg-31-deep-ocean::after {
   100% { transform: translate( 32px, 0px)  scaleX(1.02); }
 }
 @keyframes ocean31p {
-  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 40px 0,    85px 70px,  15px 140px; }
+  from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 40px 0, 85px 70px, 15px 140px; }
   to   { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 40px -290px, 85px -210px, 15px -420px; }
 }
 
@@ -3449,10 +3436,7 @@ html.bg-32-lava-lamp {
   overflow: hidden;
 }
 html.bg-32-lava-lamp::before {
-  content: ''; position: absolute; inset: -120px; z-index: 0;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse calc(42% * var(--lava-sz,1)) calc(32% * var(--lava-sz,1)) at 25% 35%, var(--lava-c1, rgba(255,64,128,0.55)) 0%, transparent 70%),
     radial-gradient(ellipse calc(38% * var(--lava-sz,1)) calc(28% * var(--lava-sz,1)) at 72% 65%, var(--lava-c2, rgba(255,128,32,0.50)) 0%, transparent 68%),
@@ -3466,10 +3450,7 @@ html.bg-32-lava-lamp::before {
   animation: lava32a var(--lava-speed-a, 22s) ease-in-out infinite alternate;
 }
 html.bg-32-lava-lamp::after {
-  content: ''; position: absolute; inset: -120px; z-index: 0;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse calc(35% * var(--lava-sz,1)) calc(28% * var(--lava-sz,1)) at 60% 42%, var(--lava-c3, rgba(192,32,255,0.48)) 0%, transparent 68%),
     radial-gradient(ellipse calc(28% * var(--lava-sz,1)) calc(22% * var(--lava-sz,1)) at 20% 58%, var(--lava-c1, rgba(255,64,128,0.44)) 0%, transparent 65%),
