@@ -100,6 +100,7 @@ body {
 #root {
   min-height: 100vh;
   overflow: hidden;
+  isolation: isolate;
 }
 
 button {
@@ -3320,24 +3321,41 @@ html.bg-30-aurora {
   /* Stars baked into base — never move, never animate */
   background-color: var(--aurora-bg, #01050f);
   background-image:
-    /* Tiled star field — density controlled via --aurora-star-tile */
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 15% 25%, rgba(255,255,255,var(--aurora-star-op, 0.65)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 70% 60%, rgba(255,255,255,var(--aurora-star-op, 0.50)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 2px)   var(--aurora-star-sz, 2px)   at 40% 80%, rgba(255,255,255,var(--aurora-star-op, 0.75)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 85% 15%, rgba(255,255,255,var(--aurora-star-op, 0.45)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 28% 50%, rgba(255,255,255,var(--aurora-star-op, 0.60)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 55% 35%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 92% 75%, rgba(255,255,255,var(--aurora-star-op, 0.40)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 2px)   var(--aurora-star-sz, 2px)   at  5% 90%, rgba(255,255,255,var(--aurora-star-op, 0.70)) 0, transparent 100%);
-  background-size:
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
-    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px);
+    radial-gradient(1.5px 1.5px at  3% 12%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px   1px   at  8% 67%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 13% 34%, rgba(255,255,255,var(--aurora-star-op,0.80)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 18% 88%, rgba(255,255,255,var(--aurora-star-op,0.45)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at 22% 51%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 27%  9%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 31% 76%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 36% 42%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at 40% 95%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 45% 23%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 49% 58%, rgba(255,255,255,var(--aurora-star-op,0.45)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 54% 15%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 58% 81%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at 63% 39%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 67% 72%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 71%  5%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 75% 63%, rgba(255,255,255,var(--aurora-star-op,0.80)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 79% 29%, rgba(255,255,255,var(--aurora-star-op,0.45)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at 83% 84%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 87% 47%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 91% 18%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 94% 71%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 97% 38%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at  6% 44%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 11% 92%, rgba(255,255,255,var(--aurora-star-op,0.45)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 16% 21%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 24% 65%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 33% 57%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at 42% 31%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 51% 86%, rgba(255,255,255,var(--aurora-star-op,0.45)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 60%  7%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(1.5px 1.5px at 69% 53%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 78% 91%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(2px   2px   at 86% 26%, rgba(255,255,255,var(--aurora-star-op,0.80)) 0,transparent 100%),
+    radial-gradient(1px   1px   at 95% 59%, rgba(255,255,255,var(--aurora-star-op,0.45)) 0,transparent 100%);
     overflow: hidden;
 }
 html.bg-30-aurora::before {
