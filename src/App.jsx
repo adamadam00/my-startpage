@@ -903,6 +903,10 @@ function applyTheme(t) {
     s('--aurora-c1c',     hRgba(ac1, (0.10*ai).toFixed(3)))
     s('--aurora-c2c',     hRgba(ac2, (0.12*ai).toFixed(3)))
     s('--aurora-star-op', (t.bgAuroraStarOpacity ?? 0.65).toFixed(2))
+    // Star density: tile size controls repetition — smaller = denser
+    const sDens = t.bgAuroraStarDensity ?? 50
+    const sTile = Math.max(20, Math.round(110 - sDens * 0.9))
+    s('--aurora-star-tile', sTile + 'px')
     s('--aurora-speed-a', dur(8))
     s('--aurora-speed-b', dur(12))
   }

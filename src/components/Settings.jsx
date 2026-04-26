@@ -580,6 +580,7 @@ export default function Settings({
                   <Row label="Band color 2"><ColorPick value={theme.bgAuroraC2 || '#1e78ff'} onChange={v => set('bgAuroraC2', v)} /></Row>
                   <Row label="Band color 3"><ColorPick value={theme.bgAuroraC3 || '#8c28ff'} onChange={v => set('bgAuroraC3', v)} /></Row>
                   <Row label="Intensity"><Slider val={theme.bgAuroraIntensity ?? 100} min={20} max={200} onChange={v => set('bgAuroraIntensity', v)} unit="%" /></Row>
+                  <Row label="Star density"><Slider val={theme.bgAuroraStarDensity ?? 50} min={5} max={100} onChange={v => set('bgAuroraStarDensity', v)} unit="%" /></Row>
                   <Row label="Star brightness"><Slider val={Math.round((theme.bgAuroraStarOpacity ?? 0.65) * 100)} min={0} max={100} onChange={v => set('bgAuroraStarOpacity', v / 100)} unit="%" /></Row>
                 </>
               )}
