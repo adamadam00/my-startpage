@@ -897,6 +897,9 @@ function applyTheme(t) {
     s('--aurora-blur',   (t.bgAuroraBlur ?? 22) + 'px')
     s('--aurora-star-op', (t.bgAuroraStarOpacity ?? 0.65).toFixed(2))
     s('--aurora-star-sz', (t.bgAuroraStarSize ?? 1.5).toFixed(1) + 'px')
+    // Star density: smaller tile = more stars
+    const starTile = Math.round(120 - (t.bgAuroraStarDensity ?? 50) * 0.8)
+    s('--aurora-star-tile', Math.max(20, starTile) + 'px')
     s('--aurora-blur-b', ((t.bgAuroraBlur ?? 22) + 14) + 'px')
     // opacity baked into colors so no compositing context is created
     const ao = t.bgAuroraOpacity ?? 0.85
@@ -1035,8 +1038,8 @@ function applyTheme(t) {
     html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
     html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
     html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
-    html.bg-30-aurora::before { animation-duration: ${dur(18)} !important; }
-    html.bg-30-aurora::after  { animation-duration: ${dur(26)} !important; }
+    html.bg-30-aurora::before { animation-duration: ${dur(8)} !important; }
+    html.bg-30-aurora::after  { animation-duration: ${dur(12)} !important; }
     html.bg-31-deep-ocean::before { animation-duration: ${dur(14)} !important; }
     html.bg-31-deep-ocean::after  { animation-duration: ${dur(12)} !important; }
     html.bg-32-lava-lamp::before { animation-duration: ${dur(22)} !important; }

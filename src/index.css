@@ -3320,27 +3320,25 @@ html.bg-30-aurora {
   /* Stars baked into base — never move, never animate */
   background-color: var(--aurora-bg, #01050f);
   background-image:
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at  4% 18%, rgba(255,255,255,var(--aurora-star-op, 0.75)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 11% 62%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 17% 38%, rgba(255,255,255,var(--aurora-star-op, 0.65)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 23% 84%, rgba(255,255,255,var(--aurora-star-op, 0.45)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 29% 52%, rgba(255,255,255,var(--aurora-star-op, 0.60)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 34%  9%, rgba(255,255,255,var(--aurora-star-op, 0.50)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 41% 73%, rgba(255,255,255,var(--aurora-star-op, 0.70)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 47% 31%, rgba(255,255,255,var(--aurora-star-op, 0.50)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 53% 91%, rgba(255,255,255,var(--aurora-star-op, 0.65)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 58% 44%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 64% 22%, rgba(255,255,255,var(--aurora-star-op, 0.60)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 70% 67%, rgba(255,255,255,var(--aurora-star-op, 0.70)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 75% 15%, rgba(255,255,255,var(--aurora-star-op, 0.45)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 81% 55%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 2px)   var(--aurora-star-sz, 2px)   at 86% 79%, rgba(255,255,255,var(--aurora-star-op, 0.80)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 91% 33%, rgba(255,255,255,var(--aurora-star-op, 0.50)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 96% 58%, rgba(255,255,255,var(--aurora-star-op, 0.65)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at  8% 96%, rgba(255,255,255,var(--aurora-star-op, 0.40)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 44% 87%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
-    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 62% 12%, rgba(255,255,255,var(--aurora-star-op, 0.60)) 0, transparent 100%);
-  overflow: hidden;
+    /* Tiled star field — density controlled via --aurora-star-tile */
+    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 15% 25%, rgba(255,255,255,var(--aurora-star-op, 0.65)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 70% 60%, rgba(255,255,255,var(--aurora-star-op, 0.50)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 2px)   var(--aurora-star-sz, 2px)   at 40% 80%, rgba(255,255,255,var(--aurora-star-op, 0.75)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 85% 15%, rgba(255,255,255,var(--aurora-star-op, 0.45)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 28% 50%, rgba(255,255,255,var(--aurora-star-op, 0.60)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 55% 35%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 92% 75%, rgba(255,255,255,var(--aurora-star-op, 0.40)) 0, transparent 100%),
+    radial-gradient(var(--aurora-star-sz, 2px)   var(--aurora-star-sz, 2px)   at  5% 90%, rgba(255,255,255,var(--aurora-star-op, 0.70)) 0, transparent 100%);
+  background-size:
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px),
+    var(--aurora-star-tile, 80px) var(--aurora-star-tile, 80px);
+    overflow: hidden;
 }
 html.bg-30-aurora::before {
   /* Curtain bands + soft vertical rays — oversized to prevent edge clipping */
@@ -3369,7 +3367,7 @@ html.bg-30-aurora::before {
     radial-gradient(ellipse 20% 14% at 15% 24%,   var(--aurora-c2c, rgba(30,120,255,0.12)) 0%, transparent 78%),
     radial-gradient(ellipse 14% 10% at 88% 20%,   var(--aurora-c3b, rgba(140,40,255,0.14)) 0%, transparent 76%),
     radial-gradient(ellipse 22% 12% at 52% 18%,   var(--aurora-c1c, rgba(0,220,120,0.10)) 0%, transparent 80%);
-  animation: aurora30a var(--aurora-speed-a, 18s) ease-in-out infinite alternate;
+  animation: aurora30a var(--aurora-speed-a, 8s) ease-in-out infinite alternate;
 }
 html.bg-30-aurora::after {
   /* Second aurora layer — different phase, also oversized */
@@ -3395,24 +3393,24 @@ html.bg-30-aurora::after {
     radial-gradient(ellipse  7% 68% at 80%  0%,   var(--aurora-c1b, rgba(0,200,100,0.11)) 0%, transparent 92%),
     radial-gradient(ellipse  9% 76% at 88%  0%,   var(--aurora-c3a, rgba(140,40,255,0.13)) 0%, transparent 88%),
     radial-gradient(ellipse  7% 70% at 96%  0%,   var(--aurora-c2a, rgba(30,120,255,0.11)) 0%, transparent 91%);
-  animation: aurora30b var(--aurora-speed-b, 26s) ease-in-out infinite alternate-reverse;
+  animation: aurora30b var(--aurora-speed-b, 12s) ease-in-out infinite alternate-reverse;
 }
 @keyframes aurora30a {
-  0%   { transform: translate(-20px, 0px)   scale(1.06); }
-  20%  { transform: translate( 15px,-12px)  scale(0.97); }
-  40%  { transform: translate(-18px,  8px)  scale(1.08); }
-  55%  { transform: translate( 22px,-16px)  scale(1.02); }
-  70%  { transform: translate(-12px, 10px)  scale(1.05); }
-  85%  { transform: translate( 18px, -5px)  scale(0.96); }
-  100% { transform: translate(-15px,  8px)  scale(1.04); }
+  0%   { transform: translate(-120px,  0px)  scale(1.12); }
+  20%  { transform: translate(  80px,-40px)  scale(0.94); }
+  40%  { transform: translate(-100px,  30px) scale(1.18); }
+  55%  { transform: translate(  90px,-55px)  scale(1.04); }
+  70%  { transform: translate( -60px,  45px) scale(1.10); }
+  85%  { transform: translate( 110px,-20px)  scale(0.92); }
+  100% { transform: translate( -80px,  35px) scale(1.08); }
 }
 @keyframes aurora30b {
-  0%   { transform: translate( 18px,  0px)  scale(0.96); }
-  18%  { transform: translate(-15px, -8px)  scale(1.05); }
-  36%  { transform: translate( 20px,  5px)  scale(0.98); }
-  54%  { transform: translate(-22px,-12px)  scale(1.07); }
-  72%  { transform: translate( 14px,  4px)  scale(0.99); }
-  100% { transform: translate(-20px, -6px)  scale(1.04); }
+  0%   { transform: translate( 100px,   0px) scale(0.92); }
+  18%  { transform: translate( -90px, -35px) scale(1.14); }
+  36%  { transform: translate( 115px,  25px) scale(0.96); }
+  54%  { transform: translate(-110px, -50px) scale(1.18); }
+  72%  { transform: translate(  70px,  20px) scale(0.98); }
+  100% { transform: translate(-130px, -30px) scale(1.12); }
 }
 
 
