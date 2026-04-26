@@ -92,8 +92,6 @@ body {
   -webkit-font-smoothing: antialiased;
   transform-origin: top left;
   transform: scale(var(--page-scale));
-  position: relative;
-  z-index: 1;
   width: calc(100% / var(--page-scale));
   min-height: calc(100% / var(--page-scale));
   position: relative;
@@ -3324,10 +3322,66 @@ html.bg-30-aurora {
   background-color: var(--aurora-bg, #01050f);
   overflow: hidden;
 }
+html.bg-30-aurora body::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(2px 2px at  2% 11%, rgba(255,255,255,var(--aurora-star-op,0.80)) 0,transparent 100%),
+    radial-gradient(1px 1px at  5% 74%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(3px 3px at  8% 38%, rgba(255,255,255,var(--aurora-star-op,0.90)) 0,transparent 100%),
+    radial-gradient(1px 1px at 11% 87%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(2px 2px at 14% 22%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 17% 55%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 20%  4%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(3px 3px at 23% 68%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 26% 41%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 29% 93%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(1px 1px at 32% 17%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 35% 62%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(3px 3px at 38%  8%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 41% 79%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 44% 33%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 47% 96%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(1px 1px at 50% 48%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(3px 3px at 53% 14%, rgba(255,255,255,var(--aurora-star-op,0.90)) 0,transparent 100%),
+    radial-gradient(1px 1px at 56% 83%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(2px 2px at 59% 27%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 62% 71%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(1px 1px at 65%  2%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(3px 3px at 68% 58%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 71% 91%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(2px 2px at 74% 35%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 77% 19%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(1px 1px at 80% 76%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(3px 3px at 83% 44%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 86%  7%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(2px 2px at 89% 63%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 92% 29%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1px 1px at 95% 85%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(3px 3px at 98% 52%, rgba(255,255,255,var(--aurora-star-op,0.90)) 0,transparent 100%),
+    radial-gradient(1px 1px at  6% 44%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 16% 31%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(3px 3px at 28% 15%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 37% 52%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 46%  6%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 55% 39%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 64% 88%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
+    radial-gradient(3px 3px at 73% 24%, rgba(255,255,255,var(--aurora-star-op,0.90)) 0,transparent 100%),
+    radial-gradient(1px 1px at 82% 67%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 91% 13%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at  9% 97%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1px 1px at 24% 44%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(3px 3px at 43% 72%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 67% 18%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 85% 89%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 33% 72%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(1px 1px at 76% 47%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%);
+  background-size: var(--aurora-star-tile, 100%) var(--aurora-star-tile, 100%);
+}
 /* ::before — aurora curtain bands + vertical rays */
 html.bg-30-aurora::before {
   content: ''; position: fixed; top: -10%; left: -8%; width: 116%; height: 120%;
-  z-index: 0;
+  z-index: -1;
   background:
     radial-gradient(ellipse 220% 32% at 35%  8%,  var(--aurora-c1a, rgba(0,220,120,0.30)) 0%, transparent 80%),
     radial-gradient(ellipse 180% 24% at 68% 12%,  var(--aurora-c2a, rgba(30,120,255,0.26)) 0%, transparent 78%),
@@ -3365,10 +3419,10 @@ html.bg-30-aurora::before {
     radial-gradient(ellipse 130% 20% at 78% 12%,  var(--aurora-c1a, rgba(0,220,120,0.16)) 0%, transparent 76%);
   animation: aurora30a var(--aurora-speed-a, 8s) ease-in-out infinite alternate;
 }
-/* ::after — stars only, non-animated, z-index above aurora bands */
+/* ::after — stars only, static */
 html.bg-30-aurora::after {
   content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-  z-index: 0;
+  z-index: -1;
   background-image:
     radial-gradient(1.5px 1.5px at  2% 11%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
     radial-gradient(1px   1px   at  5% 74%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
@@ -3420,57 +3474,6 @@ html.bg-30-aurora::after {
     radial-gradient(1.5px 1.5px at 85% 89%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
     radial-gradient(1px   1px   at 33% 72%, rgba(255,255,255,var(--aurora-star-op,0.50)) 0,transparent 100%),
     radial-gradient(1px   1px   at 76% 47%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%);
-  background-size:
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px),
-    var(--aurora-star-tile, 100px) var(--aurora-star-tile, 100px);
   /* No animation — stars stay fixed */
 }
 @keyframes aurora30a {
