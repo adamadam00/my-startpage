@@ -3318,8 +3318,8 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 /* ── 30 · AURORA ────────────────────────────────────────────── */
 html.bg-30-aurora {
   /* Stars baked into base — never move, never animate */
-  background:
-    var(--aurora-bg, #01050f)
+  background-color: var(--aurora-bg, #01050f);
+  background-image:
     radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at  4% 18%, rgba(255,255,255,var(--aurora-star-op, 0.75)) 0, transparent 100%),
     radial-gradient(var(--aurora-star-sz, 1px)   var(--aurora-star-sz, 1px)   at 11% 62%, rgba(255,255,255,var(--aurora-star-op, 0.55)) 0, transparent 100%),
     radial-gradient(var(--aurora-star-sz, 1.5px) var(--aurora-star-sz, 1.5px) at 17% 38%, rgba(255,255,255,var(--aurora-star-op, 0.65)) 0, transparent 100%),
