@@ -894,53 +894,46 @@ function applyTheme(t) {
     const ac3 = t.bgAuroraC3 || '#8c28ff'
     const ai  = (t.bgAuroraIntensity ?? 100) / 100
     s('--aurora-bg',      t.bgAuroraBg || '#01050f')
-    s('--aurora-c1a',     hRgba(ac1, (0.30*ai).toFixed(3)))
-    s('--aurora-c2a',     hRgba(ac2, (0.26*ai).toFixed(3)))
-    s('--aurora-c3a',     hRgba(ac3, (0.20*ai).toFixed(3)))
-    s('--aurora-c1b',     hRgba(ac1, (0.16*ai).toFixed(3)))
-    s('--aurora-c2b',     hRgba(ac2, (0.18*ai).toFixed(3)))
-    s('--aurora-c3b',     hRgba(ac3, (0.14*ai).toFixed(3)))
-    s('--aurora-c1c',     hRgba(ac1, (0.10*ai).toFixed(3)))
-    s('--aurora-c2c',     hRgba(ac2, (0.12*ai).toFixed(3)))
-    s('--aurora-star-op', (t.bgAuroraStarOpacity ?? 0.65).toFixed(2))
-    // Star density: tile size controls repetition — smaller = denser
-    const sDens = t.bgAuroraStarDensity ?? 100
-    // 100% = full viewport (fixed positions), lower = tiled repeating
-    s('--aurora-star-tile', sDens === 100 ? '100%' : Math.max(20, Math.round(110 - sDens * 0.9)) + 'px')
-    s('--aurora-speed-a', dur(8))
-    s('--aurora-speed-b', dur(12))
+    s('--aurora-c1a',     hRgba(ac1, (0.35*ai).toFixed(3)))
+    s('--aurora-c2a',     hRgba(ac2, (0.30*ai).toFixed(3)))
+    s('--aurora-c3a',     hRgba(ac3, (0.25*ai).toFixed(3)))
+    s('--aurora-star-op', (t.bgAuroraStarOpacity ?? 0.75).toFixed(2))
+    // Star density via background-size on ::after
+    const sd = t.bgAuroraStarDensity ?? 100
+    s('--aurora-star-tile', sd >= 100 ? '100%' : Math.max(30, Math.round(sd)) + '%')
+    s('--aurora-opacity', t.bgAuroraOpacity ?? 0.90)
+    s('--aurora-speed-a', dur(20))
   }
 
   if (t.bgPreset === '31-deep-ocean') {
-    const oi  = (t.bgOceanIntensity ?? 100) / 100
+    const oi   = (t.bgOceanIntensity ?? 100) / 100
     const dens = t.bgOceanDensity ?? 50
     const tileA = Math.round(360 - dens * 2.4) + 'px'
     const tileB = Math.round(260 - dens * 1.8) + 'px'
     const tileC = Math.round(480 - dens * 3.0) + 'px'
     s('--ocean-bg',       t.bgOceanDeepBg || '#000814')
-    s('--ocean-caustic',  hRgba(t.bgOceanCausticC || '#0078c8', (0.18*oi).toFixed(3)))
-    s('--ocean-mid',      hRgba(t.bgOceanMidC || '#003c78', (0.28*oi).toFixed(3)))
-    s('--ocean-bio',      hRgba(t.bgOceanBioC || '#00ffb4', (t.bgOceanBioOpacity ?? 0.6).toFixed(3)))
-    s('--ocean-particle', hRgba(t.bgOceanParticleC || '#64dcff', (t.bgOceanParticleOpacity ?? 0.9).toFixed(3)))
+    s('--ocean-caustic',  hRgba(t.bgOceanCausticC || '#0078c8', (0.20*oi).toFixed(3)))
+    s('--ocean-mid',      hRgba(t.bgOceanMidC || '#003c78', (0.32*oi).toFixed(3)))
+    s('--ocean-bio',      hRgba(t.bgOceanBioC || '#00ffb4', (t.bgOceanBioOpacity ?? 0.08).toFixed(3)))
+    s('--ocean-particle', hRgba(t.bgOceanParticleC || '#64dcff', (t.bgOceanParticleOpacity ?? 0.55).toFixed(3)))
     s('--ocean-tile-a',   tileA + ' ' + Math.round(parseInt(tileA)*1.6) + 'px')
     s('--ocean-tile-b',   tileB + ' ' + Math.round(parseInt(tileB)*1.5) + 'px')
     s('--ocean-tile-c',   tileC + ' ' + Math.round(parseInt(tileC)*1.7) + 'px')
-    s('--ocean-speed-a',  dur(14))
+    s('--ocean-speed-a',  dur(16))
     s('--ocean-speed-b',  dur(12))
   }
 
   if (t.bgPreset === '32-lava-lamp') {
     const lo = t.bgLavaOpacity ?? 0.8
     s('--lava-bg',    t.bgLavaBg || '#080410')
-    s('--lava-c1',    hRgba(t.bgLavaC1 || '#ff4080', (0.55*lo).toFixed(3)))
-    s('--lava-c2',    hRgba(t.bgLavaC2 || '#ff8020', (0.50*lo).toFixed(3)))
-    s('--lava-c3',    hRgba(t.bgLavaC3 || '#c020ff', (0.48*lo).toFixed(3)))
+    s('--lava-c1',    hRgba(t.bgLavaC1 || '#ff4080', (0.60*lo).toFixed(3)))
+    s('--lava-c2',    hRgba(t.bgLavaC2 || '#ff8020', (0.55*lo).toFixed(3)))
+    s('--lava-c3',    hRgba(t.bgLavaC3 || '#c020ff', (0.52*lo).toFixed(3)))
     s('--lava-c1g',   hRgba(t.bgLavaC1 || '#ff4080', (0.22*lo).toFixed(3)))
     s('--lava-c2g',   hRgba(t.bgLavaC2 || '#ff8020', (0.20*lo).toFixed(3)))
     s('--lava-c3g',   hRgba(t.bgLavaC3 || '#c020ff', (0.18*lo).toFixed(3)))
-    s('--lava-sz',    (t.bgLavaSize ?? 100) / 100)
-    s('--lava-speed-a', dur(22))
-    s('--lava-speed-b', dur(16))
+    s('--lava-speed-a', dur(18))
+    s('--lava-speed-b', dur(14))
   }
 
   const sfGrad = ps.sfGrad ?? false
@@ -1023,12 +1016,11 @@ function applyTheme(t) {
     html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
     html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
     html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
-    html.bg-30-aurora::before { animation-duration: ${dur(8)} !important; }
-    html.bg-30-aurora::after  { animation-duration: ${dur(12)} !important; }
-    html.bg-31-deep-ocean::before { animation-duration: ${dur(14)} !important; }
+    html.bg-30-aurora::before { animation-duration: ${dur(20)} !important; }
+    html.bg-31-deep-ocean::before { animation-duration: ${dur(16)} !important; }
     html.bg-31-deep-ocean::after  { animation-duration: ${dur(12)} !important; }
-    html.bg-32-lava-lamp::before { animation-duration: ${dur(22)} !important; }
-    html.bg-32-lava-lamp::after  { animation-duration: ${dur(16)} !important; }
+    html.bg-32-lava-lamp::before { animation-duration: ${dur(18)} !important; }
+    html.bg-32-lava-lamp::after  { animation-duration: ${dur(14)} !important; }
 
     html.bg-grass {
       overflow: hidden;
