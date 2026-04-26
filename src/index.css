@@ -3350,6 +3350,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   animation: aurora30a 22s ease-in-out infinite alternate;
 }
 .bg-30-aurora::after {
+  display: none;
   content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 160% 30% at 55% -18%, var(--aurora-c2) 0%, transparent 65%),
@@ -3460,6 +3461,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   animation: ocean31a 20s ease-in-out infinite alternate;
 }
 .bg-31-deep-ocean::after {
+  display: none;
   content: ''; position: fixed;
   top: 0; left: 0; width: 100%; height: 100%;
   background-image:
@@ -3512,6 +3514,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   animation: lava32a 22s ease-in-out infinite alternate;
 }
 .bg-32-lava-lamp::after {
+  display: none;
   content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 50% 42% at 62% 30%, var(--lava-c3) 0%, transparent 68%),
