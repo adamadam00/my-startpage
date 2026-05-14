@@ -1141,7 +1141,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     )}
 
                     <div className="note-edit-toolbar" data-toolbar="true">
-                      {/* Row 1: formatting + colors */}
                       <div className="note-edit-toolbar-row">
                         <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('bold', false, null)} title="Bold"><strong>B</strong></button>
                         <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('italic', false, null)} title="Italic"><em>I</em></button>
@@ -1168,9 +1167,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                             document.execCommand('foreColor', false, e.target.value)
                             document.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true }))
                           }} />
-                      </div>
-                      {/* Row 2: attach + share + spacer + timestamp + pin + delete */}
-                      <div className="note-edit-toolbar-row">
+                        <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 0.1rem', flexShrink: 0 }} />
                         <button type="button" className="btn-xs" title="Attach file (max 49MB)"
                           style={{ color: 'var(--text-dim)', flexShrink: 0 }}
                           onMouseDown={e => e.preventDefault()}
@@ -1212,7 +1209,6 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()}
                           onClick={() => remove(note.id)} title="Delete note"
                           style={{ color: 'var(--danger)', flexShrink: 0 }}>🗑</button>
-                      </div>
                     </div>
                   </>
                 )}

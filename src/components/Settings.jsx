@@ -477,7 +477,7 @@ export default function Settings({
                   label="Animation speed"
                   val={theme.bgAnimSpeed ?? 1}
                   min={0}
-                  max={20}
+                  max={8}
                   step={0.1}
                   onChange={v => set('bgAnimSpeed', v)}
                   unit="×"

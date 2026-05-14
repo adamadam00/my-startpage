@@ -1192,7 +1192,6 @@ html.bg-29-carbon::after {
   box-shadow: 0 10px 32px rgba(0,0,0,0.5);
   backdrop-filter: blur(12px);
   overflow: hidden;
-  padding: 0;
 }
 .news-feed-tabs {
   display: flex;
@@ -1860,15 +1859,11 @@ html.bg-29-carbon::after {
   top: calc(100% + 0.15rem);
   left: 0;
   right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.4rem 0.5rem;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: visible;
 }
 .note-edit-toolbar-row {
@@ -1876,7 +1871,9 @@ html.bg-29-carbon::after {
   gap: 0.2rem;
   align-items: center;
   flex-wrap: nowrap;
+  padding: 0.35rem 0.5rem;
   width: 100%;
+  overflow: visible;
 }
 
 .note-drag-handle-inline {
@@ -3330,20 +3327,13 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   pointer-events: none;
 }
 
-/* ── News/Calendar pinned popout ── */
 .news-dropdown.news-pinned,
 .cal-dropdown.cal-pinned {
-  position: fixed;
-  top: 52px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(700px, 96vw);
-  max-height: 78vh;
-  z-index: 9999;
+  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+  width: min(700px, 96vw); max-height: 78vh; z-index: 9999;
   box-shadow: 0 8px 40px rgba(0,0,0,0.55);
 }
 .news-dropdown.news-pinned .news-articles,
 .cal-dropdown.cal-pinned .cal-dropdown-inner {
-  max-height: calc(78vh - 48px);
-  overflow-y: auto;
+  max-height: calc(78vh - 48px); overflow-y: auto;
 }
