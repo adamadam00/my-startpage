@@ -886,52 +886,6 @@ function applyTheme(t) {
     s('--plasma-c6', rgba(userColors[2] || userColors[0], 0.18));
   }
 
-  const hRgba = (hex, a) => { const r = hexRgb(hex||'#000000'); return `rgba(${r},${a.toFixed(3)})` }
-
-  if (t.bgPreset === '30-aurora') {
-    const ac1=t.bgAuroraC1||'#00dc78', ac2=t.bgAuroraC2||'#1e78ff', ac3=t.bgAuroraC3||'#8c28ff'
-    const ai=(t.bgAuroraIntensity??100)/100
-    s('--aurora-c1', hRgba(ac1, 0.32*ai))
-    s('--aurora-c2', hRgba(ac2, 0.26*ai))
-    s('--aurora-c3', hRgba(ac3, 0.22*ai))
-    s('--aurora-c4', hRgba(ac2, 0.18*ai))
-    s('--aurora-c5', hRgba(ac3, 0.14*ai))
-    s('--aurora-c6', hRgba(ac1, 0.16*ai))
-    s('--aurora-star-op', t.bgAuroraStarOpacity??0.8)
-    const sd=t.bgAuroraStarDensity??100
-    s('--aurora-star-tile', sd>=100?'100%':Math.max(25,sd)+'%')
-  }
-
-  if (t.bgPreset === '31-deep-ocean') {
-    const oi=(t.bgOceanIntensity??100)/100
-    const occ=t.bgOceanCausticC||'#0078c8', omc=t.bgOceanMidC||'#003c78'
-    const obc=t.bgOceanBioC||'#00ffb4', opc=t.bgOceanParticleC||'#64dcff'
-    s('--ocean-c1', hRgba(occ, 0.22*oi))
-    s('--ocean-c2', hRgba(omc, 0.32*oi))
-    s('--ocean-c3', hRgba(obc, (t.bgOceanBioOpacity??0.08)))
-    s('--ocean-c4', hRgba(occ, 0.18*oi))
-    s('--ocean-c5', hRgba(omc, 0.22*oi))
-    s('--ocean-c6', hRgba(obc, (t.bgOceanBioOpacity??0.08)*0.8))
-    const dens=t.bgOceanDensity??50
-    const tA=Math.round(360-dens*2.4)+'px', tB=Math.round(260-dens*1.8)+'px', tC=Math.round(480-dens*3.0)+'px'
-    s('--ocean-particle', hRgba(opc, t.bgOceanParticleOpacity??0.55))
-    s('--ocean-tile-a', tA+' '+Math.round(parseInt(tA)*1.6)+'px')
-    s('--ocean-tile-b', tB+' '+Math.round(parseInt(tB)*1.5)+'px')
-    s('--ocean-tile-c', tC+' '+Math.round(parseInt(tC)*1.7)+'px')
-    s('--ocean-speed-b', dur(12))
-  }
-
-  if (t.bgPreset === '32-lava-lamp') {
-    const lo=t.bgLavaOpacity??0.85
-    const lc1=t.bgLavaC1||'#ff4080', lc2=t.bgLavaC2||'#ff8020', lc3=t.bgLavaC3||'#c020ff'
-    s('--lava-c1',  hRgba(lc1, 0.60*lo))
-    s('--lava-c2',  hRgba(lc2, 0.55*lo))
-    s('--lava-c3',  hRgba(lc3, 0.52*lo))
-    s('--lava-c1g', hRgba(lc1, 0.22*lo))
-    s('--lava-c2g', hRgba(lc2, 0.20*lo))
-    s('--lava-c3g', hRgba(lc3, 0.18*lo))
-  }
-
   const sfGrad = ps.sfGrad ?? false
   if (sfGrad && c1) {
     s(
@@ -1012,12 +966,6 @@ function applyTheme(t) {
     html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
     html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
     html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
-    .bg-30-aurora::before { animation-duration: ${dur(22)} !important; }
-    .bg-30-aurora::after  { animation-duration: ${dur(30)} !important; }
-    .bg-31-deep-ocean::before { animation-duration: ${dur(20)} !important; }
-    .bg-31-deep-ocean::after  { animation-duration: ${dur(12)} !important; }
-    .bg-32-lava-lamp::before { animation-duration: ${dur(22)} !important; }
-    .bg-32-lava-lamp::after  { animation-duration: ${dur(28)} !important; }
 
     html.bg-grass {
       overflow: hidden;
@@ -2347,10 +2295,8 @@ export default function App() {
 				  triggerExpandAll={triggerExpand}
 				  openInNewTab={theme.openInNewTab ?? true}
 				  faviconEnabled={theme.faviconEnabled ?? true}
-				  onAddSection={async () => {
-					const name = await window.prompt('Section name:', 'New Section')
-					if (!name) return
-					const sectionName = String(name).trim() || 'New Section'
+				  onAddSection={async (name) => {
+					const sectionName = (typeof name === 'string' ? name : '').trim() || 'New Section'
 					const { error } = await supabase
 					  .from('sections')
 					  .insert({
