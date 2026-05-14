@@ -1214,8 +1214,8 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                           style={{ color: 'var(--danger)', flexShrink: 0 }}>🗑</button>
                       </div>
                     </div>
-                )}
                   </>
+                )}
                 </>
               </div>
             )
