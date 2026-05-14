@@ -1700,16 +1700,10 @@ export default function App() {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
       
-      // Get workspace order from settings
-      const { data: settings } = await supabase.from('user_settings').select('workspace_order').eq('user_id', sessionRef.current.user.id).single()
-      let ordered = wsData || []
-      if (settings?.workspace_order?.length) {
-        const orderMap = Object.fromEntries(settings.workspace_order.map((id, i) => [id, i]))
-        ordered = [...ordered].sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999))
-      }
+      const ordered = wsData || []
 
-      // Update workspaces without clearing — preserves current view
-      setWorkspaces(ordered)
+      // Only update if changed — prevents unnecessary re-renders that flicker animated backgrounds
+      setWorkspaces(prev => JSON.stringify(prev) === JSON.stringify(ordered) ? prev : ordered)
       CacheManager.save('workspaces', ordered)
       
       const currentWs = activeWsRef.current ?? ordered?.[0]?.id ?? null

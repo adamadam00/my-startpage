@@ -404,10 +404,12 @@ html.bg-16-starfield-old::before, html.bg-16-starfield-old::after {
     radial-gradient(calc(var(--bg-star-size, 1) * 1px) calc(var(--bg-star-size, 1) * 1px) at 95% 50%, var(--bg-08-c3, rgba(200,210,255,0.70)) 0%,transparent 100%),
     radial-gradient(calc(var(--bg-star-size, 1) * 1px) calc(var(--bg-star-size, 1) * 1px) at 55% 75%, var(--bg-08-c3, rgba(200,210,255,0.60)) 0%,transparent 100%);
   background-size: calc(700px / (var(--bg-star-density, 1))) calc(700px / (var(--bg-star-density, 1)));
+  will-change: transform;
   animation: starfield-drift calc(80s / var(--bg-star-speed, 1)) linear infinite;
 }
 html.bg-16-starfield-old::after {
   background-size: calc(450px / (var(--bg-star-density, 1))) calc(450px / (var(--bg-star-density, 1)));
+  will-change: transform;
   animation: starfield-drift calc(130s / var(--bg-star-speed, 1)) linear infinite reverse;
   opacity: 0.55;
 }
@@ -522,6 +524,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
     radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
     radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(45px);
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
@@ -531,6 +534,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
     radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c6) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(65px);
   animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
 }
@@ -549,6 +553,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
     radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
     radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(45px);
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
@@ -558,6 +563,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
     radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c6) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(65px);
   animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
 }
@@ -576,6 +582,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
     radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
     radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(45px);
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
@@ -585,6 +592,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
     radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c6) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(65px);
   animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
 }
@@ -603,6 +611,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
     radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
     radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(45px);
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
@@ -612,6 +621,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
     radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c6) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(65px);
   animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
 }
@@ -630,6 +640,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
     radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
     radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(45px);
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
@@ -639,6 +650,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
     radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c6) 0%,transparent 65%);
+  will-change: transform;
   filter: blur(65px);
   animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
 }
@@ -651,6 +663,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 70% 55% at 25% 45%, var(--bg-fog-c1, rgba(50,60,110,0.22)) 0%,transparent 70%),
     radial-gradient(ellipse 55% 70% at 72% 58%, var(--bg-fog-c1, rgba(40,50,100,0.18)) 0%,transparent 70%),
     radial-gradient(ellipse 80% 45% at 48% 82%, var(--bg-fog-c1, rgba(45,55,105,0.15)) 0%,transparent 70%);
+  will-change: transform;
   filter: blur(var(--bg-fog-blur, 75px));
   animation: fog-a 42s ease-in-out infinite alternate;
 }
@@ -660,6 +673,7 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 65% at 78% 22%, var(--bg-fog-c2, rgba(35,55,105,0.16)) 0%,transparent 70%),
     radial-gradient(ellipse 75% 45% at 18% 68%, var(--bg-fog-c2, rgba(50,45,100,0.14)) 0%,transparent 70%),
     radial-gradient(ellipse 50% 60% at 50% 40%, var(--bg-fog-c2, rgba(40,40,90,0.10)) 0%,transparent 70%);
+  will-change: transform;
   filter: blur(var(--bg-fog-blur2, 95px));
   animation: fog-b 58s ease-in-out infinite alternate-reverse;
 }
