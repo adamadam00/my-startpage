@@ -138,7 +138,6 @@ function getFavicon(url) {
   catch { return null }
 }
 
-
 // ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
 const NEWS_FEEDS = [
   { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
@@ -157,7 +156,6 @@ function NewsWidget({ theme, setTheme }) {
   const [loading, setLoading] = useState(false)
   const [activeFeed, setActiveFeed] = useState(null)
   const closeTimer = useRef(null)
-
   const disabledFeeds = theme.newsDisabledFeeds || []
   const customFeeds = [
     theme.newsCustom1 ? { id: 'custom1', label: theme.newsCustom1Label || 'Custom 1', url: theme.newsCustom1 } : null,
@@ -165,53 +163,41 @@ function NewsWidget({ theme, setTheme }) {
     theme.newsCustom3 ? { id: 'custom3', label: theme.newsCustom3Label || 'Custom 3', url: theme.newsCustom3 } : null,
   ].filter(Boolean)
   const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
-
   const fetchFeed = async (feed) => {
     setLoading(true); setArticles([])
-    try {
-      const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
-      const data = await res.json()
-      setArticles((data.items || []).slice(0, 10))
-    } catch { setArticles([]) }
+    try { const r = await fetch(RSS_PROXY + encodeURIComponent(feed.url)); const d = await r.json(); setArticles((d.items||[]).slice(0,10)) }
+    catch { setArticles([]) }
     setLoading(false)
   }
-
-  const openNews = () => {
-    clearTimeout(closeTimer.current)
-    if (!open) { const f = allFeeds[0]; if (f) { setActiveFeed(f); fetchFeed(f) }; setOpen(true) }
-  }
+  const openNews = () => { clearTimeout(closeTimer.current); if (!open) { const f=allFeeds[0]; if(f){setActiveFeed(f);fetchFeed(f)}; setOpen(true) } }
   const handleMouseEnter = () => { clearTimeout(closeTimer.current); openNews() }
   const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 300) }
   const handleClick = () => { if (!open) openNews(); else setPinned(p => !p) }
   const handleClose = () => { setPinned(false); setOpen(false) }
   const switchFeed = (feed) => { setActiveFeed(feed); fetchFeed(feed) }
-
   if (allFeeds.length === 0) return null
-
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseLeave={handleMouseLeave} onMouseEnter={handleMouseEnter}>
-      <button className={`icon-btn topbar-quick-btn topbar-news-btn${pinned ? ' active' : ''}`}
-        title="News — hover to open, click to pin" onClick={handleClick}>N</button>
+      <button className={`icon-btn topbar-quick-btn topbar-news-btn${pinned ? ' active' : ''}`} title="News — hover to open, click to pin" onClick={handleClick}>N</button>
       {open && (
         <div className={`news-dropdown${pinned ? ' news-pinned' : ''}`}>
           <div className="news-dropdown-inner">
             <div className="news-feed-tabs" style={{ position: 'relative', paddingRight: '1.8rem' }}>
               {allFeeds.map(f => (
                 <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
-                  {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width: 12, height: 12, marginRight: '0.3rem', verticalAlign: 'middle', borderRadius: 2 }} onError={e => e.target.style.display='none'} />}
+                  {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width:12, height:12, marginRight:'0.3rem', verticalAlign:'middle', borderRadius:2 }} onError={e=>e.target.style.display='none'} />}
                   {f.label}
                 </button>
               ))}
-              <button onClick={handleClose} title="Close"
-                style={{ position: 'absolute', top: '50%', right: '0.3rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.35rem', fontSize: '0.9em' }}>✕</button>
+              <button onClick={handleClose} title="Close" style={{ position:'absolute', top:'50%', right:'0.3rem', transform:'translateY(-50%)', background:'none', border:'none', color:'var(--text-dim)', cursor:'pointer', padding:'0.2rem 0.35rem', fontSize:'0.9em' }}>✕</button>
             </div>
             <div className="news-articles">
-              {loading && <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size,12px)' }}>Loading...</div>}
-              {!loading && articles.length === 0 && <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size,12px)' }}>No articles found</div>}
-              {!loading && articles.map((a, i) => (
+              {loading && <div style={{ padding:'1rem', color:'var(--text-dim)', fontSize:'var(--news-font-size,12px)' }}>Loading...</div>}
+              {!loading && articles.length===0 && <div style={{ padding:'1rem', color:'var(--text-dim)', fontSize:'var(--news-font-size,12px)' }}>No articles found</div>}
+              {!loading && articles.map((a,i) => (
                 <a key={i} className="news-article-row" href={a.link} target="_blank" rel="noopener noreferrer">
                   <span className="news-article-title">{a.title}</span>
-                  {a.pubDate && <span className="news-article-date">{new Date(a.pubDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>}
+                  {a.pubDate && <span className="news-article-date">{new Date(a.pubDate).toLocaleDateString([],{month:'short',day:'numeric'})}</span>}
                 </a>
               ))}
             </div>
@@ -304,7 +290,7 @@ function CalendarWidget({ theme }) {
         <div className={`cal-dropdown${pinned ? ' cal-pinned' : ''}`}>
           <div className="cal-dropdown-inner">
             <div className="cal-header" style={{ position: 'relative', paddingRight: '2rem' }}>
-              Next 3 days
+              Next {theme.calDays || 3} days
               <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none', marginRight: '0.5rem' }}>Open ↗</a>
               <button onClick={handleClose} title="Close" style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.35rem', fontSize: '0.9em' }}>✕</button>
             </div>
@@ -1648,7 +1634,6 @@ export default function App() {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
       
-      // Only update if changed to avoid triggering re-renders that flicker backgrounds
       const ordered = wsData || []
       setWorkspaces(prev => JSON.stringify(prev) === JSON.stringify(ordered) ? prev : ordered)
       CacheManager.save('workspaces', ordered)
@@ -1671,8 +1656,8 @@ export default function App() {
       // Merge own notes + shared notes (deduplicate by id)
       const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
       
-      setSections(prev => JSON.stringify(prev) === JSON.stringify(secData || []) ? prev : (secData || []))
-      setLinks(prev => JSON.stringify(prev) === JSON.stringify(linkData || []) ? prev : (linkData || []))
+      setSections(prev => JSON.stringify(prev) === JSON.stringify(secData||[]) ? prev : (secData||[]))
+      setLinks(prev => JSON.stringify(prev) === JSON.stringify(linkData||[]) ? prev : (linkData||[]))
       setNotes(prev => JSON.stringify(prev) === JSON.stringify(allNotes) ? prev : allNotes)
       
       // Cache all data
@@ -2247,10 +2232,16 @@ export default function App() {
 				  faviconEnabled={theme.faviconEnabled ?? true}
 				  onAddSection={async (name) => {
 					const sectionName = (typeof name === 'string' ? name : '').trim() || 'New Section'
-					const { error } = await supabase.from('sections').insert({
-					  user_id: session.user.id, workspace_id: activeWs,
-					  name: sectionName, position: sections.length, col_index: 0, collapsed: false
-					})
+					const { error } = await supabase
+					  .from('sections')
+					  .insert({
+						user_id: session.user.id,
+						workspace_id: activeWs,
+						name: sectionName,
+						position: sections.length,
+						col_index: 0,
+						collapsed: false
+					  })
 					if (error) { console.error('Error creating section:', error.message); return }
 					await handleRefresh()
 				  }}

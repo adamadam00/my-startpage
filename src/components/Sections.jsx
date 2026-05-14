@@ -498,22 +498,15 @@ function SectionCard({
         <>
           <LinksList section={section} links={links} openInNewTab={openInNewTab} faviconEnabled={faviconEnabled} onRefresh={onRefresh} />
           {addingLink && (
-            <form
-              ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
+            <form ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
               style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.35rem 0.5rem', borderTop: '1px solid var(--border)' }}
               onSubmit={async e => {
                 e.preventDefault()
-                const url = newLinkUrl.trim()
-                if (!url) return
-                const { error } = await supabase.from('links').insert({
-                  user_id: section.user_id, workspace_id: section.workspace_id,
-                  section_id: section.id, title: newLinkTitle.trim() || 'New Link',
-                  url, position: links.length
-                })
+                const url = newLinkUrl.trim(); if (!url) return
+                const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim() || 'New Link', url, position: links.length })
                 if (error) { alert('Error: ' + error.message); return }
                 setAddingLink(false); await onRefresh?.()
-              }}
-            >
+              }}>
               <input autoFocus className="input" style={{ fontSize: '0.78em', padding: '0.2rem 0.4rem' }}
                 placeholder="Link title…" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Escape') setAddingLink(false) }} />
@@ -1003,13 +996,10 @@ export default function Sections({
                 addingSectionName !== null ? (
                   <form style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}
                     onSubmit={e => { e.preventDefault(); onAddSection(addingSectionName.trim() || 'New Section'); setAddingSectionName(null) }}>
-                    <input autoFocus className="input"
-                      style={{ fontSize: '0.75em', padding: '0.2rem 0.4rem', width: '120px' }}
-                      placeholder="Section name…"
-                      value={addingSectionName}
+                    <input autoFocus className="input" style={{ fontSize: '0.75em', padding: '0.2rem 0.4rem', width: '120px' }}
+                      placeholder="Section name…" value={addingSectionName}
                       onChange={e => setAddingSectionName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Escape') setAddingSectionName(null) }}
-                    />
+                      onKeyDown={e => { if (e.key === 'Escape') setAddingSectionName(null) }} />
                     <button type="submit" className="icon-btn" style={{ color: 'var(--accent)' }}>✓</button>
                     <button type="button" className="icon-btn" onClick={() => setAddingSectionName(null)}>✕</button>
                   </form>

@@ -370,6 +370,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
   const [uploading, setUploading] = useState({})
   const [collapsedNotes, setCollapsedNotes] = useState(new Set())
   const textRef = useRef(null)
+  const savedSelectionRef = useRef(null)
   
   const otherWorkspaces = workspaces.filter(w => w.id !== workspaceId)
   const canShare = otherWorkspaces.length > 0
@@ -1140,255 +1141,79 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     )}
 
                     <div className="note-edit-toolbar" data-toolbar="true">
-                      <div style={{ display: 'flex', gap: '0.15rem' }}>
-                        <button
-                          type="button"
-                          className="btn-xs"
-                          onMouseDown={(e) => e.preventDefault()}
-                          onClick={() => {
-                            document.execCommand('bold', false, null)
-                          }}
-                          title="Bold"
-                        >
-                          <strong>B</strong>
-                        </button>
-                      <button
-                        type="button"
-                        className="btn-xs"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          document.execCommand('italic', false, null)
-                        }}
-                        title="Italic"
-                      >
-                        <em>I</em>
-                      </button>
-                      <button
-                        type="button"
-                        className="btn-xs"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => {
-                          const selection = window.getSelection()
-                          const selectedText = selection.toString()
-                          
-                          if (selectedText && selectedText.includes('\n')) {
-                            // Multi-line selection: convert each line to list item
-                            const lines = selectedText.split('\n')
-                            const bulletedLines = lines.map(line => line.trim() ? `<li>${line}</li>` : '').filter(Boolean).join('')
-                            
-                            const range = selection.getRangeAt(0)
-                            range.deleteContents()
-                            const ul = document.createElement('ul')
-                            ul.className = 'note-bullets'
-                            ul.innerHTML = bulletedLines
-                            range.insertNode(ul)
-                            range.collapse(false)
-                          } else {
-                            // Single line or no selection: use execCommand
-                            document.execCommand('insertUnorderedList', false, null)
-                            
-                            // Add class to the created UL
-                            setTimeout(() => {
-                              const editDiv = document.querySelector('.note-editing')
-                              if (editDiv) {
-                                const uls = editDiv.querySelectorAll('ul:not(.note-bullets)')
-                                uls.forEach(ul => ul.classList.add('note-bullets'))
-                              }
-                            }, 0)
-                          }
-                          
-                          // Trigger update
-                          const editDiv = document.querySelector('.note-editing')
-                          if (editDiv) {
-                            setTimeout(() => editDiv.dispatchEvent(new Event('input', { bubbles: true })), 10)
-                          }
-                        }}
-                        title="Bullet point"
-                      >
-                        •
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.1rem' }}>
-                      <button
-                        type="button"
-                        className="color-dot"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          document.execCommand('foreColor', false, '#ff6b6b')
-                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
-                          if (editDiv) editDiv.dispatchEvent(new Event('input', { bubbles: true }))
-                        }}
-                        title="Red"
-                        style={{ background: '#ff6b6b' }}
-                      >
-                      </button>
-                      <button
-                        type="button"
-                        className="color-dot"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          document.execCommand('foreColor', false, '#6c8fff')
-                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
-                          if (editDiv) editDiv.dispatchEvent(new Event('input', { bubbles: true }))
-                        }}
-                        title="Blue"
-                        style={{ background: '#6c8fff' }}
-                      >
-                      </button>
-                      <button
-                        type="button"
-                        className="color-dot"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          document.execCommand('foreColor', false, '#6bffb8')
-                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
-                          if (editDiv) editDiv.dispatchEvent(new Event('input', { bubbles: true }))
-                        }}
-                        title="Green"
-                        style={{ background: '#6bffb8' }}
-                      >
-                      </button>
-                      <button
-                        type="button"
-                        className="color-dot"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={(e) => {
-                          document.execCommand('foreColor', false, '#ffd32a')
-                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
-                          if (editDiv) editDiv.dispatchEvent(new Event('input', { bubbles: true }))
-                        }}
-                        title="Yellow"
-                        style={{ background: '#ffd32a' }}
-                      >
-                      </button>
-                      <input
-                        type="color"
-                        className="color-picker"
-                        onMouseDown={(e) => e.preventDefault()}
-                        onChange={(e) => {
-                          document.execCommand('foreColor', false, e.target.value)
-                          // Trigger input event to update editText state immediately
-                          const editDiv = e.target.closest('.note-item').querySelector('.note-editing')
-                          if (editDiv) {
-                            const event = new Event('input', { bubbles: true })
-                            editDiv.dispatchEvent(event)
-                          }
-                        }}
-                        title="Custom color"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-xs"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => {
-                        const input = document.createElement('input')
-                        input.type = 'file'
-                        input.accept = '*/*'
-                        input.onchange = async (e) => {
-                          const file = e.target.files[0]
-                          if (!file) return
-                          
-                          const sizeMB = file.size / (1024 * 1024)
-                          
-                          if (sizeMB > 49) {
-                            alert(`File too large: ${sizeMB.toFixed(1)}MB\nMaximum allowed: 49MB`)
-                            return
-                          }
-                          
-                          if (sizeMB > 30) {
-                            const proceed = confirm(`Warning: Large file (${sizeMB.toFixed(1)}MB)\nFiles over 30MB may take longer to upload.\nContinue?`)
-                            if (!proceed) return
-                          }
-                          
-                          // Upload to Supabase storage
-                          const fileName = `${Date.now()}_${file.name}`
-                          const { data, error } = await supabase.storage
-                            .from('note-files')
-                            .upload(`${userId}/${fileName}`, file)
-                          
-                          if (error) {
-                            alert('Upload failed: ' + error.message)
-                            return
-                          }
-                          
-                          // Update note with file info
-                          const files = note.files || []
-                          files.push({
-                            name: file.name,
-                            size: file.size,
-                            path: data.path,
-                            uploaded_at: new Date().toISOString()
-                          })
-                          
-                          await supabase
-                            .from('notes')
-                            .update({ files })
-                            .eq('id', note.id)
-                          
-                          // Add newline to note content
-                          const editDiv = document.querySelector('.note-editing')
-                          if (editDiv) {
-                            // Ensure there's a line break for typing
-                            if (!editDiv.innerHTML.trim() || !editDiv.innerHTML.endsWith('\n')) {
-                              editDiv.innerHTML += '<br>'
-                              setEditText(editDiv.innerHTML)
-                            }
-                            
-                            // Move cursor to end
-                            editDiv.focus()
-                            const range = document.createRange()
-                            const sel = window.getSelection()
-                            range.selectNodeContents(editDiv)
-                            range.collapse(false)
-                            sel.removeAllRanges()
-                            sel.addRange(range)
-                          }
-                          
-                          onRefresh?.()
-                        }
-                        input.click()
-                      }}
-                      title="Attach file (max 49MB)"
-                    >
-                      📎
-                    </button>
-                    <div style={{ flex: 1, minWidth: '0.2rem' }} />
-                    {canShare && (
-                      <select
-                        className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
-                        value={editShareNote}
-                        onChange={e => setEditShareNote(e.target.value)}
-                      >
-                        <option value=''>No sharing</option>
-                        {otherWorkspaces.map(w => (
-                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
+                      {/* Row 1: formatting + colors */}
+                      <div className="note-edit-toolbar-row">
+                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('bold', false, null)} title="Bold"><strong>B</strong></button>
+                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('italic', false, null)} title="Italic"><em>I</em></button>
+                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => {
+                          const sel = window.getSelection(); const txt = sel?.toString()
+                          if (txt?.includes('\n')) {
+                            const r = sel.getRangeAt(0); r.deleteContents()
+                            const ul = document.createElement('ul'); ul.className = 'note-bullets'
+                            ul.innerHTML = txt.split('\n').filter(l => l.trim()).map(l => `<li>${l}</li>`).join('')
+                            r.insertNode(ul); r.collapse(false)
+                          } else { document.execCommand('insertUnorderedList', false, null); setTimeout(() => document.querySelector('.note-editing')?.querySelectorAll('ul:not(.note-bullets)').forEach(ul => ul.classList.add('note-bullets')), 0) }
+                          setTimeout(() => document.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true })), 10)
+                        }} title="Bullet">•</button>
+                        <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 0.1rem', flexShrink: 0 }} />
+                        {[['#ff6b6b','Red'],['#6c8fff','Blue'],['#6bffb8','Green'],['#ffd32a','Yellow'],['#ff9f2a','Orange'],['#111','Black'],['#f0f0f0','White']].map(([c,l]) => (
+                          <button key={c} type="button" className="color-dot" onMouseDown={e => e.preventDefault()}
+                            onClick={e => { document.execCommand('foreColor', false, c); e.target.closest('.note-item')?.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true })) }}
+                            title={l} style={{ background: c, border: c === '#f0f0f0' ? '1px solid #888' : c === '#111' ? '1px solid #555' : undefined }} />
                         ))}
-                      </select>
-                    )}
-                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                      {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
-                        month: 'numeric', 
-                        day: 'numeric', 
-                        year: '2-digit',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true 
-                      }) : ''}
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-xs"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => remove(note.id)}
-                      title="Delete note"
-                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.2rem' }}
-                    >
-                      🗑
-                    </button>
-                  </div>
-                  </>
+                        <input type="color" className="color-picker" title="Custom color"
+                          onMouseDown={() => { const s = window.getSelection(); if (s?.rangeCount > 0) savedSelectionRef.current = s.getRangeAt(0).cloneRange() }}
+                          onChange={e => {
+                            if (savedSelectionRef.current) { const s = window.getSelection(); s.removeAllRanges(); s.addRange(savedSelectionRef.current) }
+                            document.execCommand('foreColor', false, e.target.value)
+                            document.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true }))
+                          }} />
+                      </div>
+                      {/* Row 2: attach + share + spacer + timestamp + pin + delete */}
+                      <div className="note-edit-toolbar-row">
+                        <button type="button" className="btn-xs" title="Attach file (max 49MB)"
+                          style={{ color: 'var(--text-dim)', flexShrink: 0 }}
+                          onMouseDown={e => e.preventDefault()}
+                          onClick={() => {
+                            const input = document.createElement('input'); input.type = 'file'; input.accept = '*/*'
+                            input.onchange = async e => {
+                              const file = e.target.files[0]; if (!file) return
+                              const sizeMB = file.size / (1024*1024)
+                              if (sizeMB > 49) { alert(`File too large: ${sizeMB.toFixed(1)}MB`); return }
+                              if (sizeMB > 30 && !confirm(`Large file (${sizeMB.toFixed(1)}MB) — continue?`)) return
+                              const { data, error } = await supabase.storage.from('note-files').upload(`${userId}/${Date.now()}_${file.name}`, file)
+                              if (error) { alert('Upload failed: ' + error.message); return }
+                              const files = [...(note.files || []), { name: file.name, size: file.size, path: data.path, uploaded_at: new Date().toISOString() }]
+                              await supabase.from('notes').update({ files }).eq('id', note.id)
+                              onRefresh?.()
+                            }
+                            input.click()
+                          }}>📎</button>
+                        {canShare && (
+                          <div style={{ position: 'relative', flexShrink: 0 }}>
+                            <button type="button" className="btn-xs"
+                              onMouseDown={e => e.preventDefault()}
+                              onClick={e => { e.stopPropagation(); const s = e.currentTarget.nextSibling; s.style.display = s.style.display === 'none' ? 'block' : 'none' }}
+                              title={editShareNote ? `Sharing → ${otherWorkspaces.find(w=>w.id===editShareNote)?.name}` : 'Share note'}
+                              style={{ color: editShareNote ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}>📤</button>
+                            <select className="input"
+                              style={{ display: 'none', position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, zIndex: 300, fontSize: '0.78em', padding: '0.25rem 0.4rem', minWidth: '130px', background: 'var(--bg2)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
+                              value={editShareNote}
+                              onChange={e => { setEditShareNote(e.target.value); e.target.style.display = 'none' }}>
+                              <option value=''>No sharing</option>
+                              {otherWorkspaces.map(w => <option key={w.id} value={w.id}>→ {w.name}</option>)}
+                            </select>
+                          </div>
+                        )}
+                        <div style={{ flex: 1 }} />
+                        <span style={{ fontSize: '0.6em', color: 'var(--text-dim)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          {note.updated_at ? new Date(note.updated_at).toLocaleString('en-AU', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true }) : ''}
+                        </span>
+                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()}
+                          onClick={() => remove(note.id)} title="Delete note"
+                          style={{ color: 'var(--danger)', flexShrink: 0 }}>🗑</button>
+                      </div>
+                    </div>
                 )}
                 </>
               </div>

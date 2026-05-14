@@ -1192,6 +1192,7 @@ html.bg-29-carbon::after {
   box-shadow: 0 10px 32px rgba(0,0,0,0.5);
   backdrop-filter: blur(12px);
   overflow: hidden;
+  padding: 0;
 }
 .news-feed-tabs {
   display: flex;
@@ -1204,7 +1205,7 @@ html.bg-29-carbon::after {
 }
 .news-feed-tabs::-webkit-scrollbar { display: none; }
 .news-tab-btn {
-  padding: 0.5rem 0.85rem;
+  padding: 0.5rem 1rem;
   font-size: 0.8em;
   font-family: var(--font);
   color: var(--text-dim);
@@ -1233,7 +1234,7 @@ html.bg-29-carbon::after {
   display: flex;
   align-items: baseline;
   gap: 0.5rem;
-  padding: var(--news-padding-v, 8px) var(--news-padding-h, 14px);
+  padding: var(--news-padding-v, 9px) var(--news-padding-h, 18px);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
   text-decoration: none;
   transition: background 0.12s;
@@ -1860,17 +1861,22 @@ html.bg-29-carbon::after {
   left: 0;
   right: 0;
   display: flex;
-  gap: 0.3rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.5rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.4rem 0.5rem;
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
-  flex-wrap: wrap;
-  align-items: center;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: visible;
-  min-height: 2.5rem;
+}
+.note-edit-toolbar-row {
+  display: flex;
+  gap: 0.2rem;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .note-drag-handle-inline {
@@ -3341,6 +3347,3 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   max-height: calc(78vh - 48px);
   overflow-y: auto;
 }
-.news-feed-tabs { padding: 0.4rem 0.5rem; }
-.news-tab-btn { padding: 0.3rem 0.6rem; margin: 0.15rem 0.1rem; }
-.news-article-row { padding: 0.55rem 0.85rem; }
