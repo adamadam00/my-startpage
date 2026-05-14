@@ -1069,10 +1069,8 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
 
                         <div className="note-actions-overlay">
                           {note.shared_to && (
-                            <span 
-                              style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)', marginRight: '0.3rem' }}
-                              title={`Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}
-                            >
+                            <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)', marginRight: '0.3rem' }}
+                              title={`Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}>
                               <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <rect x="1" y="1" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none"/>
                                 <line x1="5" y1="14" x2="11" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>

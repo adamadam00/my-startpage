@@ -378,6 +378,9 @@ function SectionCard({
 }) {
   const [isHovered, setIsHovered] = useState(false);
   const hoverCloseTimer = useRef(null);
+  const [addingLink, setAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
 
   const handleArchiveMouseEnter = () => {
     if (!isArchiveColumn) return
@@ -454,31 +457,7 @@ function SectionCard({
           <button
             className="icon-btn"
             type="button"
-            onClick={async () => {
-              const title = window.prompt('Link title:', 'New Link')
-              if (!title?.trim()) return
-              
-              const url = window.prompt('URL:', 'https://')
-              if (!url?.trim()) return
-              
-              const { error } = await supabase
-                .from('links')
-                .insert({
-                  user_id: section.user_id,
-                  workspace_id: section.workspace_id,
-                  section_id: section.id,
-                  title: title.trim(),
-                  url: url.trim(),
-                  position: links.length
-                })
-              
-              if (error) {
-                alert('Error adding link: ' + error.message)
-                return
-              }
-              
-              await onRefresh?.()
-            }}
+            onClick={() => { setAddingLink(true); setNewLinkTitle(''); setNewLinkUrl('') }}
             title="Add link"
           >
             +
@@ -516,13 +495,38 @@ function SectionCard({
       </div>
 
       {shouldShowContent && (
-        <LinksList
-          section={section}
-          links={links}
-          openInNewTab={openInNewTab}
-          faviconEnabled={faviconEnabled}
-          onRefresh={onRefresh}
-        />
+        <>
+          <LinksList section={section} links={links} openInNewTab={openInNewTab} faviconEnabled={faviconEnabled} onRefresh={onRefresh} />
+          {addingLink && (
+            <form
+              ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
+              style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.35rem 0.5rem', borderTop: '1px solid var(--border)' }}
+              onSubmit={async e => {
+                e.preventDefault()
+                const url = newLinkUrl.trim()
+                if (!url) return
+                const { error } = await supabase.from('links').insert({
+                  user_id: section.user_id, workspace_id: section.workspace_id,
+                  section_id: section.id, title: newLinkTitle.trim() || 'New Link',
+                  url, position: links.length
+                })
+                if (error) { alert('Error: ' + error.message); return }
+                setAddingLink(false); await onRefresh?.()
+              }}
+            >
+              <input autoFocus className="input" style={{ fontSize: '0.78em', padding: '0.2rem 0.4rem' }}
+                placeholder="Link title…" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') setAddingLink(false) }} />
+              <input className="input" style={{ fontSize: '0.78em', padding: '0.2rem 0.4rem' }}
+                placeholder="https://…" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Escape') setAddingLink(false) }} />
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <button type="submit" className="btn-xs btn-primary" style={{ flex: 1 }}>Add</button>
+                <button type="button" className="btn-xs" onClick={() => setAddingLink(false)}>✕</button>
+              </div>
+            </form>
+          )}
+        </>
       )}
     </div>
     </>
@@ -564,6 +568,7 @@ export default function Sections({
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
+  const [addingSectionName, setAddingSectionName] = useState(null);
   const isSavingLayoutRef = useRef(false);
   const lastSavedLayoutRef = useRef("");
 
@@ -956,37 +961,27 @@ export default function Sections({
         }}>
           Create your first section to organize your bookmarks
         </div>
-        <button
-          className="btn btn-primary"
-          onClick={async () => {
-            const name = window.prompt('Section name:', 'New Section')
-            if (!name?.trim()) return
-            
-            const { error } = await supabase
-              .from('sections')
-              .insert({
-                user_id: userId,
-                workspace_id: workspaceId,
-                name: name.trim(),
-                position: 0,
-                collapsed: false
-              })
-            
-            if (error) {
-              alert('Error creating section: ' + error.message)
-              return
-            }
-            
-            await onRefresh?.()
-          }}
-          style={{
-            fontSize: '0.95em',
-            padding: '0.6rem 1.5rem',
-            marginTop: '0.5rem'
-          }}
-        >
-          + Create First Section
-        </button>
+        {addingSectionName !== null ? (
+          <form style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginTop: '0.75rem' }}
+            onSubmit={async e => {
+              e.preventDefault()
+              const { error } = await supabase.from('sections').insert({ user_id: userId, workspace_id: workspaceId, name: addingSectionName.trim() || 'New Section', position: 0, collapsed: false })
+              if (error) { alert('Error: ' + error.message); return }
+              setAddingSectionName(null); await onRefresh?.()
+            }}>
+            <input autoFocus className="input" style={{ fontSize: '0.9em', padding: '0.4rem 0.7rem' }}
+              placeholder="Section name…" value={addingSectionName}
+              onChange={e => setAddingSectionName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Escape') setAddingSectionName(null) }} />
+            <button type="submit" className="btn btn-primary">Create</button>
+            <button type="button" className="icon-btn" onClick={() => setAddingSectionName(null)}>✕</button>
+          </form>
+        ) : (
+          <button className="btn btn-primary" onClick={() => setAddingSectionName('')}
+            style={{ fontSize: '0.95em', padding: '0.6rem 1.5rem', marginTop: '0.5rem' }}>
+            + Create First Section
+          </button>
+        )}
       </div>
     )
   }
@@ -1005,12 +1000,24 @@ export default function Sections({
           return (
             <div key={col.id} className="sections-col-header">
               {col.index === 0 && (
-                <button
-                  className="icon-btn col-header-btn"
-                  title="Add new section"
-                  onClick={onAddSection}
-                  style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
-                >+</button>
+                addingSectionName !== null ? (
+                  <form style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}
+                    onSubmit={e => { e.preventDefault(); onAddSection(addingSectionName.trim() || 'New Section'); setAddingSectionName(null) }}>
+                    <input autoFocus className="input"
+                      style={{ fontSize: '0.75em', padding: '0.2rem 0.4rem', width: '120px' }}
+                      placeholder="Section name…"
+                      value={addingSectionName}
+                      onChange={e => setAddingSectionName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Escape') setAddingSectionName(null) }}
+                    />
+                    <button type="submit" className="icon-btn" style={{ color: 'var(--accent)' }}>✓</button>
+                    <button type="button" className="icon-btn" onClick={() => setAddingSectionName(null)}>✕</button>
+                  </form>
+                ) : (
+                  <button className="icon-btn col-header-btn" title="Add new section"
+                    onClick={() => setAddingSectionName('')}
+                    style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}>+</button>
+                )
               )}
               {isArchiveColumn && (
                 <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
