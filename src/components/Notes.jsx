@@ -1215,6 +1215,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                       </div>
                     </div>
                 )}
+                  </>
                 </>
               </div>
             )
