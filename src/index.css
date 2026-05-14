@@ -1325,7 +1325,7 @@ html.bg-29-carbon::after {
 .cal-day-group:last-child { border-bottom: none; }
 .cal-day-label {
   padding: 0.4rem 0.85rem 0.2rem;
-  font-size: var(--news-font-size, 12px);
+  font-size: 0.75em;
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -1345,14 +1345,14 @@ html.bg-29-carbon::after {
 .cal-event-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .cal-event-time {
   color: var(--accent);
-  font-size: var(--news-font-size, 12px);
+  font-size: 0.78em;
   white-space: nowrap;
   min-width: 60px;
   flex-shrink: 0;
 }
 .cal-event-title {
   color: var(--text);
-  font-size: var(--news-font-size, 12px);
+  font-size: 0.82em;
   flex: 1;
   line-height: 1.3;
 }
@@ -1384,9 +1384,8 @@ html.bg-29-carbon::after {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.65rem 0;
+  padding: 0.55rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
-  font-size: var(--news-font-size, 12px);
 }
 
 .weather-dropdown-row:last-child {
@@ -1847,18 +1846,16 @@ html.bg-29-carbon::after {
   right: 0;
   display: flex;
   gap: 0.3rem;
-  padding: 0.4rem 0.5rem 0.4rem 0.5rem;
+  padding: 0.4rem 0.5rem;
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow-x: auto;
-  overflow-y: hidden;
+  overflow: visible;
   min-height: 2.5rem;
-  scrollbar-width: thin;
 }
 
 .note-drag-handle-inline {
@@ -3310,34 +3307,4 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   color: var(--text-dim);
   opacity: 0.5;
   pointer-events: none;
-}
-
-/* ── Pinned / popout mode ── */
-.news-dropdown.news-pinned,
-.cal-dropdown.cal-pinned {
-  position: fixed;
-  top: 52px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(700px, 96vw);
-  max-height: 78vh;
-  z-index: 9999;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.55);
-}
-.news-dropdown.news-pinned .news-articles,
-.cal-dropdown.cal-pinned .cal-dropdown-inner {
-  max-height: calc(78vh - 48px);
-  overflow-y: auto;
-}
-
-/* More padding in news tabs and article rows */
-.news-feed-tabs {
-  padding: 0.4rem 0.5rem;
-}
-.news-tab-btn {
-  padding: 0.3rem 0.6rem;
-  margin: 0.15rem 0.1rem;
-}
-.news-article-row {
-  padding: 0.55rem 0.85rem;
 }

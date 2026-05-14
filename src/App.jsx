@@ -133,15 +133,6 @@ function WeatherWidget() {
   )
 }
 
-const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
-
-function getFavicon(url) {
-  try {
-    const domain = new URL(url).hostname
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`
-  } catch { return null }
-}
-
 // ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
 const NEWS_FEEDS = [
   { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
@@ -151,10 +142,11 @@ const NEWS_FEEDS = [
   { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
   { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
 ]
+const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
 function NewsWidget({ theme, setTheme }) {
+  const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [open, setOpen] = useState(false)
-  const [pinned, setPinned] = useState(false)
   const [articles, setArticles] = useState([])
   const [loading, setLoading] = useState(false)
   const [activeFeed, setActiveFeed] = useState(null)
@@ -166,19 +158,23 @@ function NewsWidget({ theme, setTheme }) {
     theme.newsCustom2 ? { id: 'custom2', label: theme.newsCustom2Label || 'Custom 2', url: theme.newsCustom2 } : null,
     theme.newsCustom3 ? { id: 'custom3', label: theme.newsCustom3Label || 'Custom 3', url: theme.newsCustom3 } : null,
   ].filter(Boolean)
+
   const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
 
   const fetchFeed = async (feed) => {
-    setLoading(true); setArticles([])
+    setLoading(true)
+    setArticles([])
     try {
       const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
       const data = await res.json()
       setArticles((data.items || []).slice(0, 10))
-    } catch { setArticles([]) }
+    } catch {
+      setArticles([])
+    }
     setLoading(false)
   }
 
-  const openNews = () => {
+  const handleOpen = () => {
     clearTimeout(closeTimer.current)
     if (!open) {
       const first = allFeeds[0]
@@ -186,34 +182,41 @@ function NewsWidget({ theme, setTheme }) {
       setOpen(true)
     }
   }
-  const handleMouseEnter = () => { clearTimeout(closeTimer.current); openNews() }
-  const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 300) }
-  const handleClick = () => { if (!open) { openNews() } else { setPinned(p => !p) } }
-  const handleClose = () => { setPinned(false); setOpen(false) }
-  const switchFeed = (feed) => { setActiveFeed(feed); fetchFeed(feed) }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 300)
+  }
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    if (!open) {
+      const first = allFeeds[0]
+      if (first && !activeFeed) { setActiveFeed(first); fetchFeed(first) }
+      setOpen(true)
+    }
+  }
+
+  const switchFeed = (feed) => {
+    setActiveFeed(feed)
+    fetchFeed(feed)
+  }
 
   if (allFeeds.length === 0) return null
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseLeave={handleMouseLeave} onMouseEnter={handleMouseEnter}>
-      <button className={`icon-btn topbar-quick-btn topbar-news-btn${pinned ? ' active' : ''}`}
-        title="News — hover to open, click to pin" onClick={handleClick}>N</button>
+      <button className="icon-btn topbar-quick-btn topbar-news-btn" title="News" onClick={handleOpen}>N</button>
       {open && (
-        <div className={`news-dropdown${pinned ? ' news-pinned' : ''}`}>
+        <div className="news-dropdown">
           <div className="news-dropdown-inner">
-            <div className="news-feed-tabs" style={{ position: 'relative', paddingRight: '1.8rem' }}>
+            <div className="news-feed-tabs">
               {allFeeds.map(f => (
                 <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
-                  {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width: 12, height: 12, marginRight: '0.3rem', verticalAlign: 'middle', borderRadius: 2, flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
                   {f.label}
                 </button>
               ))}
-              <button onClick={handleClose} title="Close"
-                style={{ position: 'absolute', top: '50%', right: '0.3rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.35rem', fontSize: '0.9em', lineHeight: 1 }}>✕</button>
             </div>
             <div className="news-articles">
-              {loading && <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size,12px)' }}>Loading...</div>}
-              {!loading && articles.length === 0 && <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size,12px)' }}>No articles found</div>}
+              {loading && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: '0.82em' }}>Loading...</div>}
+              {!loading && articles.length === 0 && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: '0.82em' }}>No articles found</div>}
               {!loading && articles.map((a, i) => (
                 <a key={i} className="news-article-row" href={a.link} target="_blank" rel="noopener noreferrer">
                   <span className="news-article-title">{a.title}</span>
@@ -278,7 +281,6 @@ async function fetchIcal(url) {
 
 function CalendarWidget({ theme }) {
   const [open, setOpen] = useState(false)
-  const [pinned, setPinned] = useState(false)
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -326,9 +328,7 @@ function CalendarWidget({ theme }) {
   }
 
   const handleMouseEnter = () => { clearTimeout(closeTimer.current); if (!open) { setOpen(true); fetchEvents() } }
-  const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 300) }
-  const handleClick = () => { if (!open) { setOpen(true); fetchEvents() } else { setPinned(p => !p) } }
-  const handleClose = () => { setPinned(false); setOpen(false) }
+  const handleMouseLeave = () => { closeTimer.current = setTimeout(() => setOpen(false), 300) }
 
   const grouped = {}
   events.forEach(ev => {
@@ -342,9 +342,7 @@ function CalendarWidget({ theme }) {
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <button className={`icon-btn topbar-quick-btn topbar-cal-btn${pinned ? ' active' : ''}`}
-        title="Calendar — hover to preview, click to pin"
-        onClick={handleClick}>
+      <button className="icon-btn topbar-quick-btn topbar-cal-btn" title="Calendar (next 3 days)">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
           <line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="1.5"/>
@@ -356,18 +354,16 @@ function CalendarWidget({ theme }) {
         </svg>
       </button>
       {open && (
-        <div className={`cal-dropdown${pinned ? ' cal-pinned' : ''}`}>
+        <div className="cal-dropdown">
           <div className="cal-dropdown-inner">
-            <div className="cal-header" style={{ position: 'relative', padding: '0.6rem 2.2rem 0.6rem 0.85rem' }}>
-              Next {theme.calDays || 3} days
-              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none', marginRight: '0.5rem' }}>Open ↗</a>
-              <button onClick={handleClose} title="Close"
-                style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.35rem', fontSize: '0.9em', lineHeight: 1 }}>✕</button>
+            <div className="cal-header">
+              Next 3 days
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
             </div>
             {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
             {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
             {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
-            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next {theme.calDays || 3} days 🎉</div>}
+            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
             {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
@@ -1704,15 +1700,24 @@ export default function App() {
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
       
-      setWorkspaces(wsData || [])
-      CacheManager.save('workspaces', wsData || []) // Cache workspaces
+      // Get workspace order from settings
+      const { data: settings } = await supabase.from('user_settings').select('workspace_order').eq('user_id', sessionRef.current.user.id).single()
+      let ordered = wsData || []
+      if (settings?.workspace_order?.length) {
+        const orderMap = Object.fromEntries(settings.workspace_order.map((id, i) => [id, i]))
+        ordered = [...ordered].sort((a, b) => (orderMap[a.id] ?? 999) - (orderMap[b.id] ?? 999))
+      }
+
+      // Update workspaces without clearing — preserves current view
+      setWorkspaces(ordered)
+      CacheManager.save('workspaces', ordered)
       
-      const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+      const currentWs = activeWsRef.current ?? ordered?.[0]?.id ?? null
       if (!currentWs) return
       
-      if (!activeWs) {
+      if (!activeWsRef.current) {
         setActiveWs(currentWs)
-        CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
+        CacheManager.save('activeWorkspace', currentWs)
       }
       
       const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }] = await Promise.all([
@@ -1722,14 +1727,22 @@ export default function App() {
         supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
       ])
       
-      // Merge own notes + shared notes (deduplicate by id)
       const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
       
-      setSections(secData || [])
-      setLinks(linkData || [])
-      setNotes(allNotes)
+      // Only update if data actually changed — prevents unnecessary re-renders
+      setSections(prev => {
+        const next = secData || []
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+      })
+      setLinks(prev => {
+        const next = linkData || []
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+      })
+      setNotes(prev => {
+        const next = allNotes
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+      })
       
-      // Cache all data
       CacheManager.save('sections', secData || [])
       CacheManager.save('links', linkData || [])
       CacheManager.save('notes', allNotes)
