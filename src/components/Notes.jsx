@@ -1189,8 +1189,8 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                       </span>
                       <button type="button" className="btn-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>remove(note.id)} title="Delete note" style={{color:'var(--danger)',flexShrink:0}}>🗑</button>
                     </div>
-                  </div>
                   </>
+                  </div>
                 )}
                 </>
               </div>

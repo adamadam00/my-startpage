@@ -3334,3 +3334,173 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .news-dropdown.news-pinned .news-articles,.cal-dropdown.cal-pinned .cal-dropdown-inner {
   max-height: calc(78vh - 48px); overflow-y: auto;
 }
+
+
+/* ── 30 · AURORA ── */
+.bg-30-aurora { background-color: var(--aurora-bg, #01050f); overflow: hidden; }
+.bg-30-aurora::before {
+  content: ''; position: fixed; top: -10%; left: -8%; width: 116%; height: 120%; z-index: -1;
+  background:
+    radial-gradient(ellipse 220% 32% at 35%  8%,  var(--aurora-c1a, rgba(0,220,120,0.30)) 0%, transparent 80%),
+    radial-gradient(ellipse 180% 24% at 68% 12%,  var(--aurora-c2a, rgba(30,120,255,0.26)) 0%, transparent 78%),
+    radial-gradient(ellipse 150% 18% at 52% 16%,  var(--aurora-c3a, rgba(140,40,255,0.20)) 0%, transparent 76%),
+    radial-gradient(ellipse  8% 80% at  5%  0%,   var(--aurora-c1a, rgba(0,220,120,0.18)) 0%, transparent 88%),
+    radial-gradient(ellipse  7% 70% at 12%  0%,   var(--aurora-c1b, rgba(0,200,100,0.14)) 0%, transparent 90%),
+    radial-gradient(ellipse 10% 85% at 20%  0%,   var(--aurora-c2a, rgba(30,120,255,0.16)) 0%, transparent 86%),
+    radial-gradient(ellipse  6% 65% at 28%  0%,   var(--aurora-c1a, rgba(0,220,120,0.12)) 0%, transparent 92%),
+    radial-gradient(ellipse  9% 75% at 36%  0%,   var(--aurora-c3a, rgba(140,40,255,0.14)) 0%, transparent 88%),
+    radial-gradient(ellipse  7% 72% at 44%  0%,   var(--aurora-c2a, rgba(30,120,255,0.15)) 0%, transparent 90%),
+    radial-gradient(ellipse 11% 88% at 52%  0%,   var(--aurora-c1a, rgba(0,220,120,0.18)) 0%, transparent 86%),
+    radial-gradient(ellipse  6% 68% at 60%  0%,   var(--aurora-c2b, rgba(0,180,255,0.13)) 0%, transparent 92%),
+    radial-gradient(ellipse  8% 78% at 68%  0%,   var(--aurora-c3a, rgba(140,40,255,0.14)) 0%, transparent 88%),
+    radial-gradient(ellipse  7% 70% at 76%  0%,   var(--aurora-c1b, rgba(0,200,100,0.13)) 0%, transparent 90%),
+    radial-gradient(ellipse  9% 82% at 84%  0%,   var(--aurora-c2a, rgba(30,120,255,0.15)) 0%, transparent 87%),
+    radial-gradient(ellipse  6% 65% at 92%  0%,   var(--aurora-c1a, rgba(0,220,120,0.12)) 0%, transparent 92%),
+    radial-gradient(ellipse  8% 74% at 100% 0%,   var(--aurora-c3a, rgba(140,40,255,0.13)) 0%, transparent 89%),
+    radial-gradient(ellipse 20% 14% at 15% 24%,   var(--aurora-c2c, rgba(30,120,255,0.12)) 0%, transparent 78%),
+    radial-gradient(ellipse 14% 10% at 88% 20%,   var(--aurora-c3b, rgba(140,40,255,0.14)) 0%, transparent 76%),
+    radial-gradient(ellipse 22% 12% at 52% 18%,   var(--aurora-c1c, rgba(0,220,120,0.10)) 0%, transparent 80%);
+  animation: aurora30a var(--aurora-speed-a, 22s) ease-in-out infinite alternate;
+}
+.bg-30-aurora::after {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background-image:
+    radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 23% 72%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(3px 3px at 38%  8%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 52% 55%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 67% 88%, rgba(255,255,255,var(--aurora-star-op,0.80)) 0,transparent 100%),
+    radial-gradient(1px 1px at 81% 32%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(2px 2px at 94% 65%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at  5% 48%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(3px 3px at 18% 91%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 31% 26%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(2px 2px at 44% 78%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 57%  4%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 70% 44%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(3px 3px at 83% 19%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 96% 82%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(2px 2px at 12% 37%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 26% 61%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 39% 95%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
+    radial-gradient(2px 2px at 48% 18%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(3px 3px at 74% 12%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 87% 52%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at  2% 83%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 15% 58%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
+    radial-gradient(1px 1px at 29%  2%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(3px 3px at 43% 72%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 61% 71%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
+    radial-gradient(2px 2px at 74% 35%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
+    radial-gradient(1px 1px at 91% 13%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
+    radial-gradient(3px 3px at 55% 89%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
+    radial-gradient(1px 1px at 67% 18%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%);
+  background-size: var(--aurora-star-tile,100%) var(--aurora-star-tile,100%);
+  opacity: var(--aurora-star-op, 0.75);
+}
+@keyframes aurora30a {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  20%  { transform: translate( 55px, -25px) scale(1.06); }
+  40%  { transform: translate(-40px,  35px) scale(0.96); }
+  60%  { transform: translate( 70px,  20px) scale(1.04); }
+  80%  { transform: translate(-20px, -40px) scale(1.08); }
+  100% { transform: translate(-55px,  50px) scale(0.97); }
+}
+
+/* ── 31 · DEEP OCEAN ── */
+.bg-31-deep-ocean { background: var(--ocean-bg, #000814); overflow: hidden; }
+.bg-31-deep-ocean {
+  --ocean-c1: rgba(0,120,200,0.22); --ocean-c2: rgba(0,60,120,0.32);
+  --ocean-c3: rgba(0,255,180,0.08); --ocean-c4: rgba(0,140,220,0.18);
+  --ocean-c5: rgba(0,40,100,0.22);  --ocean-c6: rgba(100,255,200,0.08);
+}
+.bg-31-deep-ocean::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background:
+    radial-gradient(ellipse  8% 85% at 12%  0%, var(--ocean-c1) 0%, transparent 80%),
+    radial-gradient(ellipse  6% 68% at 24%  0%, var(--ocean-c4) 0%, transparent 75%),
+    radial-gradient(ellipse 10% 90% at 36%  0%, var(--ocean-c1) 0%, transparent 82%),
+    radial-gradient(ellipse  7% 72% at 48%  0%, var(--ocean-c4) 0%, transparent 78%),
+    radial-gradient(ellipse 11% 88% at 60%  0%, var(--ocean-c1) 0%, transparent 84%),
+    radial-gradient(ellipse  6% 70% at 72%  0%, var(--ocean-c4) 0%, transparent 76%),
+    radial-gradient(ellipse  9% 80% at 84%  0%, var(--ocean-c1) 0%, transparent 80%),
+    radial-gradient(ellipse  7% 68% at 96%  0%, var(--ocean-c4) 0%, transparent 75%),
+    radial-gradient(ellipse 80% 50% at 50% 25%, var(--ocean-c2) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 15% 55%, var(--ocean-c5) 0%, transparent 65%),
+    radial-gradient(ellipse 65% 35% at 85% 50%, var(--ocean-c5) 0%, transparent 62%),
+    radial-gradient(ellipse 22% 12% at 15% 92%, var(--ocean-c3) 0%, transparent 65%),
+    radial-gradient(ellipse 18% 10% at 45% 96%, var(--ocean-c6) 0%, transparent 60%),
+    radial-gradient(ellipse 26% 14% at 75% 90%, var(--ocean-c3) 0%, transparent 65%),
+    radial-gradient(ellipse 100% 45% at 50% 100%, rgba(0,0,6,0.92) 0%, transparent 70%);
+  animation: ocean31a var(--ocean-speed-a, 18s) ease-in-out infinite alternate;
+}
+.bg-31-deep-ocean::after {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background-image:
+    radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(100,220,255,0.55)) 0%, transparent 100%),
+    radial-gradient(circle 1px at 50% 50%, var(--ocean-particle, rgba(150,240,255,0.45)) 0%, transparent 100%),
+    radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(80,200,255,0.35)) 0%, transparent 100%);
+  background-size:
+    var(--ocean-tile-a, 180px 290px),
+    var(--ocean-tile-b, 120px 210px),
+    var(--ocean-tile-c, 250px 420px);
+  background-position: 40px 0, 85px 70px, 15px 140px;
+  animation: ocean31p var(--ocean-speed-b, 12s) linear infinite;
+}
+@keyframes ocean31a {
+  0%   { transform: translate(  0px, 0px) scaleX(1.00); }
+  33%  { transform: translate(-30px, 0px) scaleX(1.06); }
+  66%  { transform: translate( 20px, 0px) scaleX(0.97); }
+  100% { transform: translate(-15px, 0px) scaleX(1.03); }
+}
+@keyframes ocean31p {
+  from { background-position: 40px 0, 85px 70px, 15px 140px; }
+  to   { background-position: 40px -290px, 85px -210px, 15px -420px; }
+}
+
+/* ── 32 · LAVA LAMP ── */
+.bg-32-lava-lamp { background: var(--lava-bg, #080410); overflow: hidden; }
+.bg-32-lava-lamp {
+  --lava-c1: rgba(255,64,128,0.60); --lava-c2: rgba(255,128,32,0.55); --lava-c3: rgba(192,32,255,0.52);
+  --lava-c1g: rgba(255,64,128,0.22); --lava-c2g: rgba(255,128,32,0.20); --lava-c3g: rgba(192,32,255,0.18);
+}
+.bg-32-lava-lamp::before {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background:
+    radial-gradient(ellipse 55% 45% at 25% 35%, var(--lava-c1) 0%, transparent 75%),
+    radial-gradient(ellipse 50% 40% at 72% 65%, var(--lava-c2) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 35% at 55% 20%, var(--lava-c3) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 28% at 82% 28%, var(--lava-c1) 0%, transparent 68%),
+    radial-gradient(ellipse 32% 25% at 15% 75%, var(--lava-c2) 0%, transparent 66%),
+    radial-gradient(ellipse 40% 30% at 45% 80%, var(--lava-c3) 0%, transparent 68%),
+    radial-gradient(ellipse 75% 55% at 30% 40%, var(--lava-c1g) 0%, transparent 78%),
+    radial-gradient(ellipse 70% 50% at 70% 62%, var(--lava-c2g) 0%, transparent 76%);
+  animation: lava32a var(--lava-speed-a, 20s) ease-in-out infinite alternate;
+}
+.bg-32-lava-lamp::after {
+  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
+  background:
+    radial-gradient(ellipse 50% 42% at 62% 30%, var(--lava-c3) 0%, transparent 72%),
+    radial-gradient(ellipse 45% 38% at 22% 62%, var(--lava-c1) 0%, transparent 70%),
+    radial-gradient(ellipse 48% 40% at 85% 55%, var(--lava-c2) 0%, transparent 71%),
+    radial-gradient(ellipse 30% 25% at 42% 18%, var(--lava-c3) 0%, transparent 66%),
+    radial-gradient(ellipse 35% 28% at 12% 85%, var(--lava-c1) 0%, transparent 68%),
+    radial-gradient(ellipse 65% 48% at 55% 50%, var(--lava-c3g) 0%, transparent 76%);
+  animation: lava32b var(--lava-speed-b, 16s) ease-in-out infinite alternate-reverse;
+}
+@keyframes lava32a {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  20%  { transform: translate( 40px, -35px) scale(1.06); }
+  40%  { transform: translate(-30px,  45px) scale(0.95); }
+  60%  { transform: translate( 55px,  25px) scale(1.04); }
+  80%  { transform: translate(-15px, -45px) scale(1.08); }
+  100% { transform: translate(-45px,  55px) scale(0.97); }
+}
+@keyframes lava32b {
+  0%   { transform: translate(  0px,   0px) scale(1.00); }
+  25%  { transform: translate(-55px,  40px) scale(1.05); }
+  50%  { transform: translate( 35px, -55px) scale(0.95); }
+  75%  { transform: translate( 65px,  30px) scale(1.07); }
+  100% { transform: translate(-35px,  55px) scale(0.97); }
+}
+
