@@ -505,6 +505,7 @@ function SectionCard({
           />
           {addingLink && (
             <form
+              ref={el => el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })}
               style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', padding: '0.35rem 0.5rem', borderTop: '1px solid var(--border)' }}
               onSubmit={async e => {
                 e.preventDefault()
