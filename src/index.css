@@ -101,7 +101,6 @@ body {
   min-height: 100vh;
   overflow: hidden;
   isolation: isolate;
-  transform: translateZ(0);
 }
 
 button {
@@ -1859,21 +1858,19 @@ html.bg-29-carbon::after {
   top: calc(100% + 0.15rem);
   left: 0;
   right: 0;
-  z-index: 100;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.35rem 0.5rem;
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: visible;
-}
-.note-edit-toolbar-row {
-  display: flex;
-  gap: 0.2rem;
-  align-items: center;
-  flex-wrap: nowrap;
-  padding: 0.35rem 0.5rem;
-  width: 100%;
-  overflow: visible;
+  min-height: 2.2rem;
 }
 
 .note-drag-handle-inline {
@@ -3327,13 +3324,5 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   pointer-events: none;
 }
 
-.news-dropdown.news-pinned,
-.cal-dropdown.cal-pinned {
-  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
-  width: min(700px, 96vw); max-height: 78vh; z-index: 9999;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.55);
-}
-.news-dropdown.news-pinned .news-articles,
-.cal-dropdown.cal-pinned .cal-dropdown-inner {
-  max-height: calc(78vh - 48px); overflow-y: auto;
-}
+.news-dropdown.news-pinned,.cal-dropdown.cal-pinned{position:fixed;top:52px;left:50%;transform:translateX(-50%);width:min(700px,96vw);max-height:78vh;z-index:9999;box-shadow:0 8px 40px rgba(0,0,0,0.55);}
+.news-dropdown.news-pinned .news-articles,.cal-dropdown.cal-pinned .cal-dropdown-inner{max-height:calc(78vh - 48px);overflow-y:auto;}

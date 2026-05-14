@@ -120,10 +120,10 @@ function WeatherWidget() {
             {forecast.map((day) => (
               <div key={day.date} className="weather-dropdown-row">
                 <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
-                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
-                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>/ {day.min}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
               </div>
             ))}
           </div>
@@ -847,8 +847,8 @@ function applyTheme(t) {
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
-  const speed = t.bgAnimSpeed ?? ps.speed ?? 1
-  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
+  const speed = t.bgAnimSpeed ?? 1
+  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(2) + 's')
   const c1 = ps.c1 || null
   const c2 = ps.c2 || null
   const c3 = ps.c3 || null

@@ -1070,13 +1070,11 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
 
                         <div className="note-actions-overlay">
                           {note.shared_to && (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)', marginRight: '0.3rem' }}
-                              title={`Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}>
-                              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <rect x="1" y="1" width="14" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.4" fill="none"/>
-                                <line x1="5" y1="14" x2="11" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                                <line x1="8" y1="11" x2="8" y2="14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                              </svg>
+                            <span 
+                              style={{ display: 'inline-flex', alignItems: 'center', color: 'var(--accent)', marginRight: '0.3rem' }}
+                              title={`Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}
+                            >
+                              🔄
                             </span>
                           )}
                           {note.files && note.files.length > 0 && (
@@ -1141,76 +1139,57 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     )}
 
                     <div className="note-edit-toolbar" data-toolbar="true">
-                      <div className="note-edit-toolbar-row">
-                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('bold', false, null)} title="Bold"><strong>B</strong></button>
-                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => document.execCommand('italic', false, null)} title="Italic"><em>I</em></button>
-                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => {
-                          const sel = window.getSelection(); const txt = sel?.toString()
-                          if (txt?.includes('\n')) {
-                            const r = sel.getRangeAt(0); r.deleteContents()
-                            const ul = document.createElement('ul'); ul.className = 'note-bullets'
-                            ul.innerHTML = txt.split('\n').filter(l => l.trim()).map(l => `<li>${l}</li>`).join('')
-                            r.insertNode(ul); r.collapse(false)
-                          } else { document.execCommand('insertUnorderedList', false, null); setTimeout(() => document.querySelector('.note-editing')?.querySelectorAll('ul:not(.note-bullets)').forEach(ul => ul.classList.add('note-bullets')), 0) }
-                          setTimeout(() => document.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true })), 10)
-                        }} title="Bullet">•</button>
-                        <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 0.1rem', flexShrink: 0 }} />
-                        {[['#ff6b6b','Red'],['#6c8fff','Blue'],['#6bffb8','Green'],['#ffd32a','Yellow'],['#ff9f2a','Orange'],['#111','Black'],['#f0f0f0','White']].map(([c,l]) => (
-                          <button key={c} type="button" className="color-dot" onMouseDown={e => e.preventDefault()}
-                            onClick={e => { document.execCommand('foreColor', false, c); e.target.closest('.note-item')?.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true })) }}
-                            title={l} style={{ background: c, border: c === '#f0f0f0' ? '1px solid #888' : c === '#111' ? '1px solid #555' : undefined }} />
-                        ))}
-                        <input type="color" className="color-picker" title="Custom color"
-                          onMouseDown={() => { const s = window.getSelection(); if (s?.rangeCount > 0) savedSelectionRef.current = s.getRangeAt(0).cloneRange() }}
-                          onChange={e => {
-                            if (savedSelectionRef.current) { const s = window.getSelection(); s.removeAllRanges(); s.addRange(savedSelectionRef.current) }
-                            document.execCommand('foreColor', false, e.target.value)
-                            document.querySelector('.note-editing')?.dispatchEvent(new Event('input', { bubbles: true }))
-                          }} />
-                        <div style={{ width: 1, height: 14, background: 'var(--border)', margin: '0 0.1rem', flexShrink: 0 }} />
-                        <button type="button" className="btn-xs" title="Attach file (max 49MB)"
-                          style={{ color: 'var(--text-dim)', flexShrink: 0 }}
-                          onMouseDown={e => e.preventDefault()}
-                          onClick={() => {
-                            const input = document.createElement('input'); input.type = 'file'; input.accept = '*/*'
-                            input.onchange = async e => {
-                              const file = e.target.files[0]; if (!file) return
-                              const sizeMB = file.size / (1024*1024)
-                              if (sizeMB > 49) { alert(`File too large: ${sizeMB.toFixed(1)}MB`); return }
-                              if (sizeMB > 30 && !confirm(`Large file (${sizeMB.toFixed(1)}MB) — continue?`)) return
-                              const { data, error } = await supabase.storage.from('note-files').upload(`${userId}/${Date.now()}_${file.name}`, file)
-                              if (error) { alert('Upload failed: ' + error.message); return }
-                              const files = [...(note.files || []), { name: file.name, size: file.size, path: data.path, uploaded_at: new Date().toISOString() }]
-                              await supabase.from('notes').update({ files }).eq('id', note.id)
-                              onRefresh?.()
-                            }
-                            input.click()
-                          }}>📎</button>
-                        {canShare && (
-                          <div style={{ position: 'relative', flexShrink: 0 }}>
-                            <button type="button" className="btn-xs"
-                              onMouseDown={e => e.preventDefault()}
-                              onClick={e => { e.stopPropagation(); const s = e.currentTarget.nextSibling; s.style.display = s.style.display === 'none' ? 'block' : 'none' }}
-                              title={editShareNote ? `Sharing → ${otherWorkspaces.find(w=>w.id===editShareNote)?.name}` : 'Share note'}
-                              style={{ color: editShareNote ? 'var(--accent)' : 'var(--text-dim)', flexShrink: 0 }}>📤</button>
-                            <select className="input"
-                              style={{ display: 'none', position: 'absolute', bottom: 'calc(100% + 4px)', left: 0, zIndex: 300, fontSize: '0.78em', padding: '0.25rem 0.4rem', minWidth: '130px', background: 'var(--bg2)', border: '1px solid var(--accent)', borderRadius: 'var(--radius-sm)', boxShadow: '0 4px 12px rgba(0,0,0,0.4)' }}
-                              value={editShareNote}
-                              onChange={e => { setEditShareNote(e.target.value); e.target.style.display = 'none' }}>
-                              <option value=''>No sharing</option>
-                              {otherWorkspaces.map(w => <option key={w.id} value={w.id}>→ {w.name}</option>)}
-                            </select>
-                          </div>
-                        )}
-                        <div style={{ flex: 1 }} />
-                        <span style={{ fontSize: '0.6em', color: 'var(--text-dim)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                          {note.updated_at ? new Date(note.updated_at).toLocaleString('en-AU', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true }) : ''}
-                        </span>
-                        <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()}
-                          onClick={() => remove(note.id)} title="Delete note"
-                          style={{ color: 'var(--danger)', flexShrink: 0 }}>🗑</button>
-                      </div>
+                      <button type="button" className="btn-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>document.execCommand('bold',false,null)} title="Bold"><strong>B</strong></button>
+                      <button type="button" className="btn-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>document.execCommand('italic',false,null)} title="Italic"><em>I</em></button>
+                      <button type="button" className="btn-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>{
+                        const sel=window.getSelection(),txt=sel?.toString()
+                        if(txt?.includes('\n')){const r=sel.getRangeAt(0);r.deleteContents();const ul=document.createElement('ul');ul.className='note-bullets';ul.innerHTML=txt.split('\n').filter(l=>l.trim()).map(l=>`<li>${l}</li>`).join('');r.insertNode(ul);r.collapse(false)}
+                        else{document.execCommand('insertUnorderedList',false,null);setTimeout(()=>document.querySelector('.note-editing')?.querySelectorAll('ul:not(.note-bullets)').forEach(u=>u.classList.add('note-bullets')),0)}
+                        setTimeout(()=>document.querySelector('.note-editing')?.dispatchEvent(new Event('input',{bubbles:true})),10)
+                      }} title="Bullet">•</button>
+                      <div style={{width:1,height:14,background:'var(--border)',margin:'0 0.1rem',flexShrink:0}}/>
+                      {[['#ff6b6b','Red'],['#6c8fff','Blue'],['#6bffb8','Green'],['#ffd32a','Yellow'],['#ff9f2a','Orange'],['#111111','Black'],['#f0f0f0','White']].map(([c,l])=>(
+                        <button key={c} type="button" className="color-dot" onMouseDown={e=>e.preventDefault()}
+                          onClick={e=>{document.execCommand('foreColor',false,c);e.target.closest('.note-item')?.querySelector('.note-editing')?.dispatchEvent(new Event('input',{bubbles:true}))}}
+                          title={l} style={{background:c,border:c==='#f0f0f0'?'1px solid #888':c==='#111111'?'1px solid #555':undefined}}/>
+                      ))}
+                      <input type="color" className="color-picker" title="Custom color"
+                        onMouseDown={()=>{const s=window.getSelection();if(s?.rangeCount>0)savedSelectionRef.current=s.getRangeAt(0).cloneRange()}}
+                        onChange={e=>{if(savedSelectionRef.current){const s=window.getSelection();s.removeAllRanges();s.addRange(savedSelectionRef.current)};document.execCommand('foreColor',false,e.target.value);document.querySelector('.note-editing')?.dispatchEvent(new Event('input',{bubbles:true}))}}/>
+                      <div style={{width:1,height:14,background:'var(--border)',margin:'0 0.1rem',flexShrink:0}}/>
+                      <button type="button" className="btn-xs" title="Attach file" style={{color:'var(--text-dim)',flexShrink:0}} onMouseDown={e=>e.preventDefault()} onClick={()=>{
+                        const inp=document.createElement('input');inp.type='file';inp.accept='*/*'
+                        inp.onchange=async e=>{
+                          const file=e.target.files[0];if(!file)return
+                          const mb=file.size/1048576
+                          if(mb>49){alert(`Too large: ${mb.toFixed(1)}MB`);return}
+                          if(mb>30&&!confirm(`Large file (${mb.toFixed(1)}MB) — continue?`))return
+                          const{data,error}=await supabase.storage.from('note-files').upload(`${userId}/${Date.now()}_${file.name}`,file)
+                          if(error){alert('Upload failed: '+error.message);return}
+                          await supabase.from('notes').update({files:[...(note.files||[]),{name:file.name,size:file.size,path:data.path,uploaded_at:new Date().toISOString()}]}).eq('id',note.id)
+                          onRefresh?.()
+                        };inp.click()
+                      }}>📎</button>
+                      {canShare&&(
+                        <div style={{position:'relative',flexShrink:0}}>
+                          <button type="button" className="btn-xs" onMouseDown={e=>e.preventDefault()}
+                            onClick={e=>{e.stopPropagation();const s=e.currentTarget.nextSibling;s.style.display=s.style.display==='none'?'block':'none'}}
+                            title={editShareNote?`Sharing → ${otherWorkspaces.find(w=>w.id===editShareNote)?.name}`:'Share note'}
+                            style={{color:editShareNote?'var(--accent)':'var(--text-dim)',flexShrink:0}}>📤</button>
+                          <select className="input" style={{display:'none',position:'absolute',bottom:'calc(100% + 4px)',left:0,zIndex:300,fontSize:'0.78em',padding:'0.25rem 0.4rem',minWidth:'130px',background:'var(--bg2)',border:'1px solid var(--accent)',borderRadius:'var(--radius-sm)',boxShadow:'0 4px 12px rgba(0,0,0,0.4)'}}
+                            value={editShareNote} onChange={e=>{setEditShareNote(e.target.value);e.target.style.display='none'}}>
+                            <option value=''>No sharing</option>
+                            {otherWorkspaces.map(w=><option key={w.id} value={w.id}>→ {w.name}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      <div style={{flex:1}}/>
+                      <span style={{fontSize:'0.6em',color:'var(--text-dim)',whiteSpace:'nowrap',flexShrink:0}}>
+                        {note.updated_at?new Date(note.updated_at).toLocaleString('en-AU',{month:'numeric',day:'numeric',year:'2-digit',hour:'numeric',minute:'2-digit',hour12:true}):''}
+                      </span>
+                      <button type="button" className="btn-xs" onMouseDown={e=>e.preventDefault()} onClick={()=>remove(note.id)} title="Delete note" style={{color:'var(--danger)',flexShrink:0}}>🗑</button>
                     </div>
+                  </div>
                   </>
                 )}
                 </>
