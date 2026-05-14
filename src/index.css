@@ -1870,7 +1870,6 @@ html.bg-29-carbon::after {
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: visible;
-  min-height: 2.2rem;
 }
 
 .note-drag-handle-inline {
@@ -2941,7 +2940,8 @@ flex-shrink: 0;
   border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
   display: flex;
   gap: 0.75rem;
-  z-index: 10;
+  z-index: 10000;
+  box-sizing: border-box;
 }
 
 .settings-footer[data-side='left'] {
@@ -3324,5 +3324,13 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   pointer-events: none;
 }
 
-.news-dropdown.news-pinned,.cal-dropdown.cal-pinned{position:fixed;top:52px;left:50%;transform:translateX(-50%);width:min(700px,96vw);max-height:78vh;z-index:9999;box-shadow:0 8px 40px rgba(0,0,0,0.55);}
-.news-dropdown.news-pinned .news-articles,.cal-dropdown.cal-pinned .cal-dropdown-inner{max-height:calc(78vh - 48px);overflow-y:auto;}
+.news-dropdown.news-pinned,.cal-dropdown.cal-pinned,.weather-dropdown.weather-pinned {
+  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
+  width: min(360px, 96vw); max-height: 78vh; z-index: 9999;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55);
+}
+.news-dropdown.news-pinned { width: min(700px, 96vw); }
+.cal-dropdown.cal-pinned { width: min(500px, 96vw); }
+.news-dropdown.news-pinned .news-articles,.cal-dropdown.cal-pinned .cal-dropdown-inner {
+  max-height: calc(78vh - 48px); overflow-y: auto;
+}

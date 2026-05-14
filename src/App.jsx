@@ -30,16 +30,14 @@ function WeatherWidget() {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
+  const [pinned, setPinned] = useState(false)
   const closeTimer = useRef(null)
-
-  const handleMouseEnter = () => {
-    clearTimeout(closeTimer.current)
-    setOpen(true)
-  }
-  const handleMouseLeave = () => {
-    closeTimer.current = setTimeout(() => setOpen(false), 200)
-  }
   const [loading, setLoading] = useState(true)
+
+  const handleMouseEnter = () => { clearTimeout(closeTimer.current); setOpen(true) }
+  const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 200) }
+  const handleClick = () => { if (!open) setOpen(true); else setPinned(p => !p) }
+  const handleClose = () => { setPinned(false); setOpen(false) }
 
   useEffect(() => {
     const doFetch = async (lat, lon) => {
@@ -70,14 +68,13 @@ function WeatherWidget() {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => doFetch(coords.latitude, coords.longitude),
         () => doFetch(-37.8136, 144.9631),
-        { timeout: 5000 } // Add timeout to geolocation
+        { timeout: 5000 }
       )
     } else {
       doFetch(-37.8136, 144.9631)
     }
   }, [])
 
-  // Show loading placeholder to prevent layout shift
   if (loading || !wx) {
     return (
       <div className="weather-wrap" style={{ opacity: 0.5 }}>
@@ -102,24 +99,27 @@ function WeatherWidget() {
     95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
   }
 
-  const dayLabel = (dateStr) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString([], { weekday: 'short' });
-  }
+  const dayLabel = (dateStr) => new Date(dateStr).toLocaleDateString([], { weekday: 'short' })
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
+      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }}
+        title="5-day forecast — hover to open, click to pin" onClick={handleClick}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
       </div>
       {open && forecast.length > 0 && (
-        <div className="weather-dropdown">
+        <div className={`weather-dropdown${pinned ? ' weather-pinned' : ''}`}>
           <div className="weather-dropdown-inner">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <span style={{ fontSize: 'var(--news-font-size, 12px)', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>5-Day Forecast</span>
+              <button onClick={handleClose} title="Close"
+                style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.1rem 0.3rem', fontSize: '0.9em' }}>✕</button>
+            </div>
             {forecast.map((day) => (
               <div key={day.date} className="weather-dropdown-row">
-                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{icons[day.code] || '🌡'}</span>
                 <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>{descs[day.code] || 'Unknown'}</span>
                 <span style={{ color: 'var(--text)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500 }}>{day.max}°</span>
                 <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>/ {day.min}°</span>
@@ -847,8 +847,8 @@ function applyTheme(t) {
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
-  const speed = t.bgAnimSpeed ?? 1
-  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(2) + 's')
+  const speed = ps.speed ?? 1
+  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
   const c1 = ps.c1 || null
   const c2 = ps.c2 || null
   const c3 = ps.c3 || null
