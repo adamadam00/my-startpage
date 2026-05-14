@@ -30,14 +30,16 @@ function WeatherWidget() {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
-  const [pinned, setPinned] = useState(false)
   const closeTimer = useRef(null)
-  const [loading, setLoading] = useState(true)
 
-  const handleMouseEnter = () => { clearTimeout(closeTimer.current); setOpen(true) }
-  const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 200) }
-  const handleClick = () => { if (!open) setOpen(true); else setPinned(p => !p) }
-  const handleClose = () => { setPinned(false); setOpen(false) }
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    setOpen(true)
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 200)
+  }
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const doFetch = async (lat, lon) => {
@@ -68,13 +70,14 @@ function WeatherWidget() {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => doFetch(coords.latitude, coords.longitude),
         () => doFetch(-37.8136, 144.9631),
-        { timeout: 5000 }
+        { timeout: 5000 } // Add timeout to geolocation
       )
     } else {
       doFetch(-37.8136, 144.9631)
     }
   }, [])
 
+  // Show loading placeholder to prevent layout shift
   if (loading || !wx) {
     return (
       <div className="weather-wrap" style={{ opacity: 0.5 }}>
@@ -99,31 +102,28 @@ function WeatherWidget() {
     95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
   }
 
-  const dayLabel = (dateStr) => new Date(dateStr).toLocaleDateString([], { weekday: 'short' })
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString([], { weekday: 'short' });
+  }
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }}
-        title="5-day forecast — hover to open, click to pin" onClick={handleClick}>
+      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
       </div>
       {open && forecast.length > 0 && (
-        <div className={`weather-dropdown${pinned ? ' weather-pinned' : ''}`}>
+        <div className="weather-dropdown">
           <div className="weather-dropdown-inner">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: 'var(--news-font-size, 12px)', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>5-Day Forecast</span>
-              <button onClick={handleClose} title="Close"
-                style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.1rem 0.3rem', fontSize: '0.9em' }}>✕</button>
-            </div>
             {forecast.map((day) => (
               <div key={day.date} className="weather-dropdown-row">
-                <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{icons[day.code] || '🌡'}</span>
-                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>{descs[day.code] || 'Unknown'}</span>
-                <span style={{ color: 'var(--text)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500 }}>{day.max}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>/ {day.min}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
               </div>
             ))}
           </div>
@@ -888,6 +888,31 @@ function applyTheme(t) {
 
   const hRgba = (hex, a) => { const r = hexRgb(hex||'#000000'); return `rgba(${r},${parseFloat(a).toFixed(3)})` }
 
+  // 02-noise color
+  if (t.bgPreset === '02-noise') {
+    s('background-color', t.bgNoiseBase || '#050510', 'html.bg-02-noise')
+    if (t.bgNoiseC1) { const r=hexRgb(t.bgNoiseC1); s('--bg-noise-c1', `rgba(${r},${t.bgNoiseOpacity??0.04})`) }
+    else s('--bg-noise-c1', `rgba(26,32,96,${t.bgNoiseOpacity??0.04})`)
+  }
+
+  // 10b-lava
+  if (t.bgPreset === '18b-lava') {
+    const lc1=t.bgLavaC1||'#ff3200', lc2=t.bgLavaC2||'#ff8800', lc3=t.bgLavaC3||'#ffcc00'
+    const li=(t.bgLavaIntensity??100)/100
+    s('--lava18-c1', hRgba(lc1, 0.40*li)); s('--lava18-c2', hRgba(lc2, 0.36*li))
+    s('--lava18-c3', hRgba(lc3, 0.28*li)); s('--lava18-c4', hRgba(lc1, 0.20*li))
+    s('--lava18-c5', hRgba(lc2, 0.18*li)); s('--lava18-c6', hRgba(lc3, 0.14*li))
+  }
+
+  // 06-mesh opacity
+  if (t.bgMeshOpacity) {
+    const o = t.bgMeshOpacity
+    if (t.bgMeshC1) { const r=hexRgb(t.bgMeshC1); s('--bg-mesh-c1', `rgba(${r},${o})`) }
+    if (t.bgMeshC2) { const r=hexRgb(t.bgMeshC2); s('--bg-mesh-c2', `rgba(${r},${o*0.9})`) }
+    if (t.bgMeshC3) { const r=hexRgb(t.bgMeshC3); s('--bg-mesh-c3', `rgba(${r},${o*0.7})`) }
+  }
+
+  // New bgs 30-32
   if (t.bgPreset === '30-aurora') {
     const ac1=t.bgAuroraC1||'#00dc78', ac2=t.bgAuroraC2||'#1e78ff', ac3=t.bgAuroraC3||'#8c28ff'
     const ai=(t.bgAuroraIntensity??100)/100
@@ -898,34 +923,26 @@ function applyTheme(t) {
     s('--aurora-star-op', t.bgAuroraStarOpacity??0.75)
     const sd=t.bgAuroraStarDensity??100
     s('--aurora-star-tile', sd>=100?'100%':Math.max(25,sd)+'%')
-    s('--aurora-speed-a', dur(22)); s('--aurora-speed-b', dur(30))
   }
-
   if (t.bgPreset === '31-deep-ocean') {
     const oi=(t.bgOceanIntensity??100)/100
     const dens=t.bgOceanDensity??50
     const tA=Math.round(360-dens*2.4)+'px', tB=Math.round(260-dens*1.8)+'px', tC=Math.round(480-dens*3.0)+'px'
     s('--ocean-bg', t.bgOceanDeepBg||'#000814')
-    s('--ocean-c1', hRgba(t.bgOceanCausticC||'#0078c8', 0.22*oi))
-    s('--ocean-c2', hRgba(t.bgOceanMidC||'#003c78', 0.32*oi))
-    s('--ocean-c3', hRgba(t.bgOceanBioC||'#00ffb4', t.bgOceanBioOpacity??0.08))
-    s('--ocean-c4', hRgba(t.bgOceanCausticC||'#0078c8', 0.18*oi))
-    s('--ocean-c5', hRgba(t.bgOceanMidC||'#003c78', 0.22*oi))
-    s('--ocean-c6', hRgba(t.bgOceanBioC||'#00ffb4', (t.bgOceanBioOpacity??0.08)*0.8))
+    s('--ocean-c1', hRgba(t.bgOceanCausticC||'#0078c8', 0.22*oi)); s('--ocean-c2', hRgba(t.bgOceanMidC||'#003c78', 0.32*oi))
+    s('--ocean-c3', hRgba(t.bgOceanBioC||'#00ffb4', t.bgOceanBioOpacity??0.08)); s('--ocean-c4', hRgba(t.bgOceanCausticC||'#0078c8', 0.18*oi))
+    s('--ocean-c5', hRgba(t.bgOceanMidC||'#003c78', 0.22*oi)); s('--ocean-c6', hRgba(t.bgOceanBioC||'#00ffb4', (t.bgOceanBioOpacity??0.08)*0.8))
     s('--ocean-particle', hRgba(t.bgOceanParticleC||'#64dcff', t.bgOceanParticleOpacity??0.55))
     s('--ocean-tile-a', tA+' '+Math.round(parseInt(tA)*1.6)+'px')
     s('--ocean-tile-b', tB+' '+Math.round(parseInt(tB)*1.5)+'px')
     s('--ocean-tile-c', tC+' '+Math.round(parseInt(tC)*1.7)+'px')
-    s('--ocean-speed-a', dur(18)); s('--ocean-speed-b', dur(12))
   }
-
   if (t.bgPreset === '32-lava-lamp') {
     const lo=t.bgLavaOpacity??0.85
     const lc1=t.bgLavaC1||'#ff4080', lc2=t.bgLavaC2||'#ff8020', lc3=t.bgLavaC3||'#c020ff'
     s('--lava-bg', t.bgLavaBg||'#080410')
     s('--lava-c1', hRgba(lc1, 0.60*lo)); s('--lava-c2', hRgba(lc2, 0.55*lo)); s('--lava-c3', hRgba(lc3, 0.52*lo))
     s('--lava-c1g', hRgba(lc1, 0.22*lo)); s('--lava-c2g', hRgba(lc2, 0.20*lo)); s('--lava-c3g', hRgba(lc3, 0.18*lo))
-    s('--lava-speed-a', dur(20)); s('--lava-speed-b', dur(16))
   }
 
   const sfGrad = ps.sfGrad ?? false
@@ -1008,6 +1025,8 @@ function applyTheme(t) {
     html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
     html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
     html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
+    html.bg-18b-lava::before { animation-duration: ${dur(18)} !important; }
+    html.bg-18b-lava::after  { animation-duration: ${dur(25)} !important; }
     .bg-30-aurora::before { animation-duration: ${dur(22)} !important; }
     .bg-30-aurora::after  { animation-duration: ${dur(30)} !important; }
     .bg-31-deep-ocean::before { animation-duration: ${dur(18)} !important; }
@@ -1230,6 +1249,9 @@ function applyTheme(t) {
   // Starfield - combine star speed with global anim speed
   s('--bg-star-size', t.bgStarSize ?? 1)
   s('--bg-star-density', t.bgStarDensity ? t.bgStarDensity / 100 : 1)
+  s('--bg-star-op1', t.bgStarOp1 ?? 1)
+  s('--bg-star-op2', t.bgStarOp2 ?? 0.55)
+  s('--bg-star-op3', t.bgStarOp3 ?? 0.30)
   s('--bg-star-speed', (t.bgStarSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
   // Star streaks
   s('--bg-streak-bg', t.bgStreakBg || '#02020f')
