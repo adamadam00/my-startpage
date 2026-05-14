@@ -109,7 +109,7 @@ function WeatherWidget() {
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day weather forecast — hover to expand' : 'Weather'}>
+      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
@@ -133,6 +133,15 @@ function WeatherWidget() {
   )
 }
 
+const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
+
+function getFavicon(url) {
+  try {
+    const domain = new URL(url).hostname
+    return `https://www.google.com/s2/favicons?domain=${domain}&sz=16`
+  } catch { return null }
+}
+
 // ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
 const NEWS_FEEDS = [
   { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
@@ -142,10 +151,8 @@ const NEWS_FEEDS = [
   { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
   { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
 ]
-const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
 function NewsWidget({ theme, setTheme }) {
-  const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [open, setOpen] = useState(false)
   const [pinned, setPinned] = useState(false)
   const [articles, setArticles] = useState([])
@@ -159,70 +166,54 @@ function NewsWidget({ theme, setTheme }) {
     theme.newsCustom2 ? { id: 'custom2', label: theme.newsCustom2Label || 'Custom 2', url: theme.newsCustom2 } : null,
     theme.newsCustom3 ? { id: 'custom3', label: theme.newsCustom3Label || 'Custom 3', url: theme.newsCustom3 } : null,
   ].filter(Boolean)
-
   const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
 
   const fetchFeed = async (feed) => {
-    setLoading(true)
-    setArticles([])
+    setLoading(true); setArticles([])
     try {
       const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
       const data = await res.json()
       setArticles((data.items || []).slice(0, 10))
-    } catch {
-      setArticles([])
-    }
+    } catch { setArticles([]) }
     setLoading(false)
   }
 
-  const handleOpen = () => {
+  const openNews = () => {
     clearTimeout(closeTimer.current)
     if (!open) {
       const first = allFeeds[0]
       if (first) { setActiveFeed(first); fetchFeed(first) }
       setOpen(true)
-    } else {
-      setPinned(p => !p)
     }
   }
-  const handleMouseLeave = () => {
-    if (pinned) return
-    closeTimer.current = setTimeout(() => setOpen(false), 300)
-  }
-  const handleMouseEnter = () => {
-    clearTimeout(closeTimer.current)
-    if (!open) {
-      const first = allFeeds[0]
-      if (first && !activeFeed) { setActiveFeed(first); fetchFeed(first) }
-      setOpen(true)
-    }
-  }
+  const handleMouseEnter = () => { clearTimeout(closeTimer.current); openNews() }
+  const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 300) }
+  const handleClick = () => { if (!open) { openNews() } else { setPinned(p => !p) } }
   const handleClose = () => { setPinned(false); setOpen(false) }
-
   const switchFeed = (feed) => { setActiveFeed(feed); fetchFeed(feed) }
 
   if (allFeeds.length === 0) return null
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseLeave={handleMouseLeave} onMouseEnter={handleMouseEnter}>
-      <button className={`icon-btn topbar-quick-btn topbar-news-btn${pinned ? ' active' : ''}`} title="News — click to open, click again to pin" onClick={handleOpen}>N</button>
+      <button className={`icon-btn topbar-quick-btn topbar-news-btn${pinned ? ' active' : ''}`}
+        title="News — hover to open, click to pin" onClick={handleClick}>N</button>
       {open && (
         <div className={`news-dropdown${pinned ? ' news-pinned' : ''}`}>
           <div className="news-dropdown-inner">
-            <div className="news-feed-tabs" style={{ display: 'flex', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flex: 1, flexWrap: 'wrap', gap: 0 }}>
-                {allFeeds.map(f => (
-                  <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
-                    {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width: 12, height: 12, marginRight: '0.3rem', verticalAlign: 'middle', borderRadius: 2, flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
-                    {f.label}
-                  </button>
-                ))}
-              </div>
-              <button onClick={handleClose} title="Close" style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.4rem', fontSize: '0.9em', flexShrink: 0 }}>✕</button>
+            <div className="news-feed-tabs" style={{ position: 'relative', paddingRight: '1.8rem' }}>
+              {allFeeds.map(f => (
+                <button key={f.id} className={`news-tab-btn${activeFeed?.id === f.id ? ' active' : ''}`} onClick={() => switchFeed(f)}>
+                  {getFavicon(f.url) && <img src={getFavicon(f.url)} alt="" style={{ width: 12, height: 12, marginRight: '0.3rem', verticalAlign: 'middle', borderRadius: 2, flexShrink: 0 }} onError={e => e.target.style.display='none'} />}
+                  {f.label}
+                </button>
+              ))}
+              <button onClick={handleClose} title="Close"
+                style={{ position: 'absolute', top: '50%', right: '0.3rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.35rem', fontSize: '0.9em', lineHeight: 1 }}>✕</button>
             </div>
             <div className="news-articles">
-              {loading && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>Loading...</div>}
-              {!loading && articles.length === 0 && <div style={{ padding: '0.75rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>No articles found</div>}
+              {loading && <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size,12px)' }}>Loading...</div>}
+              {!loading && articles.length === 0 && <div style={{ padding: '1rem', color: 'var(--text-dim)', fontSize: 'var(--news-font-size,12px)' }}>No articles found</div>}
               {!loading && articles.map((a, i) => (
                 <a key={i} className="news-article-row" href={a.link} target="_blank" rel="noopener noreferrer">
                   <span className="news-article-title">{a.title}</span>
@@ -351,7 +342,9 @@ function CalendarWidget({ theme }) {
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <button className={`icon-btn topbar-quick-btn topbar-cal-btn${pinned ? ' active' : ''}`} title="Calendar — hover to preview, click to pin" onClick={handleClick}>
+      <button className={`icon-btn topbar-quick-btn topbar-cal-btn${pinned ? ' active' : ''}`}
+        title="Calendar — hover to preview, click to pin"
+        onClick={handleClick}>
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="1" y="2" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none"/>
           <line x1="1" y1="6" x2="15" y2="6" stroke="currentColor" strokeWidth="1.5"/>
@@ -365,15 +358,16 @@ function CalendarWidget({ theme }) {
       {open && (
         <div className={`cal-dropdown${pinned ? ' cal-pinned' : ''}`}>
           <div className="cal-dropdown-inner">
-            <div className="cal-header">
-              Next {icalUrls.length ? (theme.calDays || 3) : ''} {icalUrls.length ? `day${(theme.calDays||3) !== 1 ? 's' : ''}` : 'Calendar'}
-              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none' }}>Open ↗</a>
-              <button onClick={handleClose} title="Close" style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.1rem 0.3rem', fontSize: '0.9em', marginLeft: '0.3rem' }}>✕</button>
+            <div className="cal-header" style={{ position: 'relative', padding: '0.6rem 2.2rem 0.6rem 0.85rem' }}>
+              Next {theme.calDays || 3} days
+              <a href="https://calendar.google.com" target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', fontSize: '0.75em', color: 'var(--accent)', textDecoration: 'none', marginRight: '0.5rem' }}>Open ↗</a>
+              <button onClick={handleClose} title="Close"
+                style={{ position: 'absolute', top: '50%', right: '0.4rem', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.2rem 0.35rem', fontSize: '0.9em', lineHeight: 1 }}>✕</button>
             </div>
             {!icalUrls.length && <div className="cal-empty">⚙ Add your iCal URL in Settings → General → Calendar & Gmail</div>}
             {icalUrls.length > 0 && loading && <div className="cal-empty">Loading...</div>}
             {icalUrls.length > 0 && !loading && error && <div className="cal-empty" style={{ color: 'var(--danger)' }}>{error}</div>}
-            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next 3 days 🎉</div>}
+            {icalUrls.length > 0 && !loading && !error && events.length === 0 && <div className="cal-empty">No events in next {theme.calDays || 3} days 🎉</div>}
             {icalUrls.length > 0 && !loading && !error && Object.entries(grouped).map(([day, dayEvents]) => (
               <div key={day} className="cal-day-group">
                 <div className="cal-day-label">{day}</div>
@@ -2173,7 +2167,7 @@ export default function App() {
 				<div className="topbar-divider" />
 				<a
 				  className="icon-btn topbar-quick-btn"
-				  title="Open new tab"
+				  title="New tab"
 				  href="about:blank"
 				  target="_blank"
 				  rel="noreferrer"
@@ -2186,7 +2180,7 @@ export default function App() {
 				</a>
 				<a
 				  className="icon-btn topbar-quick-btn topbar-google-btn"
-				  title="Open Google"
+				  title="Google"
 				  href="https://www.google.com.au"
 				  target="_blank"
 				  rel="noreferrer"
@@ -2247,7 +2241,7 @@ export default function App() {
 					}}
 				  />
 				  {(searchMode === 'web' ? webSearch : searchMode === 'links' ? search : bmQuery) && (
-					<button className="icon-btn search-btn" title="Clear search" onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
+					<button className="icon-btn search-btn" title="Clear" onClick={() => { setSearch(''); setWebSearch(''); setBmQuery('') }}>✕</button>
 				  )}
 				  {searchMode === 'bookmarks' && bmQuery && filteredBookmarks.length > 0 && (
 					<div className="bm-dropdown" style={{
@@ -2284,7 +2278,7 @@ export default function App() {
 				</button>
 				<button
 				  className="icon-btn topbar-quick-btn"
-				  title="Open settings"
+				  title="Settings"
 				  onClick={() => setSettingsOpen(true)}
 				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
 				>⚙</button>

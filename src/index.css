@@ -1384,7 +1384,7 @@ html.bg-29-carbon::after {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.55rem 0;
+  padding: 0.65rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
   font-size: var(--news-font-size, 12px);
 }
@@ -3312,24 +3312,32 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   pointer-events: none;
 }
 
-/* ── Pinned/popout mode for News and Calendar ── */
+/* ── Pinned / popout mode ── */
 .news-dropdown.news-pinned,
 .cal-dropdown.cal-pinned {
   position: fixed;
   top: 52px;
   left: 50%;
   transform: translateX(-50%);
-  width: min(680px, 96vw);
-  max-height: 75vh;
+  width: min(700px, 96vw);
+  max-height: 78vh;
   z-index: 9999;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.55);
 }
-.news-dropdown.news-pinned .news-dropdown-inner,
+.news-dropdown.news-pinned .news-articles,
 .cal-dropdown.cal-pinned .cal-dropdown-inner {
-  max-height: calc(75vh - 4px);
+  max-height: calc(78vh - 48px);
   overflow-y: auto;
 }
-.news-dropdown.news-pinned .news-articles {
-  max-height: calc(75vh - 80px);
-  overflow-y: auto;
+
+/* More padding in news tabs and article rows */
+.news-feed-tabs {
+  padding: 0.4rem 0.5rem;
+}
+.news-tab-btn {
+  padding: 0.3rem 0.6rem;
+  margin: 0.15rem 0.1rem;
+}
+.news-article-row {
+  padding: 0.55rem 0.85rem;
 }
