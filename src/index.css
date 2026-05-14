@@ -100,6 +100,8 @@ body {
 #root {
   min-height: 100vh;
   overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 button {
@@ -663,7 +665,6 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 70% 55% at 25% 45%, var(--bg-fog-c1, rgba(50,60,110,0.22)) 0%,transparent 70%),
     radial-gradient(ellipse 55% 70% at 72% 58%, var(--bg-fog-c1, rgba(40,50,100,0.18)) 0%,transparent 70%),
     radial-gradient(ellipse 80% 45% at 48% 82%, var(--bg-fog-c1, rgba(45,55,105,0.15)) 0%,transparent 70%);
-  will-change: transform;
   filter: blur(var(--bg-fog-blur, 75px));
   animation: fog-a 42s ease-in-out infinite alternate;
 }
@@ -673,7 +674,6 @@ html.bg-29-star-streaks::after {
     radial-gradient(ellipse 60% 65% at 78% 22%, var(--bg-fog-c2, rgba(35,55,105,0.16)) 0%,transparent 70%),
     radial-gradient(ellipse 75% 45% at 18% 68%, var(--bg-fog-c2, rgba(50,45,100,0.14)) 0%,transparent 70%),
     radial-gradient(ellipse 50% 60% at 50% 40%, var(--bg-fog-c2, rgba(40,40,90,0.10)) 0%,transparent 70%);
-  will-change: transform;
   filter: blur(var(--bg-fog-blur2, 95px));
   animation: fog-b 58s ease-in-out infinite alternate-reverse;
 }
@@ -1860,16 +1860,18 @@ html.bg-29-carbon::after {
   right: 0;
   display: flex;
   gap: 0.3rem;
-  padding: 0.4rem 0.5rem;
+  padding: 0.4rem 0.5rem 0.4rem 0.5rem;
   background: var(--notes-card-bg);
   border: 1px solid var(--border);
   border-radius: var(--notes-radius);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   z-index: 100;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  overflow: visible;
+  overflow-x: auto;
+  overflow-y: hidden;
   min-height: 2.5rem;
+  scrollbar-width: thin;
 }
 
 .note-drag-handle-inline {
