@@ -500,9 +500,7 @@ export default function Settings({
                   <Row label="Noise color"><ColorPick value={theme.bgNoiseC1 || '#1a2060'} onChange={v => set('bgNoiseC1', v)} /></Row>
                   <Row label="Noise opacity"><Slider val={Math.round((theme.bgNoiseOpacity ?? 0.04) * 100)} min={1} max={40} onChange={v => set('bgNoiseOpacity', v/100)} unit="%" /></Row>
                 </>
-              )}}
-
-              }
+              )}
 
               {/* 04-Grid Settings */}
               {theme.bgPreset === '04-grid' && (
@@ -552,8 +550,6 @@ export default function Settings({
                   <Row label="Length"><Slider val={theme.bgStreakLength ?? 100} min={20} max={300} onChange={v => set('bgStreakLength', v)} unit="%" /></Row>
                 </>
               )}
-
-              }
 
               {/* 10-Inferno Settings */}
               {theme.bgPreset === '18-inferno' && (
@@ -629,8 +625,6 @@ export default function Settings({
                 </>
               )}
 
-              }
-
               {/* 14-Fog Settings */}
               {theme.bgPreset === '22-fog' && (
                 <>
@@ -669,8 +663,6 @@ export default function Settings({
                   <Row label="Shimmer intensity"><Slider val={theme.bgSilverShimmer ?? 100} min={50} max={150} onChange={v => set('bgSilverShimmer', v)} unit="%" /></Row>
                 </>
               )}
-
-              }
 
               }
 
