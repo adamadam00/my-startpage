@@ -956,12 +956,12 @@ html.bg-29-carbon::after {
 }
 
 @keyframes starfield-drift-a {
-  from { transform: translate(0px, 0px); }
-  to   { transform: translate(calc(-700px / var(--bg-star-density, 1)), calc(-700px / var(--bg-star-density, 1))); }
+  from { transform: translate(  0px,   0px); }
+  to   { transform: translate(-700px, -700px); }
 }
 @keyframes starfield-drift-b {
-  from { transform: translate(0px, 0px); }
-  to   { transform: translate(calc(450px / var(--bg-star-density, 1)), calc(450px / var(--bg-star-density, 1))); }
+  from { transform: translate(  0px,  0px); }
+  to   { transform: translate(450px, 450px); }
 }
 
 @keyframes plasma-shift-a {

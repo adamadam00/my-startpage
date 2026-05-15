@@ -259,7 +259,7 @@ export default function Settings({
     <>
       <div className="settings-veil" onClick={onClose} />
 
-      <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="settings-panel" data-side={side} style={{ width: 'min(480px, 75vw)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
         <style>{`
           .settings-group-title:hover .settings-group-actions,
