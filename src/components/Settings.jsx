@@ -416,23 +416,27 @@ export default function Settings({
               <SectionTitle>Preset</SectionTitle>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.5rem' }}>
                 {[
-                  { label: 'Solid',        v: '01-solid'         },
-                  { label: 'Grid',         v: '04-grid'          },
-                  { label: 'Silver',       v: '25-silver-radial' },
-                  { label: '·Noise',       v: '02-noise'         },
-                  { label: '·Gradient',    v: '05-gradient'      },
-                  { label: '·Mesh',        v: '06-mesh'          },
-                  { label: '·Nebula',      v: '07-nebula'        },
-                  { label: '·Stars',       v: '16-starfield-old' },
-                  { label: '·Inferno',     v: '18-inferno'       },
-                  { label: '·Lava',        v: '18b-lava'         },
-                  { label: '·Forest',      v: '19-mint'          },
-                  { label: '·Dusk',        v: '20-dusk'          },
-                  { label: '·Smoke',       v: '22-fog'           },
-                  { label: '·Scan',        v: '23-scan'          },
-                  { label: '·Aurora',      v: '30-aurora'        },
-                  { label: '·Deep Ocean',  v: '31-deep-ocean'    },
-                  { label: '·Lava Lamp',   v: '32-lava-lamp'     },
+                  { label: '01-Solid', v: '01-solid' },
+                  { label: '02-Noise', v: '02-noise' },
+                  { label: '03-Shapes', v: '03-dots' },
+                  { label: '04-Grid', v: '04-grid' },
+                  { label: '05-Gradient', v: '05-gradient' },
+                  { label: '06-Mesh', v: '06-mesh' },
+                  { label: '07-Nebula', v: '07-nebula' },
+                  { label: '08-Stars', v: '16-starfield-old' },
+                  { label: '08b-Streaks', v: '29-star-streaks' },
+                  { label: '09-Plasma', v: '17-plasma' },
+                  { label: '10-Inferno', v: '18-inferno' },
+                  { label: '11-Mint', v: '19-mint' },
+                  { label: '12-Dusk', v: '20-dusk' },
+                  { label: '13-Mono', v: '21-mono' },
+                  { label: '14-Fog', v: '22-fog' },
+                  { label: '15-Scan', v: '23-scan' },
+                  { label: '16-Lt-Bokeh', v: '24-light-bokeh' },
+                  { label: '17-Silver', v: '25-silver-radial' },
+                  { label: '18-Wall', v: '26-wall-texture' },
+                  { label: '19-Concrete', v: '27-concrete' },
+                  { label: '20-Metal', v: '28-brushed-metal' },
                 ].map(p => (
                   <button
                     key={p.v}
@@ -441,63 +445,7 @@ export default function Settings({
                   >
                     {p.label}
                   </button>
-                ))
-
-
-              {theme.bgPreset === '18b-lava' && (
-                <>
-                  <Row label="Lava color 1"><ColorPick value={theme.bgLavaC1 || '#ff3200'} onChange={v => set('bgLavaC1', v)} /></Row>
-                  <Row label="Lava color 2"><ColorPick value={theme.bgLavaC2 || '#ff8800'} onChange={v => set('bgLavaC2', v)} /></Row>
-                  <Row label="Lava color 3"><ColorPick value={theme.bgLavaC3 || '#ffcc00'} onChange={v => set('bgLavaC3', v)} /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedLava ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedLava', v)} unit="×" /></Row>
-                </>
-              )}
-
-              {theme.bgPreset === '30-aurora' && (
-                <>
-                  <Row label="Sky color"><ColorPick value={theme.bgAuroraBg || '#01050f'} onChange={v => set('bgAuroraBg', v)} /></Row>
-                  <Row label="Band color 1"><ColorPick value={theme.bgAuroraC1 || '#00dc78'} onChange={v => set('bgAuroraC1', v)} /></Row>
-                  <Row label="Band color 2"><ColorPick value={theme.bgAuroraC2 || '#1e78ff'} onChange={v => set('bgAuroraC2', v)} /></Row>
-                  <Row label="Band color 3"><ColorPick value={theme.bgAuroraC3 || '#8c28ff'} onChange={v => set('bgAuroraC3', v)} /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedAurora ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedAurora', v)} unit="×" /></Row>
-                </>
-              )}
-
-              {theme.bgPreset === '31-deep-ocean' && (
-                <>
-                  <Row label="Deep water"><ColorPick value={theme.bgOceanDeepBg || '#000814'} onChange={v => set('bgOceanDeepBg', v)} /></Row>
-                  <Row label="Caustic color"><ColorPick value={theme.bgOceanCausticC || '#0078c8'} onChange={v => set('bgOceanCausticC', v)} /></Row>
-                  <Row label="Mid-water color"><ColorPick value={theme.bgOceanMidC || '#003c78'} onChange={v => set('bgOceanMidC', v)} /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedOcean ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedOcean', v)} unit="×" /></Row>
-                </>
-              )}
-
-              {theme.bgPreset === '32-lava-lamp' && (
-                <>
-                  <Row label="Background"><ColorPick value={theme.bgLavaBg || '#080410'} onChange={v => set('bgLavaBg', v)} /></Row>
-                  <Row label="Blob color 1"><ColorPick value={theme.bgLavaC1 || '#ff4080'} onChange={v => set('bgLavaC1', v)} /></Row>
-                  <Row label="Blob color 2"><ColorPick value={theme.bgLavaC2 || '#ff8020'} onChange={v => set('bgLavaC2', v)} /></Row>
-                  <Row label="Blob color 3"><ColorPick value={theme.bgLavaC3 || '#c020ff'} onChange={v => set('bgLavaC3', v)} /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedLavaLamp ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedLavaLamp', v)} unit="×" /></Row>
-                </>
-              )}
-
-              {theme.bgPreset === '06-mesh' && (
-                <>
-                  <Row label="Color 1"><ColorPick value={theme.bgMeshC1 || '#7890ff'} onChange={v => set('bgMeshC1', v)} /></Row>
-                  <Row label="Color 2"><ColorPick value={theme.bgMeshC2 || '#9c6fff'} onChange={v => set('bgMeshC2', v)} /></Row>
-                  <Row label="Color 3"><ColorPick value={theme.bgMeshC3 || '#ff6b6b'} onChange={v => set('bgMeshC3', v)} /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedMesh ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedMesh', v)} unit="×" /></Row>
-                </>
-              )}
-
-              {theme.bgPreset === '07-nebula' && (
-                <>
-                  <Row label="Nebula color 1"><ColorPick value={theme.bgNebulaC1 || '#501a8c'} onChange={v => set('bgNebulaC1', v)} /></Row>
-                  <Row label="Nebula color 2"><ColorPick value={theme.bgNebulaC2 || '#143ca0'} onChange={v => set('bgNebulaC2', v)} /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedNebula ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedNebula', v)} unit="×" /></Row>
-                </>
-              )}}
+                ))}
               </div>
 
               {/* Pattern colour and opacity - only for 02-noise, 04-grid */}
@@ -521,23 +469,20 @@ export default function Settings({
                       unit="%"
                     />
                   </Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedGradient ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedGradient', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedMesh ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedMesh', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedNebula ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedNebula', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedStars ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedStars', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedInferno ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedInferno', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedLava ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedLava', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedForest ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedForest', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedDusk ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedDusk', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedSmoke ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedSmoke', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedScan ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedScan', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedAurora ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedAurora', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedOcean ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedOcean', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedLavaLamp ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedLavaLamp', v)} unit="×" /></Row>
                 </>
               )}
 
-              
+              <Row label="Animation speed">
+                <Slider
+                  label="Animation speed"
+                  val={theme.bgAnimSpeed ?? 1}
+                  min={0}
+                  max={8}
+                  step={0.1}
+                  onChange={v => set('bgAnimSpeed', v)}
+                  unit="×"
+                />
+              </Row>
 
               <Row label="Background blur">
                 <Slider
@@ -560,7 +505,22 @@ export default function Settings({
               )}
 
               {/* 03-Shapes Settings */}
-              }
+              {theme.bgPreset === '03-dots' && (
+                <>
+                  <SectionTitle>Pattern type</SectionTitle>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.5rem' }}>
+                    {['circles', 'squares', 'diamonds', 'hexagons', 'triangles', 'stars'].map(p => (
+                      <button key={p} className={`btn-xs${theme.bgDotPattern === p ? ' btn-primary' : ''}`} onClick={() => set('bgDotPattern', p)}>
+                        {p.charAt(0).toUpperCase() + p.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  <Row label="Primary colour"><ColorPick value={theme.bgC1 || '#2a4a6a'} onChange={v => set('bgC1', v)} /></Row>
+                  <Row label="Secondary colour"><ColorPick value={theme.bgC2 || '#4a2a5a'} onChange={v => set('bgC2', v)} /></Row>
+                  <Row label="Pattern size"><Slider val={theme.bgDotScale ?? 24} min={8} max={80} onChange={v => set('bgDotScale', v)} unit="px" /></Row>
+                  <Row label="Opacity"><Slider val={Math.round((theme.bgShapeOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('bgShapeOpacity', v / 100)} unit="%" /></Row>
+                </>
+              )}
 
               {/* 04-Grid Settings */}
               {theme.bgPreset === '04-grid' && (
@@ -588,6 +548,7 @@ export default function Settings({
               {theme.bgPreset === '16-starfield-old' && (
                 <>
                   <Row label="Sky top"><ColorPick value={theme.bgC1 || '#05050f'} onChange={v => set('bgC1', v)} /></Row>
+                  <Row label="Sky mid"><ColorPick value={theme.bgStarMid || '#020518'} onChange={v => set('bgStarMid', v)} /></Row>
                   <Row label="Sky bottom"><ColorPick value={theme.bgC2 || '#000308'} onChange={v => set('bgC2', v)} /></Row>
                   <Row label="Star tint"><ColorPick value={theme.bgC3 || '#c8d2ff'} onChange={v => set('bgC3', v)} /></Row>
                   <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={4} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
@@ -597,10 +558,29 @@ export default function Settings({
               )}
 
               {/* 21-Star Streaks Settings */}
-              }
+              {theme.bgPreset === '29-star-streaks' && (
+                <>
+                  <Row label="Sky color"><ColorPick value={theme.bgStreakBg || '#02020f'} onChange={v => set('bgStreakBg', v)} /></Row>
+                  <Row label="Streak color"><ColorPick value={theme.bgStreakC1 || '#ffffff'} onChange={v => set('bgStreakC1', v)} /></Row>
+                  <Row label="Streak tint"><ColorPick value={theme.bgStreakC2 || '#aac4ff'} onChange={v => set('bgStreakC2', v)} /></Row>
+                  <Row label="Opacity"><Slider val={Math.round((theme.bgStreakOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('bgStreakOpacity', v / 100)} unit="%" /></Row>
+                  <Row label="Density"><Slider val={theme.bgStreakDensity ?? 100} min={25} max={250} onChange={v => set('bgStreakDensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgStreakSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStreakSpeed', v)} unit="×" /></Row>
+                  <Row label="Length"><Slider val={theme.bgStreakLength ?? 100} min={20} max={300} onChange={v => set('bgStreakLength', v)} unit="%" /></Row>
+                </>
+              )}
 
               {/* 09-Plasma Settings */}
-              }
+              {theme.bgPreset === '17-plasma' && (
+                <>
+                  <Row label="Primary color"><ColorPick value={theme.bgPlasmaC1 || '#6c8fff'} onChange={v => set('bgPlasmaC1', v)} /></Row>
+                  <Row label="Secondary color"><ColorPick value={theme.bgPlasmaC2 || '#6bffb8'} onChange={v => set('bgPlasmaC2', v)} /></Row>
+                  <Row label="Accent color"><ColorPick value={theme.bgPlasmaC3 || '#9c6fff'} onChange={v => set('bgPlasmaC3', v)} /></Row>
+                  <Row label="Animation speed"><Slider val={theme.bgPlasmaSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgPlasmaSpeed', v)} unit="×" /></Row>
+                  <Row label="Blur amount"><Slider val={theme.bgPlasmaBlur ?? 55} min={20} max={100} onChange={v => set('bgPlasmaBlur', v)} unit="px" /></Row>
+                  <Row label="Intensity"><Slider val={theme.bgPlasmaFlow ?? 100} min={50} max={150} onChange={v => set('bgPlasmaFlow', v)} unit="%" /></Row>
+                </>
+              )}
 
               {/* 10-Inferno Settings */}
               {theme.bgPreset === '18-inferno' && (
@@ -636,14 +616,19 @@ export default function Settings({
               )}
 
               {/* 13-Mono Settings */}
-              }
+              {theme.bgPreset === '21-mono' && (
+                <>
+                  <Row label="Primary color"><ColorPick value={theme.bgMonoC1 || '#3c508c'} onChange={v => set('bgMonoC1', v)} /></Row>
+                  <Row label="Secondary color"><ColorPick value={theme.bgMonoC2 || '#5064b4'} onChange={v => set('bgMonoC2', v)} /></Row>
+                  <Row label="Accent color"><ColorPick value={theme.bgMonoC3 || '#324678'} onChange={v => set('bgMonoC3', v)} /></Row>
+                  <Row label="Animation speed"><Slider val={theme.bgMonoSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgMonoSpeed', v)} unit="×" /></Row>
+                  <Row label="Contrast"><Slider val={theme.bgMonoContrast ?? 100} min={50} max={150} onChange={v => set('bgMonoContrast', v)} unit="%" /></Row>
+                </>
+              )}
 
               {/* 14-Fog Settings */}
               {theme.bgPreset === '22-fog' && (
                 <>
-                  <Row label="Smoke color 1"><ColorPick value={theme.bgFogC1 || '#505050'} onChange={v => set('bgFogC1', v)} /></Row>
-                  <Row label="Smoke color 2"><ColorPick value={theme.bgFogC2 || '#404035'} onChange={v => set('bgFogC2', v)} /></Row>
-                  <Row label="Smoke color 3"><ColorPick value={theme.bgFogC3 || '#302830'} onChange={v => set('bgFogC3', v)} /></Row>
                   <Row label="Mist color"><ColorPick value={theme.bgC1 || '#3a4a6e'} onChange={v => set('bgC1', v)} /></Row>
                   <Row label="Animation speed"><Slider val={theme.bgFogSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgFogSpeed', v)} unit="×" /></Row>
                   <Row label="Density"><Slider val={theme.bgFogDensity ?? 100} min={30} max={150} onChange={v => set('bgFogDensity', v)} unit="%" /></Row>
@@ -663,7 +648,13 @@ export default function Settings({
               )}
 
               {/* 16-Lt-Bokeh Settings */}
-              }
+              {theme.bgPreset === '24-light-bokeh' && (
+                <>
+                  <Row label="Bokeh color"><ColorPick value={theme.bgBokehColor || '#6c8fff'} onChange={v => set('bgBokehColor', v)} /></Row>
+                  <Row label="Glow intensity"><Slider val={theme.bgBokehGlow ?? 100} min={50} max={150} onChange={v => set('bgBokehGlow', v)} unit="%" /></Row>
+                  <Row label="Blur amount"><Slider val={theme.bgBokehBlur ?? 60} min={30} max={100} onChange={v => set('bgBokehBlur', v)} unit="px" /></Row>
+                </>
+              )}
 
               {/* 17-Silver Settings */}
               {theme.bgPreset === '25-silver-radial' && (
@@ -675,13 +666,32 @@ export default function Settings({
               )}
 
               {/* 18-Wall Settings */}
-              }
+              {theme.bgPreset === '26-wall-texture' && (
+                <>
+                  <Row label="Base color"><ColorPick value={theme.bgWallColor || '#0f0f15'} onChange={v => set('bgWallColor', v)} /></Row>
+                  <Row label="Texture intensity"><Slider val={theme.bgWallTexture ?? 100} min={50} max={150} onChange={v => set('bgWallTexture', v)} unit="%" /></Row>
+                  <Row label="Roughness"><Slider val={theme.bgWallRough ?? 100} min={50} max={150} onChange={v => set('bgWallRough', v)} unit="%" /></Row>
+                </>
+              )}
 
               {/* 19-Concrete Settings */}
-              }
+              {theme.bgPreset === '27-concrete' && (
+                <>
+                  <Row label="Base color"><ColorPick value={theme.bgConcreteColor || '#54585a'} onChange={v => set('bgConcreteColor', v)} /></Row>
+                  <Row label="Texture density"><Slider val={theme.bgConcreteDensity ?? 100} min={50} max={150} onChange={v => set('bgConcreteDensity', v)} unit="%" /></Row>
+                </>
+              )}
 
               {/* 20-Metal Settings */}
-              }
+              {theme.bgPreset === '28-brushed-metal' && (
+                <>
+                  <Row label="Base color"><ColorPick value={theme.bgC1 || '#9a9fb0'} onChange={v => set('bgC1', v)} /></Row>
+                  <Row label="Dark tone"><ColorPick value={theme.bgC2 || '#7a8090'} onChange={v => set('bgC2', v)} /></Row>
+                  <Row label="Shine intensity"><Slider val={theme.bgMetalShine ?? 25} min={10} max={40} onChange={v => set('bgMetalShine', v)} unit="%" /></Row>
+                  <Row label="Rotation speed"><Slider val={theme.bgMetalSpeed ?? 20} min={10} max={40} onChange={v => set('bgMetalSpeed', v)} unit="s" /></Row>
+                  <Row label="Grain detail"><Slider val={theme.bgMetalGrain ?? 2} min={1} max={4} onChange={v => set('bgMetalGrain', v)} unit="px" /></Row>
+                </>
+              )}
             </Group>
           )
 
@@ -808,13 +818,15 @@ export default function Settings({
               <Row label="Section gap (h)"><Slider label="Section gap (h)" val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
               <Row label="Link gap"><Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={-50} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
               <Row label="Link left padding"><Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-140} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
-              <SectionTitle>Page scale</SectionTitle>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
-                {PAGE_SCALES.map(v => (
-                  <button key={v} className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`} onClick={() => set('pageScale', v)}>
-                    {Math.round(v * 100)}%
-                  </button>
-                ))}
+                            <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
+                <SectionTitle>Page scale</SectionTitle>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
+                  {PAGE_SCALES.map(v => (
+                    <button key={v} className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`} onClick={() => set('pageScale', v)}>
+                      {Math.round(v * 100)}%
+                    </button>
+                  ))}
+                </div>
               </div>
             </Group>
           )
@@ -920,7 +932,7 @@ export default function Settings({
           if (sectionId === 'favicons') return <Group title="Favicons" defaultOpen={false} {...commonGroupProps}><Row label="Show favicons"><Toggle label="Show favicons" checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} /></Row><Row label="Favicon size"><Slider label="Favicon size" val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" /></Row><Row label="Favicon opacity"><Slider label="Favicon opacity" val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('faviconOpacity', v / 100)} unit="%" /></Row><Row label="Greyscale"><Toggle label="Greyscale" checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} /></Row><Row label="Load delay"><Slider label="Load delay" val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5} onChange={v => set('faviconDelay', v)} unit="s" /></Row><Row label="Fade-in duration"><Slider label="Fade-in duration" val={theme.faviconFade ?? 0.3} min={0} max={2} step={0.1} onChange={v => set('faviconFade', v)} unit="s" /></Row></Group>
           if (sectionId === 'notes') return (
             <Group title="Notes" defaultOpen={false} {...commonGroupProps}>
-              <Row label="Panel width"><Slider val={theme.notesWidth ?? 288} min={200} max={550} onChange={v => set('notesWidth', v)} unit="px" /></Row>
+              <Row label="Panel width"><Slider val={theme.notesWidth ?? 288} min={200} max={400} onChange={v => set('notesWidth', v)} unit="px" /></Row>
               <Row label="Font family">
                 <select className="input" style={{ fontSize: '0.78em' }} value={theme.notesFontFamily || 'inherit'} onChange={e => set('notesFontFamily', e.target.value)}>
                   <option value="inherit">Same as app</option>
@@ -996,7 +1008,7 @@ export default function Settings({
             <Group title="News" defaultOpen={false} {...commonGroupProps}>
               <Row label="Show news button"><Toggle checked={!(theme.hideNews ?? false)} onChange={v => set('hideNews', !v)} /></Row>
               <SectionTitle>Appearance</SectionTitle>
-              <Row label="Dropdown font size"><Slider val={theme.newsFontSize ?? 12} min={9} max={18} onChange={v => set('newsFontSize', v)} unit="px" /></Row>
+              <Row label="Font size"><Slider val={theme.newsFontSize ?? 12} min={9} max={18} onChange={v => set('newsFontSize', v)} unit="px" /></Row>
               <Row label="Padding H"><Slider val={theme.newsPaddingH ?? 14} min={4} max={32} onChange={v => set('newsPaddingH', v)} unit="px" /></Row>
               <Row label="Padding V"><Slider val={theme.newsPaddingV ?? 8} min={2} max={24} onChange={v => set('newsPaddingV', v)} unit="px" /></Row>
               <SectionTitle>Feeds</SectionTitle>
@@ -1178,7 +1190,7 @@ export default function Settings({
             onClick={onSignOut}>Sign out</button>
         </div>
       )}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 10000, width: 'min(480px, 75vw)' }}>
+      <div className="settings-footer" data-side={side} style={{ zIndex: 10001, width: 'min(480px, 75vw)', boxSizing: 'border-box' }}>
         <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
           onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
           {side === 'right' ? '⇐ Left' : 'Right ⇒'}

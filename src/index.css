@@ -100,7 +100,6 @@ body {
 #root {
   min-height: 100vh;
   overflow: hidden;
-  isolation: isolate;
 }
 
 button {
@@ -265,17 +264,7 @@ html.bg-01-solid { background: var(--bg); }
 /* 02. Noise */
 html.bg-02-noise {
   background: var(--bg);
-}
-html.bg-02-noise::before {
-  content: ''; position: fixed; inset: 0; z-index: -1;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 512px 512px;
-  opacity: var(--bg-noise-opacity, 0.05);
-  mix-blend-mode: screen;
-}
-html.bg-02-noise::after {
-  content: ''; position: fixed; inset: 0; z-index: -1;
-  background: var(--bg-noise-c1, rgba(26,32,96,0.04));
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
 }
 
 /* 03. Dots - Repeating shape patterns */
@@ -396,7 +385,10 @@ html.bg-07-nebula {
 
 /* 16. Starfield (old dense) */
 html.bg-16-starfield-old { 
-  background: linear-gradient(to bottom, var(--bg-08-c1, #05050f) 0%, var(--bg-08-c2, #000308) 100%); 
+  background: linear-gradient(to bottom,
+    var(--bg-08-c1, #05050f) 0%,
+    var(--bg-08-mid, #020518) 50%,
+    var(--bg-08-c2, #000308) 100%);
   overflow: hidden; 
 }
 html.bg-16-starfield-old::before, html.bg-16-starfield-old::after {
@@ -554,8 +546,7 @@ html.bg-29-star-streaks::after {
   --plasma-c5: rgba(200,10,0,0.16);  --plasma-c6: rgba(255,100,5,0.20);
 }
 .bg-18-inferno::before {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 80% 60% at 20% 30%, var(--plasma-c1) 0%,transparent 65%),
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
@@ -565,8 +556,7 @@ html.bg-29-star-streaks::after {
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
 .bg-18-inferno::after {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
@@ -583,8 +573,7 @@ html.bg-29-star-streaks::after {
   --plasma-c5: rgba(0,180,160,0.16); --plasma-c6: rgba(40,220,180,0.18);
 }
 .bg-19-mint::before {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 80% 60% at 20% 30%, var(--plasma-c1) 0%,transparent 65%),
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
@@ -594,8 +583,7 @@ html.bg-29-star-streaks::after {
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
 .bg-19-mint::after {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
@@ -612,8 +600,7 @@ html.bg-29-star-streaks::after {
   --plasma-c5: rgba(160,50,200,0.16); --plasma-c6: rgba(200,70,180,0.18);
 }
 .bg-20-dusk::before {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 80% 60% at 20% 30%, var(--plasma-c1) 0%,transparent 65%),
     radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
@@ -623,8 +610,7 @@ html.bg-29-star-streaks::after {
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
 .bg-20-dusk::after {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -120px;
   background:
     radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
     radial-gradient(ellipse 80% 45% at 15% 75%, rgba(255,180,80,0.07) 0%,transparent 65%),
@@ -663,28 +649,22 @@ html.bg-29-star-streaks::after {
 /* 22. Fog - Atmospheric mist */
 .bg-22-fog { background: var(--bg-fog-bg, #05050d); overflow: hidden; }
 .bg-22-fog::before {
-  content: ''; position: fixed; top: -10%; left: -10%; width: 120%; height: 120%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -150px;
   background:
-    radial-gradient(ellipse 70% 65% at 25% 45%, var(--bg-fog-c1, rgba(70,75,70,0.24)) 0%,transparent 68%),
-    radial-gradient(ellipse 55% 80% at 72% 58%, var(--bg-fog-c1, rgba(65,65,60,0.20)) 0%,transparent 68%),
-    radial-gradient(ellipse 80% 55% at 48% 82%, var(--bg-fog-c1, rgba(60,70,65,0.18)) 0%,transparent 68%),
-    radial-gradient(ellipse 50% 60% at 10% 30%, var(--bg-fog-c1, rgba(55,60,55,0.15)) 0%,transparent 68%),
-    radial-gradient(ellipse 45% 55% at 90% 20%, var(--bg-fog-c1, rgba(58,62,58,0.14)) 0%,transparent 68%);
+    radial-gradient(ellipse 70% 55% at 25% 45%, var(--bg-fog-c1, rgba(50,60,110,0.22)) 0%,transparent 70%),
+    radial-gradient(ellipse 55% 70% at 72% 58%, var(--bg-fog-c1, rgba(40,50,100,0.18)) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 45% at 48% 82%, var(--bg-fog-c1, rgba(45,55,105,0.15)) 0%,transparent 70%);
   filter: blur(var(--bg-fog-blur, 75px));
-  animation: fog-a 14s ease-in-out infinite alternate;
+  animation: fog-a 42s ease-in-out infinite alternate;
 }
 .bg-22-fog::after {
-  content: ''; position: fixed; top: -10%; left: -10%; width: 120%; height: 120%;
-  will-change: transform;
+  content: ''; position: absolute; inset: -150px;
   background:
-    radial-gradient(ellipse 60% 75% at 78% 22%, var(--bg-fog-c2, rgba(50,55,45,0.20)) 0%,transparent 68%),
-    radial-gradient(ellipse 75% 55% at 18% 68%, var(--bg-fog-c2, rgba(55,50,45,0.18)) 0%,transparent 68%),
-    radial-gradient(ellipse 50% 70% at 50% 40%, var(--bg-fog-c2, rgba(45,50,45,0.15)) 0%,transparent 68%),
-    radial-gradient(ellipse 40% 60% at 35% 80%, var(--bg-fog-c2, rgba(48,52,48,0.14)) 0%,transparent 68%),
-    radial-gradient(ellipse 55% 45% at 70% 70%, var(--bg-fog-c2, rgba(52,55,50,0.13)) 0%,transparent 68%);
+    radial-gradient(ellipse 60% 65% at 78% 22%, var(--bg-fog-c2, rgba(35,55,105,0.16)) 0%,transparent 70%),
+    radial-gradient(ellipse 75% 45% at 18% 68%, var(--bg-fog-c2, rgba(50,45,100,0.14)) 0%,transparent 70%),
+    radial-gradient(ellipse 50% 60% at 50% 40%, var(--bg-fog-c2, rgba(40,40,90,0.10)) 0%,transparent 70%);
   filter: blur(var(--bg-fog-blur2, 95px));
-  animation: fog-b 20s ease-in-out infinite alternate-reverse;
+  animation: fog-b 58s ease-in-out infinite alternate-reverse;
 }
 
 /* 23. Scan - Scanning effect */
@@ -979,8 +959,8 @@ html.bg-29-carbon::after {
 }
 
 @keyframes starfield-drift {
-  from { transform: translate(0, 0); }
-  to   { transform: translate(-220px, -220px); }
+  0%   { transform: translate(   0px,    0px); }
+  100% { transform: translate(-220px, -220px); }
 }
 
 @keyframes plasma-shift-a {
@@ -1013,33 +993,12 @@ html.bg-29-carbon::after {
   66%  { transform: translate(42px,-58px) scale(0.94); }
   100% { transform: translate(-32px,72px) scale(1.03); }
 }
-/* 14-Smoke color 3 layer */
-html.bg-22-fog body::before {
-  content: ''; position: fixed; top: -10%; left: -10%; width: 120%; height: 120%;
-  pointer-events: none;
-  will-change: transform;
-  background:
-    radial-gradient(ellipse 55% 65% at 55% 35%, var(--bg-fog-c3, rgba(48,40,48,0.18)) 0%, transparent 68%),
-    radial-gradient(ellipse 40% 55% at 25% 70%, var(--bg-fog-c3, rgba(44,38,44,0.16)) 0%, transparent 68%),
-    radial-gradient(ellipse 50% 50% at 80% 60%, var(--bg-fog-c3, rgba(42,36,42,0.14)) 0%, transparent 68%),
-    radial-gradient(ellipse 35% 60% at 45% 15%, var(--bg-fog-c3, rgba(40,34,40,0.12)) 0%, transparent 68%);
-  filter: blur(80px);
-  animation: fog-c 17s ease-in-out infinite alternate;
-}
-@keyframes fog-c {
-  0%   { transform: translate(  0px,   0px); }
-  33%  { transform: translate( 40px,  35px); }
-  66%  { transform: translate(-50px, -28px); }
-  100% { transform: translate( 30px,  48px); }
-}
 
-@keyframes scan-sweep {
-  0%    { top: -2px;  opacity: 0; }
-  3%    { top: -2px;  opacity: 1; }
-  35%   { top: 100%; opacity: 1; }
-  36%   { top: 100%; opacity: 0; }
-  36.1% { top: -2px;  opacity: 0; }
-  100%  { top: -2px;  opacity: 0; }
+@keyframes scan-sweep { 
+  0% { top:-2px; opacity:0; } 
+  4% { opacity:1; } 
+  92% { opacity:0.85; } 
+  100% { top:100%; opacity:0; } 
 }
 
 /* App */
@@ -2972,7 +2931,8 @@ flex-shrink: 0;
   border-top: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
   display: flex;
   gap: 0.75rem;
-  z-index: 10;
+  z-index: 10001;
+  box-sizing: border-box;
 }
 
 .settings-footer[data-side='left'] {
@@ -3353,210 +3313,4 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   color: var(--text-dim);
   opacity: 0.5;
   pointer-events: none;
-}
-
-/* ── 10b LAVA ── */
-html.bg-18b-lava { background: #0a0200; overflow: hidden; }
-html.bg-18b-lava {
-  --lava18-c1: rgba(255,50,0,0.40); --lava18-c2: rgba(255,136,0,0.36);
-  --lava18-c3: rgba(255,200,0,0.28); --lava18-c4: rgba(200,30,0,0.20);
-  --lava18-c5: rgba(255,100,0,0.18); --lava18-c6: rgba(255,160,0,0.14);
-}
-html.bg-18b-lava::before {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  background:
-    radial-gradient(ellipse 60% 80% at 20% 90%, var(--lava18-c1) 0%, transparent 70%),
-    radial-gradient(ellipse 75% 55% at 75% 92%, var(--lava18-c2) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 65% at 50% 75%, var(--lava18-c3) 0%, transparent 68%),
-    radial-gradient(ellipse 40% 50% at 90% 65%, var(--lava18-c4) 0%, transparent 65%),
-    radial-gradient(ellipse 65% 40% at 10% 65%, var(--lava18-c1) 0%, transparent 65%),
-    radial-gradient(ellipse 90% 30% at 50% 100%, var(--lava18-c2) 0%, transparent 60%);
-  filter: blur(55px);
-  will-change: transform;
-  animation: lava18a 18s ease-in-out infinite alternate;
-}
-html.bg-18b-lava::after {
-  content: ''; position: fixed; top: -8%; left: -8%; width: 116%; height: 116%;
-  background:
-    radial-gradient(ellipse 45% 60% at 35% 80%, var(--lava18-c5) 0%, transparent 68%),
-    radial-gradient(ellipse 60% 45% at 65% 85%, var(--lava18-c6) 0%, transparent 68%),
-    radial-gradient(ellipse 35% 55% at 15% 92%, var(--lava18-c3) 0%, transparent 65%),
-    radial-gradient(ellipse 50% 40% at 85% 88%, var(--lava18-c2) 0%, transparent 65%),
-    radial-gradient(ellipse 18% 15% at 28% 96%, rgba(255,220,100,0.16) 0%, transparent 72%),
-    radial-gradient(ellipse 15% 12% at 62% 97%, rgba(255,200,80,0.13) 0%, transparent 72%);
-  filter: blur(70px);
-  will-change: transform;
-  animation: lava18b 25s ease-in-out infinite alternate-reverse;
-}
-@keyframes lava18a {
-  0%   { transform: translate(  0px,   0px) scale(1.00); }
-  20%  { transform: translate( 50px, -30px) scale(1.06); }
-  40%  { transform: translate(-35px,  45px) scale(0.95); }
-  60%  { transform: translate( 65px,  20px) scale(1.04); }
-  80%  { transform: translate(-20px, -50px) scale(1.08); }
-  100% { transform: translate(-50px,  60px) scale(0.97); }
-}
-@keyframes lava18b {
-  0%   { transform: translate(  0px,   0px) scale(1.00); }
-  25%  { transform: translate(-60px,  40px) scale(1.05); }
-  50%  { transform: translate( 40px, -60px) scale(0.95); }
-  75%  { transform: translate( 70px,  30px) scale(1.07); }
-  100% { transform: translate(-40px,  65px) scale(0.97); }
-}
-
-/* ── 22 AURORA ── */
-.bg-30-aurora { background-color: var(--aurora-bg, #01050f); overflow: hidden; }
-.bg-30-aurora::before {
-  content: ''; position: fixed; top: -10%; left: -8%; width: 116%; height: 120%; z-index: -1;
-  will-change: transform;
-  background:
-    radial-gradient(ellipse 220% 32% at 35%  8%, var(--aurora-c1a, rgba(0,220,120,0.28)) 0%, transparent 80%),
-    radial-gradient(ellipse 180% 24% at 68% 12%, var(--aurora-c2a, rgba(30,120,255,0.24)) 0%, transparent 78%),
-    radial-gradient(ellipse 150% 18% at 52% 16%, var(--aurora-c3a, rgba(140,40,255,0.18)) 0%, transparent 76%),
-    radial-gradient(ellipse 18% 80% at  5%  0%, var(--aurora-c1b, rgba(0,200,100,0.14)) 0%, transparent 88%),
-    radial-gradient(ellipse 20% 85% at 20%  0%, var(--aurora-c2a, rgba(30,120,255,0.12)) 0%, transparent 86%),
-    radial-gradient(ellipse 18% 75% at 36%  0%, var(--aurora-c3a, rgba(140,40,255,0.11)) 0%, transparent 88%),
-    radial-gradient(ellipse 22% 88% at 52%  0%, var(--aurora-c1a, rgba(0,220,120,0.14)) 0%, transparent 86%),
-    radial-gradient(ellipse 18% 78% at 68%  0%, var(--aurora-c2b, rgba(30,180,255,0.12)) 0%, transparent 90%),
-    radial-gradient(ellipse 20% 82% at 84%  0%, var(--aurora-c2a, rgba(30,120,255,0.12)) 0%, transparent 87%);
-  animation: aurora30a 22s ease-in-out infinite alternate;
-}
-.bg-30-aurora::after {
-  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-  background-image:
-    radial-gradient(2px 2px at 10% 15%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
-    radial-gradient(1px 1px at 23% 72%, rgba(255,255,255,var(--aurora-star-op,0.55)) 0,transparent 100%),
-    radial-gradient(3px 3px at 38%  8%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
-    radial-gradient(1px 1px at 52% 55%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%),
-    radial-gradient(2px 2px at 67% 88%, rgba(255,255,255,var(--aurora-star-op,0.80)) 0,transparent 100%),
-    radial-gradient(1px 1px at 81% 32%, rgba(255,255,255,var(--aurora-star-op,0.65)) 0,transparent 100%),
-    radial-gradient(2px 2px at 94% 65%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
-    radial-gradient(3px 3px at 18% 91%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
-    radial-gradient(1px 1px at 31% 26%, rgba(255,255,255,var(--aurora-star-op,0.70)) 0,transparent 100%),
-    radial-gradient(2px 2px at 44% 78%, rgba(255,255,255,var(--aurora-star-op,0.75)) 0,transparent 100%),
-    radial-gradient(3px 3px at 74% 12%, rgba(255,255,255,var(--aurora-star-op,0.85)) 0,transparent 100%),
-    radial-gradient(1px 1px at 87% 52%, rgba(255,255,255,var(--aurora-star-op,0.60)) 0,transparent 100%);
-  background-size: var(--aurora-star-tile,100%) var(--aurora-star-tile,100%);
-}
-@keyframes aurora30a {
-  0%   { transform: translate(  0px,   0px) scale(1.00); }
-  20%  { transform: translate( 55px, -25px) scale(1.06); }
-  40%  { transform: translate(-40px,  35px) scale(0.96); }
-  60%  { transform: translate( 70px,  20px) scale(1.04); }
-  80%  { transform: translate(-20px, -40px) scale(1.08); }
-  100% { transform: translate(-55px,  50px) scale(0.97); }
-}
-
-/* ── 23 DEEP OCEAN ── */
-.bg-31-deep-ocean { background: var(--ocean-bg, #000814); overflow: hidden; }
-.bg-31-deep-ocean {
-  --ocean-c1: rgba(0,120,200,0.22); --ocean-c2: rgba(0,60,120,0.32);
-  --ocean-c3: rgba(0,255,180,0.08); --ocean-c4: rgba(0,140,220,0.18);
-  --ocean-c5: rgba(0,40,100,0.22);  --ocean-c6: rgba(100,255,200,0.06);
-}
-.bg-31-deep-ocean::before {
-  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-  will-change: transform;
-  background:
-    radial-gradient(ellipse 20% 85% at 12%  0%, var(--ocean-c1) 0%, transparent 80%),
-    radial-gradient(ellipse 22% 90% at 36%  0%, var(--ocean-c1) 0%, transparent 82%),
-    radial-gradient(ellipse 24% 88% at 60%  0%, var(--ocean-c1) 0%, transparent 84%),
-    radial-gradient(ellipse 20% 80% at 84%  0%, var(--ocean-c1) 0%, transparent 80%),
-    radial-gradient(ellipse 16% 68% at 24%  0%, var(--ocean-c4) 0%, transparent 75%),
-    radial-gradient(ellipse 18% 72% at 48%  0%, var(--ocean-c4) 0%, transparent 78%),
-    radial-gradient(ellipse 16% 70% at 72%  0%, var(--ocean-c4) 0%, transparent 76%),
-    radial-gradient(ellipse 90% 55% at 50% 28%, var(--ocean-c2) 0%, transparent 72%),
-    radial-gradient(ellipse 70% 45% at 15% 55%, var(--ocean-c5) 0%, transparent 68%),
-    radial-gradient(ellipse 75% 40% at 85% 50%, var(--ocean-c5) 0%, transparent 65%),
-    radial-gradient(ellipse 28% 14% at 15% 92%, var(--ocean-c3) 0%, transparent 65%),
-    radial-gradient(ellipse 24% 12% at 45% 96%, var(--ocean-c6) 0%, transparent 60%),
-    radial-gradient(ellipse 32% 16% at 75% 90%, var(--ocean-c3) 0%, transparent 65%),
-    radial-gradient(ellipse 100% 50% at 50% 100%, rgba(0,0,6,0.92) 0%, transparent 70%);
-  animation: ocean31a 18s ease-in-out infinite alternate;
-}
-.bg-31-deep-ocean::after {
-  content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1;
-  background-image:
-    radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(100,220,255,0.55)) 0%, transparent 100%),
-    radial-gradient(circle 1px at 50% 50%, var(--ocean-particle, rgba(150,240,255,0.45)) 0%, transparent 100%),
-    radial-gradient(circle 2px at 50% 50%, var(--ocean-particle, rgba(80,200,255,0.35))  0%, transparent 100%);
-  background-size:
-    var(--ocean-tile-a, 180px 290px),
-    var(--ocean-tile-b, 120px 210px),
-    var(--ocean-tile-c, 250px 420px);
-  background-position: 40px 0, 85px 70px, 15px 140px;
-  animation: ocean31p 12s linear infinite;
-}
-@keyframes ocean31a {
-  0%   { transform: translate(  0px, 0px) scaleX(1.00); }
-  33%  { transform: translate(-30px, 0px) scaleX(1.06); }
-  66%  { transform: translate( 20px, 0px) scaleX(0.97); }
-  100% { transform: translate(-15px, 0px) scaleX(1.03); }
-}
-@keyframes ocean31p {
-  from { background-position: 40px 0, 85px 70px, 15px 140px; }
-  to   { background-position: 40px -290px, 85px -210px, 15px -420px; }
-}
-
-/* ── 24 LAVA LAMP ── */
-.bg-32-lava-lamp { background: var(--lava-bg, #080410); overflow: hidden; }
-.bg-32-lava-lamp {
-  --lava-c1: rgba(255,64,128,0.60); --lava-c2: rgba(255,128,32,0.55); --lava-c3: rgba(192,32,255,0.52);
-  --lava-c1g: rgba(255,64,128,0.22); --lava-c2g: rgba(255,128,32,0.20); --lava-c3g: rgba(192,32,255,0.18);
-}
-.bg-32-lava-lamp::before {
-  content: ''; position: fixed; top: -10%; left: -10%; width: 120%; height: 120%; z-index: -1;
-  will-change: transform;
-  background:
-    radial-gradient(ellipse 140% 140% at 50% 50%, var(--lava-c1g) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 50% at 25% 35%, var(--lava-c1) 0%, transparent 78%),
-    radial-gradient(ellipse 55% 45% at 72% 65%, var(--lava-c2) 0%, transparent 75%),
-    radial-gradient(ellipse 50% 40% at 55% 20%, var(--lava-c3) 0%, transparent 72%),
-    radial-gradient(ellipse 40% 33% at 85% 28%, var(--lava-c1) 0%, transparent 70%),
-    radial-gradient(ellipse 38% 30% at 12% 78%, var(--lava-c2) 0%, transparent 68%),
-    radial-gradient(ellipse 80% 60% at 30% 40%, var(--lava-c1g) 0%, transparent 80%);
-  animation: lava32a 20s ease-in-out infinite alternate;
-}
-.bg-32-lava-lamp::after {
-  content: ''; position: fixed; top: -10%; left: -10%; width: 120%; height: 120%; z-index: -1;
-  will-change: transform;
-  background:
-    radial-gradient(ellipse 140% 140% at 50% 50%, var(--lava-c2g) 0%, transparent 70%),
-    radial-gradient(ellipse 55% 47% at 62% 30%, var(--lava-c3) 0%, transparent 75%),
-    radial-gradient(ellipse 50% 43% at 22% 62%, var(--lava-c1) 0%, transparent 73%),
-    radial-gradient(ellipse 53% 45% at 82% 58%, var(--lava-c2) 0%, transparent 74%),
-    radial-gradient(ellipse 40% 35% at  8% 20%, var(--lava-c3) 0%, transparent 70%),
-    radial-gradient(ellipse 38% 33% at 92% 80%, var(--lava-c1) 0%, transparent 70%),
-    radial-gradient(ellipse 70% 53% at 55% 50%, var(--lava-c3g) 0%, transparent 78%);
-  animation: lava32b 16s ease-in-out infinite alternate-reverse;
-}
-@keyframes lava32a {
-  0%   { transform: translate(  0px,   0px) scale(1.00); }
-  20%  { transform: translate( 40px, -35px) scale(1.06); }
-  40%  { transform: translate(-30px,  45px) scale(0.95); }
-  60%  { transform: translate( 55px,  25px) scale(1.04); }
-  80%  { transform: translate(-15px, -45px) scale(1.08); }
-  100% { transform: translate(-45px,  55px) scale(0.97); }
-}
-@keyframes lava32b {
-  0%   { transform: translate(  0px,   0px) scale(1.00); }
-  25%  { transform: translate(-55px,  40px) scale(1.05); }
-  50%  { transform: translate( 35px, -55px) scale(0.95); }
-  75%  { transform: translate( 65px,  30px) scale(1.07); }
-  100% { transform: translate(-35px,  55px) scale(0.97); }
-}
-
-/* Settings footer always visible */
-.settings-footer { z-index: 10000 !important; width: min(480px, 75vw) !important; }
-
-/* Pinned dropdowns */
-.news-dropdown.news-pinned,.cal-dropdown.cal-pinned,.weather-dropdown.weather-pinned {
-  position: fixed; top: 52px; left: 50%; transform: translateX(-50%);
-  width: min(360px,96vw); max-height: 78vh; z-index: 9999;
-  box-shadow: 0 8px 40px rgba(0,0,0,0.55);
-}
-.news-dropdown.news-pinned { width: min(700px,96vw); }
-.cal-dropdown.cal-pinned   { width: min(500px,96vw); }
-.news-dropdown.news-pinned .news-articles,.cal-dropdown.cal-pinned .cal-dropdown-inner {
-  max-height: calc(78vh - 48px); overflow-y: auto;
 }
