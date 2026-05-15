@@ -601,7 +601,7 @@ export default function Settings({
                   <Row label="Blob color 3"><ColorPick value={theme.bgLavaC3 || '#c020ff'} onChange={v => set('bgLavaC3', v)} /></Row>
                   <Row label="Opacity"><Slider val={Math.round((theme.bgLavaOpacity ?? 0.85) * 100)} min={20} max={100} onChange={v => set('bgLavaOpacity', v/100)} unit="%" /></Row>
                 </>
-              )}}}
+              )}
 
               {/* 11-Forest Settings */}
               {theme.bgPreset === '19-mint' && (
