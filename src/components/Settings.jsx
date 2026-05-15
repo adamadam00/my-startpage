@@ -436,8 +436,7 @@ export default function Settings({
                 ].map(p => (
                   <button
                     key={p.v}
-                    className={`btn-xs${theme.bgPreset === p.v ? ' btn-primary' : ''}`}
-                    onClick={() => set('bgPreset', p.v)}
+                    className={`btn-xs$ => set('bgPreset', p.v)}
                   >
                     {p.label}
                   </button>
@@ -481,10 +480,7 @@ export default function Settings({
                 />
               </Row>
 
-              {/* Pattern colour/opacity - only for 02-Noise */}
-              }
-
-              {/* 03-Shapes Settings */}
+              {/* 03-Shapes Settings */
               {theme.bgPreset === '03-dots' && (
                 <>
                   <SectionTitle>Pattern type</SectionTitle>
@@ -542,20 +538,8 @@ export default function Settings({
               )}}
 
               {/* 08-Stars Settings */}
-              {theme.bgPreset === '16-starfield-old' && (
-                <>
-                  <Row label="Sky top"><ColorPick value={theme.bgC1 || '#05050f'} onChange={v => set('bgC1', v)} /></Row>
-                  <Row label="Sky bottom"><ColorPick value={theme.bgC2 || '#000308'} onChange={v => set('bgC2', v)} /></Row>
-                  <Row label="Star tint"><ColorPick value={theme.bgC3 || '#c8d2ff'} onChange={v => set('bgC3', v)} /></Row>
-                  <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={4} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
-                  <Row label="Star density"><Slider val={theme.bgStarDensity ?? 100} min={25} max={250} onChange={v => set('bgStarDensity', v)} unit="%" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgStarSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStarSpeed', v)} unit="×" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedStars ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedStars', v)} unit="×" /></Row>
-                </>
-              )}
 
               {/* 21-Star Streaks Settings */}
-              }
 
               {/* 09-Plasma Settings */}
               {theme.bgPreset === '17-plasma' && (
@@ -621,19 +605,8 @@ export default function Settings({
               )}}
 
               {/* 11-Mint Settings */}
-              {theme.bgPreset === '19-mint' && (
-                <>
-                  <Row label="Primary color"><ColorPick value={theme.bgMintC1 || '#00dc8c'} onChange={v => set('bgMintC1', v)} /></Row>
-                  <Row label="Secondary color"><ColorPick value={theme.bgMintC2 || '#00beff'} onChange={v => set('bgMintC2', v)} /></Row>
-                  <Row label="Accent color"><ColorPick value={theme.bgMintC3 || '#009664'} onChange={v => set('bgMintC3', v)} /></Row>
-                  <Row label="Animation speed"><Slider val={theme.bgMintSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgMintSpeed', v)} unit="×" /></Row>
-                  <Row label="Saturation"><Slider val={theme.bgMintSat ?? 100} min={50} max={150} onChange={v => set('bgMintSat', v)} unit="%" /></Row>
-                  <Row label="Speed"><Slider val={theme.bgSpeedForest ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedForest', v)} unit="×" /></Row>
-                </>
-              )}
 
               {/* 12-Dusk Settings */}
-              }
 
               {/* 13-Mono Settings */}
               {theme.bgPreset === '21-mono' && (
@@ -661,25 +634,14 @@ export default function Settings({
               )}
 
               {/* 15-Scan Settings */}
-              }
 
               {/* 16-Lt-Bokeh Settings */}
-              {theme.bgPreset === '24-light-bokeh' && (
-                <>
-                  <Row label="Bokeh color"><ColorPick value={theme.bgBokehColor || '#6c8fff'} onChange={v => set('bgBokehColor', v)} /></Row>
-                  <Row label="Glow intensity"><Slider val={theme.bgBokehGlow ?? 100} min={50} max={150} onChange={v => set('bgBokehGlow', v)} unit="%" /></Row>
-                  <Row label="Blur amount"><Slider val={theme.bgBokehBlur ?? 60} min={30} max={100} onChange={v => set('bgBokehBlur', v)} unit="px" /></Row>
-                </>
-              )}
 
               {/* 17-Silver Settings */}
-              }
 
               {/* 18-Wall Settings */}
-              }
 
               {/* 19-Concrete Settings */}
-              }
 
               {/* 20-Metal Settings */}
               {theme.bgPreset === '28-brushed-metal' && (
