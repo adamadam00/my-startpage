@@ -524,6 +524,23 @@ export default function Settings({
                 </>
               )}
 
+              {theme.bgPreset === '06-mesh' && (
+                <>
+                  <Row label="Color 1"><ColorPick value={theme.bgMeshC1 || '#7890ff'} onChange={v => set('bgMeshC1', v)} /></Row>
+                  <Row label="Color 2"><ColorPick value={theme.bgMeshC2 || '#9c6fff'} onChange={v => set('bgMeshC2', v)} /></Row>
+                  <Row label="Color 3"><ColorPick value={theme.bgMeshC3 || '#ff6b6b'} onChange={v => set('bgMeshC3', v)} /></Row>
+                  <Row label="Opacity"><Slider val={Math.round((theme.bgMeshOpacity ?? 0.18) * 100)} min={5} max={60} onChange={v => set('bgMeshOpacity', v/100)} unit="%" /></Row>
+                </>
+              )}
+
+              {theme.bgPreset === '07-nebula' && (
+                <>
+                  <Row label="Nebula color 1"><ColorPick value={theme.bgNebulaC1 || '#501a8c'} onChange={v => set('bgNebulaC1', v)} /></Row>
+                  <Row label="Nebula color 2"><ColorPick value={theme.bgNebulaC2 || '#143ca0'} onChange={v => set('bgNebulaC2', v)} /></Row>
+                  <Row label="Intensity"><Slider val={theme.bgNebulaIntensity ?? 100} min={20} max={200} onChange={v => set('bgNebulaIntensity', v)} unit="%" /></Row>
+                </>
+              )}
+
               {/* 08-Stars Settings */}
               {theme.bgPreset === '16-starfield-old' && (
                 <>
@@ -1161,20 +1178,12 @@ export default function Settings({
             onClick={onSignOut}>Sign out</button>
         </div>
       )}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
+      <div className="settings-footer" data-side={side} style={{ zIndex: 10000, width: 'min(480px, 75vw)' }}>
         <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
           onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
           {side === 'right' ? '⇐ Left' : 'Right ⇒'}
         </button>
         <button className="btn btn-primary" style={{ flex: 1 }}
-              {theme.bgPreset === '06-mesh' && (
-                <>
-                  <Row label="Color 1"><ColorPick value={theme.bgMeshC1 || '#7890ff'} onChange={v => set('bgMeshC1', v)} /></Row>
-                  <Row label="Color 2"><ColorPick value={theme.bgMeshC2 || '#9c6fff'} onChange={v => set('bgMeshC2', v)} /></Row>
-                  <Row label="Color 3"><ColorPick value={theme.bgMeshC3 || '#ff6b6b'} onChange={v => set('bgMeshC3', v)} /></Row>
-                  <Row label="Opacity"><Slider val={Math.round((theme.bgMeshOpacity ?? 0.18) * 100)} min={5} max={60} onChange={v => set('bgMeshOpacity', v/100)} unit="%" /></Row>
-                </>
-              )}
           onClick={() => { onSave(); onClose() }}>Save &amp; Close</button>
       </div>
     </>
