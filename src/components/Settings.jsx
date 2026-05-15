@@ -481,22 +481,7 @@ export default function Settings({
               </Row>
 
               {/* 03-Shapes Settings */
-              {theme.bgPreset === '03-dots' && (
-                <>
-                  <SectionTitle>Pattern type</SectionTitle>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.5rem' }}>
-                    {['circles', 'squares', 'diamonds', 'hexagons', 'triangles', 'stars'].map(p => (
-                      <button key={p} className={`btn-xs${theme.bgDotPattern === p ? ' btn-primary' : ''}`} onClick={() => set('bgDotPattern', p)}>
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                      </button>
-                    ))}
-                  </div>
-                  <Row label="Primary colour"><ColorPick value={theme.bgC1 || '#2a4a6a'} onChange={v => set('bgC1', v)} /></Row>
-                  <Row label="Secondary colour"><ColorPick value={theme.bgC2 || '#4a2a5a'} onChange={v => set('bgC2', v)} /></Row>
-                  <Row label="Pattern size"><Slider val={theme.bgDotScale ?? 24} min={8} max={80} onChange={v => set('bgDotScale', v)} unit="px" /></Row>
-                  <Row label="Opacity"><Slider val={Math.round((theme.bgShapeOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('bgShapeOpacity', v / 100)} unit="%" /></Row>
-                </>
-              )}
+              }
 
               {/* 04-Grid Settings */}
               {theme.bgPreset === '04-grid' && (
@@ -542,16 +527,7 @@ export default function Settings({
               {/* 21-Star Streaks Settings */}
 
               {/* 09-Plasma Settings */}
-              {theme.bgPreset === '17-plasma' && (
-                <>
-                  <Row label="Primary color"><ColorPick value={theme.bgPlasmaC1 || '#6c8fff'} onChange={v => set('bgPlasmaC1', v)} /></Row>
-                  <Row label="Secondary color"><ColorPick value={theme.bgPlasmaC2 || '#6bffb8'} onChange={v => set('bgPlasmaC2', v)} /></Row>
-                  <Row label="Accent color"><ColorPick value={theme.bgPlasmaC3 || '#9c6fff'} onChange={v => set('bgPlasmaC3', v)} /></Row>
-                  <Row label="Animation speed"><Slider val={theme.bgPlasmaSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgPlasmaSpeed', v)} unit="×" /></Row>
-                  <Row label="Blur amount"><Slider val={theme.bgPlasmaBlur ?? 55} min={20} max={100} onChange={v => set('bgPlasmaBlur', v)} unit="px" /></Row>
-                  <Row label="Intensity"><Slider val={theme.bgPlasmaFlow ?? 100} min={50} max={150} onChange={v => set('bgPlasmaFlow', v)} unit="%" /></Row>
-                </>
-              )}
+              }
 
               {/* 10-Inferno Settings */}
               {theme.bgPreset === '18-inferno' && (
@@ -609,15 +585,7 @@ export default function Settings({
               {/* 12-Dusk Settings */}
 
               {/* 13-Mono Settings */}
-              {theme.bgPreset === '21-mono' && (
-                <>
-                  <Row label="Primary color"><ColorPick value={theme.bgMonoC1 || '#3c508c'} onChange={v => set('bgMonoC1', v)} /></Row>
-                  <Row label="Secondary color"><ColorPick value={theme.bgMonoC2 || '#5064b4'} onChange={v => set('bgMonoC2', v)} /></Row>
-                  <Row label="Accent color"><ColorPick value={theme.bgMonoC3 || '#324678'} onChange={v => set('bgMonoC3', v)} /></Row>
-                  <Row label="Animation speed"><Slider val={theme.bgMonoSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgMonoSpeed', v)} unit="×" /></Row>
-                  <Row label="Contrast"><Slider val={theme.bgMonoContrast ?? 100} min={50} max={150} onChange={v => set('bgMonoContrast', v)} unit="%" /></Row>
-                </>
-              )}
+              }
 
               {/* 14-Fog Settings */}
               {theme.bgPreset === '22-fog' && (
@@ -644,15 +612,7 @@ export default function Settings({
               {/* 19-Concrete Settings */}
 
               {/* 20-Metal Settings */}
-              {theme.bgPreset === '28-brushed-metal' && (
-                <>
-                  <Row label="Base color"><ColorPick value={theme.bgC1 || '#9a9fb0'} onChange={v => set('bgC1', v)} /></Row>
-                  <Row label="Dark tone"><ColorPick value={theme.bgC2 || '#7a8090'} onChange={v => set('bgC2', v)} /></Row>
-                  <Row label="Shine intensity"><Slider val={theme.bgMetalShine ?? 25} min={10} max={40} onChange={v => set('bgMetalShine', v)} unit="%" /></Row>
-                  <Row label="Rotation speed"><Slider val={theme.bgMetalSpeed ?? 20} min={10} max={40} onChange={v => set('bgMetalSpeed', v)} unit="s" /></Row>
-                  <Row label="Grain detail"><Slider val={theme.bgMetalGrain ?? 2} min={1} max={4} onChange={v => set('bgMetalGrain', v)} unit="px" /></Row>
-                </>
-              )}
+              }
             </Group>
           )
 
