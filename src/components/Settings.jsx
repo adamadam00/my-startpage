@@ -560,7 +560,7 @@ export default function Settings({
 
                   <Row label="Intensity"><Slider val={theme.bgInfernoIntensity ?? 100} min={50} max={150} onChange={v => set('bgInfernoIntensity', v)} unit="%" /></Row>
                 </>
-              )
+              )}
               {theme.bgPreset === '18b-lava' && (
                 <>
                   <Row label="Lava color 1"><ColorPick value={theme.bgLavaC1 || '#ff3200'} onChange={v => set('bgLavaC1', v)} /></Row>
