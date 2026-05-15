@@ -503,7 +503,7 @@ export default function Settings({
                   <Row label="Animation speed"><Slider val={theme.bgGradientSpeed ?? 25} min={5} max={60} onChange={v => set('bgGradientSpeed', v)} unit="s" /></Row>
                   <Row label="Speed"><Slider val={theme.bgSpeedGradient ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedGradient', v)} unit="×" /></Row>
                 </>
-              )
+              )}
 
               {theme.bgPreset === '06-mesh' && (
                 <>
@@ -537,7 +537,7 @@ export default function Settings({
                   <Row label="Intensity"><Slider val={theme.bgInfernoIntensity ?? 100} min={50} max={150} onChange={v => set('bgInfernoIntensity', v)} unit="%" /></Row>
                   <Row label="Speed"><Slider val={theme.bgSpeedInferno ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedInferno', v)} unit="×" /></Row>
                 </>
-              )
+              )}
 
               {theme.bgPreset === '18b-lava' && (
                 <>
