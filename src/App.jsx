@@ -847,8 +847,7 @@ function applyTheme(t) {
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
-  const speed = t.bgAnimSpeed ?? 1
-  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(2) + 's')
+  const dur = (b) => parseFloat(b) <= 0 ? '9999s' : (parseFloat(b).toFixed(2) + 's')
   const c1 = ps.c1 || null
   const c2 = ps.c2 || null
   const c3 = ps.c3 || null
@@ -893,13 +892,16 @@ function applyTheme(t) {
     s('background-color', t.bgNoiseBase || '#050510', 'html.bg-02-noise')
     if (t.bgNoiseC1) { const r=hexRgb(t.bgNoiseC1); s('--bg-noise-c1', `rgba(${r},${t.bgNoiseOpacity??0.04})`) }
     else s('--bg-noise-c1', `rgba(26,32,96,${t.bgNoiseOpacity??0.04})`)
-    s('--bg-anim-speed', (t.bgSpeedNoise ?? 1) * (t.bgAnimSpeed ?? 1))
+    s('--bg-anim-speed', t.bgSpeedNoise ?? 1)
   }
 
   // 14-smoke color wiring
   if (t.bgPreset === '22-fog') {
     if (t.bgFogC1) { const r=hexRgb(t.bgFogC1); s('--bg-fog-c1', `rgba(${r},0.25)`) }
     if (t.bgFogC2) { const r=hexRgb(t.bgFogC2); s('--bg-fog-c2', `rgba(${r},0.20)`) }
+    if (t.bgFogC3) { const r=hexRgb(t.bgFogC3); s('--bg-fog-c3', `rgba(${r},0.18)`) }
+    const sm = t.bgSpeedSmoke ?? 1
+    s('--fog-dur-a', (14/sm).toFixed(2)+'s'); s('--fog-dur-b', (20/sm).toFixed(2)+'s')
   }
 
   // 10b-lava
@@ -1194,7 +1196,7 @@ function applyTheme(t) {
   }
 
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
-  s('--bg-anim-speed', Math.min(t.bgAnimSpeed ?? 1, 20))
+  s('--bg-anim-speed', t.bgSpeedNoise ?? 1)
   if (t.bgC1) s('--bg-c1', t.bgC1)
   if (t.bgC2) s('--bg-c2', t.bgC2)
   if (t.bgC3) s('--bg-c3', t.bgC3)
@@ -1260,7 +1262,7 @@ function applyTheme(t) {
   s('--bg-star-op1', t.bgStarOp1 ?? 1)
   s('--bg-star-op2', t.bgStarOp2 ?? 0.55)
   s('--bg-star-op3', t.bgStarOp3 ?? 0.30)
-  s('--bg-star-speed', (t.bgSpeedStars ?? 1) * (t.bgAnimSpeed ?? 1))
+  s('--bg-star-speed', t.bgSpeedStars ?? 1)
   // Star streaks
   s('--bg-streak-bg', t.bgStreakBg || '#02020f')
   if (t.bgStreakC1) { const r = hexRgb(t.bgStreakC1); s('--bg-streak-c1', `rgba(${r},0.9)`) }

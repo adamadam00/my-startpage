@@ -468,17 +468,7 @@ export default function Settings({
                 </>
               )}
 
-              <Row label="Animation speed">
-                <Slider
-                  label="Animation speed"
-                  val={theme.bgAnimSpeed ?? 1}
-                  min={0}
-                  max={20}
-                  step={0.1}
-                  onChange={v => set('bgAnimSpeed', v)}
-                  unit="×"
-                />
-              </Row>
+              
 
               <Row label="Background blur">
                 <Slider
@@ -656,6 +646,7 @@ export default function Settings({
                 <>
                   <Row label="Smoke color 1"><ColorPick value={theme.bgFogC1 || '#505050'} onChange={v => set('bgFogC1', v)} /></Row>
                   <Row label="Smoke color 2"><ColorPick value={theme.bgFogC2 || '#404035'} onChange={v => set('bgFogC2', v)} /></Row>
+                  <Row label="Smoke color 3"><ColorPick value={theme.bgFogC3 || '#302830'} onChange={v => set('bgFogC3', v)} /></Row>
                   <Row label="Density"><Slider val={theme.bgFogDensity ?? 100} min={30} max={150} onChange={v => set('bgFogDensity', v)} unit="%" /></Row>
                   <Row label="Speed"><Slider val={theme.bgSpeedSmoke ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedSmoke', v)} unit="×" /></Row>
                 </>
