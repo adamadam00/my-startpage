@@ -1190,7 +1190,7 @@ export default function Settings({
             onClick={onSignOut}>Sign out</button>
         </div>
       )}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 10001, width: 'min(480px, 75vw)', boxSizing: 'border-box' }}>
+      <div className="settings-footer" data-side={side}>
         <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
           onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
           {side === 'right' ? '⇐ Left' : 'Right ⇒'}
