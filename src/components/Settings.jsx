@@ -480,8 +480,7 @@ export default function Settings({
                 />
               </Row>
 
-              {/* 03-Shapes Settings */
-              }
+              {/* 03-Shapes Settings */}
 
               {/* 04-Grid Settings */}
               {theme.bgPreset === '04-grid' && (
@@ -520,14 +519,13 @@ export default function Settings({
                   <Row label="Nebula color 1"><ColorPick value={theme.bgNebulaC1 || '#501a8c'} onChange={v => set('bgNebulaC1', v)} /></Row>
                   <Row label="Nebula color 2"><ColorPick value={theme.bgNebulaC2 || '#143ca0'} onChange={v => set('bgNebulaC2', v)} /></Row>
                 </>
-              )}}
+              )}
 
               {/* 08-Stars Settings */}
 
               {/* 21-Star Streaks Settings */}
 
               {/* 09-Plasma Settings */}
-              }
 
               {/* 10-Inferno Settings */}
               {theme.bgPreset === '18-inferno' && (
@@ -578,14 +576,13 @@ export default function Settings({
                   <Row label="Blob color 3"><ColorPick value={theme.bgLavaC3 || '#c020ff'} onChange={v => set('bgLavaC3', v)} /></Row>
                   <Row label="Opacity"><Slider val={Math.round((theme.bgLavaOpacity ?? 0.85) * 100)} min={20} max={100} onChange={v => set('bgLavaOpacity', v/100)} unit="%" /></Row>
                 </>
-              )}}
+              )}
 
               {/* 11-Mint Settings */}
 
               {/* 12-Dusk Settings */}
 
               {/* 13-Mono Settings */}
-              }
 
               {/* 14-Fog Settings */}
               {theme.bgPreset === '22-fog' && (
@@ -612,7 +609,6 @@ export default function Settings({
               {/* 19-Concrete Settings */}
 
               {/* 20-Metal Settings */}
-              }
             </Group>
           )
 
