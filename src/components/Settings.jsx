@@ -416,25 +416,23 @@ export default function Settings({
               <SectionTitle>Preset</SectionTitle>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.28rem', padding: '0 0.75rem 0.5rem' }}>
                 {[
-                  { label: '01-Solid',        v: '01-solid'          },
-                  { label: '* 02-Noise',      v: '02-noise'          },
-                  { label: '04-Grid',         v: '04-grid'           },
-                  { label: '* 05-Gradient',   v: '05-gradient'       },
-                  { label: '* 06-Mesh',       v: '06-mesh'           },
-                  { label: '* 07-Nebula',     v: '07-nebula'         },
-                  { label: '* 08-Stars',      v: '16-starfield-old'  },
-                  { label: '* 08b-Streaks',   v: '29-star-streaks'   },
-                  { label: '* 10-Inferno',    v: '18-inferno'        },
-                  { label: '* 10b-Lava',      v: '18b-lava'          },
-                  { label: '* 11-Forest',     v: '19-mint'           },
-                  { label: '* 12-Dusk',       v: '20-dusk'           },
-                  { label: '* 14-Smoke',      v: '22-fog'            },
-                  { label: '* 15-Scan',       v: '23-scan'           },
-                  { label: '16-Lt-Bokeh',     v: '24-light-bokeh'    },
-                  { label: '17-Silver',       v: '25-silver-radial'  },
-                  { label: '* 22-Aurora',     v: '30-aurora'         },
-                  { label: '* 23-DeepOcean',  v: '31-deep-ocean'     },
-                  { label: '* 24-LavaLamp',   v: '32-lava-lamp'      }
+                  { label: 'Solid',       v: '01-solid'          },
+                  { label: 'Grid',        v: '04-grid'           },
+                  { label: 'Silver',      v: '25-silver-radial'  },
+                  { label: '* Noise',     v: '02-noise'          },
+                  { label: '* Gradient',  v: '05-gradient'       },
+                  { label: '* Mesh',      v: '06-mesh'           },
+                  { label: '* Nebula',    v: '07-nebula'         },
+                  { label: '* Stars',     v: '16-starfield-old'  },
+                  { label: '* Inferno',   v: '18-inferno'        },
+                  { label: '* Lava',      v: '18b-lava'          },
+                  { label: '* Forest',    v: '19-mint'           },
+                  { label: '* Dusk',      v: '20-dusk'           },
+                  { label: '* Smoke',     v: '22-fog'            },
+                  { label: '* Scan',      v: '23-scan'           },
+                  { label: '* Aurora',    v: '30-aurora'         },
+                  { label: '* Deep Ocean',v: '31-deep-ocean'     },
+                  { label: '* Lava Lamp', v: '32-lava-lamp'      },
                 ].map(p => (
                   <button
                     key={p.v}
@@ -475,8 +473,8 @@ export default function Settings({
                   label="Animation speed"
                   val={theme.bgAnimSpeed ?? 1}
                   min={0}
-                  max={50}
-                  step={0.5}
+                  max={20}
+                  step={0.1}
                   onChange={v => set('bgAnimSpeed', v)}
                   unit="×"
                 />
@@ -499,6 +497,7 @@ export default function Settings({
                   <Row label="Base color"><ColorPick value={theme.bgNoiseBase || '#050510'} onChange={v => set('bgNoiseBase', v)} /></Row>
                   <Row label="Noise color"><ColorPick value={theme.bgNoiseC1 || '#1a2060'} onChange={v => set('bgNoiseC1', v)} /></Row>
                   <Row label="Noise opacity"><Slider val={Math.round((theme.bgNoiseOpacity ?? 0.04) * 100)} min={1} max={40} onChange={v => set('bgNoiseOpacity', v/100)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedNoise ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedNoise', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -516,11 +515,11 @@ export default function Settings({
               {/* 05-Gradient Settings */}
               {theme.bgPreset === '05-gradient' && (
                 <>
-                  <Row label="Color 1 (top-left)"><ColorPick value={theme.bgC1 || '#1a2a4a'} onChange={v => set('bgC1', v)} /></Row>
-                  <Row label="Color 2 (center)"><ColorPick value={theme.bgC2 || '#2a1a3a'} onChange={v => set('bgC2', v)} /></Row>
-                  <Row label="Color 3 (bottom-right)"><ColorPick value={theme.bgC3 || '#1a3a2a'} onChange={v => set('bgC3', v)} /></Row>
+                  <Row label="Color 1"><ColorPick value={theme.bgC1 || '#1a2a4a'} onChange={v => set('bgC1', v)} /></Row>
+                  <Row label="Color 2"><ColorPick value={theme.bgC2 || '#2a1a3a'} onChange={v => set('bgC2', v)} /></Row>
+                  <Row label="Color 3"><ColorPick value={theme.bgC3 || '#1a3a2a'} onChange={v => set('bgC3', v)} /></Row>
                   <Row label="Angle"><Slider val={theme.bgGradientAngle ?? 135} min={0} max={360} onChange={v => set('bgGradientAngle', v)} unit="°" /></Row>
-
+                  <Row label="Speed"><Slider val={theme.bgSpeedGradient ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedGradient', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -530,6 +529,7 @@ export default function Settings({
                   <Row label="Color 2"><ColorPick value={theme.bgMeshC2 || '#9c6fff'} onChange={v => set('bgMeshC2', v)} /></Row>
                   <Row label="Color 3"><ColorPick value={theme.bgMeshC3 || '#ff6b6b'} onChange={v => set('bgMeshC3', v)} /></Row>
                   <Row label="Opacity"><Slider val={Math.round((theme.bgMeshOpacity ?? 0.18) * 100)} min={5} max={60} onChange={v => set('bgMeshOpacity', v/100)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedMesh ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedMesh', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -538,6 +538,7 @@ export default function Settings({
                   <Row label="Nebula color 1"><ColorPick value={theme.bgNebulaC1 || '#501a8c'} onChange={v => set('bgNebulaC1', v)} /></Row>
                   <Row label="Nebula color 2"><ColorPick value={theme.bgNebulaC2 || '#143ca0'} onChange={v => set('bgNebulaC2', v)} /></Row>
                   <Row label="Intensity"><Slider val={theme.bgNebulaIntensity ?? 100} min={20} max={200} onChange={v => set('bgNebulaIntensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedNebula ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedNebula', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -552,11 +553,12 @@ export default function Settings({
                   <Row label="Layer 3 opacity"><Slider val={Math.round((theme.bgStarOp3 ?? 0.3) * 100)} min={0} max={100} onChange={v => set('bgStarOp3', v/100)} unit="%" /></Row>
                   <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={4} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
                   <Row label="Star density"><Slider val={theme.bgStarDensity ?? 100} min={25} max={250} onChange={v => set('bgStarDensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedStars ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedStars', v)} unit="×" /></Row>
                 </>
               )}
 
               {/* 21-Star Streaks Settings */}
-              {theme.bgPreset === '29-star-streaks' && (
+              {false && (
                 <>
                   <Row label="Sky color"><ColorPick value={theme.bgStreakBg || '#02020f'} onChange={v => set('bgStreakBg', v)} /></Row>
                   <Row label="Streak color"><ColorPick value={theme.bgStreakC1 || '#ffffff'} onChange={v => set('bgStreakC1', v)} /></Row>
@@ -576,6 +578,7 @@ export default function Settings({
                   <Row label="Ember color"><ColorPick value={theme.bgInfernoC3 || '#dc1400'} onChange={v => set('bgInfernoC3', v)} /></Row>
 
                   <Row label="Intensity"><Slider val={theme.bgInfernoIntensity ?? 100} min={50} max={150} onChange={v => set('bgInfernoIntensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedInferno ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedInferno', v)} unit="×" /></Row>
                 </>
               )}
               {theme.bgPreset === '18b-lava' && (
@@ -584,6 +587,7 @@ export default function Settings({
                   <Row label="Lava color 2"><ColorPick value={theme.bgLavaC2 || '#ff8800'} onChange={v => set('bgLavaC2', v)} /></Row>
                   <Row label="Lava color 3"><ColorPick value={theme.bgLavaC3 || '#ffcc00'} onChange={v => set('bgLavaC3', v)} /></Row>
                   <Row label="Intensity"><Slider val={theme.bgLavaIntensity ?? 100} min={20} max={200} onChange={v => set('bgLavaIntensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedLava ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedLava', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -596,6 +600,7 @@ export default function Settings({
                   <Row label="Intensity"><Slider val={theme.bgAuroraIntensity ?? 100} min={20} max={200} onChange={v => set('bgAuroraIntensity', v)} unit="%" /></Row>
                   <Row label="Star brightness"><Slider val={Math.round((theme.bgAuroraStarOpacity ?? 0.75) * 100)} min={0} max={100} onChange={v => set('bgAuroraStarOpacity', v/100)} unit="%" /></Row>
                   <Row label="Star density"><Slider val={theme.bgAuroraStarDensity ?? 100} min={20} max={100} onChange={v => set('bgAuroraStarDensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedAurora ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedAurora', v)} unit="×" /></Row>
                 </>
               )}
               {theme.bgPreset === '31-deep-ocean' && (
@@ -608,6 +613,7 @@ export default function Settings({
                   <Row label="Particle color"><ColorPick value={theme.bgOceanParticleC || '#64dcff'} onChange={v => set('bgOceanParticleC', v)} /></Row>
                   <Row label="Particle density"><Slider val={theme.bgOceanDensity ?? 50} min={10} max={100} onChange={v => set('bgOceanDensity', v)} unit="%" /></Row>
                   <Row label="Intensity"><Slider val={theme.bgOceanIntensity ?? 100} min={20} max={180} onChange={v => set('bgOceanIntensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedOcean ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedOcean', v)} unit="×" /></Row>
                 </>
               )}
               {theme.bgPreset === '32-lava-lamp' && (
@@ -617,6 +623,7 @@ export default function Settings({
                   <Row label="Blob color 2"><ColorPick value={theme.bgLavaC2 || '#ff8020'} onChange={v => set('bgLavaC2', v)} /></Row>
                   <Row label="Blob color 3"><ColorPick value={theme.bgLavaC3 || '#c020ff'} onChange={v => set('bgLavaC3', v)} /></Row>
                   <Row label="Opacity"><Slider val={Math.round((theme.bgLavaOpacity ?? 0.85) * 100)} min={20} max={100} onChange={v => set('bgLavaOpacity', v/100)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedLavaLamp ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedLavaLamp', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -628,6 +635,7 @@ export default function Settings({
                   <Row label="Accent color"><ColorPick value={theme.bgMintC3 || '#009664'} onChange={v => set('bgMintC3', v)} /></Row>
 
                   <Row label="Saturation"><Slider val={theme.bgMintSat ?? 100} min={50} max={150} onChange={v => set('bgMintSat', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedForest ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedForest', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -639,16 +647,17 @@ export default function Settings({
                   <Row label="Accent color"><ColorPick value={theme.bgDuskC3 || '#8c28b4'} onChange={v => set('bgDuskC3', v)} /></Row>
 
                   <Row label="Glow intensity"><Slider val={theme.bgDuskGlow ?? 100} min={50} max={150} onChange={v => set('bgDuskGlow', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedDusk ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedDusk', v)} unit="×" /></Row>
                 </>
               )}
 
               {/* 14-Fog Settings */}
               {theme.bgPreset === '22-fog' && (
                 <>
-                  <Row label="Mist color"><ColorPick value={theme.bgC1 || '#3a4a6e'} onChange={v => set('bgC1', v)} /></Row>
-
+                  <Row label="Smoke color 1"><ColorPick value={theme.bgFogC1 || '#505050'} onChange={v => set('bgFogC1', v)} /></Row>
+                  <Row label="Smoke color 2"><ColorPick value={theme.bgFogC2 || '#404035'} onChange={v => set('bgFogC2', v)} /></Row>
                   <Row label="Density"><Slider val={theme.bgFogDensity ?? 100} min={30} max={150} onChange={v => set('bgFogDensity', v)} unit="%" /></Row>
-                  <Row label="Blur amount"><Slider val={theme.bgFogBlur ?? 85} min={40} max={120} onChange={v => set('bgFogBlur', v)} unit="px" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedSmoke ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedSmoke', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -660,11 +669,12 @@ export default function Settings({
 
                   <Row label="Line intensity"><Slider val={theme.bgScanIntensity ?? 100} min={50} max={200} onChange={v => set('bgScanIntensity', v)} unit="%" /></Row>
                   <Row label="Line thickness"><Slider val={theme.bgScanThickness ?? 1} min={1} max={5} onChange={v => set('bgScanThickness', v)} unit="px" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedScan ?? 1} min={0.1} max={5} step={0.1} onChange={v => set('bgSpeedScan', v)} unit="×" /></Row>
                 </>
               )}
 
               {/* 16-Lt-Bokeh Settings */}
-              {theme.bgPreset === '24-light-bokeh' && (
+              {false && (
                 <>
                   <Row label="Bokeh color"><ColorPick value={theme.bgBokehColor || '#6c8fff'} onChange={v => set('bgBokehColor', v)} /></Row>
                   <Row label="Glow intensity"><Slider val={theme.bgBokehGlow ?? 100} min={50} max={150} onChange={v => set('bgBokehGlow', v)} unit="%" /></Row>

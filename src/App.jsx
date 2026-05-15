@@ -893,6 +893,13 @@ function applyTheme(t) {
     s('background-color', t.bgNoiseBase || '#050510', 'html.bg-02-noise')
     if (t.bgNoiseC1) { const r=hexRgb(t.bgNoiseC1); s('--bg-noise-c1', `rgba(${r},${t.bgNoiseOpacity??0.04})`) }
     else s('--bg-noise-c1', `rgba(26,32,96,${t.bgNoiseOpacity??0.04})`)
+    s('--bg-anim-speed', (t.bgSpeedNoise ?? 1) * (t.bgAnimSpeed ?? 1))
+  }
+
+  // 14-smoke color wiring
+  if (t.bgPreset === '22-fog') {
+    if (t.bgFogC1) { const r=hexRgb(t.bgFogC1); s('--bg-fog-c1', `rgba(${r},0.25)`) }
+    if (t.bgFogC2) { const r=hexRgb(t.bgFogC2); s('--bg-fog-c2', `rgba(${r},0.20)`) }
   }
 
   // 10b-lava
@@ -1004,8 +1011,8 @@ function applyTheme(t) {
     html.bg-16-starfield-old::before { animation-duration: ${dur(80)} !important; }
     html.bg-16-starfield-old::after  { animation-duration: ${dur(130)} !important; }
     html.bg-05-gradient       { animation-duration: ${dur(25)} !important; }
-    html.bg-06-mesh           { animation-duration: ${dur(22)} !important; }
-    html.bg-07-nebula         { animation-duration: ${dur(30)} !important; }
+    html.bg-06-mesh           { animation-duration: ${dur(22/(t.bgSpeedMesh??1))} !important; }
+    html.bg-07-nebula         { animation-duration: ${dur(30/(t.bgSpeedNebula??1))} !important; }
     html.bg-fog::before       { animation-duration: ${dur(42)} !important; }
     html.bg-fog::after        { animation-duration: ${dur(58)} !important; }
     html.bg-22-fog::before    { animation-duration: ${dur(42)} !important; }
@@ -1016,8 +1023,12 @@ function applyTheme(t) {
     html.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
     .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before { animation-duration: ${dur(20)} !important; }
     .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after  { animation-duration: ${dur(28)} !important; }
-    .bg-layer:is(.bg-17-plasma,.bg-18-inferno,.bg-19-mint,.bg-20-dusk,.bg-21-mono)::before { animation-duration: ${dur(20)} !important; }
-    .bg-layer:is(.bg-17-plasma,.bg-18-inferno,.bg-19-mint,.bg-20-dusk,.bg-21-mono)::after  { animation-duration: ${dur(28)} !important; }
+    html.bg-18-inferno::before { animation-duration: ${dur(20/(t.bgSpeedInferno??1))} !important; }
+    html.bg-18-inferno::after  { animation-duration: ${dur(28/(t.bgSpeedInferno??1))} !important; }
+    html.bg-19-mint::before    { animation-duration: ${dur(20/(t.bgSpeedForest??1))} !important; }
+    html.bg-19-mint::after     { animation-duration: ${dur(28/(t.bgSpeedForest??1))} !important; }
+    html.bg-20-dusk::before    { animation-duration: ${dur(20/(t.bgSpeedDusk??1))} !important; }
+    html.bg-20-dusk::after     { animation-duration: ${dur(28/(t.bgSpeedDusk??1))} !important; }
     html.bg-drift::before     { animation-duration: ${dur(35)} !important; }
     html.bg-drift::after      { animation-duration: ${dur(50)} !important; }
     html.bg-pulse::before     { animation-duration: ${dur(8)} !important; }
@@ -1025,14 +1036,11 @@ function applyTheme(t) {
     html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
     html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
     html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
-    html.bg-18b-lava::before { animation-duration: ${dur(18)} !important; }
-    html.bg-18b-lava::after  { animation-duration: ${dur(25)} !important; }
-    .bg-30-aurora::before { animation-duration: ${dur(22)} !important; }
-    .bg-30-aurora::after  { animation-duration: ${dur(30)} !important; }
-    .bg-31-deep-ocean::before { animation-duration: ${dur(18)} !important; }
-    .bg-31-deep-ocean::after  { animation-duration: ${dur(12)} !important; }
-    .bg-32-lava-lamp::before { animation-duration: ${dur(20)} !important; }
-    .bg-32-lava-lamp::after  { animation-duration: ${dur(16)} !important; }
+    html.bg-18b-lava::before { animation-duration: ${dur(18/(t.bgSpeedLava??1))} !important; }
+    html.bg-18b-lava::after  { animation-duration: ${dur(25/(t.bgSpeedLava??1))} !important; }
+    .bg-30-aurora::before { animation-duration: ${dur(22/(t.bgSpeedAurora??1))} !important; }
+    .bg-32-lava-lamp::before { animation-duration: ${dur(20/(t.bgSpeedLavaLamp??1))} !important; }
+    .bg-32-lava-lamp::after  { animation-duration: ${dur(16/(t.bgSpeedLavaLamp??1))} !important; }
 
     html.bg-grass {
       overflow: hidden;
@@ -1186,7 +1194,7 @@ function applyTheme(t) {
   }
 
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
-  s('--bg-anim-speed', t.bgAnimSpeed ?? 1)
+  s('--bg-anim-speed', Math.min(t.bgAnimSpeed ?? 1, 20))
   if (t.bgC1) s('--bg-c1', t.bgC1)
   if (t.bgC2) s('--bg-c2', t.bgC2)
   if (t.bgC3) s('--bg-c3', t.bgC3)
@@ -1252,7 +1260,7 @@ function applyTheme(t) {
   s('--bg-star-op1', t.bgStarOp1 ?? 1)
   s('--bg-star-op2', t.bgStarOp2 ?? 0.55)
   s('--bg-star-op3', t.bgStarOp3 ?? 0.30)
-  s('--bg-star-speed', (t.bgStarSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
+  s('--bg-star-speed', (t.bgSpeedStars ?? 1) * (t.bgAnimSpeed ?? 1))
   // Star streaks
   s('--bg-streak-bg', t.bgStreakBg || '#02020f')
   if (t.bgStreakC1) { const r = hexRgb(t.bgStreakC1); s('--bg-streak-c1', `rgba(${r},0.9)`) }
