@@ -408,7 +408,7 @@ html.bg-16-starfield-old::before, html.bg-16-starfield-old::after {
 }
 html.bg-16-starfield-old::after {
   background-size: calc(450px / (var(--bg-star-density, 1))) calc(450px / (var(--bg-star-density, 1)));
-  animation: starfield-drift-b calc(130s / var(--bg-star-speed, 1)) linear infinite;
+  animation: starfield-drift-b calc(160s / var(--bg-star-speed, 1)) linear infinite;
   opacity: 0.55;
 }
 
@@ -956,12 +956,12 @@ html.bg-29-carbon::after {
 }
 
 @keyframes starfield-drift-a {
-  from { transform: translate(  0px,   0px); }
+  from { transform: translate(0px, 0px); }
   to   { transform: translate(-700px, -700px); }
 }
 @keyframes starfield-drift-b {
-  from { transform: translate(  0px,  0px); }
-  to   { transform: translate(450px, 450px); }
+  from { transform: translate(0px, 0px); }
+  to   { transform: translate(-450px, -450px); }
 }
 
 @keyframes plasma-shift-a {
