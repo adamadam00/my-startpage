@@ -568,7 +568,7 @@ export default function Settings({
                   <Row label="Lava color 3"><ColorPick value={theme.bgLavaC3 || '#ffcc00'} onChange={v => set('bgLavaC3', v)} /></Row>
                   <Row label="Intensity"><Slider val={theme.bgLavaIntensity ?? 100} min={20} max={200} onChange={v => set('bgLavaIntensity', v)} unit="%" /></Row>
                 </>
-              )
+              )}
 
               {theme.bgPreset === '30-aurora' && (
                 <>
