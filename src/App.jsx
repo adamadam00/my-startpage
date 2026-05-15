@@ -847,7 +847,7 @@ function applyTheme(t) {
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
-  const dur = (b) => parseFloat(b) <= 0 ? '9999s' : (parseFloat(b).toFixed(2) + 's')
+  const dur = (b, sp=1) => sp <= 0 ? '9999s' : (b/sp).toFixed(2)+'s'
   const c1 = ps.c1 || null
   const c2 = ps.c2 || null
   const c3 = ps.c3 || null
@@ -887,24 +887,14 @@ function applyTheme(t) {
 
   const hRgba = (hex, a) => { const r = hexRgb(hex||'#000000'); return `rgba(${r},${parseFloat(a).toFixed(3)})` }
 
-  // 02-noise color
-  if (t.bgPreset === '02-noise') {
-    s('background-color', t.bgNoiseBase || '#050510', 'html.bg-02-noise')
-    if (t.bgNoiseC1) { const r=hexRgb(t.bgNoiseC1); s('--bg-noise-c1', `rgba(${r},${t.bgNoiseOpacity??0.04})`) }
-    else s('--bg-noise-c1', `rgba(26,32,96,${t.bgNoiseOpacity??0.04})`)
-    s('--bg-anim-speed', t.bgSpeedNoise ?? 1)
-  }
-
-  // 14-smoke color wiring
+  // 14-Smoke colors
   if (t.bgPreset === '22-fog') {
     if (t.bgFogC1) { const r=hexRgb(t.bgFogC1); s('--bg-fog-c1', `rgba(${r},0.25)`) }
     if (t.bgFogC2) { const r=hexRgb(t.bgFogC2); s('--bg-fog-c2', `rgba(${r},0.20)`) }
     if (t.bgFogC3) { const r=hexRgb(t.bgFogC3); s('--bg-fog-c3', `rgba(${r},0.18)`) }
-    const sm = t.bgSpeedSmoke ?? 1
-    s('--fog-dur-a', (14/sm).toFixed(2)+'s'); s('--fog-dur-b', (20/sm).toFixed(2)+'s')
   }
 
-  // 10b-lava
+  // 10b-Lava
   if (t.bgPreset === '18b-lava') {
     const lc1=t.bgLavaC1||'#ff3200', lc2=t.bgLavaC2||'#ff8800', lc3=t.bgLavaC3||'#ffcc00'
     const li=(t.bgLavaIntensity??100)/100
@@ -913,45 +903,39 @@ function applyTheme(t) {
     s('--lava18-c5', hRgba(lc2, 0.18*li)); s('--lava18-c6', hRgba(lc3, 0.14*li))
   }
 
-  // 06-mesh opacity
-  if (t.bgMeshOpacity) {
-    const o = t.bgMeshOpacity
-    if (t.bgMeshC1) { const r=hexRgb(t.bgMeshC1); s('--bg-mesh-c1', `rgba(${r},${o})`) }
-    if (t.bgMeshC2) { const r=hexRgb(t.bgMeshC2); s('--bg-mesh-c2', `rgba(${r},${o*0.9})`) }
-    if (t.bgMeshC3) { const r=hexRgb(t.bgMeshC3); s('--bg-mesh-c3', `rgba(${r},${o*0.7})`) }
-  }
-
-  // New bgs 30-32
+  // 22-Aurora
   if (t.bgPreset === '30-aurora') {
     const ac1=t.bgAuroraC1||'#00dc78', ac2=t.bgAuroraC2||'#1e78ff', ac3=t.bgAuroraC3||'#8c28ff'
     const ai=(t.bgAuroraIntensity??100)/100
     s('--aurora-bg', t.bgAuroraBg||'#01050f')
-    s('--aurora-c1a', hRgba(ac1, 0.30*ai)); s('--aurora-c2a', hRgba(ac2, 0.26*ai)); s('--aurora-c3a', hRgba(ac3, 0.22*ai))
-    s('--aurora-c1b', hRgba(ac1, 0.16*ai)); s('--aurora-c2b', hRgba(ac2, 0.18*ai)); s('--aurora-c3b', hRgba(ac3, 0.14*ai))
-    s('--aurora-c1c', hRgba(ac1, 0.10*ai)); s('--aurora-c2c', hRgba(ac2, 0.12*ai))
+    s('--aurora-c1a', hRgba(ac1,0.28*ai)); s('--aurora-c2a', hRgba(ac2,0.24*ai)); s('--aurora-c3a', hRgba(ac3,0.18*ai))
+    s('--aurora-c1b', hRgba(ac1,0.14*ai)); s('--aurora-c2b', hRgba(ac2,0.12*ai)); s('--aurora-c3b', hRgba(ac3,0.11*ai))
+    s('--aurora-c1c', hRgba(ac1,0.10*ai)); s('--aurora-c2c', hRgba(ac2,0.10*ai))
     s('--aurora-star-op', t.bgAuroraStarOpacity??0.75)
-    const sd=t.bgAuroraStarDensity??100
-    s('--aurora-star-tile', sd>=100?'100%':Math.max(25,sd)+'%')
   }
+
+  // 23-DeepOcean
   if (t.bgPreset === '31-deep-ocean') {
     const oi=(t.bgOceanIntensity??100)/100
     const dens=t.bgOceanDensity??50
     const tA=Math.round(360-dens*2.4)+'px', tB=Math.round(260-dens*1.8)+'px', tC=Math.round(480-dens*3.0)+'px'
     s('--ocean-bg', t.bgOceanDeepBg||'#000814')
-    s('--ocean-c1', hRgba(t.bgOceanCausticC||'#0078c8', 0.22*oi)); s('--ocean-c2', hRgba(t.bgOceanMidC||'#003c78', 0.32*oi))
-    s('--ocean-c3', hRgba(t.bgOceanBioC||'#00ffb4', t.bgOceanBioOpacity??0.08)); s('--ocean-c4', hRgba(t.bgOceanCausticC||'#0078c8', 0.18*oi))
-    s('--ocean-c5', hRgba(t.bgOceanMidC||'#003c78', 0.22*oi)); s('--ocean-c6', hRgba(t.bgOceanBioC||'#00ffb4', (t.bgOceanBioOpacity??0.08)*0.8))
-    s('--ocean-particle', hRgba(t.bgOceanParticleC||'#64dcff', t.bgOceanParticleOpacity??0.55))
+    s('--ocean-c1', hRgba(t.bgOceanCausticC||'#0078c8',0.22*oi)); s('--ocean-c2', hRgba(t.bgOceanMidC||'#003c78',0.32*oi))
+    s('--ocean-c3', hRgba(t.bgOceanBioC||'#00ffb4',0.08)); s('--ocean-c4', hRgba(t.bgOceanCausticC||'#0078c8',0.18*oi))
+    s('--ocean-c5', hRgba(t.bgOceanMidC||'#003c78',0.22*oi)); s('--ocean-c6', hRgba(t.bgOceanBioC||'#00ffb4',0.06))
+    s('--ocean-particle', hRgba(t.bgOceanParticleC||'#64dcff',0.55))
     s('--ocean-tile-a', tA+' '+Math.round(parseInt(tA)*1.6)+'px')
     s('--ocean-tile-b', tB+' '+Math.round(parseInt(tB)*1.5)+'px')
     s('--ocean-tile-c', tC+' '+Math.round(parseInt(tC)*1.7)+'px')
   }
+
+  // 24-LavaLamp
   if (t.bgPreset === '32-lava-lamp') {
     const lo=t.bgLavaOpacity??0.85
     const lc1=t.bgLavaC1||'#ff4080', lc2=t.bgLavaC2||'#ff8020', lc3=t.bgLavaC3||'#c020ff'
     s('--lava-bg', t.bgLavaBg||'#080410')
-    s('--lava-c1', hRgba(lc1, 0.60*lo)); s('--lava-c2', hRgba(lc2, 0.55*lo)); s('--lava-c3', hRgba(lc3, 0.52*lo))
-    s('--lava-c1g', hRgba(lc1, 0.22*lo)); s('--lava-c2g', hRgba(lc2, 0.20*lo)); s('--lava-c3g', hRgba(lc3, 0.18*lo))
+    s('--lava-c1',hRgba(lc1,0.60*lo)); s('--lava-c2',hRgba(lc2,0.55*lo)); s('--lava-c3',hRgba(lc3,0.52*lo))
+    s('--lava-c1g',hRgba(lc1,0.22*lo)); s('--lava-c2g',hRgba(lc2,0.20*lo)); s('--lava-c3g',hRgba(lc3,0.18*lo))
   }
 
   const sfGrad = ps.sfGrad ?? false
@@ -1007,148 +991,31 @@ function applyTheme(t) {
   }
 
   bgEl.textContent = `
-    .bg-aurora { animation-duration: ${dur(12)} !important; }
-    html.bg-starfield::before { animation-duration: ${dur(80)} !important; }
-    html.bg-starfield::after  { animation-duration: ${dur(130)} !important; }
-    html.bg-16-starfield-old::before { animation-duration: ${dur(80)} !important; }
-    html.bg-16-starfield-old::after  { animation-duration: ${dur(130)} !important; }
-    html.bg-05-gradient       { animation-duration: ${dur(25)} !important; }
-    html.bg-06-mesh           { animation-duration: ${dur(22/(t.bgSpeedMesh??1))} !important; }
-    html.bg-07-nebula         { animation-duration: ${dur(30/(t.bgSpeedNebula??1))} !important; }
-    html.bg-fog::before       { animation-duration: ${dur(42)} !important; }
-    html.bg-fog::after        { animation-duration: ${dur(58)} !important; }
-    html.bg-22-fog::before    { animation-duration: ${dur(42)} !important; }
-    html.bg-22-fog::after     { animation-duration: ${dur(58)} !important; }
-    html.bg-scan::before      { animation-duration: ${dur(7)} !important; }
-    html.bg-23-scan::before   { animation-duration: ${dur(7)} !important; }
-    html.bg-vortex::before    { animation-duration: ${dur(70)} !important; }
-    html.bg-vortex::after     { animation-duration: ${dur(110)} !important; }
-    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::before { animation-duration: ${dur(20)} !important; }
-    .bg-layer:is(.bg-plasma,.bg-inferno,.bg-mint,.bg-dusk,.bg-mono)::after  { animation-duration: ${dur(28)} !important; }
-    html.bg-18-inferno::before { animation-duration: ${dur(20/(t.bgSpeedInferno??1))} !important; }
-    html.bg-18-inferno::after  { animation-duration: ${dur(28/(t.bgSpeedInferno??1))} !important; }
-    html.bg-19-mint::before    { animation-duration: ${dur(20/(t.bgSpeedForest??1))} !important; }
-    html.bg-19-mint::after     { animation-duration: ${dur(28/(t.bgSpeedForest??1))} !important; }
-    html.bg-20-dusk::before    { animation-duration: ${dur(20/(t.bgSpeedDusk??1))} !important; }
-    html.bg-20-dusk::after     { animation-duration: ${dur(28/(t.bgSpeedDusk??1))} !important; }
-    html.bg-drift::before     { animation-duration: ${dur(35)} !important; }
-    html.bg-drift::after      { animation-duration: ${dur(50)} !important; }
-    html.bg-pulse::before     { animation-duration: ${dur(8)} !important; }
-    html.bg-pulse::after      { animation-duration: ${dur(12)} !important; }
-    html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
-    html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
-    html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
-    html.bg-18b-lava::before { animation-duration: ${dur(18/(t.bgSpeedLava??1))} !important; }
-    html.bg-18b-lava::after  { animation-duration: ${dur(25/(t.bgSpeedLava??1))} !important; }
-    .bg-30-aurora::before { animation-duration: ${dur(22/(t.bgSpeedAurora??1))} !important; }
-    .bg-32-lava-lamp::before { animation-duration: ${dur(20/(t.bgSpeedLavaLamp??1))} !important; }
-    .bg-32-lava-lamp::after  { animation-duration: ${dur(16/(t.bgSpeedLavaLamp??1))} !important; }
-
-    html.bg-grass {
-      overflow: hidden;
-      background-color: ${gSky};
-      background-image:
-        radial-gradient(6px 6px at 72% 12%, rgba(255,248,220,.95) 0, transparent 100%),
-        radial-gradient(45px 45px at 72% 12%, rgba(255,240,180,.22) 0, transparent 100%),
-        radial-gradient(100px 100px at 72% 12%, rgba(255,240,180,.06) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.9) 0, transparent 100%),
-        radial-gradient(1px 1px at 14% 4%, rgba(255,255,255,.7) 0, transparent 100%),
-        radial-gradient(1px 1px at 23% 11%, rgba(255,255,255,.6) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 38% 6%, rgba(255,255,255,.8) 0, transparent 100%),
-        radial-gradient(1px 1px at 50% 3%, rgba(255,255,255,.5) 0, transparent 100%),
-        radial-gradient(1px 1px at 58% 14%, rgba(255,255,255,.65) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 80% 7%, rgba(255,255,255,.75) 0, transparent 100%),
-        radial-gradient(1px 1px at 93% 4%, rgba(255,255,255,.8) 0, transparent 100%),
-        radial-gradient(1px 1px at 33% 16%, rgba(255,255,255,.45) 0, transparent 100%),
-        radial-gradient(1px 1px at 65% 10%, rgba(255,255,255,.55) 0, transparent 100%),
-        linear-gradient(to bottom, ${gSky} 0%, ${gSky}bb 55%, ${gGnd}aa 66%, ${gGnd} 100%);
-    }
-    html.bg-grass::before {
-      content: '';
-      position: absolute; bottom: 0; left: -5%; width: 110%; height: 42%;
-      background: ${gGnd};
-      clip-path: polygon(
-        0% 100%, 0% 52%,
-        1% 30%, 2% 50%, 3% 22%, 4% 46%, 5% 10%, 6% 40%, 7% 18%, 8% 44%,
-        9% 6%, 10% 38%, 11% 20%, 12% 46%, 13% 8%, 14% 36%, 15% 16%, 16% 42%,
-        17% 4%, 18% 34%, 19% 14%, 20% 40%, 21% 4%, 22% 30%, 23% 14%, 24% 42%,
-        25% 6%, 26% 37%, 27% 18%, 28% 44%, 29% 8%, 30% 38%, 31% 16%, 32% 42%,
-        33% 5%, 34% 34%, 35% 12%, 36% 42%, 37% 4%, 38% 32%, 39% 14%, 40% 40%,
-        41% 6%, 42% 36%, 43% 18%, 44% 44%, 45% 8%, 46% 38%, 47% 16%, 48% 42%,
-        49% 4%, 50% 32%, 51% 12%, 52% 42%, 53% 4%, 54% 30%, 55% 14%, 56% 40%,
-        57% 6%, 58% 36%, 59% 18%, 60% 44%, 61% 8%, 62% 38%, 63% 16%, 64% 42%,
-        65% 4%, 66% 32%, 67% 12%, 68% 42%, 69% 4%, 70% 30%, 71% 14%, 72% 40%,
-        73% 6%, 74% 36%, 75% 18%, 76% 44%, 77% 8%, 78% 38%, 79% 16%, 80% 42%,
-        81% 4%, 82% 32%, 83% 12%, 84% 42%, 85% 4%, 86% 30%, 87% 14%, 88% 40%,
-        89% 6%, 90% 36%, 91% 18%, 92% 44%, 93% 8%, 94% 38%, 95% 16%, 96% 42%,
-        97% 4%, 98% 32%, 99% 50%, 100% 52%, 100% 100%
-      );
-      animation: grass-sway ${dur(5)} ease-in-out infinite alternate;
-      transform-origin: bottom center;
-    }
-    html.bg-grass::after {
-      content: '';
-      position: absolute; bottom: 0; left: 0; right: 0; height: 50%;
-      background-image:
-        radial-gradient(2.5px 2.5px at 12% 40%, rgba(180,255,80,.7) 0, transparent 100%),
-        radial-gradient(2px 2px at 28% 55%, rgba(200,255,100,.55) 0, transparent 100%),
-        radial-gradient(2.5px 2.5px at 45% 35%, rgba(180,255,80,.65) 0, transparent 100%),
-        radial-gradient(2px 2px at 62% 50%, rgba(200,255,100,.6) 0, transparent 100%),
-        radial-gradient(2.5px 2.5px at 78% 42%, rgba(180,255,80,.55) 0, transparent 100%),
-        radial-gradient(2px 2px at 18% 62%, rgba(200,255,100,.5) 0, transparent 100%),
-        radial-gradient(2px 2px at 52% 68%, rgba(180,255,80,.6) 0, transparent 100%),
-        radial-gradient(2.5px 2.5px at 88% 48%, rgba(200,255,100,.55) 0, transparent 100%),
-        linear-gradient(to top, rgba(2,6,2,.7) 0%, transparent 100%);
-      animation: firefly-blink ${dur(3)} ease-in-out infinite alternate;
-      pointer-events: none;
-    }
-    @keyframes grass-sway   { 0% { transform: skewX(-2.5deg); } 100% { transform: skewX(2.5deg); } }
-    @keyframes firefly-blink { 0% { opacity: .3; } 100% { opacity: 1; } }
-
-    html.bg-ocean {
-      overflow: hidden;
-      background-color: ${oSky};
-      background-image:
-        radial-gradient(7px 7px at 30% 18%, rgba(255,248,220,.95) 0, transparent 100%),
-        radial-gradient(55px 55px at 30% 18%, rgba(255,240,180,.22) 0, transparent 100%),
-        radial-gradient(120px 120px at 30% 18%, rgba(255,240,180,.06) 0, transparent 100%),
-        linear-gradient(to right, transparent 28%, rgba(255,248,200,.04) 29.5%, rgba(255,248,200,.07) 30.5%, rgba(255,248,200,.04) 31.5%, transparent 33%),
-        radial-gradient(1.5px 1.5px at 5% 8%, rgba(255,255,255,.85) 0, transparent 100%),
-        radial-gradient(1px 1px at 12% 4%, rgba(255,255,255,.65) 0, transparent 100%),
-        radial-gradient(1px 1px at 20% 12%, rgba(255,255,255,.55) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 42% 6%, rgba(255,255,255,.75) 0, transparent 100%),
-        radial-gradient(1px 1px at 55% 14%, rgba(255,255,255,.6) 0, transparent 100%),
-        radial-gradient(1.5px 1.5px at 63% 4%, rgba(255,255,255,.8) 0, transparent 100%),
-        radial-gradient(1px 1px at 76% 10%, rgba(255,255,255,.55) 0, transparent 100%),
-        radial-gradient(1px 1px at 86% 5%, rgba(255,255,255,.7) 0, transparent 100%),
-        radial-gradient(1px 1px at 94% 15%, rgba(255,255,255,.6) 0, transparent 100%),
-        radial-gradient(1px 1px at 18% 17%, rgba(255,255,255,.45) 0, transparent 100%),
-        linear-gradient(to bottom, ${oSky} 0%, ${oSky}cc 36%, ${oWtr}cc 52%, ${oWtr} 100%);
-    }
-    html.bg-ocean::before {
-      content: '';
-      position: absolute; bottom: -22%; left: -30%; width: 160%; height: 75%;
-      background: ${oWtr};
-      border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%;
-      opacity: .88;
-      animation: ocean-wave-a ${dur(10)} ease-in-out infinite alternate;
-    }
-    html.bg-ocean::after {
-      content: '';
-      position: absolute; bottom: -18%; left: -40%; width: 180%; height: 60%;
-      background: color-mix(in srgb, ${oWtr} 85%, #000020);
-      border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%;
-      opacity: .75;
-      animation: ocean-wave-b ${dur(15)} ease-in-out infinite alternate-reverse;
-    }
-    @keyframes ocean-wave-a {
-      0%   { transform: translateX(-6%) rotate(-1.5deg); border-radius: 40% 60% 55% 45% / 35% 25% 45% 28%; }
-      100% { transform: translateX(6%)  rotate(1.5deg);  border-radius: 60% 40% 45% 55% / 25% 35% 28% 45%; }
-    }
-    @keyframes ocean-wave-b {
-      0%   { transform: translateX(8%)  rotate(2deg);    border-radius: 55% 45% 42% 58% / 25% 42% 28% 38%; }
-      100% { transform: translateX(-8%) rotate(-2deg);   border-radius: 45% 55% 58% 42% / 42% 25% 38% 28%; }
-    }
+    /* Per-preset individual speeds */
+    html.bg-06-mesh           { animation-duration: ${dur(22, t.bgSpeedMesh??1)} !important; }
+    html.bg-06-mesh::before   { animation-duration: ${dur(28, t.bgSpeedMesh??1)} !important; }
+    html.bg-07-nebula         { animation-duration: ${dur(30, t.bgSpeedNebula??1)} !important; }
+    html.bg-07-nebula::before { animation-duration: ${dur(22, t.bgSpeedNebula??1)} !important; }
+    html.bg-16-starfield-old::before { animation-duration: ${dur(80,  t.bgSpeedStars??1)} !important; }
+    html.bg-16-starfield-old::after  { animation-duration: ${dur(130, t.bgSpeedStars??1)} !important; }
+    html.bg-16-starfield-old body::before { animation-duration: ${dur(200, t.bgSpeedStars??1)} !important; }
+    html.bg-18-inferno::before { animation-duration: ${dur(20, t.bgSpeedInferno??1)} !important; }
+    html.bg-18-inferno::after  { animation-duration: ${dur(28, t.bgSpeedInferno??1)} !important; }
+    html.bg-18b-lava::before   { animation-duration: ${dur(18, t.bgSpeedLava??1)} !important; }
+    html.bg-18b-lava::after    { animation-duration: ${dur(25, t.bgSpeedLava??1)} !important; }
+    html.bg-19-mint::before    { animation-duration: ${dur(20, t.bgSpeedForest??1)} !important; }
+    html.bg-19-mint::after     { animation-duration: ${dur(28, t.bgSpeedForest??1)} !important; }
+    html.bg-20-dusk::before    { animation-duration: ${dur(20, t.bgSpeedDusk??1)} !important; }
+    html.bg-20-dusk::after     { animation-duration: ${dur(28, t.bgSpeedDusk??1)} !important; }
+    html.bg-22-fog::before     { animation-duration: ${dur(14, t.bgSpeedSmoke??1)} !important; }
+    html.bg-22-fog::after      { animation-duration: ${dur(20, t.bgSpeedSmoke??1)} !important; }
+    html.bg-23-scan::before    { animation-duration: ${dur(7,  t.bgSpeedScan??1)} !important; }
+    .bg-30-aurora::before      { animation-duration: ${dur(22, t.bgSpeedAurora??1)} !important; }
+    .bg-31-deep-ocean::before  { animation-duration: ${dur(18, t.bgSpeedOcean??1)} !important; }
+    .bg-31-deep-ocean::after   { animation-duration: ${dur(12, t.bgSpeedOcean??1)} !important; }
+    .bg-32-lava-lamp::before   { animation-duration: ${dur(20, t.bgSpeedLavaLamp??1)} !important; }
+    .bg-32-lava-lamp::after    { animation-duration: ${dur(16, t.bgSpeedLavaLamp??1)} !important; }
+    html.bg-18b-lava { animation-duration: ${dur(18, t.bgSpeedLava??1)} !important; }
   `
 
   var oldPlanets = document.getElementById('sf-planets')
@@ -1196,7 +1063,7 @@ function applyTheme(t) {
   }
 
   s('--wallpaper-opacity', (t.wallpaperOpacity ?? 100) / 100)
-  s('--bg-anim-speed', t.bgSpeedNoise ?? 1)
+  s('--bg-anim-speed', t.bgAnimSpeed ?? 1)
   if (t.bgC1) s('--bg-c1', t.bgC1)
   if (t.bgC2) s('--bg-c2', t.bgC2)
   if (t.bgC3) s('--bg-c3', t.bgC3)
@@ -1259,9 +1126,6 @@ function applyTheme(t) {
   // Starfield - combine star speed with global anim speed
   s('--bg-star-size', t.bgStarSize ?? 1)
   s('--bg-star-density', t.bgStarDensity ? t.bgStarDensity / 100 : 1)
-  s('--bg-star-op1', t.bgStarOp1 ?? 1)
-  s('--bg-star-op2', t.bgStarOp2 ?? 0.55)
-  s('--bg-star-op3', t.bgStarOp3 ?? 0.30)
   s('--bg-star-speed', t.bgSpeedStars ?? 1)
   // Star streaks
   s('--bg-streak-bg', t.bgStreakBg || '#02020f')
