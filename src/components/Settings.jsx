@@ -663,10 +663,6 @@ export default function Settings({
                   <Row label="Shimmer intensity"><Slider val={theme.bgSilverShimmer ?? 100} min={50} max={150} onChange={v => set('bgSilverShimmer', v)} unit="%" /></Row>
                 </>
               )}
-
-              }
-
-              }
             </Group>
           )
 
