@@ -739,15 +739,13 @@ export default function Settings({
               <Row label="Section gap (h)"><Slider label="Section gap (h)" val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
               <Row label="Link gap"><Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={-50} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
               <Row label="Link left padding"><Slider label="Link left padding" val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-140} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
-                            <div style={{ paddingTop: '0.65rem', paddingBottom: '0.65rem' }}>
-                <SectionTitle>Page scale</SectionTitle>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
-                  {PAGE_SCALES.map(v => (
-                    <button key={v} className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`} onClick={() => set('pageScale', v)}>
-                      {Math.round(v * 100)}%
-                    </button>
-                  ))}
-                </div>
+              <SectionTitle>Page scale</SectionTitle>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginTop: '0.35rem' }}>
+                {PAGE_SCALES.map(v => (
+                  <button key={v} className={`btn-xs${Math.abs((theme.pageScale ?? 1) - v) < 0.01 ? ' btn-primary' : ''}`} onClick={() => set('pageScale', v)}>
+                    {Math.round(v * 100)}%
+                  </button>
+                ))}
               </div>
             </Group>
           )
