@@ -48,15 +48,9 @@ function NoteToolbar({ targetSelector, onUpdate }) {
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={() => exec('underline')} title="Underline"><u>U</u></button>
       <button type="button" className="btn-xs" onMouseDown={e => e.preventDefault()} onClick={addBullet} title="Bullet">•</button>
       <div style={{ display: 'flex', gap: '0.1rem', marginLeft: '0.1rem' }}>
-        {[
-          { key: 1, var: '--note-color-1', fallback: '#ff6b6b' },
-          { key: 2, var: '--note-color-2', fallback: '#6c8fff' },
-          { key: 3, var: '--note-color-3', fallback: '#6bffb8' },
-          { key: 4, var: '--note-color-4', fallback: '#ffd32a' },
-        ].map(({ key, var: v, fallback }) => {
-          const col = getComputedStyle(document.documentElement).getPropertyValue(v).trim() || fallback
-          return <button key={key} type="button" className="color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(col)} style={{ background: col }} title={col} />
-        })}
+        {['#ff6b6b','#6c8fff','#6bffb8','#ffd32a'].map(c => (
+          <button key={c} type="button" className="color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(c)} style={{ background: c }} title={c} />
+        ))}
         <input type="color" className="color-picker" onMouseDown={e => e.preventDefault()} onChange={e => setColor(e.target.value)} title="Custom color" />
       </div>
     </div>
@@ -665,7 +659,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   )}
                   <div style={{ flex: 1 }} />
                   <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote('') }}>×</button>
-                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
+                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Create</button>
                 </div>
               </div>
             </div>
@@ -1371,7 +1365,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         ))}
                       </select>
                     )}
-                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 1, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
                       {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
                         month: 'numeric', 
                         day: 'numeric', 
@@ -1387,7 +1381,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => remove(note.id)}
                       title="Delete note"
-                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.2rem' }}
+                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.2rem', position: 'relative', zIndex: 1 }}
                     >
                       🗑
                     </button>
