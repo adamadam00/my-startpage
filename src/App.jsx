@@ -36,19 +36,19 @@ function ClockWidget() {
   const nowM = now.getMinutes() + now.getSeconds() / 60
   const hasTarget = totalMins !== null
   const tMins = totalMins ?? 0
-  const tH = ((now.getHours() + Math.floor(tMins / 60)) % 12) + (now.getMinutes() + tMins % 60) / 60
+  const tH = ((now.getHours() + Math.floor(tMins/60)) % 12) + (now.getMinutes() + tMins%60) / 60
   const tM = (nowM + tMins) % 60
-  const days = Math.floor(tMins / (60 * 24))
-  const remMins = tMins % (60 * 24)
+  const days = Math.floor(tMins / (60*24))
+  const remMins = tMins % (60*24)
   const hrs = Math.floor(remMins / 60)
   const mins = remMins % 60
 
-  const toRad = deg => (deg - 90) * Math.PI / 180
-  const handPos = (val, max, r) => { const a = toRad((val/max)*360); return { x: 100+r*Math.cos(a), y: 100+r*Math.sin(a) } }
-  const arcPath = (fromVal, fromMax, toVal, toMax, r) => {
-    const a1=toRad((fromVal/fromMax)*360), a2=toRad((toVal/toMax)*360)
+  const toRad = deg => (deg-90)*Math.PI/180
+  const handPos = (val, max, r) => { const a=toRad((val/max)*360); return {x:100+r*Math.cos(a), y:100+r*Math.sin(a)} }
+  const arcPath = (fv, fm, tv, tm, r) => {
+    const a1=toRad((fv/fm)*360), a2=toRad((tv/tm)*360)
     const x1=100+r*Math.cos(a1), y1=100+r*Math.sin(a1), x2=100+r*Math.cos(a2), y2=100+r*Math.sin(a2)
-    const da=((toVal/toMax)-(fromVal/fromMax)+1)%1
+    const da=((tv/tm)-(fv/fm)+1)%1
     return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${da>0.5?1:0} 1 ${x2} ${y2} Z`
   }
 
@@ -72,15 +72,12 @@ function ClockWidget() {
           if (diff > 270) lapRef.current = Math.max(0, lapRef.current-1)
         }
         lastAngleRef.current = angle
-        const laps = Math.max(0, lapRef.current)
-        const frac = angle/360
+        const laps = Math.max(0, lapRef.current), frac = angle/360
         if (type === 'hour') {
-          // Snap to nearest 15 mins — less jittery
-          setTotalMins(Math.round((laps*12 + frac*12)*60/15)*15)
+          setTotalMins(Math.round((laps*12 + frac*12)*60/30)*30)  // snap 30min
         } else {
           const baseH = hasTarget ? Math.floor(tMins/60) : 0
-          // Snap to nearest 5 mins
-          setTotalMins(baseH*60 + Math.round(frac*60/5)*5 % 60)
+          setTotalMins(baseH*60 + Math.round(frac*60/10)*10 % 60)  // snap 10min
         }
       })
     }
@@ -101,7 +98,7 @@ function ClockWidget() {
       </div>
       {open && (
         <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:240,userSelect:'none'}}>
-          <div style={{fontSize:'0.7em',color:'var(--text-dim)',textAlign:'center',marginBottom:'0.5rem'}}>Drag hour hand · each full loop = +12h</div>
+          <div style={{fontSize:'0.7em',color:'var(--text-dim)',textAlign:'center',marginBottom:'0.5rem'}}>Drag hour hand · each loop = +12h</div>
           <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{display:'block',margin:'0 auto',touchAction:'none'}}>
             <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
             {hasTarget && <path d={arcPath(nowM,60,tM,60,88)} fill="var(--accent)" opacity="0.13"/>}
@@ -133,8 +130,8 @@ function ClockWidget() {
             </div>
             {!hasTarget&&<div style={{fontSize:'0.68em',color:'var(--text-dim)',opacity:0.5}}>drag a hand to measure</div>}
           </div>
-          <div style={{textAlign:'center',marginTop:'0.5rem'}}>
-            {hasTarget&&<button className="btn-xs" onClick={()=>setTotalMins(null)} style={{marginRight:'0.5rem'}}>Reset</button>}
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'0.5rem'}}>
+            <div>{hasTarget&&<button className="btn-xs" onClick={()=>setTotalMins(null)}>Reset</button>}</div>
             <button className="btn-xs" onClick={()=>setOpen(false)}>Close</button>
           </div>
         </div>
@@ -253,12 +250,14 @@ function WeatherWidget() {
 
 // ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
 const NEWS_FEEDS = [
-  { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
-  { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
-  { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
-  { id: 'ap',       label: 'AP News',   url: 'https://feeds.feedburner.com/ap/topheadlines' },
-  { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
-  { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
+  { id: 'abc',      label: 'ABC AU',       url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
+  { id: 'guardian', label: 'Guardian',     url: 'https://www.theguardian.com/au/rss' },
+  { id: 'sbs',      label: 'SBS',          url: 'https://www.sbs.com.au/news/feed' },
+  { id: 'bbc',      label: 'BBC World',    url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { id: 'hn',       label: 'Hacker News',  url: 'https://news.ycombinator.com/rss' },
+  { id: 'ars',      label: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
+  { id: 'verge',    label: 'The Verge',    url: 'https://www.theverge.com/rss/index.xml' },
+  { id: 'dezeen',   label: 'Dezeen',       url: 'https://feeds.feedburner.com/dezeen' },
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
