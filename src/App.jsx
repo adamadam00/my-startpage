@@ -566,8 +566,7 @@ function WidgetPanelWeather({ theme }) {
 
   const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'}
   const descs = {0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Raining',65:'Heavy rain',71:'Light snow',73:'Snowing',75:'Heavy snow',80:'Showers',81:'Rain showers',82:'Violent rain',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'}
-  const today = new Date().toISOString().slice(0,10)
-  const dayLabel = d => d === today ? 'Today' : new Date(d).toLocaleDateString([],{weekday:'short'})
+  const dayLabel = d => new Date(d).toLocaleDateString([],{weekday:'short'})
 
   if (!wx) return <div className="wp-section wp-weather"><span style={{opacity:0.5}}>Loading weather...</span></div>
   return (
