@@ -659,7 +659,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   )}
                   <div style={{ flex: 1 }} />
                   <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote('') }}>×</button>
-                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
+                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Create</button>
                 </div>
               </div>
             </div>
