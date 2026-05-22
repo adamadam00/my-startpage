@@ -3446,11 +3446,3 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   border-bottom: 2px solid var(--text-dim);
   border-radius: 0 0 2px 0;
 }
-
-/* Note text color palette */
-:root {
-  --note-color-1: #ff6b6b;
-  --note-color-2: #6c8fff;
-  --note-color-3: #6bffb8;
-  --note-color-4: #ffd32a;
-}
