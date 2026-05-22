@@ -259,7 +259,7 @@ export default function Settings({
     <>
       <div className="settings-veil" onClick={onClose} />
 
-      <div className="settings-panel" data-side={side} style={{ width: 'min(480px, 75vw)', display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div className="settings-panel" data-side={side} style={{ width: 'min(380px, 74vw)', display: 'flex', flexDirection: 'column', height: '100%' }}>
 
         <style>{`
           .settings-group-title:hover .settings-group-actions,
@@ -548,7 +548,6 @@ export default function Settings({
               {theme.bgPreset === '16-starfield-old' && (
                 <>
                   <Row label="Sky top"><ColorPick value={theme.bgC1 || '#05050f'} onChange={v => set('bgC1', v)} /></Row>
-                  <Row label="Sky mid"><ColorPick value={theme.bgStarMid || '#020518'} onChange={v => set('bgStarMid', v)} /></Row>
                   <Row label="Sky bottom"><ColorPick value={theme.bgC2 || '#000308'} onChange={v => set('bgC2', v)} /></Row>
                   <Row label="Star tint"><ColorPick value={theme.bgC3 || '#c8d2ff'} onChange={v => set('bgC3', v)} /></Row>
                   <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={4} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
@@ -795,7 +794,9 @@ export default function Settings({
               <SectionTitle>Settings Panel Colors</SectionTitle>
               <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
               <Row label="Section subtitle"><ColorPick label="Section subtitle" value={theme.settingsSubtitleColor || '#7890ff'} onChange={v => set('settingsSubtitleColor', v)} /></Row>
-              <Row label="Handle"><ColorPick label="Handle" value={theme.handleColor || theme.settingsTitleColor || theme.accent || '#7878a0'} onChange={v => set('handleColor', v)} /></Row>
+              <Row label="Handle color"><ColorPick label="Handle color" value={theme.handleColor || theme.settingsTitleColor || theme.accent || '#7878a0'} onChange={v => set('handleColor', v)} /></Row>
+              <Row label="Grip opacity"><Slider val={Math.round((theme.handleOpacity ?? 0.35) * 100)} min={0} max={100} onChange={v => set('handleOpacity', v / 100)} unit="%" /></Row>
+              <Row label="Grip scale"><Slider val={Math.round((theme.handleScale ?? 1) * 100)} min={50} max={200} onChange={v => set('handleScale', v / 100)} unit="%" /></Row>
               
               <SectionTitle>Font Settings</SectionTitle>
               <Row label="Font family">
@@ -1190,7 +1191,7 @@ export default function Settings({
             onClick={onSignOut}>Sign out</button>
         </div>
       )}
-      <div className="settings-footer" data-side={side}>
+      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
         <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
           onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
           {side === 'right' ? '⇐ Left' : 'Right ⇒'}
