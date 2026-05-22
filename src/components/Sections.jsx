@@ -1014,11 +1014,7 @@ export default function Sections({
                   style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
                 >+</button>
               )}
-              {isArchiveColumn && (
-                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
-                  Archive Column
-                </span>
-              )}
+
             </div>
           )
         })}
@@ -1036,6 +1032,11 @@ export default function Sections({
           >
             <SectionColumn col={col}>
               {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
+              {isArchiveColumn && (
+                <div className="archive-col-label" style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
+                  Archive Section
+                </div>
+              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}

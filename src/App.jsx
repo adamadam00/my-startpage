@@ -476,6 +476,7 @@ function GmailWidget({ theme }) {
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 // ─── WIDGET PANEL ─────────────────────────────────────────────────────────────
 function WidgetPanel({ theme, setTheme }) {
+  const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [collapsed, setCollapsed] = useState(() => {
     try { return JSON.parse(localStorage.getItem('widgetPanelCollapsed') ?? 'false') } catch { return false }
   })
@@ -492,14 +493,30 @@ function WidgetPanel({ theme, setTheme }) {
 
   if (!showWeather && !showNews && !showCalendar) return null
 
+  const widgets = [
+    { key: 'hideWeather',  show: showWeather,  icon: '⛅', label: 'Weather'  },
+    { key: 'hideNews',     show: showNews,     icon: '📰', label: 'News'     },
+    { key: 'hideCalendar', show: showCalendar, icon: '📅', label: 'Calendar' },
+  ]
+
   return (
     <div className="widget-panel" data-collapsed={collapsed}>
-      <div className="widget-panel-header" onClick={toggle}>
-        <span className="widget-panel-title">
-          {[showWeather && '⛅', showNews && '📰', showCalendar && '📅'].filter(Boolean).join(' · ')}
-          <span style={{ marginLeft: '0.4rem', opacity: 0.6, fontSize: '0.8em' }}>Widgets</span>
-        </span>
-        <span className="widget-panel-chevron">{collapsed ? '▼' : '▲'}</span>
+      <div className="widget-panel-header">
+        <div className="widget-panel-icons">
+          {widgets.map(w => (
+            <button
+              key={w.key}
+              className={`wp-icon-btn${w.show ? ' active' : ''}`}
+              title={`${w.show ? 'Hide' : 'Show'} ${w.label}`}
+              onClick={e => { e.stopPropagation(); set(w.key, !w.show) }}
+            >
+              {w.icon}
+            </button>
+          ))}
+        </div>
+        <button className="wp-collapse-btn" onClick={toggle} title={collapsed ? 'Expand' : 'Collapse'}>
+          {collapsed ? '▼' : '▲'}
+        </button>
       </div>
       {!collapsed && (
         <div className="widget-panel-body">
@@ -522,7 +539,7 @@ function WidgetPanelWeather({ theme }) {
         const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`)
         const d = await r.json()
         setWx(d.current_weather ?? null)
-        if (d.daily) setForecast(d.daily.time.slice(0,5).map((date,i) => ({ date, code: d.daily.weathercode[i], max: Math.round(d.daily.temperature_2m_max[i]), min: Math.round(d.daily.temperature_2m_min[i]) })))
+        if (d.daily) setForecast(d.daily.time.slice(0,3).map((date,i) => ({ date, code: d.daily.weathercode[i], max: Math.round(d.daily.temperature_2m_max[i]), min: Math.round(d.daily.temperature_2m_min[i]) })))
       } catch {}
     }
     if (navigator.geolocation) navigator.geolocation.getCurrentPosition(({coords}) => doFetch(coords.latitude, coords.longitude), () => doFetch(-37.8136,144.9631), {timeout:5000})
@@ -543,11 +560,13 @@ function WidgetPanelWeather({ theme }) {
       </div>
       {forecast.map(day => (
         <div key={day.date} className="wp-forecast-row">
-          <span>{icons[day.code]||'🌡'}</span>
+          <span style={{flexShrink:0}}>{icons[day.code]||'🌡'}</span>
           <span className="wp-forecast-day">{dayLabel(day.date)}</span>
           <span className="wp-forecast-desc">{descs[day.code]||''}</span>
-          <span className="wp-forecast-hi">{day.max}°</span>
-          <span className="wp-forecast-lo">/{day.min}°</span>
+          <div className="wp-forecast-temps">
+            <span className="wp-forecast-hi">{day.max}°</span>
+            <span className="wp-forecast-lo">/{day.min}°</span>
+          </div>
         </div>
       ))}
     </div>
