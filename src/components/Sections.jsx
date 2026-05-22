@@ -56,7 +56,6 @@ function LinkRow({
   openInNewTab,
   faviconEnabled,
   onRefresh,
-  wasDragging,
 }) {
   const {
     attributes,
@@ -76,6 +75,8 @@ function LinkRow({
 
   const [showColors, setShowColors] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const dragMoved = useRef(false);
+  const pointerStart = useRef({ x: 0, y: 0 });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -183,6 +184,15 @@ function LinkRow({
         style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
         {...attributes}
         {...listeners}
+        onPointerDown={e => {
+          pointerStart.current = { x: e.clientX, y: e.clientY };
+          dragMoved.current = false;
+        }}
+        onPointerMove={e => {
+          const dx = e.clientX - pointerStart.current.x;
+          const dy = e.clientY - pointerStart.current.y;
+          if (Math.sqrt(dx*dx + dy*dy) > 4) dragMoved.current = true;
+        }}
       >
         <a
           className="link-title"
@@ -192,8 +202,9 @@ function LinkRow({
           title={link.title}
           style={link.color ? { color: link.color } : undefined}
           onClick={(e) => {
-            if (isDragging || wasDragging.current) {
+            if (isDragging || dragMoved.current) {
               e.preventDefault();
+              e.stopPropagation();
             }
           }}
         >
@@ -303,17 +314,11 @@ function LinksList({
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 4 },
     })
   );
 
-  const wasDragging = useRef(false);
-
   async function handleDragEnd(event) {
-    // Mark that a drag just finished — stays true long enough to block the click event
-    wasDragging.current = true;
-    setTimeout(() => { wasDragging.current = false; }, 200);
-
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
@@ -363,7 +368,6 @@ function LinksList({
               openInNewTab={openInNewTab}
               faviconEnabled={faviconEnabled}
               onRefresh={onRefresh}
-              wasDragging={wasDragging}
             />
           ))}
         </div>
