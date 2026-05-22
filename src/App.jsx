@@ -491,6 +491,23 @@ function WidgetPanel({ theme, setTheme }) {
   const showNews     = !(theme.hideNews     ?? false)
   const showCalendar = !(theme.hideCalendar ?? false)
 
+  const panelRef = useRef(null)
+
+  const startResize = (e) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startH = panelRef.current?.getBoundingClientRect().height || 400
+    const onMove = (ev) => {
+      const newH = Math.max(120, startH + (ev.clientY - startY))
+      if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
+      // resize news article area proportionally
+      document.documentElement.style.setProperty('--wp-news-height', Math.max(80, newH - 200) + 'px')
+    }
+    const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
   if (!showWeather && !showNews && !showCalendar) return null
 
   const widgets = [
@@ -500,7 +517,7 @@ function WidgetPanel({ theme, setTheme }) {
   ]
 
   return (
-    <div className="widget-panel" data-collapsed={collapsed}>
+    <div className="widget-panel" data-collapsed={collapsed} ref={panelRef}>
       <div className="widget-panel-header">
         <div className="widget-panel-icons">
           {widgets.map(w => (
@@ -508,7 +525,7 @@ function WidgetPanel({ theme, setTheme }) {
               key={w.key}
               className={`wp-icon-btn${w.show ? ' active' : ''}`}
               title={`${w.show ? 'Hide' : 'Show'} ${w.label}`}
-              onClick={e => { e.stopPropagation(); set(w.key, !w.show) }}
+              onClick={e => { e.stopPropagation(); set(w.key, w.show) }}
             >
               {w.icon}
             </button>
@@ -525,6 +542,7 @@ function WidgetPanel({ theme, setTheme }) {
           {showCalendar && <WidgetPanelCalendar theme={theme} />}
         </div>
       )}
+      {!collapsed && <div className="wp-resize-handle" onPointerDown={startResize} />}
     </div>
   )
 }
@@ -632,13 +650,20 @@ function WidgetPanelCalendar({ theme }) {
     if (!icalUrls.length) { setLoading(false); return }
     const fetchAll = async () => {
       try {
-        const days = theme.calDays || 7
-        const results = await Promise.all(icalUrls.map(url =>
-          fetch(`/api/ical?url=${encodeURIComponent(url)}&days=${days}`).then(r=>r.json()).catch(()=>([]))
-        ))
-        const all = results.flat().filter((e,i,a)=>a.findIndex(x=>x.uid===e.uid)===i)
-          .sort((a,b)=>new Date(a.start)-new Date(b.start))
-        setEvents(all)
+        const now = new Date()
+        const cutoff = new Date()
+        cutoff.setDate(cutoff.getDate() + (theme.calDays || 14))
+        cutoff.setHours(23,59,59,999)
+        const results = await Promise.allSettled(icalUrls.map(u => fetchIcal(u)))
+        const all = []
+        results.forEach(r => {
+          if (r.status === 'fulfilled') {
+            try { parseIcal(r.value).forEach(ev => { const s=new Date(ev.start); if(s>=now&&s<=cutoff) all.push(ev) }) } catch {}
+          }
+        })
+        all.sort((a,b)=>new Date(a.start)-new Date(b.start))
+        const deduped = all.filter((e,i,a)=>a.findIndex(x=>x.uid===e.uid)===i)
+        setEvents(deduped)
       } catch(e) { setError('Could not load calendar') }
       setLoading(false)
     }

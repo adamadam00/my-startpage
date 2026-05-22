@@ -3318,7 +3318,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   border: 1px solid var(--border);
   background: var(--card);
   overflow: hidden;
-  transition: all 0.2s ease;
+  position: relative;
 }
 .widget-panel[data-collapsed='true'] {
   margin-bottom: 0.5rem;
@@ -3401,7 +3401,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   transition: all 0.15s;
 }
 .wp-tab.active, .wp-tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-.wp-news-articles { display: flex; flex-direction: column; gap: 0; max-height: 280px; overflow-y: auto; padding-right: 0.5rem; scrollbar-width: thin; scrollbar-gutter: stable; }
+.wp-news-articles { display: flex; flex-direction: column; gap: 0; max-height: var(--wp-news-height, 280px); overflow-y: auto; padding-right: 0.75rem; scrollbar-width: thin; scrollbar-gutter: stable; }
 .wp-article {
   display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem;
   padding: 0.3rem 0;
@@ -3420,3 +3420,28 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .wp-cal-event { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.15rem 0; }
 .wp-cal-time { font-size: var(--news-font-size, 12px); color: var(--accent); flex-shrink: 0; min-width: 60px; }
 .wp-cal-title { font-size: var(--news-font-size, 12px); color: var(--text); }
+
+/* Widget panel resize handle */
+.wp-resize-handle {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+  opacity: 0.25;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+.wp-resize-handle:hover { opacity: 0.7; }
+.wp-resize-handle::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--text-dim);
+  border-bottom: 2px solid var(--text-dim);
+  border-radius: 0 0 2px 0;
+}
