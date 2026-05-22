@@ -474,6 +474,188 @@ function GmailWidget({ theme }) {
 }
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
+// ─── WIDGET PANEL ─────────────────────────────────────────────────────────────
+function WidgetPanel({ theme, setTheme }) {
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('widgetPanelCollapsed') ?? 'false') } catch { return false }
+  })
+
+  const toggle = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem('widgetPanelCollapsed', JSON.stringify(next))
+  }
+
+  const showWeather  = !(theme.hideWeather  ?? false)
+  const showNews     = !(theme.hideNews     ?? false)
+  const showCalendar = !(theme.hideCalendar ?? false)
+
+  if (!showWeather && !showNews && !showCalendar) return null
+
+  return (
+    <div className="widget-panel" data-collapsed={collapsed}>
+      <div className="widget-panel-header" onClick={toggle}>
+        <span className="widget-panel-title">
+          {[showWeather && '⛅', showNews && '📰', showCalendar && '📅'].filter(Boolean).join(' · ')}
+          <span style={{ marginLeft: '0.4rem', opacity: 0.6, fontSize: '0.8em' }}>Widgets</span>
+        </span>
+        <span className="widget-panel-chevron">{collapsed ? '▼' : '▲'}</span>
+      </div>
+      {!collapsed && (
+        <div className="widget-panel-body">
+          {showWeather  && <WidgetPanelWeather theme={theme} />}
+          {showNews     && <WidgetPanelNews    theme={theme} setTheme={setTheme} />}
+          {showCalendar && <WidgetPanelCalendar theme={theme} />}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function WidgetPanelWeather({ theme }) {
+  const [wx, setWx] = useState(null)
+  const [forecast, setForecast] = useState([])
+
+  useEffect(() => {
+    const doFetch = async (lat, lon) => {
+      try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`)
+        const d = await r.json()
+        setWx(d.current_weather ?? null)
+        if (d.daily) setForecast(d.daily.time.slice(0,5).map((date,i) => ({ date, code: d.daily.weathercode[i], max: Math.round(d.daily.temperature_2m_max[i]), min: Math.round(d.daily.temperature_2m_min[i]) })))
+      } catch {}
+    }
+    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(({coords}) => doFetch(coords.latitude, coords.longitude), () => doFetch(-37.8136,144.9631), {timeout:5000})
+    else doFetch(-37.8136,144.9631)
+  }, [])
+
+  const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'}
+  const descs = {0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Raining',65:'Heavy rain',71:'Light snow',73:'Snowing',75:'Heavy snow',80:'Showers',81:'Rain showers',82:'Violent rain',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'}
+  const dayLabel = d => new Date(d).toLocaleDateString([],{weekday:'short'})
+
+  if (!wx) return <div className="wp-section wp-weather"><span style={{opacity:0.5}}>Loading weather...</span></div>
+  return (
+    <div className="wp-section wp-weather">
+      <div className="wp-weather-now">
+        <span className="wp-weather-icon">{icons[wx.weathercode]||'🌡'}</span>
+        <span className="wp-weather-temp">{Math.round(wx.temperature)}°</span>
+        <span className="wp-weather-desc">{descs[wx.weathercode]||''}</span>
+      </div>
+      {forecast.map(day => (
+        <div key={day.date} className="wp-forecast-row">
+          <span>{icons[day.code]||'🌡'}</span>
+          <span className="wp-forecast-day">{dayLabel(day.date)}</span>
+          <span className="wp-forecast-desc">{descs[day.code]||''}</span>
+          <span className="wp-forecast-hi">{day.max}°</span>
+          <span className="wp-forecast-lo">/{day.min}°</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function WidgetPanelNews({ theme, setTheme }) {
+  const [activeFeed, setActiveFeed] = useState(null)
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const disabledFeeds = theme.newsDisabledFeeds || []
+  const customFeeds = [
+    theme.newsCustom1 ? { id:'custom1', label: theme.newsCustom1Label||'Custom 1', url: theme.newsCustom1 } : null,
+    theme.newsCustom2 ? { id:'custom2', label: theme.newsCustom2Label||'Custom 2', url: theme.newsCustom2 } : null,
+    theme.newsCustom3 ? { id:'custom3', label: theme.newsCustom3Label||'Custom 3', url: theme.newsCustom3 } : null,
+  ].filter(Boolean)
+  const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
+  const currentFeed = activeFeed || allFeeds[0]
+
+  const fetchFeed = async (feed) => {
+    if (!feed) return
+    setLoading(true); setArticles([])
+    try {
+      const r = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
+      const d = await r.json()
+      setArticles((d.items||[]).slice(0,12))
+    } catch { setArticles([]) }
+    setLoading(false)
+  }
+
+  useEffect(() => { if (currentFeed) fetchFeed(currentFeed) }, [currentFeed?.id])
+
+  if (allFeeds.length === 0) return null
+  return (
+    <div className="wp-section wp-news">
+      <div className="wp-news-tabs">
+        {allFeeds.map(f => (
+          <button key={f.id} className={`wp-tab${currentFeed?.id === f.id ? ' active' : ''}`} onClick={() => setActiveFeed(f)}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <div className="wp-news-articles">
+        {loading && <div className="wp-empty">Loading...</div>}
+        {!loading && articles.map((a,i) => (
+          <a key={i} className="wp-article" href={a.link} target="_blank" rel="noopener noreferrer">
+            <span className="wp-article-title">{a.title}</span>
+            {a.pubDate && <span className="wp-article-date">{new Date(a.pubDate).toLocaleDateString([],{month:'short',day:'numeric'})}</span>}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WidgetPanelCalendar({ theme }) {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
+
+  useEffect(() => {
+    if (!icalUrls.length) { setLoading(false); return }
+    const fetchAll = async () => {
+      try {
+        const days = theme.calDays || 7
+        const results = await Promise.all(icalUrls.map(url =>
+          fetch(`/api/ical?url=${encodeURIComponent(url)}&days=${days}`).then(r=>r.json()).catch(()=>([]))
+        ))
+        const all = results.flat().filter((e,i,a)=>a.findIndex(x=>x.uid===e.uid)===i)
+          .sort((a,b)=>new Date(a.start)-new Date(b.start))
+        setEvents(all)
+      } catch(e) { setError('Could not load calendar') }
+      setLoading(false)
+    }
+    fetchAll()
+  }, [icalUrls.join('|'), theme.calDays])
+
+  const formatTime = (dt, allDay) => allDay ? 'All day' : new Date(dt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true})
+  const grouped = events.reduce((acc, ev) => {
+    const day = new Date(ev.start).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})
+    if (!acc[day]) acc[day] = []
+    acc[day].push(ev)
+    return acc
+  }, {})
+
+  return (
+    <div className="wp-section wp-calendar">
+      {!icalUrls.length && <div className="wp-empty">Add iCal URL in Settings → Calendar</div>}
+      {loading && <div className="wp-empty">Loading...</div>}
+      {error && <div className="wp-empty" style={{color:'var(--danger)'}}>{error}</div>}
+      {!loading && !error && events.length === 0 && icalUrls.length > 0 && <div className="wp-empty">No upcoming events 🎉</div>}
+      {Object.entries(grouped).map(([day, dayEvents]) => (
+        <div key={day} className="wp-cal-day">
+          <div className="wp-cal-day-label">{day}</div>
+          {dayEvents.map((ev,i) => (
+            <div key={i} className="wp-cal-event">
+              <span className="wp-cal-time">{formatTime(ev.start, ev.allDay)}</span>
+              <span className="wp-cal-title">{ev.title}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
 const DEFAULT_THEME = {
   bg: '#0a0a0f', bg2: '#12121a', bg3: '#1a1a28',
   card: '#12121a', cardOpacity: 1, titleBg: '#0f0f18',
@@ -603,8 +785,8 @@ function applyTheme(t) {
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
   s('--handle-opacity', 0.05)
-  s('--handle-opacity-global', t.handleOpacity ?? 0.35)
-  s('--handle-size', `${Math.round(10 * (t.handleScale ?? 1))}px`)
+  s('--handle-opacity-global', 0.05)
+  s('--handle-size', '10px')
   s('--handle-color', t.handleColor ?? '#2a2a3a')
   s('--action-button-scale', 1)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
@@ -2287,6 +2469,8 @@ export default function App() {
 				<Sections
 				  sections={sections}
 				  links={searchMode === 'links' ? filteredLinks : links}
+				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} />}
+				  widgetPanelPosition={theme.widgetPanelPosition || 'above'}
 				  userId={session.user.id}
 				  workspaceId={activeWs}
 				  onRefresh={handleRefresh}

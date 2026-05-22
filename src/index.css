@@ -2337,7 +2337,6 @@ html.bg-29-carbon::after {
   transition: background 0.15s;
   overflow: visible;
   min-width: 0;
-  cursor: default;
 }
 
 .link-item > .link-act:first-child {
@@ -2361,7 +2360,6 @@ html.bg-29-carbon::after {
   object-fit: contain;
   opacity: var(--favicon-opacity);
   filter: var(--favicon-filter);
-  cursor: default;
 }
 
 .link-title {
@@ -3312,3 +3310,84 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   opacity: 0.5;
   pointer-events: none;
 }
+
+/* ── Widget Panel ──────────────────────────────────────────────── */
+.widget-panel {
+  margin-bottom: 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+.widget-panel[data-collapsed='true'] {
+  margin-bottom: 0.5rem;
+}
+.widget-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  background: color-mix(in srgb, var(--card) 80%, var(--accent) 8%);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.widget-panel-header:hover { background: color-mix(in srgb, var(--card) 70%, var(--accent) 15%); }
+.widget-panel-title { font-size: 0.78em; color: var(--text-dim); font-weight: 500; }
+.widget-panel-chevron { font-size: 0.65em; color: var(--text-dim); opacity: 0.6; }
+.widget-panel-body { display: flex; flex-direction: column; gap: 0; }
+
+/* Sections */
+.wp-section {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+}
+.wp-section:last-child { border-bottom: none; }
+.wp-empty { padding: 0.5rem 0; font-size: 0.78em; color: var(--text-dim); }
+
+/* Weather */
+.wp-weather-now { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
+.wp-weather-icon { font-size: 1.4em; }
+.wp-weather-temp { font-size: 1.1em; font-weight: 600; color: var(--text); }
+.wp-weather-desc { font-size: 0.78em; color: var(--text-dim); }
+.wp-forecast-row {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.2rem 0;
+  font-size: var(--news-font-size, 12px);
+  border-top: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
+}
+.wp-forecast-day { color: var(--text-dim); width: 2.5rem; flex-shrink: 0; }
+.wp-forecast-desc { flex: 1; color: var(--text-dim); }
+.wp-forecast-hi { color: var(--text); font-weight: 500; }
+.wp-forecast-lo { color: var(--text-dim); }
+
+/* News */
+.wp-news-tabs { display: flex; flex-wrap: wrap; gap: 0.2rem; margin-bottom: 0.4rem; }
+.wp-tab {
+  font-size: 0.7em; padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: transparent; color: var(--text-dim); cursor: pointer;
+  transition: all 0.15s;
+}
+.wp-tab.active, .wp-tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.wp-news-articles { display: flex; flex-direction: column; gap: 0; max-height: 280px; overflow-y: auto; }
+.wp-article {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 25%, transparent);
+  text-decoration: none;
+  transition: background 0.1s;
+}
+.wp-article:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.wp-article-title { font-size: var(--news-font-size, 12px); color: var(--text); flex: 1; line-height: 1.35; }
+.wp-article-date { font-size: 0.7em; color: var(--text-dim); flex-shrink: 0; white-space: nowrap; }
+.wp-article:hover .wp-article-title { color: var(--accent); }
+
+/* Calendar */
+.wp-cal-day { margin-bottom: 0.35rem; }
+.wp-cal-day-label { font-size: 0.7em; font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; padding: 0.2rem 0 0.15rem; border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent); margin-bottom: 0.2rem; }
+.wp-cal-event { display: flex; gap: 0.5rem; align-items: baseline; padding: 0.15rem 0; }
+.wp-cal-time { font-size: var(--news-font-size, 12px); color: var(--accent); flex-shrink: 0; min-width: 60px; }
+.wp-cal-title { font-size: var(--news-font-size, 12px); color: var(--text); }

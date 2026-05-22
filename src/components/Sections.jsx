@@ -178,26 +178,28 @@ function LinkRow({
         />
       ) : null}
 
-      {/* Drag handle - separate from the clickable link */}
-      <div
+      <div 
+        style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
         {...attributes}
         {...listeners}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
-        title="Drag to reorder"
       >
-        <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+        <a
+          className="link-title"
+          href={href}
+          target={openInNewTab ? "_blank" : "_self"}
+          rel={openInNewTab ? "noopener noreferrer" : undefined}
+          title={link.title}
+          style={link.color ? { color: link.color } : undefined}
+          onClick={(e) => {
+            // Allow click to navigate, but only if not dragging
+            if (isDragging) {
+              e.preventDefault();
+            }
+          }}
+        >
+          {link.title}
+        </a>
       </div>
-      {/* Link - completely separate from drag listeners */}
-      <a
-        className="link-title"
-        href={href}
-        target={openInNewTab ? "_blank" : "_self"}
-        rel={openInNewTab ? "noopener noreferrer" : undefined}
-        title={link.title}
-        style={{ flex: 1, minWidth: 0, ...(link.color ? { color: link.color } : {}) }}
-      >
-        {link.title}
-      </a>
 
       <div
         className="link-actions-overlay"
@@ -559,6 +561,8 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
+  widgetPanel = null,
+  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -1031,6 +1035,7 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
+              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1047,6 +1052,7 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
+              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
