@@ -11,16 +11,153 @@ import './index.css'
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
+  const [open, setOpen] = useState(false)
+  const [totalMins, setTotalMins] = useState(null) // null = not set, else minutes ahead (0-4320 = 3days)
+  const wrapRef = useRef(null)
+  const svgRef = useRef(null)
+  const clockSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--clock-widget-size') || '1')
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('pointerdown', handler)
+    return () => document.removeEventListener('pointerdown', handler)
+  }, [open])
+
   const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+  const nowH = now.getHours() % 12 + now.getMinutes() / 60
+  const nowM = now.getMinutes() + now.getSeconds() / 60
+  const hasTarget = totalMins !== null
+
+  // Target time on clock face
+  const tMins = totalMins ?? 0
+  const tH = ((now.getHours() + Math.floor(tMins / 60)) % 12) + (now.getMinutes() + tMins % 60) / 60
+  const tM = (nowM + tMins) % 60
+  const days = Math.floor(tMins / (60 * 24))
+  const remMins = tMins % (60 * 24)
+  const hrs = Math.floor(remMins / 60)
+  const mins = remMins % 60
+
+  const toRad = deg => (deg - 90) * Math.PI / 180
+  const handPos = (val, max, r) => {
+    const a = toRad((val / max) * 360)
+    return { x: 100 + r * Math.cos(a), y: 100 + r * Math.sin(a) }
+  }
+  const arcPath = (fromVal, fromMax, toVal, toMax, r) => {
+    const a1 = toRad((fromVal / fromMax) * 360)
+    const a2 = toRad((toVal / toMax) * 360)
+    const x1 = 100 + r * Math.cos(a1), y1 = 100 + r * Math.sin(a1)
+    const x2 = 100 + r * Math.cos(a2), y2 = 100 + r * Math.sin(a2)
+    const da = ((toVal / toMax) - (fromVal / fromMax) + 1) % 1
+    return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${da > 0.5 ? 1 : 0} 1 ${x2} ${y2} Z`
+  }
+
+  // Drag: pointer angle → minutes ahead (accumulates laps via day counter)
+  const lapRef = useRef(0)
+  const lastAngleRef = useRef(null)
+
+  const onPointerDown = (type) => (e) => {
+    e.preventDefault(); e.stopPropagation()
+    lapRef.current = hasTarget ? Math.floor(tMins / 720) : 0 // preserve existing laps
+    lastAngleRef.current = null
+    const svg = svgRef.current
+    let pending = null
+    const move = (ev) => {
+      if (pending) return
+      pending = requestAnimationFrame(() => {
+        pending = null
+        const rect = svg.getBoundingClientRect()
+        const dx = ev.clientX - (rect.left + rect.width / 2)
+        const dy = ev.clientY - (rect.top + rect.height / 2)
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90
+        if (angle < 0) angle += 360
+        // Detect laps (crossing 0/360)
+        if (lastAngleRef.current !== null) {
+          const diff = angle - lastAngleRef.current
+          if (diff < -180) lapRef.current++  // crossed 360→0 clockwise
+          if (diff > 180) lapRef.current = Math.max(0, lapRef.current - 1) // went back
+        }
+        lastAngleRef.current = angle
+        const laps = Math.max(0, lapRef.current)
+        const frac = angle / 360
+        if (type === 'hour') {
+          // Each lap = 12 hours
+          const totalH = laps * 12 + frac * 12
+          setTotalMins(Math.round(totalH * 60))
+        } else {
+          // Keep existing hours, change minutes
+          const baseH = hasTarget ? Math.floor(tMins / 60) : 0
+          const newMins = Math.round(frac * 60)
+          setTotalMins(baseH * 60 + newMins)
+        }
+      })
+    }
+    const up = () => { if (pending) cancelAnimationFrame(pending); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+    window.addEventListener('pointermove', move, { passive: true })
+    window.addEventListener('pointerup', up)
+  }
+
+  const hPos = handPos(tH % 12, 12, 52), mPos = handPos(tM, 60, 72)
+  const nowHPos = handPos(nowH, 12, 52), nowMPos = handPos(nowM, 60, 72)
+  const nums = [12,1,2,3,4,5,6,7,8,9,10,11]
+
   return (
-    <div className="clock-compact">
-      <span className="clock-compact-time">{hm}</span>
-      <span className="clock-compact-date">{date}</span>
+    <div style={{ position: 'relative' }} ref={wrapRef}>
+      <div className="clock-compact" onClick={() => setOpen(o => !o)} style={{ cursor: 'pointer' }}>
+        <span className="clock-compact-time">{hm}</span>
+        <span className="clock-compact-date">{date}</span>
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', padding: '1rem', zIndex: 9999, width: 240, userSelect: 'none' }}>
+          <div style={{ fontSize: '0.7em', color: 'var(--text-dim)', textAlign: 'center', marginBottom: '0.5rem' }}>
+            Drag hour hand to add laps · minute for fine tuning
+          </div>
+          <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{ display: 'block', margin: '0 auto', touchAction: 'none' }}>
+            <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
+            {hasTarget && <path d={arcPath(nowM, 60, tM, 60, 88)} fill="var(--accent)" opacity="0.13"/>}
+            {hasTarget && <path d={arcPath(nowH, 12, tH % 12, 12, 55)} fill="var(--accent)" opacity="0.08"/>}
+            {Array.from({length:60},(_,i)=>{ const a=toRad(i/60*360),r1=i%5===0?82:88; return <line key={i} x1={100+96*Math.cos(a)} y1={100+96*Math.sin(a)} x2={100+r1*Math.cos(a)} y2={100+r1*Math.sin(a)} stroke="var(--border)" strokeWidth={i%5===0?2:1} strokeLinecap="round"/> })}
+            {nums.map((n,i)=>{ const a=toRad(i/12*360); return <text key={n} x={100+72*Math.cos(a)} y={100+72*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="600" fill="var(--text)" fontFamily="inherit">{n}</text> })}
+            <line x1="100" y1="100" x2={nowHPos.x} y2={nowHPos.y} stroke="var(--text-dim)" strokeWidth="4" strokeLinecap="round" opacity="0.25"/>
+            <line x1="100" y1="100" x2={nowMPos.x} y2={nowMPos.y} stroke="var(--text-dim)" strokeWidth="2.5" strokeLinecap="round" opacity="0.25"/>
+            <line x1="100" y1="100" x2={hPos.x} y2={hPos.y} stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
+            <line x1="100" y1="100" x2={mPos.x} y2={mPos.y} stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
+            <circle cx={hPos.x} cy={hPos.y} r="9" fill="var(--accent)" opacity="0.2" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
+            <circle cx={mPos.x} cy={mPos.y} r="7" fill="var(--accent)" opacity="0.2" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
+            <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
+          </svg>
+          {/* Lap counter badges */}
+          {hasTarget && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '0.4rem', marginBottom: '0.2rem' }}>
+              <button className="btn-xs" onClick={() => setTotalMins(m => Math.max(0, (m??0) - 720))} title="−12h">−12h</button>
+              <span style={{ fontSize: '0.72em', color: 'var(--text-dim)', alignSelf: 'center', minWidth: '3rem', textAlign: 'center' }}>
+                {days > 0 && <><span style={{color:'var(--accent)',fontWeight:700}}>{days}d </span></>}
+                {hrs > 0 && <><span style={{color:'var(--accent)',fontWeight:700}}>{hrs}h </span></>}
+                <span style={{color:'var(--accent)',fontWeight:700}}>{mins}m</span>
+              </span>
+              <button className="btn-xs" onClick={() => setTotalMins(m => Math.min(4320, (m??0) + 720))} title="+12h">+12h</button>
+            </div>
+          )}
+          <div style={{ textAlign: 'center', marginTop: '0.3rem' }}>
+            <div style={{ fontSize: '0.72em', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>
+              <span style={{ opacity: 0.6 }}>Now </span>
+              <span style={{ color: 'var(--text)', fontWeight: 600 }}>{hm}</span>
+              {hasTarget && <><span style={{ margin: '0 0.4rem', opacity: 0.4 }}>→</span><span style={{ color: 'var(--accent)', fontWeight: 600 }}>{(() => { const t = new Date(now.getTime() + tMins*60000); return t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) })()}</span></>}
+            </div>
+            {!hasTarget && <div style={{ fontSize: '0.68em', color: 'var(--text-dim)', opacity: 0.5 }}>drag hour hand · each loop = +12h</div>}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+            {hasTarget && <button className="btn-xs" onClick={() => setTotalMins(null)} style={{ marginRight: '0.5rem' }}>Reset</button>}
+            <button className="btn-xs" onClick={() => setOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -30,14 +167,16 @@ function WeatherWidget() {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
   const [open, setOpen] = useState(false)
-  const [pinned, setPinned] = useState(false)
   const closeTimer = useRef(null)
-  const [loading, setLoading] = useState(true)
 
-  const handleMouseEnter = () => { clearTimeout(closeTimer.current); setOpen(true) }
-  const handleMouseLeave = () => { if (pinned) return; closeTimer.current = setTimeout(() => setOpen(false), 200) }
-  const handleClick = () => { if (!open) setOpen(true); else setPinned(p => !p) }
-  const handleClose = () => { setPinned(false); setOpen(false) }
+  const handleMouseEnter = () => {
+    clearTimeout(closeTimer.current)
+    setOpen(true)
+  }
+  const handleMouseLeave = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 200)
+  }
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const doFetch = async (lat, lon) => {
@@ -68,13 +207,14 @@ function WeatherWidget() {
       navigator.geolocation.getCurrentPosition(
         ({ coords }) => doFetch(coords.latitude, coords.longitude),
         () => doFetch(-37.8136, 144.9631),
-        { timeout: 5000 }
+        { timeout: 5000 } // Add timeout to geolocation
       )
     } else {
       doFetch(-37.8136, 144.9631)
     }
   }, [])
 
+  // Show loading placeholder to prevent layout shift
   if (loading || !wx) {
     return (
       <div className="weather-wrap" style={{ opacity: 0.5 }}>
@@ -99,31 +239,28 @@ function WeatherWidget() {
     95: 'Thunderstorm', 96: 'Thunderstorm', 99: 'Thunderstorm',
   }
 
-  const dayLabel = (dateStr) => new Date(dateStr).toLocaleDateString([], { weekday: 'short' })
+  const dayLabel = (dateStr) => {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString([], { weekday: 'short' });
+  }
 
   return (
     <div style={{ position: 'relative', overflow: 'visible' }} onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }}
-        title="5-day forecast — hover to open, click to pin" onClick={handleClick}>
+      <div className="weather-wrap" style={{ cursor: forecast.length ? 'pointer' : 'default' }} title={forecast.length ? '5-day forecast' : ''}>
         <span className="weather-icon">{icons[wx.weathercode] || '🌡'}</span>
         <span className="weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="weather-desc">{descs[wx.weathercode] || ''}</span>
       </div>
       {open && forecast.length > 0 && (
-        <div className={`weather-dropdown${pinned ? ' weather-pinned' : ''}`}>
+        <div className="weather-dropdown">
           <div className="weather-dropdown-inner">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
-              <span style={{ fontSize: 'var(--news-font-size, 12px)', fontWeight: 600, color: 'var(--text-dim)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>5-Day Forecast</span>
-              <button onClick={handleClose} title="Close"
-                style={{ background: 'none', border: 'none', color: 'var(--text-dim)', cursor: 'pointer', padding: '0.1rem 0.3rem', fontSize: '0.9em' }}>✕</button>
-            </div>
             {forecast.map((day) => (
               <div key={day.date} className="weather-dropdown-row">
-                <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{icons[day.code] || '🌡'}</span>
-                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>{descs[day.code] || 'Unknown'}</span>
-                <span style={{ color: 'var(--text)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500 }}>{day.max}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>/ {day.min}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
               </div>
             ))}
           </div>
@@ -138,7 +275,7 @@ const NEWS_FEEDS = [
   { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
   { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
   { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
-  { id: 'reuters',  label: 'Reuters',   url: 'https://feeds.reuters.com/reuters/topNews' },
+  { id: 'ap',       label: 'AP News',   url: 'https://feeds.feedburner.com/ap/topheadlines' },
   { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
   { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
 ]
@@ -474,6 +611,232 @@ function GmailWidget({ theme }) {
 }
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
+// ─── WIDGET PANEL ─────────────────────────────────────────────────────────────
+function WidgetPanel({ theme, setTheme }) {
+  const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('widgetPanelCollapsed') ?? 'false') } catch { return false }
+  })
+
+  const toggle = () => {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem('widgetPanelCollapsed', JSON.stringify(next))
+  }
+
+  const showWeather  = !(theme.hideWeather  ?? false)
+  const showNews     = !(theme.hideNews     ?? false)
+  const showCalendar = !(theme.hideCalendar ?? false)
+
+  const panelRef = useRef(null)
+
+  const startResize = (e) => {
+    e.preventDefault()
+    const startY = e.clientY
+    const startH = panelRef.current?.getBoundingClientRect().height || 400
+    const onMove = (ev) => {
+      const newH = Math.max(120, startH + (ev.clientY - startY))
+      if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
+      // resize news article area proportionally
+      document.documentElement.style.setProperty('--wp-news-height', Math.max(80, newH - 200) + 'px')
+    }
+    const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
+  if (!showWeather && !showNews && !showCalendar) return null
+
+  const widgets = [
+    { key: 'hideWeather',  show: showWeather,  icon: '⛅', label: 'Weather'  },
+    { key: 'hideNews',     show: showNews,     icon: '📰', label: 'News'     },
+    { key: 'hideCalendar', show: showCalendar, icon: '📅', label: 'Calendar' },
+  ]
+
+  return (
+    <div className="widget-panel" data-collapsed={collapsed} ref={panelRef}>
+      <div className="widget-panel-header">
+        <div className="widget-panel-icons">
+          {widgets.map(w => (
+            <button
+              key={w.key}
+              className={`wp-icon-btn${w.show ? ' active' : ''}`}
+              title={`${w.show ? 'Hide' : 'Show'} ${w.label}`}
+              onClick={e => { e.stopPropagation(); set(w.key, w.show) }}
+            >
+              {w.icon}
+            </button>
+          ))}
+        </div>
+        <button className="wp-collapse-btn" onClick={toggle} title={collapsed ? 'Expand' : 'Collapse'}>
+          {collapsed ? '▼' : '▲'}
+        </button>
+      </div>
+      {!collapsed && (
+        <div className="widget-panel-body">
+          {showWeather  && <WidgetPanelWeather theme={theme} />}
+          {showNews     && <WidgetPanelNews    theme={theme} setTheme={setTheme} />}
+          {showCalendar && <WidgetPanelCalendar theme={theme} />}
+        </div>
+      )}
+      {!collapsed && <div className="wp-resize-handle" onPointerDown={startResize} />}
+    </div>
+  )
+}
+
+function WidgetPanelWeather({ theme }) {
+  const [wx, setWx] = useState(null)
+  const [forecast, setForecast] = useState([])
+
+  useEffect(() => {
+    const doFetch = async (lat, lon) => {
+      try {
+        const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`)
+        const d = await r.json()
+        setWx(d.current_weather ?? null)
+        if (d.daily) setForecast(d.daily.time.slice(0,3).map((date,i) => ({ date, code: d.daily.weathercode[i], max: Math.round(d.daily.temperature_2m_max[i]), min: Math.round(d.daily.temperature_2m_min[i]) })))
+      } catch {}
+    }
+    if (navigator.geolocation) navigator.geolocation.getCurrentPosition(({coords}) => doFetch(coords.latitude, coords.longitude), () => doFetch(-37.8136,144.9631), {timeout:5000})
+    else doFetch(-37.8136,144.9631)
+  }, [])
+
+  const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'}
+  const descs = {0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Raining',65:'Heavy rain',71:'Light snow',73:'Snowing',75:'Heavy snow',80:'Showers',81:'Rain showers',82:'Violent rain',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'}
+  const dayLabel = d => new Date(d).toLocaleDateString([],{weekday:'short'})
+
+  if (!wx) return <div className="wp-section wp-weather"><span style={{opacity:0.5}}>Loading weather...</span></div>
+  return (
+    <div className="wp-section wp-weather">
+      <div className="wp-weather-now">
+        <span className="wp-weather-icon">{icons[wx.weathercode]||'🌡'}</span>
+        <span className="wp-weather-temp">{Math.round(wx.temperature)}°</span>
+        <span className="wp-weather-desc">{descs[wx.weathercode]||''}</span>
+      </div>
+      {forecast.map(day => (
+        <div key={day.date} className="wp-forecast-row">
+          <span style={{flexShrink:0}}>{icons[day.code]||'🌡'}</span>
+          <span className="wp-forecast-day">{dayLabel(day.date)}</span>
+          <span className="wp-forecast-desc">{descs[day.code]||''}</span>
+          <div className="wp-forecast-temps">
+            <span className="wp-forecast-hi">{day.max}°</span>
+            <span className="wp-forecast-lo">/{day.min}°</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function WidgetPanelNews({ theme, setTheme }) {
+  const [activeFeed, setActiveFeed] = useState(null)
+  const [articles, setArticles] = useState([])
+  const [loading, setLoading] = useState(false)
+  const disabledFeeds = theme.newsDisabledFeeds || []
+  const customFeeds = [
+    theme.newsCustom1 ? { id:'custom1', label: theme.newsCustom1Label||'Custom 1', url: theme.newsCustom1 } : null,
+    theme.newsCustom2 ? { id:'custom2', label: theme.newsCustom2Label||'Custom 2', url: theme.newsCustom2 } : null,
+    theme.newsCustom3 ? { id:'custom3', label: theme.newsCustom3Label||'Custom 3', url: theme.newsCustom3 } : null,
+  ].filter(Boolean)
+  const allFeeds = [...NEWS_FEEDS, ...customFeeds].filter(f => !disabledFeeds.includes(f.id))
+  const currentFeed = activeFeed || allFeeds[0]
+
+  const fetchFeed = async (feed) => {
+    if (!feed) return
+    setLoading(true); setArticles([])
+    try {
+      const r = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
+      const d = await r.json()
+      setArticles((d.items||[]).slice(0,12))
+    } catch { setArticles([]) }
+    setLoading(false)
+  }
+
+  useEffect(() => { if (currentFeed) fetchFeed(currentFeed) }, [currentFeed?.id])
+
+  if (allFeeds.length === 0) return null
+  return (
+    <div className="wp-section wp-news">
+      <div className="wp-news-tabs">
+        {allFeeds.map(f => (
+          <button key={f.id} className={`wp-tab${currentFeed?.id === f.id ? ' active' : ''}`} onClick={() => setActiveFeed(f)}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <div className="wp-news-articles">
+        {loading && <div className="wp-empty">Loading...</div>}
+        {!loading && articles.map((a,i) => (
+          <a key={i} className="wp-article" href={a.link} target="_blank" rel="noopener noreferrer">
+            <span className="wp-article-title">{a.title}</span>
+            {a.pubDate && <span className="wp-article-date">{new Date(a.pubDate).toLocaleDateString([],{month:'short',day:'numeric'})}</span>}
+          </a>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WidgetPanelCalendar({ theme }) {
+  const [events, setEvents] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const icalUrls = [theme.calIcalUrl, theme.calIcalUrl2, theme.calIcalUrl3].filter(Boolean)
+
+  useEffect(() => {
+    if (!icalUrls.length) { setLoading(false); return }
+    const fetchAll = async () => {
+      try {
+        const now = new Date()
+        const cutoff = new Date()
+        cutoff.setDate(cutoff.getDate() + (theme.calDays || 14))
+        cutoff.setHours(23,59,59,999)
+        const results = await Promise.allSettled(icalUrls.map(u => fetchIcal(u)))
+        const all = []
+        results.forEach(r => {
+          if (r.status === 'fulfilled') {
+            try { parseIcal(r.value).forEach(ev => { const s=new Date(ev.start); if(s>=now&&s<=cutoff) all.push(ev) }) } catch {}
+          }
+        })
+        all.sort((a,b)=>new Date(a.start)-new Date(b.start))
+        const deduped = all.filter((e,i,a)=>a.findIndex(x=>x.uid===e.uid)===i)
+        setEvents(deduped)
+      } catch(e) { setError('Could not load calendar') }
+      setLoading(false)
+    }
+    fetchAll()
+  }, [icalUrls.join('|'), theme.calDays])
+
+  const formatTime = (dt, allDay) => allDay ? 'All day' : new Date(dt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit',hour12:true})
+  const grouped = events.reduce((acc, ev) => {
+    const day = new Date(ev.start).toLocaleDateString([],{weekday:'short',month:'short',day:'numeric'})
+    if (!acc[day]) acc[day] = []
+    acc[day].push(ev)
+    return acc
+  }, {})
+
+  return (
+    <div className="wp-section wp-calendar">
+      {!icalUrls.length && <div className="wp-empty">Add iCal URL in Settings → Calendar</div>}
+      {loading && <div className="wp-empty">Loading...</div>}
+      {error && <div className="wp-empty" style={{color:'var(--danger)'}}>{error}</div>}
+      {!loading && !error && events.length === 0 && icalUrls.length > 0 && <div className="wp-empty">No upcoming events 🎉</div>}
+      {Object.entries(grouped).map(([day, dayEvents]) => (
+        <div key={day} className="wp-cal-day">
+          <div className="wp-cal-day-label">{day}</div>
+          {dayEvents.map((ev,i) => (
+            <div key={i} className="wp-cal-event">
+              <span className="wp-cal-time">{formatTime(ev.start, ev.allDay)}</span>
+              <span className="wp-cal-title">{ev.title}</span>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+
 const DEFAULT_THEME = {
   bg: '#0a0a0f', bg2: '#12121a', bg3: '#1a1a28',
   card: '#12121a', cardOpacity: 1, titleBg: '#0f0f18',
@@ -785,6 +1148,10 @@ function applyTheme(t) {
   if (t.topbarFontSize) s('--topbar-font-size', t.topbarFontSize + 'px')
   if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
   if (t.notesFontSize) s('--notes-font-size', t.notesFontSize + 'px')
+  if (t.noteColor1) s('--note-color-1', t.noteColor1)
+  if (t.noteColor2) s('--note-color-2', t.noteColor2)
+  if (t.noteColor3) s('--note-color-3', t.noteColor3)
+  if (t.noteColor4) s('--note-color-4', t.noteColor4)
   if (t.notesFontFamily) s('--notes-font-family', t.notesFontFamily)
   if (t.notesWidth) s('--notes-width', t.notesWidth + 'px')
   if (t.notesHeaderBg) s('--notes-header-bg', t.notesHeaderBg)
@@ -847,8 +1214,8 @@ function applyTheme(t) {
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
-  const speed = t.bgAnimSpeed ?? 1
-  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(2) + 's')
+  const speed = ps.speed ?? 1
+  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
   const c1 = ps.c1 || null
   const c2 = ps.c2 || null
   const c3 = ps.c3 || null
@@ -884,48 +1251,6 @@ function applyTheme(t) {
     s('--plasma-c4', rgba(userColors[0], 0.14));
     s('--plasma-c5', rgba(userColors[1] || userColors[0], 0.16));
     s('--plasma-c6', rgba(userColors[2] || userColors[0], 0.18));
-  }
-
-  const hRgba = (hex, a) => { const r = hexRgb(hex||'#000000'); return `rgba(${r},${parseFloat(a).toFixed(3)})` }
-
-  if (t.bgPreset === '30-aurora') {
-    const ac1=t.bgAuroraC1||'#00dc78', ac2=t.bgAuroraC2||'#1e78ff', ac3=t.bgAuroraC3||'#8c28ff'
-    const ai=(t.bgAuroraIntensity??100)/100
-    s('--aurora-bg', t.bgAuroraBg||'#01050f')
-    s('--aurora-c1a', hRgba(ac1, 0.30*ai)); s('--aurora-c2a', hRgba(ac2, 0.26*ai)); s('--aurora-c3a', hRgba(ac3, 0.22*ai))
-    s('--aurora-c1b', hRgba(ac1, 0.16*ai)); s('--aurora-c2b', hRgba(ac2, 0.18*ai)); s('--aurora-c3b', hRgba(ac3, 0.14*ai))
-    s('--aurora-c1c', hRgba(ac1, 0.10*ai)); s('--aurora-c2c', hRgba(ac2, 0.12*ai))
-    s('--aurora-star-op', t.bgAuroraStarOpacity??0.75)
-    const sd=t.bgAuroraStarDensity??100
-    s('--aurora-star-tile', sd>=100?'100%':Math.max(25,sd)+'%')
-    s('--aurora-speed-a', dur(22)); s('--aurora-speed-b', dur(30))
-  }
-
-  if (t.bgPreset === '31-deep-ocean') {
-    const oi=(t.bgOceanIntensity??100)/100
-    const dens=t.bgOceanDensity??50
-    const tA=Math.round(360-dens*2.4)+'px', tB=Math.round(260-dens*1.8)+'px', tC=Math.round(480-dens*3.0)+'px'
-    s('--ocean-bg', t.bgOceanDeepBg||'#000814')
-    s('--ocean-c1', hRgba(t.bgOceanCausticC||'#0078c8', 0.22*oi))
-    s('--ocean-c2', hRgba(t.bgOceanMidC||'#003c78', 0.32*oi))
-    s('--ocean-c3', hRgba(t.bgOceanBioC||'#00ffb4', t.bgOceanBioOpacity??0.08))
-    s('--ocean-c4', hRgba(t.bgOceanCausticC||'#0078c8', 0.18*oi))
-    s('--ocean-c5', hRgba(t.bgOceanMidC||'#003c78', 0.22*oi))
-    s('--ocean-c6', hRgba(t.bgOceanBioC||'#00ffb4', (t.bgOceanBioOpacity??0.08)*0.8))
-    s('--ocean-particle', hRgba(t.bgOceanParticleC||'#64dcff', t.bgOceanParticleOpacity??0.55))
-    s('--ocean-tile-a', tA+' '+Math.round(parseInt(tA)*1.6)+'px')
-    s('--ocean-tile-b', tB+' '+Math.round(parseInt(tB)*1.5)+'px')
-    s('--ocean-tile-c', tC+' '+Math.round(parseInt(tC)*1.7)+'px')
-    s('--ocean-speed-a', dur(18)); s('--ocean-speed-b', dur(12))
-  }
-
-  if (t.bgPreset === '32-lava-lamp') {
-    const lo=t.bgLavaOpacity??0.85
-    const lc1=t.bgLavaC1||'#ff4080', lc2=t.bgLavaC2||'#ff8020', lc3=t.bgLavaC3||'#c020ff'
-    s('--lava-bg', t.bgLavaBg||'#080410')
-    s('--lava-c1', hRgba(lc1, 0.60*lo)); s('--lava-c2', hRgba(lc2, 0.55*lo)); s('--lava-c3', hRgba(lc3, 0.52*lo))
-    s('--lava-c1g', hRgba(lc1, 0.22*lo)); s('--lava-c2g', hRgba(lc2, 0.20*lo)); s('--lava-c3g', hRgba(lc3, 0.18*lo))
-    s('--lava-speed-a', dur(20)); s('--lava-speed-b', dur(16))
   }
 
   const sfGrad = ps.sfGrad ?? false
@@ -1008,12 +1333,6 @@ function applyTheme(t) {
     html.bg-tide::before      { animation-duration: ${dur(20)} !important; }
     html.bg-tide::after       { animation-duration: ${dur(30)} !important; }
     html.bg-28-brushed-metal::after { animation-duration: ${dur(20)} !important; }
-    .bg-30-aurora::before { animation-duration: ${dur(22)} !important; }
-    .bg-30-aurora::after  { animation-duration: ${dur(30)} !important; }
-    .bg-31-deep-ocean::before { animation-duration: ${dur(18)} !important; }
-    .bg-31-deep-ocean::after  { animation-duration: ${dur(12)} !important; }
-    .bg-32-lava-lamp::before { animation-duration: ${dur(20)} !important; }
-    .bg-32-lava-lamp::after  { animation-duration: ${dur(16)} !important; }
 
     html.bg-grass {
       overflow: hidden;
@@ -2335,6 +2654,8 @@ export default function App() {
 				<Sections
 				  sections={sections}
 				  links={searchMode === 'links' ? filteredLinks : links}
+				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} />}
+				  widgetPanelPosition={theme.widgetPanelPosition || 'above'}
 				  userId={session.user.id}
 				  workspaceId={activeWs}
 				  onRefresh={handleRefresh}
