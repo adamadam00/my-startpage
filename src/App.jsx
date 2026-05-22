@@ -119,11 +119,11 @@ function WeatherWidget() {
           <div className="weather-dropdown-inner">
             {forecast.map((day) => (
               <div key={day.date} className="weather-dropdown-row">
-                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
-                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
-                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500, width: '2.2rem', flexShrink: 0 }}>{dayLabel(day.date)}</span>
+                <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>/ {day.min}°</span>
               </div>
             ))}
           </div>
@@ -571,13 +571,11 @@ function WidgetPanelWeather({ theme }) {
   if (!wx) return <div className="wp-section wp-weather"><span style={{opacity:0.5}}>Loading weather...</span></div>
   return (
     <div className="wp-section wp-weather">
-      <a className="wp-weather-now" href="https://www.bom.gov.au/vic/forecasts/melbourne.shtml" target="_blank" rel="noopener noreferrer" style={{textDecoration:'none'}}>
-        <span style={{fontSize:'0.7em',fontWeight:600,color:'var(--text-dim)',opacity:0.7,flexShrink:0,textTransform:'uppercase',letterSpacing:'0.04em'}}>Now</span>
+      <div className="wp-weather-now">
         <span className="wp-weather-icon">{icons[wx.weathercode]||'🌡'}</span>
         <span className="wp-weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="wp-weather-desc">{descs[wx.weathercode]||''}</span>
-        <span style={{marginLeft:'auto',fontSize:'0.65em',color:'var(--accent)',opacity:0.7,flexShrink:0}}>↗ BOM</span>
-      </a>
+      </div>
       {forecast.map(day => (
         <div key={day.date} className="wp-forecast-row">
           <span style={{flexShrink:0}}>{icons[day.code]||'🌡'}</span>
