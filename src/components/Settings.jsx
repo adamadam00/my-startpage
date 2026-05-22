@@ -1193,22 +1193,13 @@ export default function Settings({
             onClick={onSignOut}>Sign out</button>
         </div>
       )}
-<<<<<<< HEAD
       <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
-=======
-      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)', flexDirection: 'column', gap: '0.4rem' }}>
-        <div style={{ fontSize: '0.62em', color: 'var(--text-dim)', opacity: 0.4, textAlign: 'center', letterSpacing: '0.03em' }}>
-          Built {new Date('2026-05-22').toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'})}
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
         <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
           onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
           {side === 'right' ? '⇐ Left' : 'Right ⇒'}
         </button>
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>Save &amp; Close</button>
-        </div>
       </div>
     </>
   )

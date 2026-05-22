@@ -12,17 +12,10 @@ import './index.css'
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
   const [open, setOpen] = useState(false)
-<<<<<<< HEAD
   const [totalMins, setTotalMins] = useState(null) // null = not set, else minutes ahead (0-4320 = 3days)
   const wrapRef = useRef(null)
   const svgRef = useRef(null)
   const clockSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--clock-widget-size') || '1')
-=======
-  const [targetH, setTargetH] = useState(null)
-  const [targetM, setTargetM] = useState(null)
-  const wrapRef = useRef(null)
-  const svgRef = useRef(null)
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -40,7 +33,6 @@ function ClockWidget() {
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   const nowH = now.getHours() % 12 + now.getMinutes() / 60
   const nowM = now.getMinutes() + now.getSeconds() / 60
-<<<<<<< HEAD
   const hasTarget = totalMins !== null
 
   // Target time on clock face
@@ -51,11 +43,6 @@ function ClockWidget() {
   const remMins = tMins % (60 * 24)
   const hrs = Math.floor(remMins / 60)
   const mins = remMins % 60
-=======
-  const tH = targetH ?? nowH
-  const tM = targetM ?? nowM
-  const hasTarget = targetH !== null || targetM !== null
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
 
   const toRad = deg => (deg - 90) * Math.PI / 180
   const handPos = (val, max, r) => {
@@ -68,7 +55,6 @@ function ClockWidget() {
     const x1 = 100 + r * Math.cos(a1), y1 = 100 + r * Math.sin(a1)
     const x2 = 100 + r * Math.cos(a2), y2 = 100 + r * Math.sin(a2)
     const da = ((toVal / toMax) - (fromVal / fromMax) + 1) % 1
-<<<<<<< HEAD
     return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${da > 0.5 ? 1 : 0} 1 ${x2} ${y2} Z`
   }
 
@@ -80,14 +66,6 @@ function ClockWidget() {
     e.preventDefault(); e.stopPropagation()
     lapRef.current = hasTarget ? Math.floor(tMins / 720) : 0 // preserve existing laps
     lastAngleRef.current = null
-=======
-    const large = da > 0.5 ? 1 : 0
-    return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`
-  }
-
-  const onPointerDown = (type) => (e) => {
-    e.preventDefault(); e.stopPropagation()
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
     const svg = svgRef.current
     let pending = null
     const move = (ev) => {
@@ -99,7 +77,6 @@ function ClockWidget() {
         const dy = ev.clientY - (rect.top + rect.height / 2)
         let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90
         if (angle < 0) angle += 360
-<<<<<<< HEAD
         // Detect laps (crossing 0/360)
         if (lastAngleRef.current !== null) {
           const diff = angle - lastAngleRef.current
@@ -119,10 +96,6 @@ function ClockWidget() {
           const newMins = Math.round(frac * 60)
           setTotalMins(baseH * 60 + newMins)
         }
-=======
-        if (type === 'hour') setTargetH(angle / 360 * 12)
-        else setTargetM(angle / 360 * 60)
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
       })
     }
     const up = () => { if (pending) cancelAnimationFrame(pending); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
@@ -130,18 +103,7 @@ function ClockWidget() {
     window.addEventListener('pointerup', up)
   }
 
-<<<<<<< HEAD
   const hPos = handPos(tH % 12, 12, 52), mPos = handPos(tM, 60, 72)
-=======
-  const nowTotalM = now.getHours() * 60 + now.getMinutes()
-  const targetTotalM = Math.floor(tH) % 12 * 60 + Math.round(tM)
-  let diffM = targetTotalM - (nowTotalM % (12 * 60))
-  if (diffM < 0) diffM += 12 * 60
-  const diffHrs = Math.floor(diffM / 60)
-  const diffMins = diffM % 60
-
-  const hPos = handPos(tH, 12, 52), mPos = handPos(tM, 60, 72)
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
   const nowHPos = handPos(nowH, 12, 52), nowMPos = handPos(nowM, 60, 72)
   const nums = [12,1,2,3,4,5,6,7,8,9,10,11]
 
@@ -153,7 +115,6 @@ function ClockWidget() {
       </div>
       {open && (
         <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', padding: '1rem', zIndex: 9999, width: 240, userSelect: 'none' }}>
-<<<<<<< HEAD
           <div style={{ fontSize: '0.7em', color: 'var(--text-dim)', textAlign: 'center', marginBottom: '0.5rem' }}>
             Drag hour hand to add laps · minute for fine tuning
           </div>
@@ -161,13 +122,6 @@ function ClockWidget() {
             <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
             {hasTarget && <path d={arcPath(nowM, 60, tM, 60, 88)} fill="var(--accent)" opacity="0.13"/>}
             {hasTarget && <path d={arcPath(nowH, 12, tH % 12, 12, 55)} fill="var(--accent)" opacity="0.08"/>}
-=======
-          <div style={{ fontSize: '0.7em', color: 'var(--text-dim)', textAlign: 'center', marginBottom: '0.5rem' }}>Drag hands to measure duration</div>
-          <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{ display: 'block', margin: '0 auto', touchAction: 'none' }}>
-            <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
-            {hasTarget && <path d={arcPath(nowM, 60, tM, 60, 88)} fill="var(--accent)" opacity="0.13"/>}
-            {hasTarget && <path d={arcPath(nowH, 12, tH, 12, 55)} fill="var(--accent)" opacity="0.08"/>}
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
             {Array.from({length:60},(_,i)=>{ const a=toRad(i/60*360),r1=i%5===0?82:88; return <line key={i} x1={100+96*Math.cos(a)} y1={100+96*Math.sin(a)} x2={100+r1*Math.cos(a)} y2={100+r1*Math.sin(a)} stroke="var(--border)" strokeWidth={i%5===0?2:1} strokeLinecap="round"/> })}
             {nums.map((n,i)=>{ const a=toRad(i/12*360); return <text key={n} x={100+72*Math.cos(a)} y={100+72*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="600" fill="var(--text)" fontFamily="inherit">{n}</text> })}
             <line x1="100" y1="100" x2={nowHPos.x} y2={nowHPos.y} stroke="var(--text-dim)" strokeWidth="4" strokeLinecap="round" opacity="0.25"/>
@@ -178,7 +132,6 @@ function ClockWidget() {
             <circle cx={mPos.x} cy={mPos.y} r="7" fill="var(--accent)" opacity="0.2" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
             <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
           </svg>
-<<<<<<< HEAD
           {/* Lap counter badges */}
           {hasTarget && (
             <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', marginTop: '0.4rem', marginBottom: '0.2rem' }}>
@@ -201,19 +154,6 @@ function ClockWidget() {
           </div>
           <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
             {hasTarget && <button className="btn-xs" onClick={() => setTotalMins(null)} style={{ marginRight: '0.5rem' }}>Reset</button>}
-=======
-          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-            <div style={{ fontSize: '0.72em', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>
-              <span style={{ opacity: 0.6 }}>Now </span>
-              <span style={{ color: 'var(--text)', fontWeight: 600 }}>{now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
-              {hasTarget && <><span style={{ margin: '0 0.4rem', opacity: 0.4 }}>→</span><span style={{ color: 'var(--accent)', fontWeight: 600 }}>{String(Math.floor(tH)%12||12).padStart(2,'0')}:{String(Math.round(tM)%60).padStart(2,'0')}</span></>}
-            </div>
-            {hasTarget && <div style={{ fontSize: '1em', fontWeight: 700, color: 'var(--accent)' }}>{diffHrs > 0 && `${diffHrs}h `}{diffMins}m<span style={{ fontSize: '0.65em', fontWeight: 400, color: 'var(--text-dim)', marginLeft: '0.4rem' }}>from now</span></div>}
-            {!hasTarget && <div style={{ fontSize: '0.68em', color: 'var(--text-dim)', opacity: 0.5 }}>drag a hand to measure</div>}
-          </div>
-          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-            {hasTarget && <button className="btn-xs" onClick={() => { setTargetH(null); setTargetM(null) }} style={{ marginRight: '0.5rem' }}>Reset</button>}
->>>>>>> 8bf9ab987eacdc459cb67c90a7eca22788e76981
             <button className="btn-xs" onClick={() => setOpen(false)}>Close</button>
           </div>
         </div>
