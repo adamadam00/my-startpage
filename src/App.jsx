@@ -508,7 +508,7 @@ function WidgetPanel({ theme, setTheme }) {
     window.addEventListener('pointerup', onUp)
   }
 
-  if (!showWeather && !showNews && !showCalendar) return null
+  // Always render — header stays visible so user can re-enable widgets
 
   const widgets = [
     { key: 'hideWeather',  show: showWeather,  icon: '⛅', label: 'Weather'  },
@@ -829,8 +829,8 @@ function applyTheme(t) {
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
   s('--handle-opacity', 0.05)
-  s('--handle-opacity-global', t.handleOpacity ?? 0.35)
-  s('--handle-size', `${Math.round(10 * (t.handleScale ?? 1))}px`)
+  s('--handle-opacity-global', 0.05)
+  s('--handle-size', '10px')
   s('--handle-color', t.handleColor ?? '#2a2a3a')
   s('--action-button-scale', 1)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
@@ -1073,7 +1073,8 @@ function applyTheme(t) {
   }
 
   const ps = (t.bgSt ?? {})[t.bgPreset] ?? {}
-  const dur = (b, sp=1) => sp <= 0 ? '9999s' : (b/sp).toFixed(2)+'s'
+  const speed = ps.speed ?? 1
+  const dur = (b) => speed <= 0 ? '9999s' : ((b / speed).toFixed(1) + 's')
   const c1 = ps.c1 || null
   const c2 = ps.c2 || null
   const c3 = ps.c3 || null
