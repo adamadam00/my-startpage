@@ -659,7 +659,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   )}
                   <div style={{ flex: 1 }} />
                   <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote('') }}>×</button>
-                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Create</button>
+                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
                 </div>
               </div>
             </div>
@@ -1351,37 +1351,31 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     >
                       📎
                     </button>
-                    <div style={{ flex: 1, minWidth: '0.2rem' }} />
-                    {canShare && (
-                      <select
-                        className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
-                        value={editShareNote}
-                        onChange={e => setEditShareNote(e.target.value)}
-                      >
-                        <option value=''>No sharing</option>
-                        {otherWorkspaces.map(w => (
-                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
-                        ))}
-                      </select>
-                    )}
-                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 1, overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
-                      {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
-                        month: 'numeric', 
-                        day: 'numeric', 
-                        year: '2-digit',
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true 
-                      }) : ''}
-                    </span>
+                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      {canShare && (
+                        <select
+                          className="input"
+                          style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, minWidth: 0 }}
+                          value={editShareNote}
+                          onChange={e => setEditShareNote(e.target.value)}
+                        >
+                          <option value=''>No sharing</option>
+                          {otherWorkspaces.map(w => (
+                            <option key={w.id} value={w.id}>→ {w.name}</option>
+                          ))}
+                        </select>
+                      )}
+                      <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>
+                        {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true }) : ''}
+                      </span>
+                    </div>
                     <button
                       type="button"
                       className="btn-xs"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => remove(note.id)}
                       title="Delete note"
-                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.2rem', position: 'relative', zIndex: 1 }}
+                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.3rem' }}
                     >
                       🗑
                     </button>
