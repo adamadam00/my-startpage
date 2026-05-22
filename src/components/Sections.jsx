@@ -75,8 +75,7 @@ function LinkRow({
 
   const [showColors, setShowColors] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const dragMoved = useRef(false);
-  const pointerStart = useRef({ x: 0, y: 0 });
+  const dragMoved = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -184,15 +183,6 @@ function LinkRow({
         style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
         {...attributes}
         {...listeners}
-        onPointerDown={e => {
-          pointerStart.current = { x: e.clientX, y: e.clientY };
-          dragMoved.current = false;
-        }}
-        onPointerMove={e => {
-          const dx = e.clientX - pointerStart.current.x;
-          const dy = e.clientY - pointerStart.current.y;
-          if (Math.sqrt(dx*dx + dy*dy) > 4) dragMoved.current = true;
-        }}
       >
         <a
           className="link-title"
@@ -201,10 +191,19 @@ function LinkRow({
           rel={openInNewTab ? "noopener noreferrer" : undefined}
           title={link.title}
           style={link.color ? { color: link.color } : undefined}
+          onPointerDown={e => {
+            dragMoved.current = { x: e.clientX, y: e.clientY };
+          }}
           onClick={(e) => {
-            if (isDragging || dragMoved.current) {
-              e.preventDefault();
-              e.stopPropagation();
+            const start = dragMoved.current;
+            if (start) {
+              const dx = e.clientX - start.x;
+              const dy = e.clientY - start.y;
+              if (Math.sqrt(dx*dx + dy*dy) > 4) {
+                e.preventDefault();
+                e.stopPropagation();
+                return;
+              }
             }
           }}
         >
