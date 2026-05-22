@@ -56,6 +56,7 @@ function LinkRow({
   openInNewTab,
   faviconEnabled,
   onRefresh,
+  wasDragging,
 }) {
   const {
     attributes,
@@ -309,8 +310,10 @@ function LinksList({
   const wasDragging = useRef(false);
 
   async function handleDragEnd(event) {
+    // Mark that a drag just finished — stays true long enough to block the click event
     wasDragging.current = true;
-    setTimeout(() => { wasDragging.current = false; }, 100);
+    setTimeout(() => { wasDragging.current = false; }, 200);
+
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
@@ -360,6 +363,7 @@ function LinksList({
               openInNewTab={openInNewTab}
               faviconEnabled={faviconEnabled}
               onRefresh={onRefresh}
+              wasDragging={wasDragging}
             />
           ))}
         </div>
@@ -665,7 +669,7 @@ export default function Sections({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { 
-        distance: 8,
+        distance: 1,
       },
     })
   );
