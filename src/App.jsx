@@ -1134,7 +1134,6 @@ function applyTheme(t) {
   s('--bg-05-c2', t.bgGradC2 || '#2a1a3a')
   s('--bg-05-c3', t.bgGradC3 || '#1a3a2a')
   s('--bg-08-c1', t.bgC1 || t.bgStarC1 || '#05050f')
-  s('--bg-08-mid', t.bgStarMid || '#020518')
   s('--bg-08-c2', t.bgC2 || t.bgStarC2 || '#000308')
   s('--bg-08-c3', t.bgC3 || t.bgStarC3 || '#c8d2ff')
   s('--bg-14-c1', t.bgFogC1 || '#3a4a6e')
@@ -1691,58 +1690,80 @@ export default function App() {
   const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
     
-    // If offline, just use cache
     if (!isOnline) {
-      console.log('[handleRefresh] Offline - using cached data')
+      console.log('[handleRefresh] Offline - using cache')
       return
     }
-    
+
     try {
-      const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
+      // ── CORE: workspaces + sections + links ──────────────────────────
+      // These load first and fast. Cache is already showing — only update
+      // state if data actually changed to avoid unnecessary re-renders.
+      const { data: wsData, error: wsErr } = await supabase
+        .from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
-      
-      setWorkspaces(wsData || [])
-      CacheManager.save('workspaces', wsData || []) // Cache workspaces
-      
-      const currentWs = activeWs ?? wsData?.[0]?.id ?? null
+
+      const ordered = wsData || []
+      setWorkspaces(prev =>
+        JSON.stringify(prev) === JSON.stringify(ordered) ? prev : ordered
+      )
+      CacheManager.save('workspaces', ordered)
+
+      const currentWs = activeWsRef.current ?? ordered?.[0]?.id ?? null
       if (!currentWs) return
-      
-      if (!activeWs) {
+      if (!activeWsRef.current) {
         setActiveWs(currentWs)
-        CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
+        CacheManager.save('activeWorkspace', currentWs)
       }
-      
-      const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }] = await Promise.all([
+
+      // Sections and links load together — no notes yet
+      const [{ data: secData }, { data: linkData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
-        supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
-        supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
       ])
-      
-      // Merge own notes + shared notes (deduplicate by id)
-      const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
-      
-      setSections(secData || [])
-      setLinks(linkData || [])
-      setNotes(allNotes)
-      
-      // Cache all data
+
+      setSections(prev => {
+        const next = secData || []
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+      })
+      setLinks(prev => {
+        const next = linkData || []
+        return JSON.stringify(prev) === JSON.stringify(next) ? prev : next
+      })
       CacheManager.save('sections', secData || [])
       CacheManager.save('links', linkData || [])
-      CacheManager.save('notes', allNotes)
       CacheManager.save(`sections_${currentWs}`, secData || [])
       CacheManager.save(`links_${currentWs}`, linkData || [])
-      CacheManager.save(`notes_${currentWs}`, allNotes)
-      
+
+      // ── SECONDARY: notes load separately, non-blocking ───────────────
+      // Notes failing or being slow will never affect sections/links display
+      ;(async () => {
+        try {
+          const [{ data: noteData }, { data: sharedNoteData }] = await Promise.all([
+            supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+            supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
+          ])
+          const allNotes = [...(noteData || []), ...(sharedNoteData || [])]
+            .filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
+          setNotes(prev =>
+            JSON.stringify(prev) === JSON.stringify(allNotes) ? prev : allNotes
+          )
+          CacheManager.save('notes', allNotes)
+          CacheManager.save(`notes_${currentWs}`, allNotes)
+        } catch (e) {
+          console.warn('[handleRefresh] Notes fetch failed (non-critical):', e.message)
+        }
+      })()
+
     } catch (err) {
       console.error('Refresh network error:', err.message)
-      // On error, fall back to cache
+      // Network error — keep showing cache, don't clear anything
       const cachedSections = CacheManager.load('sections')
       const cachedLinks = CacheManager.load('links')
       const cachedNotes = CacheManager.load('notes')
-      if (cachedSections) setSections(cachedSections)
-      if (cachedLinks) setLinks(cachedLinks)
-      if (cachedNotes) setNotes(cachedNotes)
+      if (cachedSections) setSections(prev => JSON.stringify(prev) === JSON.stringify(cachedSections) ? prev : cachedSections)
+      if (cachedLinks) setLinks(prev => JSON.stringify(prev) === JSON.stringify(cachedLinks) ? prev : cachedLinks)
+      if (cachedNotes) setNotes(prev => JSON.stringify(prev) === JSON.stringify(cachedNotes) ? prev : cachedNotes)
     }
   }
 
