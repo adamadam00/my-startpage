@@ -11,16 +11,151 @@ import './index.css'
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
+  const [open, setOpen] = useState(false)
+  const [targetH, setTargetH] = useState(null) // 0-11.999 hours on clock face
+  const [targetM, setTargetM] = useState(null) // 0-59 minutes
+  const [dragging, setDragging] = useState(false) // 'hour' | 'minute' | null
+  const svgRef = useRef(null)
+
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
+
+  // Reset target hands when opening
+  const handleOpen = () => {
+    setTargetH(null)
+    setTargetM(null)
+    setOpen(o => !o)
+  }
+
   const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
+
+  // Current time angles
+  const nowH = now.getHours() % 12 + now.getMinutes() / 60
+  const nowM = now.getMinutes() + now.getSeconds() / 60
+
+  // Target angles (draggable)
+  const tH = targetH ?? nowH
+  const tM = targetM ?? nowM
+
+  // Angle helpers
+  const toRad = deg => (deg - 90) * Math.PI / 180
+  const handPos = (val, max, r) => {
+    const angle = toRad((val / max) * 360)
+    return { x: 100 + r * Math.cos(angle), y: 100 + r * Math.sin(angle) }
+  }
+
+  // Drag handler
+  const onPointerDown = (type) => (e) => {
+    e.preventDefault()
+    setDragging(type)
+    const svg = svgRef.current
+    const move = (ev) => {
+      const rect = svg.getBoundingClientRect()
+      const cx = rect.left + rect.width / 2
+      const cy = rect.top + rect.height / 2
+      const dx = ev.clientX - cx, dy = ev.clientY - cy
+      let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90
+      if (angle < 0) angle += 360
+      if (type === 'hour') setTargetH(angle / 360 * 12)
+      else setTargetM(angle / 360 * 60)
+    }
+    const up = () => { setDragging(null); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+
+  // Time difference calculation
+  const nowTotalM = now.getHours() * 60 + now.getMinutes()
+  const targetTotalM = Math.round(tH) % 12 * 60 + Math.round(tM)
+  let diffM = targetTotalM - (nowTotalM % (12 * 60))
+  if (diffM < 0) diffM += 12 * 60
+  const diffHrs = Math.floor(diffM / 60)
+  const diffMins = diffM % 60
+  const hasTarget = targetH !== null || targetM !== null
+
+  // Clock hand coords
+  const hPos = handPos(tH, 12, 52)
+  const mPos = handPos(tM, 60, 72)
+  const nowHPos = handPos(nowH, 12, 52)
+  const nowMPos = handPos(nowM, 60, 72)
+
+  // Hour numbers
+  const nums = [12,1,2,3,4,5,6,7,8,9,10,11]
+
   return (
-    <div className="clock-compact">
-      <span className="clock-compact-time">{hm}</span>
-      <span className="clock-compact-date">{date}</span>
+    <div style={{ position: 'relative' }}>
+      <div className="clock-compact" onClick={handleOpen} style={{ cursor: 'pointer' }}>
+        <span className="clock-compact-time">{hm}</span>
+        <span className="clock-compact-date">{date}</span>
+      </div>
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)',
+          background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)', padding: '1rem', zIndex: 9999,
+          width: 240, userSelect: 'none'
+        }}>
+          <div style={{ fontSize: '0.7em', color: 'var(--text-dim)', textAlign: 'center', marginBottom: '0.5rem' }}>
+            Drag hands to measure duration
+          </div>
+          <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{ display: 'block', margin: '0 auto' }}>
+            {/* Face */}
+            <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
+            {/* Tick marks */}
+            {Array.from({length: 60}, (_,i) => {
+              const a = toRad(i/60*360)
+              const r1 = i % 5 === 0 ? 82 : 88
+              return <line key={i} x1={100+96*Math.cos(a)} y1={100+96*Math.sin(a)} x2={100+r1*Math.cos(a)} y2={100+r1*Math.sin(a)} stroke="var(--border)" strokeWidth={i%5===0?2:1} strokeLinecap="round"/>
+            })}
+            {/* Hour numbers */}
+            {nums.map((n,i) => {
+              const a = toRad(i/12*360)
+              return <text key={n} x={100+72*Math.cos(a)} y={100+72*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="600" fill="var(--text)" fontFamily="inherit">{n}</text>
+            })}
+            {/* Center dot */}
+            <circle cx="100" cy="100" r="3" fill="var(--accent)" zIndex="10"/>
+            {/* Current time hands (dimmed) */}
+            <line x1="100" y1="100" x2={nowHPos.x} y2={nowHPos.y} stroke="var(--text-dim)" strokeWidth="4" strokeLinecap="round" opacity="0.3"/>
+            <line x1="100" y1="100" x2={nowMPos.x} y2={nowMPos.y} stroke="var(--text-dim)" strokeWidth="2.5" strokeLinecap="round" opacity="0.3"/>
+            {/* Target hands (draggable, bright) */}
+            <line x1="100" y1="100" x2={hPos.x} y2={hPos.y} stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
+            <line x1="100" y1="100" x2={mPos.x} y2={mPos.y} stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
+            {/* Drag targets (larger hit area) */}
+            <circle cx={hPos.x} cy={hPos.y} r="8" fill="var(--accent)" opacity="0.25" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
+            <circle cx={mPos.x} cy={mPos.y} r="6" fill="var(--accent)" opacity="0.25" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
+            <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
+          </svg>
+          {/* Time display */}
+          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+            <div style={{ fontSize: '0.72em', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>
+              <span style={{ color: 'var(--text-dim)', opacity: 0.6 }}>Now </span>
+              <span style={{ color: 'var(--text)', fontWeight: 600 }}>{now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
+              {hasTarget && <>
+                <span style={{ margin: '0 0.4rem', opacity: 0.4 }}>→</span>
+                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>
+                  {String(Math.round(tH) % 12 || 12).padStart(2,'0')}:{String(Math.round(tM)).padStart(2,'0')}
+                </span>
+              </>}
+            </div>
+            {hasTarget && (
+              <div style={{ fontSize: '1em', fontWeight: 700, color: 'var(--accent)' }}>
+                {diffHrs > 0 && `${diffHrs}h `}{diffMins}m
+                <span style={{ fontSize: '0.65em', fontWeight: 400, color: 'var(--text-dim)', marginLeft: '0.4rem' }}>from now</span>
+              </div>
+            )}
+            {!hasTarget && (
+              <div style={{ fontSize: '0.68em', color: 'var(--text-dim)', opacity: 0.5 }}>drag a hand to measure</div>
+            )}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+            {hasTarget && <button className="btn-xs" onClick={() => { setTargetH(null); setTargetM(null) }} style={{ marginRight: '0.5rem' }}>Reset</button>}
+            <button className="btn-xs" onClick={() => setOpen(false)}>Close</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -119,11 +254,11 @@ function WeatherWidget() {
           <div className="weather-dropdown-inner">
             {forecast.map((day) => (
               <div key={day.date} className="weather-dropdown-row">
-                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500, width: '2.2rem', flexShrink: 0 }}>{dayLabel(day.date)}</span>
-                <span style={{ fontSize: '1.1em', flexShrink: 0 }}>{icons[day.code] || '🌡'}</span>
-                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>{descs[day.code] || 'Unknown'}</span>
-                <span style={{ color: 'var(--text)', fontSize: 'var(--news-font-size, 12px)', fontWeight: 500 }}>{day.max}°</span>
-                <span style={{ color: 'var(--text-dim)', fontSize: 'var(--news-font-size, 12px)' }}>/ {day.min}°</span>
+                <span style={{ fontSize: '1.1em' }}>{icons[day.code] || '🌡'}</span>
+                <span style={{ flex: 1, color: 'var(--text-dim)', fontSize: '0.85em' }}>{descs[day.code] || 'Unknown'}</span>
+                <span style={{ color: 'var(--text)', fontSize: '0.85em', fontWeight: 500 }}>{day.max}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.85em' }}>/ {day.min}°</span>
+                <span style={{ color: 'var(--text-dim)', fontSize: '0.75em', marginLeft: '0.3rem' }}>{dayLabel(day.date)}</span>
               </div>
             ))}
           </div>
