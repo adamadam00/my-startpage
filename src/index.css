@@ -1584,6 +1584,8 @@ html.bg-29-carbon::after {
   padding-right: 4px;
   padding-left: 4px;
   position: relative;
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
 /* Note reorder buttons */
@@ -2483,13 +2485,10 @@ html.bg-29-carbon::after {
 
 .notes-panel {
 	background: transparent;
-	display: inline-flex;
+	display: flex;
 	flex-direction: column;
-	height: auto !important;
-	max-height: none;
 	min-height: 0;
-	align-self: flex-start;
-	flex: 0 0 auto;
+	flex: 1 1 auto;
 	padding: 0 4px;
 	padding-top: 0;
 	padding-bottom: 4rem;
@@ -3329,10 +3328,9 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   justify-content: space-between;
   padding: 0.4rem 0.6rem;
   user-select: none;
-  background: var(--card);
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  background: color-mix(in srgb, var(--card) 80%, var(--accent) 8%);
+  border-bottom: 1px solid var(--border);
   gap: 0.4rem;
-  color: var(--col-header-color, var(--text-dim));
 }
 .widget-panel-icons { display: flex; gap: 0.3rem; align-items: center; }
 .wp-icon-btn {
