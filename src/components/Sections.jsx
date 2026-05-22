@@ -207,7 +207,6 @@ function LinkRow({
           {link.title}
         </a>
       </div>
-      </div>
 
       <div
         className="link-actions-overlay"
