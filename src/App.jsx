@@ -508,7 +508,7 @@ function WidgetPanel({ theme, setTheme }) {
     window.addEventListener('pointerup', onUp)
   }
 
-  // Always render — header stays visible so user can re-enable widgets
+  if (!showWeather && !showNews && !showCalendar) return null
 
   const widgets = [
     { key: 'hideWeather',  show: showWeather,  icon: '⛅', label: 'Weather'  },
@@ -550,9 +550,11 @@ function WidgetPanel({ theme, setTheme }) {
 function WidgetPanelWeather({ theme }) {
   const [wx, setWx] = useState(null)
   const [forecast, setForecast] = useState([])
+  const [coords, setCoords] = useState(null)
 
   useEffect(() => {
     const doFetch = async (lat, lon) => {
+      setCoords({ lat, lon })
       try {
         const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&temperature_unit=celsius&timezone=auto`)
         const d = await r.json()
@@ -566,16 +568,20 @@ function WidgetPanelWeather({ theme }) {
 
   const icons = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'🌨',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'}
   const descs = {0:'Clear',1:'Mostly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Foggy',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Raining',65:'Heavy rain',71:'Light snow',73:'Snowing',75:'Heavy snow',80:'Showers',81:'Rain showers',82:'Violent rain',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'}
-  const dayLabel = d => new Date(d).toLocaleDateString([],{weekday:'short'})
+
+  const today = new Date().toISOString().slice(0,10)
+  const dayLabel = d => d === today ? 'Today' : new Date(d).toLocaleDateString([],{weekday:'short'})
+  const weatherUrl = coords ? `https://www.bom.gov.au/places/#lat=${coords.lat.toFixed(2)}&lon=${coords.lon.toFixed(2)}` : 'https://www.bom.gov.au'
 
   if (!wx) return <div className="wp-section wp-weather"><span style={{opacity:0.5}}>Loading weather...</span></div>
   return (
     <div className="wp-section wp-weather">
-      <div className="wp-weather-now">
+      <a className="wp-weather-now" href={weatherUrl} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none',display:'flex',alignItems:'center',gap:'0.5rem'}}>
         <span className="wp-weather-icon">{icons[wx.weathercode]||'🌡'}</span>
         <span className="wp-weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="wp-weather-desc">{descs[wx.weathercode]||''}</span>
-      </div>
+        <span style={{marginLeft:'auto',fontSize:'0.65em',color:'var(--accent)',opacity:0.7}}>↗ BOM</span>
+      </a>
       {forecast.map(day => (
         <div key={day.date} className="wp-forecast-row">
           <span style={{flexShrink:0}}>{icons[day.code]||'🌡'}</span>
