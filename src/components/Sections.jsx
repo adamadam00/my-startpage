@@ -430,6 +430,7 @@ function SectionCard({
         ref={setNodeRef}
         style={style}
         className={`section-card ${!shouldShowContent || isDragging ? "collapsed" : ""}`}
+          data-section-id={section.id}
         data-section-id={section.id}
         onMouseEnter={handleArchiveMouseEnter}
         onMouseLeave={handleArchiveMouseLeave}
@@ -561,8 +562,6 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
-  widgetPanel = null,
-  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -872,24 +871,48 @@ export default function Sections({
   }
 
   async function handleRenameSection(section) {
-    const nextName = window.prompt("Rename section", section.name ?? "");
-    if (nextName === null) return;
+    const newName = await new Promise(resolve => {
+      const current = section.name ?? ''
+      // Find the section name element and make it editable
+      const el = document.querySelector(`[data-section-id="${section.id}"] .section-name`)
+      if (!el) { resolve(null); return }
+      const orig = el.textContent
+      el.contentEditable = 'true'
+      el.focus()
+      // Select all text
+      const range = document.createRange()
+      range.selectNodeContents(el)
+      window.getSelection().removeAllRanges()
+      window.getSelection().addRange(range)
+      el.style.outline = '1px solid var(--accent)'
+      el.style.borderRadius = '2px'
+      el.style.padding = '0 2px'
+      const finish = () => {
+        el.contentEditable = 'false'
+        el.style.outline = ''
+        el.style.borderRadius = ''
+        el.style.padding = ''
+        const val = el.textContent.trim()
+        el.textContent = val || orig
+        resolve(val || null)
+      }
+      el.onblur = finish
+      el.onkeydown = e => {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur() }
+        if (e.key === 'Escape') { el.textContent = orig; el.contentEditable = 'false'; el.style.outline = ''; resolve(null) }
+      }
+    })
 
-    const trimmed = nextName.trim();
-    if (!trimmed) return;
+    if (!newName) return
 
     const { error } = await supabase
       .from("sections")
-      .update({ name: trimmed })
+      .update({ name: newName })
       .eq("id", section.id)
-      .eq("workspace_id", workspaceId);
+      .eq("workspace_id", workspaceId)
 
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    await onRefresh?.();
+    if (error) { alert(error.message); return }
+    await onRefresh?.()
   }
 
   async function handleDeleteSection(sectionId) {
@@ -1014,7 +1037,11 @@ export default function Sections({
                   style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
                 >+</button>
               )}
-
+              {isArchiveColumn && (
+                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
+                  Archive Column
+                </span>
+              )}
             </div>
           )
         })}
@@ -1031,12 +1058,6 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
-              {isArchiveColumn && (
-                <div className="archive-col-label" style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
-                  Archive Section
-                </div>
-              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1053,7 +1074,6 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
