@@ -98,7 +98,8 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   overflow: hidden;
 }
 
@@ -1005,7 +1006,9 @@ html.bg-29-carbon::after {
   z-index: 2;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
 }
 
 .center-fill {
@@ -1561,6 +1564,7 @@ html.bg-29-carbon::after {
   padding: var(--main-gap-top) 0.75rem 0.75rem 0.75rem;
   flex: 1;
   min-height: 0;
+  max-height: 100%;
   overflow: hidden;
   position: relative;
   z-index: 2;
@@ -1579,13 +1583,12 @@ html.bg-29-carbon::after {
 
 .side-col {
   min-height: 0;
+  max-height: 100%;
   overflow-y: auto;
   overflow-x: visible;
   padding-right: 4px;
   padding-left: 4px;
   position: relative;
-  flex: 1 1 auto;
-  align-self: stretch;
 }
 
 /* Note reorder buttons */
