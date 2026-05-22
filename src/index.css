@@ -404,11 +404,11 @@ html.bg-16-starfield-old::before, html.bg-16-starfield-old::after {
     radial-gradient(calc(var(--bg-star-size, 1) * 1px) calc(var(--bg-star-size, 1) * 1px) at 95% 50%, var(--bg-08-c3, rgba(200,210,255,0.70)) 0%,transparent 100%),
     radial-gradient(calc(var(--bg-star-size, 1) * 1px) calc(var(--bg-star-size, 1) * 1px) at 55% 75%, var(--bg-08-c3, rgba(200,210,255,0.60)) 0%,transparent 100%);
   background-size: calc(700px / (var(--bg-star-density, 1))) calc(700px / (var(--bg-star-density, 1)));
-  animation: starfield-drift calc(80s / var(--bg-star-speed, 1)) linear infinite;
+  animation: starfield-drift-a calc(80s / var(--bg-star-speed, 1)) linear infinite;
 }
 html.bg-16-starfield-old::after {
   background-size: calc(450px / (var(--bg-star-density, 1))) calc(450px / (var(--bg-star-density, 1)));
-  animation: starfield-drift calc(130s / var(--bg-star-speed, 1)) linear infinite reverse;
+  animation: starfield-drift-b calc(160s / var(--bg-star-speed, 1)) linear infinite;
   opacity: 0.55;
 }
 
@@ -955,9 +955,13 @@ html.bg-29-carbon::after {
   100% { transform: rotate(360deg); opacity: 0.6; }
 }
 
-@keyframes starfield-drift { 
-  from { transform: translate(0,0) rotate(0deg); } 
-  to { transform: translate(-220px,-220px) rotate(6deg); } 
+@keyframes starfield-drift-a {
+  from { transform: translate(0px, 0px); }
+  to   { transform: translate(-700px, -700px); }
+}
+@keyframes starfield-drift-b {
+  from { transform: translate(0px, 0px); }
+  to   { transform: translate(-450px, -450px); }
 }
 
 @keyframes plasma-shift-a {
@@ -2337,6 +2341,7 @@ html.bg-29-carbon::after {
   transition: background 0.15s;
   overflow: visible;
   min-width: 0;
+  cursor: default;
 }
 
 .link-item > .link-act:first-child {
@@ -2360,6 +2365,7 @@ html.bg-29-carbon::after {
   object-fit: contain;
   opacity: var(--favicon-opacity);
   filter: var(--favicon-filter);
+  cursor: default;
 }
 
 .link-title {

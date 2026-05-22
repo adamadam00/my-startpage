@@ -541,6 +541,7 @@ export default function Settings({
                   <Row label="Color 3 (bottom-right)"><ColorPick value={theme.bgC3 || '#1a3a2a'} onChange={v => set('bgC3', v)} /></Row>
                   <Row label="Angle"><Slider val={theme.bgGradientAngle ?? 135} min={0} max={360} onChange={v => set('bgGradientAngle', v)} unit="°" /></Row>
                   <Row label="Animation speed"><Slider val={theme.bgGradientSpeed ?? 25} min={5} max={60} onChange={v => set('bgGradientSpeed', v)} unit="s" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedGradient ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedGradient', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -553,6 +554,7 @@ export default function Settings({
                   <Row label="Star size"><Slider val={theme.bgStarSize ?? 1} min={0.5} max={4} step={0.1} onChange={v => set('bgStarSize', v)} unit="×" /></Row>
                   <Row label="Star density"><Slider val={theme.bgStarDensity ?? 100} min={25} max={250} onChange={v => set('bgStarDensity', v)} unit="%" /></Row>
                   <Row label="Speed"><Slider val={theme.bgStarSpeed ?? 1} min={0.1} max={20} step={0.1} onChange={v => set('bgStarSpeed', v)} unit="×" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedStars ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedStars', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -589,6 +591,7 @@ export default function Settings({
                   <Row label="Ember color"><ColorPick value={theme.bgInfernoC3 || '#dc1400'} onChange={v => set('bgInfernoC3', v)} /></Row>
                   <Row label="Animation speed"><Slider val={theme.bgInfernoSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgInfernoSpeed', v)} unit="×" /></Row>
                   <Row label="Intensity"><Slider val={theme.bgInfernoIntensity ?? 100} min={50} max={150} onChange={v => set('bgInfernoIntensity', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedInferno ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedInferno', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -600,6 +603,7 @@ export default function Settings({
                   <Row label="Accent color"><ColorPick value={theme.bgMintC3 || '#009664'} onChange={v => set('bgMintC3', v)} /></Row>
                   <Row label="Animation speed"><Slider val={theme.bgMintSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgMintSpeed', v)} unit="×" /></Row>
                   <Row label="Saturation"><Slider val={theme.bgMintSat ?? 100} min={50} max={150} onChange={v => set('bgMintSat', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedForest ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedForest', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -611,6 +615,7 @@ export default function Settings({
                   <Row label="Accent color"><ColorPick value={theme.bgDuskC3 || '#8c28b4'} onChange={v => set('bgDuskC3', v)} /></Row>
                   <Row label="Animation speed"><Slider val={theme.bgDuskSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgDuskSpeed', v)} unit="×" /></Row>
                   <Row label="Glow intensity"><Slider val={theme.bgDuskGlow ?? 100} min={50} max={150} onChange={v => set('bgDuskGlow', v)} unit="%" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedDusk ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedDusk', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -632,6 +637,7 @@ export default function Settings({
                   <Row label="Animation speed"><Slider val={theme.bgFogSpeed ?? 1} min={0.2} max={3} step={0.1} onChange={v => set('bgFogSpeed', v)} unit="×" /></Row>
                   <Row label="Density"><Slider val={theme.bgFogDensity ?? 100} min={30} max={150} onChange={v => set('bgFogDensity', v)} unit="%" /></Row>
                   <Row label="Blur amount"><Slider val={theme.bgFogBlur ?? 85} min={40} max={120} onChange={v => set('bgFogBlur', v)} unit="px" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedSmoke ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedSmoke', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -643,6 +649,7 @@ export default function Settings({
                   <Row label="Cycle duration"><Slider val={theme.bgScanSpeed ?? 7} min={3} max={15} onChange={v => set('bgScanSpeed', v)} unit="s" /></Row>
                   <Row label="Line intensity"><Slider val={theme.bgScanIntensity ?? 100} min={50} max={200} onChange={v => set('bgScanIntensity', v)} unit="%" /></Row>
                   <Row label="Line thickness"><Slider val={theme.bgScanThickness ?? 1} min={1} max={5} onChange={v => set('bgScanThickness', v)} unit="px" /></Row>
+                  <Row label="Speed"><Slider val={theme.bgSpeedScan ?? 1} min={0.1} max={8} step={0.1} onChange={v => set('bgSpeedScan', v)} unit="×" /></Row>
                 </>
               )}
 
@@ -794,7 +801,9 @@ export default function Settings({
               <SectionTitle>Settings Panel Colors</SectionTitle>
               <Row label="Section title"><ColorPick label="Section title" value={theme.settingsTitleColor || '#7878a0'} onChange={v => set('settingsTitleColor', v)} /></Row>
               <Row label="Section subtitle"><ColorPick label="Section subtitle" value={theme.settingsSubtitleColor || '#7890ff'} onChange={v => set('settingsSubtitleColor', v)} /></Row>
-              <Row label="Handle"><ColorPick label="Handle" value={theme.handleColor || theme.settingsTitleColor || theme.accent || '#7878a0'} onChange={v => set('handleColor', v)} /></Row>
+              <Row label="Handle color"><ColorPick label="Handle color" value={theme.handleColor || theme.settingsTitleColor || theme.accent || '#7878a0'} onChange={v => set('handleColor', v)} /></Row>
+              <Row label="Grip opacity"><Slider val={Math.round((theme.handleOpacity ?? 0.35) * 100)} min={0} max={100} onChange={v => set('handleOpacity', v / 100)} unit="%" /></Row>
+              <Row label="Grip scale"><Slider val={Math.round((theme.handleScale ?? 1) * 100)} min={50} max={200} onChange={v => set('handleScale', v / 100)} unit="%" /></Row>
               
               <SectionTitle>Font Settings</SectionTitle>
               <Row label="Font family">

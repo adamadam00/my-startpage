@@ -75,6 +75,7 @@ function LinkRow({
 
   const [showColors, setShowColors] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const dragMoved = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -178,11 +179,15 @@ function LinkRow({
         />
       ) : null}
 
-      <div 
-        style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
+      <div
         {...attributes}
         {...listeners}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
+        title="Drag to reorder"
       >
+        <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+      </div>
+      <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
         <a
           className="link-title"
           href={href}
@@ -190,15 +195,18 @@ function LinkRow({
           rel={openInNewTab ? "noopener noreferrer" : undefined}
           title={link.title}
           style={link.color ? { color: link.color } : undefined}
+          onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
           onClick={(e) => {
-            // Allow click to navigate, but only if not dragging
-            if (isDragging) {
-              e.preventDefault();
+            const s = dragMoved.current
+            if (s) {
+              const dx = e.clientX - s.x, dy = e.clientY - s.y
+              if (Math.sqrt(dx*dx + dy*dy) > 4) { e.preventDefault(); e.stopPropagation(); return }
             }
           }}
         >
           {link.title}
         </a>
+      </div>
       </div>
 
       <div
