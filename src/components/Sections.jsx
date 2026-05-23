@@ -469,25 +469,24 @@ function SectionCard({
           </button>
 
           {addingLink && (
-            <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.3rem', padding: '0.4rem 0.5rem', background: 'var(--bg2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', marginTop: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
-              <input autoFocus className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => e.key === 'Escape' && setAddingLink(false)} />
-              <input className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="https://" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)}
-                onKeyDown={async e => {
-                  if (e.key === 'Escape') { setAddingLink(false); return }
-                  if (e.key === 'Enter') {
-                    if (!newLinkTitle.trim()) return
-                    const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
-                    if (error) { alert('Error: ' + error.message); return }
-                    setAddingLink(false); onRefresh?.()
-                  }
-                }}
-              />
-              <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end' }}>
+            <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999, padding: '1rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '260px' }}>
+              <div style={{ fontSize: '0.8em', fontWeight: 600, color: 'var(--text-dim)', marginBottom: '0.2rem' }}>Add Link</div>
+              <input autoFocus className="input" style={{ fontSize: '0.9em' }} placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') setAddingLink(false); if (e.key === 'Enter') e.target.nextElementSibling?.focus() }} />
+              <input className="input" style={{ fontSize: '0.9em' }} placeholder="https://" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} onKeyDown={async e => {
+                if (e.key === 'Escape') { setAddingLink(false); return }
+                if (e.key === 'Enter') {
+                  if (!newLinkTitle.trim()) return
+                  const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
+                  if (error) { alert(error.message); return }
+                  setAddingLink(false); onRefresh?.()
+                }
+              }} />
+              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.2rem' }}>
                 <button className="btn-xs" onClick={() => setAddingLink(false)}>Cancel</button>
                 <button className="btn-xs btn-primary" onClick={async () => {
                   if (!newLinkTitle.trim()) return
                   const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
-                  if (error) { alert('Error: ' + error.message); return }
+                  if (error) { alert(error.message); return }
                   setAddingLink(false); onRefresh?.()
                 }}>Add</button>
               </div>
