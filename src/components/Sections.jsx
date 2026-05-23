@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   DndContext,
   PointerSensor,
@@ -468,7 +469,7 @@ function SectionCard({
             +
           </button>
 
-          {addingLink && (
+          {addingLink && createPortal(
             <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999, padding: '1rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '260px' }}>
               <div style={{ fontSize: '0.8em', fontWeight: 600, color: 'var(--text-dim)', marginBottom: '0.2rem' }}>Add Link</div>
               <input autoFocus className="input" style={{ fontSize: '0.9em' }} placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') setAddingLink(false); if (e.key === 'Enter') e.target.nextElementSibling?.focus() }} />
@@ -490,8 +491,8 @@ function SectionCard({
                   setAddingLink(false); onRefresh?.()
                 }}>Add</button>
               </div>
-            </div>
-          )}
+            </div>,
+          document.body)}
 
           {!isArchiveColumn && (
           <button
