@@ -3314,9 +3314,15 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 /* ── Widget Panel ──────────────────────────────────────────────── */
 .widget-panel {
   margin-bottom: 0.75rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--card);
+  border-radius: var(--section-radius, var(--radius));
+  outline: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent);
+  border: none;
+  background-color: var(--card-with-opacity, var(--card));
+  background-image: var(--panels-gradient, none);
+  background-size: var(--viewport-width, 100vw) var(--viewport-height, 100vh);
+  background-repeat: no-repeat;
+  background-blend-mode: var(--panels-gradient-blend, normal);
+  box-shadow: var(--card-shadow, none);
   overflow: hidden;
   position: relative;
 }
@@ -3370,7 +3376,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 /* Sections */
 .wp-section {
   padding: 0.6rem 0.75rem;
-  border-bottom: 3px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
 }
 .wp-section:last-child { border-bottom: none; }
 .wp-empty { padding: 0.5rem 0; font-size: 0.78em; color: var(--text-dim); }
