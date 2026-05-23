@@ -1,3 +1,6 @@
+  const [addingLink, setAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
@@ -75,7 +78,6 @@ function LinkRow({
 
   const [showColors, setShowColors] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const dragMoved = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -179,15 +181,11 @@ function LinkRow({
         />
       ) : null}
 
-      <div
+      <div 
+        style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
         {...attributes}
         {...listeners}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
-        title="Drag to reorder"
       >
-        <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
-      </div>
-      <div style={{ flex: 1, minWidth: 0, display: 'flex' }}>
         <a
           className="link-title"
           href={href}
@@ -195,12 +193,10 @@ function LinkRow({
           rel={openInNewTab ? "noopener noreferrer" : undefined}
           title={link.title}
           style={link.color ? { color: link.color } : undefined}
-          onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
           onClick={(e) => {
-            const s = dragMoved.current
-            if (s) {
-              const dx = e.clientX - s.x, dy = e.clientY - s.y
-              if (Math.sqrt(dx*dx + dy*dy) > 4) { e.preventDefault(); e.stopPropagation(); return }
+            // Allow click to navigate, but only if not dragging
+            if (isDragging) {
+              e.preventDefault();
             }
           }}
         >
@@ -384,6 +380,9 @@ function SectionCard({
   faviconEnabled,
 }) {
   const [isHovered, setIsHovered] = useState(false);
+  const [addingLink, setAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
   const hoverCloseTimer = useRef(null);
 
   const handleArchiveMouseEnter = () => {
@@ -438,7 +437,6 @@ function SectionCard({
         style={style}
         className={`section-card ${!shouldShowContent || isDragging ? "collapsed" : ""}`}
           data-section-id={section.id}
-          data-section-id={section.id}
         data-section-id={section.id}
         onMouseEnter={handleArchiveMouseEnter}
         onMouseLeave={handleArchiveMouseLeave}
@@ -463,35 +461,41 @@ function SectionCard({
           <button
             className="icon-btn"
             type="button"
-            onClick={async () => {
-              const title = window.prompt('Link title:', 'New Link')
-              if (!title?.trim()) return
-              
-              const url = window.prompt('URL:', 'https://')
-              if (!url?.trim()) return
-              
-              const { error } = await supabase
-                .from('links')
-                .insert({
-                  user_id: section.user_id,
-                  workspace_id: section.workspace_id,
-                  section_id: section.id,
-                  title: title.trim(),
-                  url: url.trim(),
-                  position: links.length
-                })
-              
-              if (error) {
-                alert('Error adding link: ' + error.message)
-                return
-              }
-              
-              await onRefresh?.()
+            onClick={() => {
+              setNewLinkTitle('')
+              setNewLinkUrl('https://')
+              setAddingLink(true)
             }}
             title="Add link"
           >
             +
           </button>
+
+          {addingLink && (
+            <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.3rem', padding: '0.4rem 0.5rem', background: 'var(--bg2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', marginTop: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+              <input autoFocus className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => e.key === 'Escape' && setAddingLink(false)} />
+              <input className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="https://" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === 'Escape') { setAddingLink(false); return }
+                  if (e.key === 'Enter') {
+                    if (!newLinkTitle.trim()) return
+                    const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
+                    if (error) { alert('Error: ' + error.message); return }
+                    setAddingLink(false); onRefresh?.()
+                  }
+                }}
+              />
+              <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end' }}>
+                <button className="btn-xs" onClick={() => setAddingLink(false)}>Cancel</button>
+                <button className="btn-xs btn-primary" onClick={async () => {
+                  if (!newLinkTitle.trim()) return
+                  const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
+                  if (error) { alert('Error: ' + error.message); return }
+                  setAddingLink(false); onRefresh?.()
+                }}>Add</button>
+              </div>
+            </div>
+          )}
 
           {!isArchiveColumn && (
           <button
@@ -570,8 +574,6 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
-  widgetPanel = null,
-  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -1047,7 +1049,11 @@ export default function Sections({
                   style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
                 >+</button>
               )}
-
+              {isArchiveColumn && (
+                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
+                  Archive Column
+                </span>
+              )}
             </div>
           )
         })}
@@ -1064,12 +1070,6 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
-              {isArchiveColumn && (
-                <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
-                  Archive Section
-                </div>
-              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1086,7 +1086,6 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
