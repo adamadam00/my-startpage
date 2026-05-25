@@ -1709,7 +1709,7 @@ export default function App() {
   const [bmFolders, setBmFolders] = useState([])
   const [bmQuery, setBmQuery] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [loading, setLoading] = useState(() => !(CacheManager.load('sections')?.length || CacheManager.load('workspaces')?.length))
+  const [loading, setLoading] = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
   const [allCollapsed, setAllCollapsed] = useState(false)
@@ -2303,8 +2303,9 @@ export default function App() {
 	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 	  const bgDataAttrs = theme.bgPreset === '03-dots' ? { 'data-pattern': theme.bgDotPattern || 'circles' } : {}
 
-	  if (loading) return <div className="center-fill">Loading…</div>
-	  if (!session) return <Auth />
+	  const hasCachedSections = (CacheManager.load('sections') || []).length > 0
+	  if (loading && !hasCachedSections) return <div className="center-fill">Loading…</div>
+	  if (!session && !hasCachedSections) return <Auth />
 
 	  return (
 		<>
