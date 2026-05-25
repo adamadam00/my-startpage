@@ -1558,6 +1558,8 @@ export default function App() {
       return null
     }
   })
+  const activeWsRef = useRef(activeWs)
+  useEffect(() => { activeWsRef.current = activeWs }, [activeWs])
   const [sections, setSections] = useState(() => {
     // Load sections from cache immediately
     return CacheManager.load('sections') || []
@@ -1734,8 +1736,6 @@ export default function App() {
 
   useEffect(() => { applyTheme(theme) }, [theme])
   useEffect(() => { sessionRef.current = session }, [session])
-  const activeWsRef = useRef(activeWs)
-  useEffect(() => { activeWsRef.current = activeWs }, [activeWs])
   
   // Save active workspace to localStorage and cache
   useEffect(() => {
@@ -1913,30 +1913,30 @@ export default function App() {
     CacheManager.save('activeWorkspace', prev => prev ?? wsId)
   }
 
-  const lastRefreshRef = useRef(0)
-
-  const handleRefresh = async (force = false) => {
+  const handleRefresh = async () => {
     if (!sessionRef.current?.user?.id) return
-    if (!isOnline) return
-
-    // Throttle: skip if refreshed in last 60s unless forced
-    const now = Date.now()
-    if (!force && now - lastRefreshRef.current < 60000) return
-    lastRefreshRef.current = now
-
+    
+    // If offline, just use cache
+    if (!isOnline) {
+      console.log('[handleRefresh] Offline - using cached data')
+      return
+    }
+    
     try {
-      // ── TIER 1: workspaces + sections + links (blocks render) ──
       const { data: wsData, error: wsErr } = await supabase.from('workspaces').select('*').order('created_at', { ascending: true })
       if (wsErr) { console.error('Refresh error:', wsErr.message); return }
-
-      const ordered = wsData || []
-      setWorkspaces(prev => JSON.stringify(prev) === JSON.stringify(ordered) ? prev : ordered)
-      CacheManager.save('workspaces', ordered)
-
-      const currentWs = activeWsRef.current ?? ordered[0]?.id ?? null
+      
+      setWorkspaces(wsData || [])
+      CacheManager.save('workspaces', wsData || []) // Cache workspaces
+      
+      const currentWs = activeWs ?? wsData?.[0]?.id ?? null
       if (!currentWs) return
-      if (!activeWsRef.current) { setActiveWs(currentWs); CacheManager.save('activeWorkspace', currentWs) }
-
+      
+      if (!activeWs) {
+        setActiveWs(currentWs)
+        CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
+      }
+      
       const [{ data: secData }, { data: linkData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
@@ -1949,23 +1949,29 @@ export default function App() {
       CacheManager.save(`sections_${currentWs}`, secData || [])
       CacheManager.save(`links_${currentWs}`, linkData || [])
 
-      // ── TIER 2: notes (fire and forget, never blocks) ──
+      // Notes fire-and-forget — never block sections/links
       ;(async () => {
         try {
-          const [{ data: noteData }, { data: sharedData }] = await Promise.all([
+          const [{ data: noteData }, { data: sharedNoteData }] = await Promise.all([
             supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
             supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
           ])
-          const allNotes = [...(noteData||[]), ...(sharedData||[])].filter((n,i,a)=>a.findIndex(x=>x.id===n.id)===i)
+          const allNotes = [...(noteData||[]), ...(sharedNoteData||[])].filter((n,i,a)=>a.findIndex(x=>x.id===n.id)===i)
           setNotes(prev => JSON.stringify(prev)===JSON.stringify(allNotes)?prev:allNotes)
           CacheManager.save('notes', allNotes)
           CacheManager.save(`notes_${currentWs}`, allNotes)
         } catch(e) { console.warn('notes fetch failed:', e.message) }
       })()
-
+      
     } catch (err) {
-      console.error('Refresh error:', err.message)
-      // Network error — keep showing whatever cache we have
+      console.error('Refresh network error:', err.message)
+      // On error, fall back to cache
+      const cachedSections = CacheManager.load('sections')
+      const cachedLinks = CacheManager.load('links')
+      const cachedNotes = CacheManager.load('notes')
+      if (cachedSections) setSections(cachedSections)
+      if (cachedLinks) setLinks(cachedLinks)
+      if (cachedNotes) setNotes(cachedNotes)
     }
   }
 
@@ -1990,12 +1996,7 @@ export default function App() {
         }
       }
       
-      // Immediately show cached data for this workspace
-      const cachedSec = CacheManager.load(`sections_${activeWs}`) || CacheManager.load('sections') || []
-      const cachedLnk = CacheManager.load(`links_${activeWs}`) || CacheManager.load('links') || []
-      if (cachedSec.length) setSections(cachedSec)
-      if (cachedLnk.length) setLinks(cachedLnk)
-      loadWorkspaceTheme().then(() => handleRefresh(true))
+      loadWorkspaceTheme().then(() => handleRefresh())
     }
   }, [activeWs])
 
@@ -2303,9 +2304,8 @@ export default function App() {
 	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 	  const bgDataAttrs = theme.bgPreset === '03-dots' ? { 'data-pattern': theme.bgDotPattern || 'circles' } : {}
 
-	  const hasCachedSections = (CacheManager.load('sections') || []).length > 0
-	  if (loading && !hasCachedSections) return <div className="center-fill">Loading…</div>
-	  if (!session && !hasCachedSections) return <Auth />
+	  if (loading) return <div className="center-fill">Loading…</div>
+	  if (!session) return <Auth />
 
 	  return (
 		<>
