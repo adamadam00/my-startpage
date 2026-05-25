@@ -2304,8 +2304,10 @@ export default function App() {
 	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 	  const bgDataAttrs = theme.bgPreset === '03-dots' ? { 'data-pattern': theme.bgDotPattern || 'circles' } : {}
 
-	  if (loading) return <div className="center-fill">Loading…</div>
-	  if (!session) return <Auth />
+	  const hasCachedLinks = (CacheManager.load('links') || []).length > 0
+
+	  if (loading && !hasCachedLinks) return <div className="center-fill">Loading…</div>
+	  if (!session && !hasCachedLinks) return <Auth />
 
 	  return (
 		<>
