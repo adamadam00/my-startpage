@@ -1558,8 +1558,6 @@ export default function App() {
       return null
     }
   })
-  const activeWsRef = useRef(activeWs)
-  useEffect(() => { activeWsRef.current = activeWs }, [activeWs])
   const [sections, setSections] = useState(() => {
     // Load sections from cache immediately
     return CacheManager.load('sections') || []
