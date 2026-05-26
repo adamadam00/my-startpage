@@ -1,5 +1,7 @@
+  const [addingLink, setAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   DndContext,
   PointerSensor,
@@ -469,8 +471,8 @@ function SectionCard({
             +
           </button>
 
-          {addingLink && createPortal(
-            <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999, padding: '1rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: '280px', left: 0, right: 0, top: '100%', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.3rem', padding: '0.4rem 0.5rem', background: 'var(--bg2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', marginTop: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+          {addingLink && (
+            <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.3rem', padding: '0.4rem 0.5rem', background: 'var(--bg2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', marginTop: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
               <input autoFocus className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => e.key === 'Escape' && setAddingLink(false)} />
               <input className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="https://" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)}
                 onKeyDown={async e => {
@@ -492,8 +494,8 @@ function SectionCard({
                   setAddingLink(false); onRefresh?.()
                 }}>Add</button>
               </div>
-            </div>,
-          document.body)}
+            </div>
+          )}
 
           {!isArchiveColumn && (
           <button
@@ -572,6 +574,8 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
+  widgetPanel = null,
+  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -1047,11 +1051,7 @@ export default function Sections({
                   style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
                 >+</button>
               )}
-              {isArchiveColumn && (
-                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
-                  Archive Column
-                </span>
-              )}
+
             </div>
           )
         })}
@@ -1068,6 +1068,12 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
+              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
+              {isArchiveColumn && (
+                <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
+                  Archive Section
+                </div>
+              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1084,6 +1090,7 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
+              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
