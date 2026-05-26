@@ -1584,8 +1584,7 @@ html.bg-29-carbon::after {
   padding-right: 4px;
   padding-left: 4px;
   position: relative;
-  flex: 1 1 0;
-  align-self: stretch;
+  max-height: calc(100vh - 60px);
 }
 
 /* Note reorder buttons */
