@@ -1,6 +1,3 @@
-  const [addingLink, setAddingLink] = useState(false);
-  const [newLinkTitle, setNewLinkTitle] = useState('');
-  const [newLinkUrl, setNewLinkUrl] = useState('');
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
