@@ -500,15 +500,15 @@ function WidgetPanel({ theme, setTheme }) {
     const onMove = (ev) => {
       const newH = Math.max(120, startH + (ev.clientY - startY))
       if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
-      // Only shrink the news article area, calendar is always fully visible
-      document.documentElement.style.setProperty('--wp-news-height', Math.max(60, newH - 320) + 'px')
+      // resize news article area proportionally
+      document.documentElement.style.setProperty('--wp-news-height', Math.max(80, newH - 200) + 'px')
     }
     const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
   }
 
-  if (!showWeather && !showNews && !showCalendar) return null
+  // Never return null — always show header so user can re-enable widgets
 
   const widgets = [
     { key: 'hideWeather',  show: showWeather,  icon: '⛅', label: 'Weather'  },
@@ -1724,12 +1724,10 @@ export default function App() {
       setTriggerExpand(t => t + 1)
       setNotesTrigger(true)
       setAllCollapsed(false)
-      localStorage.setItem('widgetPanelCollapsed', 'false')
     } else {
       setTriggerCollapse(t => t + 1)
       setNotesTrigger(false)
       setAllCollapsed(true)
-      localStorage.setItem('widgetPanelCollapsed', 'true')
     }
   }
 
