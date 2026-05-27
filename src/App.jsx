@@ -11,124 +11,16 @@ import './index.css'
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
-  const [open, setOpen] = useState(false)
-  const [totalMins, setTotalMins] = useState(null)
-  const wrapRef = useRef(null)
-  const svgRef = useRef(null)
-  const lapRef = useRef(0)
-  const lastAngleRef = useRef(null)
-
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(id)
   }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false) }
-    document.addEventListener('pointerdown', handler)
-    return () => document.removeEventListener('pointerdown', handler)
-  }, [open])
-
   const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-  const nowH = now.getHours() % 12 + now.getMinutes() / 60
-  const nowM = now.getMinutes() + now.getSeconds() / 60
-  const hasTarget = totalMins !== null
-  const tMins = totalMins ?? 0
-  const tH = ((now.getHours() + Math.floor(tMins/60)) % 12) + (now.getMinutes() + tMins%60) / 60
-  const tM = (nowM + tMins) % 60
-  const days = Math.floor(tMins / (60*24))
-  const remMins = tMins % (60*24)
-  const hrs = Math.floor(remMins / 60)
-  const mins = remMins % 60
-
-  const toRad = deg => (deg-90)*Math.PI/180
-  const handPos = (val, max, r) => { const a=toRad((val/max)*360); return {x:100+r*Math.cos(a), y:100+r*Math.sin(a)} }
-  const arcPath = (fv,fm,tv,tm,r) => {
-    const a1=toRad((fv/fm)*360), a2=toRad((tv/tm)*360)
-    const x1=100+r*Math.cos(a1), y1=100+r*Math.sin(a1), x2=100+r*Math.cos(a2), y2=100+r*Math.sin(a2)
-    return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${(((tv/tm)-(fv/fm)+1)%1)>0.5?1:0} 1 ${x2} ${y2} Z`
-  }
-
-  const onPointerDown = (type) => (e) => {
-    e.preventDefault(); e.stopPropagation()
-    lapRef.current = hasTarget ? Math.floor(tMins/720) : 0
-    lastAngleRef.current = null
-    const svg = svgRef.current
-    let pending = null
-    const move = (ev) => {
-      if (pending) return
-      pending = requestAnimationFrame(() => {
-        pending = null
-        const rect = svg.getBoundingClientRect()
-        const dx = ev.clientX-(rect.left+rect.width/2), dy = ev.clientY-(rect.top+rect.height/2)
-        let angle = Math.atan2(dy,dx)*180/Math.PI+90
-        if (angle < 0) angle += 360
-        if (lastAngleRef.current !== null) {
-          const diff = angle - lastAngleRef.current
-          if (diff < -270) lapRef.current++
-          if (diff > 270) lapRef.current = Math.max(0, lapRef.current-1)
-        }
-        lastAngleRef.current = angle
-        const laps = Math.max(0, lapRef.current), frac = angle/360
-        if (type === 'hour') setTotalMins(Math.round((laps*12+frac*12)*60/30)*30)
-        else { const baseH = hasTarget ? Math.floor(tMins/60) : 0; setTotalMins(baseH*60 + Math.round(frac*60/10)*10 % 60) }
-      })
-    }
-    const up = () => { if (pending) cancelAnimationFrame(pending); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up) }
-    window.addEventListener('pointermove', move, {passive:true})
-    window.addEventListener('pointerup', up)
-  }
-
-  const hPos=handPos(tH%12,12,52), mPos=handPos(tM,60,72)
-  const nowHPos=handPos(nowH,12,52), nowMPos=handPos(nowM,60,72)
-  const nums=[12,1,2,3,4,5,6,7,8,9,10,11]
-
   return (
-    <div style={{position:'relative'}} ref={wrapRef}>
-      <div className="clock-compact" onClick={()=>setOpen(o=>!o)} style={{cursor:'pointer'}}>
-        <span className="clock-compact-time">{hm}</span>
-        <span className="clock-compact-date">{date}</span>
-      </div>
-      {open && (
-        <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:240,userSelect:'none'}}>
-          <div style={{fontSize:'0.7em',color:'var(--text-dim)',textAlign:'center',marginBottom:'0.5rem'}}>Drag hour hand · each loop = +12h</div>
-          <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{display:'block',margin:'0 auto',touchAction:'none'}}>
-            <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
-            {hasTarget && <path d={arcPath(nowM,60,tM,60,88)} fill="var(--accent)" opacity="0.13"/>}
-            {hasTarget && <path d={arcPath(nowH,12,tH%12,12,55)} fill="var(--accent)" opacity="0.08"/>}
-            {Array.from({length:60},(_,i)=>{const a=toRad(i/60*360),r1=i%5===0?82:88;return <line key={i} x1={100+96*Math.cos(a)} y1={100+96*Math.sin(a)} x2={100+r1*Math.cos(a)} y2={100+r1*Math.sin(a)} stroke="var(--border)" strokeWidth={i%5===0?2:1} strokeLinecap="round"/>})}
-            {nums.map((n,i)=>{const a=toRad(i/12*360);return <text key={n} x={100+72*Math.cos(a)} y={100+72*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="600" fill="var(--text)" fontFamily="inherit">{n}</text>})}
-            <line x1="100" y1="100" x2={nowHPos.x} y2={nowHPos.y} stroke="var(--text-dim)" strokeWidth="4" strokeLinecap="round" opacity="0.25"/>
-            <line x1="100" y1="100" x2={nowMPos.x} y2={nowMPos.y} stroke="var(--text-dim)" strokeWidth="2.5" strokeLinecap="round" opacity="0.25"/>
-            <line x1="100" y1="100" x2={hPos.x} y2={hPos.y} stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
-            <line x1="100" y1="100" x2={mPos.x} y2={mPos.y} stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
-            <circle cx={hPos.x} cy={hPos.y} r="9" fill="var(--accent)" opacity="0.2" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
-            <circle cx={mPos.x} cy={mPos.y} r="7" fill="var(--accent)" opacity="0.2" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
-            <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
-          </svg>
-          {hasTarget && (
-            <div style={{display:'flex',justifyContent:'center',gap:'0.4rem',marginTop:'0.4rem',marginBottom:'0.2rem',alignItems:'center'}}>
-              <button className="btn-xs" onClick={()=>setTotalMins(m=>Math.max(0,(m??0)-720))}>−12h</button>
-              <span style={{fontSize:'0.8em',fontWeight:700,color:'var(--accent)',minWidth:'5rem',textAlign:'center'}}>
-                {days>0&&`${days}d `}{hrs>0&&`${hrs}h `}{mins}m
-              </span>
-              <button className="btn-xs" onClick={()=>setTotalMins(m=>Math.min(4320,(m??0)+720))}>+12h</button>
-            </div>
-          )}
-          <div style={{textAlign:'center',marginTop:'0.3rem',fontSize:'0.72em',color:'var(--text-dim)'}}>
-            <span style={{opacity:0.6}}>Now </span>
-            <span style={{color:'var(--text)',fontWeight:600}}>{hm}</span>
-            {hasTarget&&<><span style={{margin:'0 0.4rem',opacity:0.4}}>→</span><span style={{color:'var(--accent)',fontWeight:600}}>{new Date(now.getTime()+tMins*60000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></>}
-            {!hasTarget&&<div style={{opacity:0.5,marginTop:'0.2rem'}}>drag a hand to measure</div>}
-          </div>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'0.5rem'}}>
-            <div>{hasTarget&&<button className="btn-xs" onClick={()=>setTotalMins(null)}>Reset</button>}</div>
-            <button className="btn-xs" onClick={()=>setOpen(false)}>Close</button>
-          </div>
-        </div>
-      )}
+    <div className="clock-compact">
+      <span className="clock-compact-time">{hm}</span>
+      <span className="clock-compact-date">{date}</span>
     </div>
   )
 }
@@ -608,8 +500,8 @@ function WidgetPanel({ theme, setTheme }) {
     const onMove = (ev) => {
       const newH = Math.max(120, startH + (ev.clientY - startY))
       if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
-      // resize news article area proportionally
-      document.documentElement.style.setProperty('--wp-news-height', Math.max(80, newH - 200) + 'px')
+      // Only shrink the news article area, calendar is always fully visible
+      document.documentElement.style.setProperty('--wp-news-height', Math.max(60, newH - 320) + 'px')
     }
     const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
     window.addEventListener('pointermove', onMove)
@@ -1832,10 +1724,12 @@ export default function App() {
       setTriggerExpand(t => t + 1)
       setNotesTrigger(true)
       setAllCollapsed(false)
+      localStorage.setItem('widgetPanelCollapsed', 'false')
     } else {
       setTriggerCollapse(t => t + 1)
       setNotesTrigger(false)
       setAllCollapsed(true)
+      localStorage.setItem('widgetPanelCollapsed', 'true')
     }
   }
 
@@ -2045,31 +1939,27 @@ export default function App() {
         CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
       }
       
-      const [{ data: secData }, { data: linkData }] = await Promise.all([
+      const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
+        supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
+        supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
       ])
-
-      setSections(prev => { const n = secData||[]; return JSON.stringify(prev)===JSON.stringify(n)?prev:n })
-      setLinks(prev => { const n = linkData||[]; return JSON.stringify(prev)===JSON.stringify(n)?prev:n })
+      
+      // Merge own notes + shared notes (deduplicate by id)
+      const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
+      
+      setSections(secData || [])
+      setLinks(linkData || [])
+      setNotes(allNotes)
+      
+      // Cache all data
       CacheManager.save('sections', secData || [])
       CacheManager.save('links', linkData || [])
+      CacheManager.save('notes', allNotes)
       CacheManager.save(`sections_${currentWs}`, secData || [])
       CacheManager.save(`links_${currentWs}`, linkData || [])
-
-      // Notes fire-and-forget — never block sections/links
-      ;(async () => {
-        try {
-          const [{ data: noteData }, { data: sharedNoteData }] = await Promise.all([
-            supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
-            supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
-          ])
-          const allNotes = [...(noteData||[]), ...(sharedNoteData||[])].filter((n,i,a)=>a.findIndex(x=>x.id===n.id)===i)
-          setNotes(prev => JSON.stringify(prev)===JSON.stringify(allNotes)?prev:allNotes)
-          CacheManager.save('notes', allNotes)
-          CacheManager.save(`notes_${currentWs}`, allNotes)
-        } catch(e) { console.warn('notes fetch failed:', e.message) }
-      })()
+      CacheManager.save(`notes_${currentWs}`, allNotes)
       
     } catch (err) {
       console.error('Refresh network error:', err.message)
@@ -2468,12 +2358,8 @@ export default function App() {
 			{/* ── TOPBAR ──────────────────────────────────────── */}
 			<div className="topbar">
 
-			  {/* Workspace dropdown */}
-			  <select
-				className="workspace-dropdown"
-				value={activeWs || ''}
-				onChange={e => setActiveWs(e.target.value)}
-			  >
+			  {/* Workspace tabs */}
+			  <div className="workspace-tabs">
 				{workspaces
 				  .filter(ws => {
 					const v = ws.visibility || 'both'
@@ -2482,9 +2368,15 @@ export default function App() {
 					return true
 				  })
 				  .map(ws => (
-					<option key={ws.id} value={ws.id}>{ws.name}</option>
-				  ))}
-			  </select>
+				  <button
+					key={ws.id}
+					className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
+					onClick={() => setActiveWs(ws.id)}
+				  >
+					{ws.name}
+				  </button>
+				))}
+			  </div>
 
 			  <div className="topbar-divider" />
 

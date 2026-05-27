@@ -1,3 +1,6 @@
+  const [addingLink, setAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   DndContext,
@@ -75,6 +78,7 @@ function LinkRow({
 
   const [showColors, setShowColors] = useState(false);
   const [showActions, setShowActions] = useState(false);
+  const dragMoved = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -179,27 +183,31 @@ function LinkRow({
       ) : null}
 
       <div 
-        style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
         {...attributes}
         {...listeners}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
+        title="Drag to reorder"
+        onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
       >
-        <a
-          className="link-title"
-          href={href}
-          target={openInNewTab ? "_blank" : "_self"}
-          rel={openInNewTab ? "noopener noreferrer" : undefined}
-          title={link.title}
-          style={link.color ? { color: link.color } : undefined}
-          onClick={(e) => {
-            // Allow click to navigate, but only if not dragging
-            if (isDragging) {
-              e.preventDefault();
-            }
-          }}
-        >
-          {link.title}
-        </a>
+        <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
       </div>
+      <a
+        className="link-title"
+        href={href}
+        target={openInNewTab ? "_blank" : "_self"}
+        rel={openInNewTab ? "noopener noreferrer" : undefined}
+        title={link.title}
+        style={{ flex: 1, minWidth: 0, ...(link.color ? { color: link.color } : {}) }}
+        onClick={(e) => {
+          const s = dragMoved.current
+          if (s) {
+            const dx = e.clientX - s.x, dy = e.clientY - s.y
+            if (Math.sqrt(dx*dx + dy*dy) > 4) { e.preventDefault(); e.stopPropagation() }
+          }
+        }}
+      >
+        {link.title}
+      </a>
 
       <div
         className="link-actions-overlay"
@@ -571,8 +579,6 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
-  widgetPanel = null,
-  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -1048,7 +1054,11 @@ export default function Sections({
                   style={{ fontSize: '1.2em', color: 'var(--col-header-color)' }}
                 >+</button>
               )}
-
+              {isArchiveColumn && (
+                <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
+                  Archive Column
+                </span>
+              )}
             </div>
           )
         })}
@@ -1065,12 +1075,6 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
-              {isArchiveColumn && (
-                <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
-                  Archive Section
-                </div>
-              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1087,7 +1091,6 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
