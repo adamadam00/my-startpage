@@ -195,12 +195,14 @@ function LinkRow({
         rel={openInNewTab ? "noopener noreferrer" : undefined}
         title={link.title}
         style={{ flex: 1, minWidth: 0, ...(link.color ? { color: link.color } : {}) }}
+        onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
         onClick={(e) => {
           const s = dragMoved.current
           if (s) {
             const dx = e.clientX - s.x, dy = e.clientY - s.y
-            if (Math.sqrt(dx*dx + dy*dy) > 4) { e.preventDefault(); e.stopPropagation() }
+            if (Math.sqrt(dx*dx + dy*dy) > 3) { e.preventDefault(); e.stopPropagation(); return }
           }
+          if (isDragging) { e.preventDefault(); e.stopPropagation() }
         }}
       >
         {link.title}

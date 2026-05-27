@@ -608,8 +608,8 @@ function WidgetPanel({ theme, setTheme }) {
     const onMove = (ev) => {
       const newH = Math.max(120, startH + (ev.clientY - startY))
       if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
-      // resize news article area proportionally
-      document.documentElement.style.setProperty('--wp-news-height', Math.max(80, newH - 200) + 'px')
+      // Only shrink news area — calendar always stays fully visible
+      document.documentElement.style.setProperty('--wp-news-height', Math.max(40, newH - 340) + 'px')
     }
     const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
     window.addEventListener('pointermove', onMove)
@@ -1832,10 +1832,12 @@ export default function App() {
       setTriggerExpand(t => t + 1)
       setNotesTrigger(true)
       setAllCollapsed(false)
+      localStorage.setItem('widgetPanelCollapsed', 'false')
     } else {
       setTriggerCollapse(t => t + 1)
       setNotesTrigger(false)
       setAllCollapsed(true)
+      localStorage.setItem('widgetPanelCollapsed', 'true')
     }
   }
 
