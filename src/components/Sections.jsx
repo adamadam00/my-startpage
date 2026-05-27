@@ -576,6 +576,8 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
+  widgetPanel = null,
+  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -1072,6 +1074,12 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
+              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
+              {isArchiveColumn && (
+                <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
+                  Archive Section
+                </div>
+              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1088,6 +1096,7 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
+              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
