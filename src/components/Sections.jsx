@@ -56,6 +56,7 @@ function LinkRow({
   openInNewTab,
   faviconEnabled,
   onRefresh,
+  isDraggingLink,
 }) {
   const {
     attributes,
@@ -184,7 +185,6 @@ function LinkRow({
         {...listeners}
         style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
         title="Drag to reorder"
-        onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
       >
         <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
       </div>
@@ -197,12 +197,12 @@ function LinkRow({
         style={{ flex: 1, minWidth: 0, ...(link.color ? { color: link.color } : {}) }}
         onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
         onClick={(e) => {
+          if (isDraggingLink?.current) { e.preventDefault(); e.stopPropagation(); return }
           const s = dragMoved.current
           if (s) {
             const dx = e.clientX - s.x, dy = e.clientY - s.y
             if (Math.sqrt(dx*dx + dy*dy) > 3) { e.preventDefault(); e.stopPropagation(); return }
           }
-          if (isDragging) { e.preventDefault(); e.stopPropagation() }
         }}
       >
         {link.title}
@@ -344,11 +344,17 @@ function LinksList({
     onRefresh?.();
   }
 
+  const isDraggingLink = useRef(false)
+
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
+      onDragStart={() => { isDraggingLink.current = true }}
+      onDragEnd={(event) => { 
+        setTimeout(() => { isDraggingLink.current = false }, 100)
+        handleDragEnd(event)
+      }}
     >
       <SortableContext
         items={links.map((link) => `link-${link.id}`)}
@@ -364,6 +370,7 @@ function LinksList({
               openInNewTab={openInNewTab}
               faviconEnabled={faviconEnabled}
               onRefresh={onRefresh}
+              isDraggingLink={isDraggingLink}
             />
           ))}
         </div>
