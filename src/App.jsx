@@ -583,11 +583,18 @@ function GmailWidget({ theme }) {
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 // ─── WIDGET PANEL ─────────────────────────────────────────────────────────────
-function WidgetPanel({ theme, setTheme }) {
+function WidgetPanel({ theme, setTheme, forceCollapsed }) {
   const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [collapsed, setCollapsed] = useState(() => {
     try { return JSON.parse(localStorage.getItem('widgetPanelCollapsed') ?? 'false') } catch { return false }
   })
+
+  useEffect(() => {
+    if (forceCollapsed !== undefined) {
+      setCollapsed(forceCollapsed)
+      localStorage.setItem('widgetPanelCollapsed', JSON.stringify(forceCollapsed))
+    }
+  }, [forceCollapsed])
 
   const toggle = () => {
     const next = !collapsed
@@ -604,12 +611,11 @@ function WidgetPanel({ theme, setTheme }) {
   const startResize = (e) => {
     e.preventDefault()
     const startY = e.clientY
-    const startH = panelRef.current?.getBoundingClientRect().height || 400
+    const currentNewsH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wp-news-height') || '280')
     const onMove = (ev) => {
-      const newH = Math.max(120, startH + (ev.clientY - startY))
-      if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
-      // Only shrink news area — calendar always stays fully visible
-      document.documentElement.style.setProperty('--wp-news-height', Math.max(40, newH - 340) + 'px')
+      const delta = ev.clientY - startY
+      const newNewsH = Math.max(40, currentNewsH + delta)
+      document.documentElement.style.setProperty('--wp-news-height', newNewsH + 'px')
     }
     const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
     window.addEventListener('pointermove', onMove)
@@ -2623,7 +2629,7 @@ export default function App() {
 				<Sections
 				  sections={sections}
 				  links={searchMode === 'links' ? filteredLinks : links}
-				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} />}
+				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} forceCollapsed={allCollapsed ? true : undefined} />}
 				  widgetPanelPosition={theme.widgetPanelPosition || 'above'}
 				  userId={session.user.id}
 				  workspaceId={activeWs}
