@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import DOMPurify from 'dompurify'
 
 // Shared formatting toolbar for both new and edit notes
 function NoteToolbar({ targetSelector, onUpdate }) {
@@ -289,7 +290,7 @@ const parseFormatting = (text) => {
     // Add note-bullets class to any ul tags that don't have it
     let html = text.replace(/<ul>/g, '<ul class="note-bullets">')
     html = html.replace(/<ul /g, '<ul class="note-bullets" ')
-    return <span dangerouslySetInnerHTML={{ __html: html }} />
+    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />
   }
   
   const lines = text.split('\n')
@@ -903,7 +904,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                               // Clear first to prevent duplication
                               el.innerHTML = ''
                               // Then set new content
-                              el.innerHTML = editText
+                              el.innerHTML = DOMPurify.sanitize(editText)
                             }
                             // Only focus and set cursor on initial edit
                             if (!el.dataset.initialized) {

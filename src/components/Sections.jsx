@@ -36,6 +36,7 @@ const SWATCH_COLORS = [
 
 function normalizeUrl(url) {
   if (!url) return "";
+  if (/^javascript:/i.test(url) || /^data:/i.test(url) || /^vbscript:/i.test(url)) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   return `https://${url}`;
 }
