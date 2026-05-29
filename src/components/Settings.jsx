@@ -943,6 +943,10 @@ export default function Settings({
                 </select>
               </Row>
               <Row label="Font size"><Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row>
+              <Row label="Text color 1"><ColorPick value={theme.noteColor1 || '#ff6b6b'} onChange={v => set('noteColor1', v)} /></Row>
+              <Row label="Text color 2"><ColorPick value={theme.noteColor2 || '#6c8fff'} onChange={v => set('noteColor2', v)} /></Row>
+              <Row label="Text color 3"><ColorPick value={theme.noteColor3 || '#6bffb8'} onChange={v => set('noteColor3', v)} /></Row>
+              <Row label="Text color 4"><ColorPick value={theme.noteColor4 || '#ffd32a'} onChange={v => set('noteColor4', v)} /></Row>
               <Row label="Word wrap"><Toggle checked={theme.notesWordWrap ?? true} onChange={v => set('notesWordWrap', v)} /></Row>
               <div style={{ padding: '0.75rem 0 0.25rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
                 <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', width: '100%' }} onClick={onClearAllNotes}>
@@ -1189,18 +1193,13 @@ export default function Settings({
             onClick={onSignOut}>Sign out</button>
         </div>
       )}
-      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)', flexDirection: 'column', gap: '0.4rem' }}>
-        <div style={{ fontSize: '0.62em', color: 'var(--text-dim)', opacity: 0.4, textAlign: 'center', letterSpacing: '0.03em' }}>
-          Built {new Date('2026-05-22').toLocaleDateString([],{day:'numeric',month:'short',year:'numeric'})}
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+      <div className="settings-footer" data-side={side} style={{ zIndex: 102, width: 'min(380px, 74vw)' }}>
         <button className="btn" style={{ flexShrink: 0 }} title="Move panel to other side"
           onClick={() => set('settingsSide', side === 'right' ? 'left' : 'right')}>
           {side === 'right' ? '⇐ Left' : 'Right ⇒'}
         </button>
         <button className="btn btn-primary" style={{ flex: 1 }}
           onClick={() => { onSave(); onClose() }}>Save &amp; Close</button>
-        </div>
       </div>
     </>
   )

@@ -12,10 +12,11 @@ import './index.css'
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
   const [open, setOpen] = useState(false)
-  const [targetH, setTargetH] = useState(null)
-  const [targetM, setTargetM] = useState(null)
+  const [totalMins, setTotalMins] = useState(null)
   const wrapRef = useRef(null)
   const svgRef = useRef(null)
+  const lapRef = useRef(0)
+  const lastAngleRef = useRef(null)
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000)
@@ -33,27 +34,27 @@ function ClockWidget() {
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   const nowH = now.getHours() % 12 + now.getMinutes() / 60
   const nowM = now.getMinutes() + now.getSeconds() / 60
-  const tH = targetH ?? nowH
-  const tM = targetM ?? nowM
-  const hasTarget = targetH !== null || targetM !== null
+  const hasTarget = totalMins !== null
+  const tMins = totalMins ?? 0
+  const tH = ((now.getHours() + Math.floor(tMins/60)) % 12) + (now.getMinutes() + tMins%60) / 60
+  const tM = (nowM + tMins) % 60
+  const days = Math.floor(tMins / (60*24))
+  const remMins = tMins % (60*24)
+  const hrs = Math.floor(remMins / 60)
+  const mins = remMins % 60
 
-  const toRad = deg => (deg - 90) * Math.PI / 180
-  const handPos = (val, max, r) => {
-    const a = toRad((val / max) * 360)
-    return { x: 100 + r * Math.cos(a), y: 100 + r * Math.sin(a) }
-  }
-  const arcPath = (fromVal, fromMax, toVal, toMax, r) => {
-    const a1 = toRad((fromVal / fromMax) * 360)
-    const a2 = toRad((toVal / toMax) * 360)
-    const x1 = 100 + r * Math.cos(a1), y1 = 100 + r * Math.sin(a1)
-    const x2 = 100 + r * Math.cos(a2), y2 = 100 + r * Math.sin(a2)
-    const da = ((toVal / toMax) - (fromVal / fromMax) + 1) % 1
-    const large = da > 0.5 ? 1 : 0
-    return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`
+  const toRad = deg => (deg-90)*Math.PI/180
+  const handPos = (val, max, r) => { const a=toRad((val/max)*360); return {x:100+r*Math.cos(a), y:100+r*Math.sin(a)} }
+  const arcPath = (fv,fm,tv,tm,r) => {
+    const a1=toRad((fv/fm)*360), a2=toRad((tv/tm)*360)
+    const x1=100+r*Math.cos(a1), y1=100+r*Math.sin(a1), x2=100+r*Math.cos(a2), y2=100+r*Math.sin(a2)
+    return `M 100 100 L ${x1} ${y1} A ${r} ${r} 0 ${(((tv/tm)-(fv/fm)+1)%1)>0.5?1:0} 1 ${x2} ${y2} Z`
   }
 
   const onPointerDown = (type) => (e) => {
     e.preventDefault(); e.stopPropagation()
+    lapRef.current = hasTarget ? Math.floor(tMins/720) : 0
+    lastAngleRef.current = null
     const svg = svgRef.current
     let pending = null
     const move = (ev) => {
@@ -61,45 +62,44 @@ function ClockWidget() {
       pending = requestAnimationFrame(() => {
         pending = null
         const rect = svg.getBoundingClientRect()
-        const dx = ev.clientX - (rect.left + rect.width / 2)
-        const dy = ev.clientY - (rect.top + rect.height / 2)
-        let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90
+        const dx = ev.clientX-(rect.left+rect.width/2), dy = ev.clientY-(rect.top+rect.height/2)
+        let angle = Math.atan2(dy,dx)*180/Math.PI+90
         if (angle < 0) angle += 360
-        if (type === 'hour') setTargetH(angle / 360 * 12)
-        else setTargetM(angle / 360 * 60)
+        if (lastAngleRef.current !== null) {
+          const diff = angle - lastAngleRef.current
+          if (diff < -270) lapRef.current++
+          if (diff > 270) lapRef.current = Math.max(0, lapRef.current-1)
+        }
+        lastAngleRef.current = angle
+        const laps = Math.max(0, lapRef.current), frac = angle/360
+        if (type === 'hour') setTotalMins(Math.round((laps*12+frac*12)*60/30)*30)
+        else { const baseH = hasTarget ? Math.floor(tMins/60) : 0; setTotalMins(baseH*60 + Math.round(frac*60/10)*10 % 60) }
       })
     }
-    const up = () => { if (pending) cancelAnimationFrame(pending); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
-    window.addEventListener('pointermove', move, { passive: true })
+    const up = () => { if (pending) cancelAnimationFrame(pending); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up) }
+    window.addEventListener('pointermove', move, {passive:true})
     window.addEventListener('pointerup', up)
   }
 
-  const nowTotalM = now.getHours() * 60 + now.getMinutes()
-  const targetTotalM = Math.floor(tH) % 12 * 60 + Math.round(tM)
-  let diffM = targetTotalM - (nowTotalM % (12 * 60))
-  if (diffM < 0) diffM += 12 * 60
-  const diffHrs = Math.floor(diffM / 60)
-  const diffMins = diffM % 60
-
-  const hPos = handPos(tH, 12, 52), mPos = handPos(tM, 60, 72)
-  const nowHPos = handPos(nowH, 12, 52), nowMPos = handPos(nowM, 60, 72)
-  const nums = [12,1,2,3,4,5,6,7,8,9,10,11]
+  const hPos=handPos(tH%12,12,52), mPos=handPos(tM,60,72)
+  const nowHPos=handPos(nowH,12,52), nowMPos=handPos(nowM,60,72)
+  const nums=[12,1,2,3,4,5,6,7,8,9,10,11]
 
   return (
-    <div style={{ position: 'relative' }} ref={wrapRef}>
-      <div className="clock-compact" onClick={() => setOpen(o => !o)} style={{ cursor: 'pointer' }}>
+    <div style={{position:'relative'}} ref={wrapRef}>
+      <div className="clock-compact" onClick={()=>setOpen(o=>!o)} style={{cursor:'pointer'}}>
         <span className="clock-compact-time">{hm}</span>
         <span className="clock-compact-date">{date}</span>
       </div>
       {open && (
-        <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', padding: '1rem', zIndex: 9999, width: 240, userSelect: 'none' }}>
-          <div style={{ fontSize: '0.7em', color: 'var(--text-dim)', textAlign: 'center', marginBottom: '0.5rem' }}>Drag hands to measure duration</div>
-          <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{ display: 'block', margin: '0 auto', touchAction: 'none' }}>
+        <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:240,userSelect:'none'}}>
+          <div style={{fontSize:'0.7em',color:'var(--text-dim)',textAlign:'center',marginBottom:'0.5rem'}}>Drag hour hand · each loop = +12h</div>
+          <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{display:'block',margin:'0 auto',touchAction:'none'}}>
             <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
-            {hasTarget && <path d={arcPath(nowM, 60, tM, 60, 88)} fill="var(--accent)" opacity="0.13"/>}
-            {hasTarget && <path d={arcPath(nowH, 12, tH, 12, 55)} fill="var(--accent)" opacity="0.08"/>}
-            {Array.from({length:60},(_,i)=>{ const a=toRad(i/60*360),r1=i%5===0?82:88; return <line key={i} x1={100+96*Math.cos(a)} y1={100+96*Math.sin(a)} x2={100+r1*Math.cos(a)} y2={100+r1*Math.sin(a)} stroke="var(--border)" strokeWidth={i%5===0?2:1} strokeLinecap="round"/> })}
-            {nums.map((n,i)=>{ const a=toRad(i/12*360); return <text key={n} x={100+72*Math.cos(a)} y={100+72*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="600" fill="var(--text)" fontFamily="inherit">{n}</text> })}
+            {hasTarget && <path d={arcPath(nowM,60,tM,60,88)} fill="var(--accent)" opacity="0.13"/>}
+            {hasTarget && <path d={arcPath(nowH,12,tH%12,12,55)} fill="var(--accent)" opacity="0.08"/>}
+            {Array.from({length:60},(_,i)=>{const a=toRad(i/60*360),r1=i%5===0?82:88;return <line key={i} x1={100+96*Math.cos(a)} y1={100+96*Math.sin(a)} x2={100+r1*Math.cos(a)} y2={100+r1*Math.sin(a)} stroke="var(--border)" strokeWidth={i%5===0?2:1} strokeLinecap="round"/>})}
+            {nums.map((n,i)=>{const a=toRad(i/12*360);return <text key={n} x={100+72*Math.cos(a)} y={100+72*Math.sin(a)} textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="600" fill="var(--text)" fontFamily="inherit">{n}</text>})}
             <line x1="100" y1="100" x2={nowHPos.x} y2={nowHPos.y} stroke="var(--text-dim)" strokeWidth="4" strokeLinecap="round" opacity="0.25"/>
             <line x1="100" y1="100" x2={nowMPos.x} y2={nowMPos.y} stroke="var(--text-dim)" strokeWidth="2.5" strokeLinecap="round" opacity="0.25"/>
             <line x1="100" y1="100" x2={hPos.x} y2={hPos.y} stroke="var(--accent)" strokeWidth="4" strokeLinecap="round" style={{cursor:'grab'}} onPointerDown={onPointerDown('hour')}/>
@@ -108,18 +108,24 @@ function ClockWidget() {
             <circle cx={mPos.x} cy={mPos.y} r="7" fill="var(--accent)" opacity="0.2" style={{cursor:'grab'}} onPointerDown={onPointerDown('minute')}/>
             <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
           </svg>
-          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-            <div style={{ fontSize: '0.72em', color: 'var(--text-dim)', marginBottom: '0.25rem' }}>
-              <span style={{ opacity: 0.6 }}>Now </span>
-              <span style={{ color: 'var(--text)', fontWeight: 600 }}>{now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span>
-              {hasTarget && <><span style={{ margin: '0 0.4rem', opacity: 0.4 }}>→</span><span style={{ color: 'var(--accent)', fontWeight: 600 }}>{String(Math.floor(tH)%12||12).padStart(2,'0')}:{String(Math.round(tM)%60).padStart(2,'0')}</span></>}
+          {hasTarget && (
+            <div style={{display:'flex',justifyContent:'center',gap:'0.4rem',marginTop:'0.4rem',marginBottom:'0.2rem',alignItems:'center'}}>
+              <button className="btn-xs" onClick={()=>setTotalMins(m=>Math.max(0,(m??0)-720))}>−12h</button>
+              <span style={{fontSize:'0.8em',fontWeight:700,color:'var(--accent)',minWidth:'5rem',textAlign:'center'}}>
+                {days>0&&`${days}d `}{hrs>0&&`${hrs}h `}{mins}m
+              </span>
+              <button className="btn-xs" onClick={()=>setTotalMins(m=>Math.min(4320,(m??0)+720))}>+12h</button>
             </div>
-            {hasTarget && <div style={{ fontSize: '1em', fontWeight: 700, color: 'var(--accent)' }}>{diffHrs > 0 && `${diffHrs}h `}{diffMins}m<span style={{ fontSize: '0.65em', fontWeight: 400, color: 'var(--text-dim)', marginLeft: '0.4rem' }}>from now</span></div>}
-            {!hasTarget && <div style={{ fontSize: '0.68em', color: 'var(--text-dim)', opacity: 0.5 }}>drag a hand to measure</div>}
+          )}
+          <div style={{textAlign:'center',marginTop:'0.3rem',fontSize:'0.72em',color:'var(--text-dim)'}}>
+            <span style={{opacity:0.6}}>Now </span>
+            <span style={{color:'var(--text)',fontWeight:600}}>{hm}</span>
+            {hasTarget&&<><span style={{margin:'0 0.4rem',opacity:0.4}}>→</span><span style={{color:'var(--accent)',fontWeight:600}}>{new Date(now.getTime()+tMins*60000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></>}
+            {!hasTarget&&<div style={{opacity:0.5,marginTop:'0.2rem'}}>drag a hand to measure</div>}
           </div>
-          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-            {hasTarget && <button className="btn-xs" onClick={() => { setTargetH(null); setTargetM(null) }} style={{ marginRight: '0.5rem' }}>Reset</button>}
-            <button className="btn-xs" onClick={() => setOpen(false)}>Close</button>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'0.5rem'}}>
+            <div>{hasTarget&&<button className="btn-xs" onClick={()=>setTotalMins(null)}>Reset</button>}</div>
+            <button className="btn-xs" onClick={()=>setOpen(false)}>Close</button>
           </div>
         </div>
       )}
@@ -577,11 +583,18 @@ function GmailWidget({ theme }) {
 
 // ─── DEFAULT THEME ─────────────────────────────────────────────────────────────
 // ─── WIDGET PANEL ─────────────────────────────────────────────────────────────
-function WidgetPanel({ theme, setTheme }) {
+function WidgetPanel({ theme, setTheme, forceCollapsed }) {
   const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
   const [collapsed, setCollapsed] = useState(() => {
     try { return JSON.parse(localStorage.getItem('widgetPanelCollapsed') ?? 'false') } catch { return false }
   })
+
+  useEffect(() => {
+    if (forceCollapsed !== undefined) {
+      setCollapsed(forceCollapsed)
+      localStorage.setItem('widgetPanelCollapsed', JSON.stringify(forceCollapsed))
+    }
+  }, [forceCollapsed])
 
   const toggle = () => {
     const next = !collapsed
@@ -598,19 +611,18 @@ function WidgetPanel({ theme, setTheme }) {
   const startResize = (e) => {
     e.preventDefault()
     const startY = e.clientY
-    const startH = panelRef.current?.getBoundingClientRect().height || 400
+    const currentNewsH = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--wp-news-height') || '280')
     const onMove = (ev) => {
-      const newH = Math.max(120, startH + (ev.clientY - startY))
-      if (panelRef.current) panelRef.current.style.maxHeight = newH + 'px'
-      // resize news article area proportionally
-      document.documentElement.style.setProperty('--wp-news-height', Math.max(80, newH - 200) + 'px')
+      const delta = ev.clientY - startY
+      const newNewsH = Math.max(40, currentNewsH + delta)
+      document.documentElement.style.setProperty('--wp-news-height', newNewsH + 'px')
     }
     const onUp = () => { window.removeEventListener('pointermove', onMove); window.removeEventListener('pointerup', onUp) }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
   }
 
-  if (!showWeather && !showNews && !showCalendar) return null
+  // Never return null — always show header so user can re-enable widgets
 
   const widgets = [
     { key: 'hideWeather',  show: showWeather,  icon: '⛅', label: 'Weather'  },
@@ -930,10 +942,10 @@ function applyTheme(t) {
   s('--title-opacity', t.headerOpacity ?? 1)
   s('--border', baseBorderColor)
   s('--border-opacity', t.cardsGradientEnabled && t.cardsGradientTargetBorder ? 0.2 : (t.borderOpacity ?? 1))
-  s('--handle-opacity', 0.05)
-  s('--handle-opacity-global', 0.05)
-  s('--handle-size', '10px')
-  s('--handle-color', t.handleColor ?? '#2a2a3a')
+  s('--handle-opacity', t.handleOpacity ? t.handleOpacity/100 : 0.35)
+  s('--handle-opacity-global', t.handleOpacity ? t.handleOpacity/100 : 0.35)
+  s('--handle-size', t.handleScale ? Math.round(10 * t.handleScale/100)+'px' : '10px')
+  s('--handle-color', t.handleColor ?? 'var(--text-dim)')
   s('--action-button-scale', 1)
   s('--text', t.text); s('--text-dim', t.textDim); s('--text-muted', t.textMuted ?? t.textDim)
   s('--title-color', t.titleColor ?? t.textDim)
@@ -1826,10 +1838,12 @@ export default function App() {
       setTriggerExpand(t => t + 1)
       setNotesTrigger(true)
       setAllCollapsed(false)
+      localStorage.setItem('widgetPanelCollapsed', 'false')
     } else {
       setTriggerCollapse(t => t + 1)
       setNotesTrigger(false)
       setAllCollapsed(true)
+      localStorage.setItem('widgetPanelCollapsed', 'true')
     }
   }
 
@@ -2615,7 +2629,7 @@ export default function App() {
 				<Sections
 				  sections={sections}
 				  links={searchMode === 'links' ? filteredLinks : links}
-				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} />}
+				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} forceCollapsed={allCollapsed ? true : undefined} />}
 				  widgetPanelPosition={theme.widgetPanelPosition || 'above'}
 				  userId={session.user.id}
 				  workspaceId={activeWs}

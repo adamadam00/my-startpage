@@ -1384,9 +1384,8 @@ html.bg-29-carbon::after {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.6rem 0;
+  padding: 0.55rem 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 35%, transparent);
-  font-size: var(--news-font-size, 12px);
 }
 
 .weather-dropdown-row:last-child {
@@ -1585,6 +1584,7 @@ html.bg-29-carbon::after {
   padding-right: 4px;
   padding-left: 4px;
   position: relative;
+  max-height: calc(100vh - 60px);
 }
 
 /* Note reorder buttons */
@@ -2484,12 +2484,9 @@ html.bg-29-carbon::after {
 
 .notes-panel {
 	background: transparent;
-	display: inline-flex;
+	display: flex;
 	flex-direction: column;
-	height: auto !important;
-	max-height: none;
 	min-height: 0;
-	align-self: flex-start;
 	flex: 0 0 auto;
 	padding: 0 4px;
 	padding-top: 0;
@@ -3446,3 +3443,21 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   border-bottom: 2px solid var(--text-dim);
   border-radius: 0 0 2px 0;
 }
+
+/* Workspace dropdown */
+.workspace-dropdown {
+  appearance: none;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--topbar-font-size, 12px);
+  padding: 0.2rem 1.6rem 0.2rem 0.6rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.4rem center;
+  min-width: 80px;
+  max-width: 140px;
+}
+.workspace-dropdown:focus { outline: 1px solid var(--accent); }
