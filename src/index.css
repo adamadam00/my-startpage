@@ -3487,18 +3487,14 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   .section-col-header { display: none !important; }
   .add-section-btn { display: none !important; }
 
-  /* Hide all sections columns EXCEPT the one containing the widget panel */
-  .sections-grid > div:not(:has(.widget-panel)) { display: none !important; }
-
   /* Widget panel fills width */
   .widget-panel {
     width: 100% !important;
     margin-bottom: 0.75rem;
+    display: block !important;
   }
 
-  /* Hide "Archive Section" label on mobile */
-  .sections-grid div[style*="ARCHIVE SECTION" i],
-  .sections-grid div[style*="Archive Section"] {
-    display: none !important;
-  }
+  /* Hide column drag handles on mobile */
+  .col-drag-handle { display: none !important; }
+  .col-header-btn { display: none !important; }
 }
