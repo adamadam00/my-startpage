@@ -30,7 +30,7 @@ function ClockWidget() {
     return () => document.removeEventListener('pointerdown', handler)
   }, [open])
 
-  const hm = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  const hm = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })
   const date = now.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
   const nowH = now.getHours() % 12 + now.getMinutes() / 60
   const nowM = now.getMinutes() + now.getSeconds() / 60
@@ -888,7 +888,7 @@ const DEFAULT_THEME = {
   scrollbarColor: '#1f1f32', scrollbarThumbColor: '#7890ff',
   btnBg: '#3a3a4a', btnText: '#e8e8f0',
   font: "'DM Mono', monospace",
-  fontSize: 14, topbarFontSize: 12, clockWidgetSize: 1, notesFontSize: 13, settingsFontSize: 13,
+  fontSize: 14, topbarFontSize: 12, mobileNotesFirst: true, clockWidgetSize: 1, notesFontSize: 13, settingsFontSize: 13,
   radius: 10, sectionRadius: 0,
   linkGap: 0.5, cardPadding: 0.75, headerPadding: 0.42,
   sectionGap: 0, sectionGapH: 0, mainGapTop: 12, pageScale: 1,
@@ -1125,6 +1125,8 @@ function applyTheme(t) {
   if (t.topbarFontSize) s('--topbar-font-size', t.topbarFontSize + 'px')
   if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
   if (t.notesFontSize) s('--notes-font-size', t.notesFontSize + 'px')
+  s('--mobile-notes-order', (t.mobileNotesFirst ?? true) ? '-1' : '1')
+  s('--mobile-widget-order', (t.mobileNotesFirst ?? true) ? '0' : '-1')
   if (t.notesFontFamily) s('--notes-font-family', t.notesFontFamily)
   if (t.notesWidth) s('--notes-width', t.notesWidth + 'px')
   if (t.notesHeaderBg) s('--notes-header-bg', t.notesHeaderBg)

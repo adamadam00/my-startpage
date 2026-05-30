@@ -3473,8 +3473,11 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   /* ── MAIN LAYOUT ───────────────────────────────────────────── */
   /* Notes first (top), then sections */
   .side-col {
-    order: -1 !important;
+    order: var(--mobile-notes-order, -1) !important;
     margin-bottom: 0.5rem;
+  }
+  .main-col {
+    order: var(--mobile-widget-order, 0) !important;
   }
 
   /* Remove the big bottom padding on notes panel for mobile */
@@ -3482,17 +3485,36 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
     padding-bottom: 0.5rem !important;
   }
 
-  /* Topbar: tight 2 rows. Row 1: clock, weather, settings (top right). Row 2: search */
+  /* Topbar: 2 rows. Row 1: clock + weather + settings. Row 2: search */
   .topbar {
     flex-wrap: wrap !important;
     align-items: center !important;
+    padding: 0.4rem 0.5rem !important;
+    gap: 0.4rem !important;
   }
   .clock-compact { order: 1; }
-  .topbar-widgets { order: 2; flex: 1; }
-  .topbar-actions { order: 3; margin-left: auto; }
+  .topbar-divider { display: none !important; }
+  .weather-compact { order: 2; }
+  .topbar-widgets { order: 3; display: flex !important; gap: 0.35rem; margin-left: auto; }
+  .topbar-actions { order: 4; display: flex; gap: 0.35rem; }
   .search-compact { order: 10; flex-basis: 100%; width: 100%; }
 
-  /* Hide collapse button on mobile (toggleAll) — it's the first button in topbar-actions */
+  /* Uniform button sizing — Google button matches others */
+  .topbar-widgets .icon-btn,
+  .topbar-widgets a.icon-btn,
+  .topbar-actions .icon-btn,
+  .topbar-google-btn {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    font-size: 1.1rem !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Hide collapse button on mobile (first button in topbar-actions) */
   .topbar-actions button:first-child { display: none !important; }
 
   /* Hide the empty "Archive Section" label heading on mobile */
