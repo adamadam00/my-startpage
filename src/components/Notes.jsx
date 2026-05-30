@@ -1358,7 +1358,13 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                         className="input"
                         style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, maxWidth: '110px', textOverflow: 'ellipsis' }}
                         value={editShareNote}
-                        onChange={e => setEditShareNote(e.target.value)}
+                        onChange={async e => {
+                          const val = e.target.value
+                          setEditShareNote(val)
+                          const { error } = await supabase.from('notes').update({ shared_to: val || null }).eq('id', note.id)
+                          if (error) alert(error.message)
+                          else onRefresh?.()
+                        }}
                       >
                         <option value=''>No sharing</option>
                         <option value='*'>→ All workspaces</option>
