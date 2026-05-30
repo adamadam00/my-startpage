@@ -1,5 +1,7 @@
+  const [addingLink, setAddingLink] = useState(false);
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
 import { useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   DndContext,
   PointerSensor,
@@ -36,7 +38,6 @@ const SWATCH_COLORS = [
 
 function normalizeUrl(url) {
   if (!url) return "";
-  if (/^javascript:/i.test(url) || /^data:/i.test(url) || /^vbscript:/i.test(url)) return "";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   return `https://${url}`;
 }
@@ -58,7 +59,6 @@ function LinkRow({
   openInNewTab,
   faviconEnabled,
   onRefresh,
-  isDraggingLink,
 }) {
   const {
     attributes,
@@ -78,7 +78,6 @@ function LinkRow({
 
   const [showColors, setShowColors] = useState(false);
   const [showActions, setShowActions] = useState(false);
-  const dragMoved = useRef(null);
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -183,32 +182,27 @@ function LinkRow({
       ) : null}
 
       <div 
+        style={{ flex: 1, minWidth: 0, display: 'flex', cursor: 'grab' }}
         {...attributes}
         {...listeners}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
-        title="Drag to reorder"
       >
-        <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+        <a
+          className="link-title"
+          href={href}
+          target={openInNewTab ? "_blank" : "_self"}
+          rel={openInNewTab ? "noopener noreferrer" : undefined}
+          title={link.title}
+          style={link.color ? { color: link.color } : undefined}
+          onClick={(e) => {
+            // Allow click to navigate, but only if not dragging
+            if (isDragging) {
+              e.preventDefault();
+            }
+          }}
+        >
+          {link.title}
+        </a>
       </div>
-      <a
-        className="link-title"
-        href={href}
-        target={openInNewTab ? "_blank" : "_self"}
-        rel={openInNewTab ? "noopener noreferrer" : undefined}
-        title={link.title}
-        style={{ flex: 1, minWidth: 0, ...(link.color ? { color: link.color } : {}) }}
-        onPointerDown={e => { dragMoved.current = { x: e.clientX, y: e.clientY } }}
-        onClick={(e) => {
-          if (isDraggingLink?.current) { e.preventDefault(); e.stopPropagation(); return }
-          const s = dragMoved.current
-          if (s) {
-            const dx = e.clientX - s.x, dy = e.clientY - s.y
-            if (Math.sqrt(dx*dx + dy*dy) > 3) { e.preventDefault(); e.stopPropagation(); return }
-          }
-        }}
-      >
-        {link.title}
-      </a>
 
       <div
         className="link-actions-overlay"
@@ -320,45 +314,44 @@ function LinksList({
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
-    const current = [...localLinks];
+    const current = [...links];
     const oldIndex = current.findIndex((l) => `link-${l.id}` === String(active.id));
     const newIndex = current.findIndex((l) => `link-${l.id}` === String(over.id));
+
     if (oldIndex === -1 || newIndex === -1) return;
 
     const next = arrayMove(current, oldIndex, newIndex);
-    setLocalLinks(next); // optimistic update — instant UI
 
-    Promise.all(
+    const results = await Promise.all(
       next.map((link, index) =>
-        supabase.from("links").update({ position: index }).eq("id", link.id)
+        supabase
+          .from("links")
+          .update({ position: index })
+          .eq("id", link.id)
       )
-    ).then(results => {
-      const failed = results.find(r => r.error);
-      if (failed?.error) { alert(failed.error.message); setLocalLinks(links); }
-      else onRefresh?.();
-    });
-  }
+    );
 
-  const isDraggingLink = useRef(false)
-  const [localLinks, setLocalLinks] = useState(links)
-  useEffect(() => { setLocalLinks(links) }, [links])
+    const failed = results.find((r) => r.error);
+    if (failed?.error) {
+      alert(failed.error.message);
+      return;
+    }
+
+    onRefresh?.();
+  }
 
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragStart={() => { isDraggingLink.current = true }}
-      onDragEnd={(event) => { 
-        setTimeout(() => { isDraggingLink.current = false }, 100)
-        handleDragEnd(event)
-      }}
+      onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={localLinks.map((link) => `link-${link.id}`)}
+        items={links.map((link) => `link-${link.id}`)}
         strategy={verticalListSortingStrategy}
       >
         <div className="links-list">
-          {localLinks.map((link, index) => (
+          {links.map((link, index) => (
             <LinkRow
               key={link.id}
               link={link}
@@ -367,7 +360,6 @@ function LinksList({
               openInNewTab={openInNewTab}
               faviconEnabled={faviconEnabled}
               onRefresh={onRefresh}
-              isDraggingLink={isDraggingLink}
             />
           ))}
         </div>
@@ -479,29 +471,31 @@ function SectionCard({
             +
           </button>
 
-          {addingLink && createPortal(
-            <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999, padding: '1.25rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: '280px', width: '320px' }}>
-              <div style={{ fontSize: '0.85em', fontWeight: 600, color: 'var(--text-dim)' }}>Add Link</div>
-              <input autoFocus className="input" placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') setAddingLink(false); if (e.key === 'Enter') e.target.nextElementSibling?.focus() }} />
-              <input className="input" placeholder="https://" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} onKeyDown={async e => {
-                if (e.key === 'Escape') { setAddingLink(false); return }
-                if (e.key === 'Enter' && newLinkTitle.trim()) {
-                  const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
-                  if (error) { alert(error.message); return }
-                  setAddingLink(false); onRefresh?.()
-                }
-              }} />
-              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          {addingLink && (
+            <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', zIndex: 50, display: 'flex', flexDirection: 'column', gap: '0.3rem', padding: '0.4rem 0.5rem', background: 'var(--bg2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', marginTop: '0.2rem', boxShadow: '0 4px 12px rgba(0,0,0,0.3)' }}>
+              <input autoFocus className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="Link title" value={newLinkTitle} onChange={e => setNewLinkTitle(e.target.value)} onKeyDown={e => e.key === 'Escape' && setAddingLink(false)} />
+              <input className="input" style={{ fontSize: '0.8em', padding: '0.25rem 0.4rem' }} placeholder="https://" value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)}
+                onKeyDown={async e => {
+                  if (e.key === 'Escape') { setAddingLink(false); return }
+                  if (e.key === 'Enter') {
+                    if (!newLinkTitle.trim()) return
+                    const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
+                    if (error) { alert('Error: ' + error.message); return }
+                    setAddingLink(false); onRefresh?.()
+                  }
+                }}
+              />
+              <div style={{ display: 'flex', gap: '0.3rem', justifyContent: 'flex-end' }}>
                 <button className="btn-xs" onClick={() => setAddingLink(false)}>Cancel</button>
                 <button className="btn-xs btn-primary" onClick={async () => {
                   if (!newLinkTitle.trim()) return
                   const { error } = await supabase.from('links').insert({ user_id: section.user_id, workspace_id: section.workspace_id, section_id: section.id, title: newLinkTitle.trim(), url: newLinkUrl.trim(), position: links.length })
-                  if (error) { alert(error.message); return }
+                  if (error) { alert('Error: ' + error.message); return }
                   setAddingLink(false); onRefresh?.()
                 }}>Add</button>
               </div>
-            </div>,
-          document.body)}
+            </div>
+          )}
 
           {!isArchiveColumn && (
           <button
@@ -580,8 +574,6 @@ export default function Sections({
   openInNewTab = true,
   faviconEnabled = true,
   onAddSection,
-  widgetPanel = null,
-  widgetPanelPosition = 'above',
 }) {
   const [localSections, setLocalSections] = useState([]);
   const [activeId, setActiveId] = useState(null);
@@ -683,7 +675,7 @@ export default function Sections({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { 
-        distance: 4,
+        distance: 1,
       },
     })
   );
@@ -1004,7 +996,7 @@ export default function Sections({
         <button
           className="btn btn-primary"
           onClick={async () => {
-            const name = window.prompt('Section name:', 'New Section')
+            const name = await window.prompt('Section name:', 'New Section')
             if (!name?.trim()) return
             
             const { error } = await supabase
@@ -1078,12 +1070,6 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
-              {isArchiveColumn && (
-                <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
-                  Archive Section
-                </div>
-              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
@@ -1100,7 +1086,6 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
         )})}
