@@ -3477,6 +3477,11 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
     margin-bottom: 0.5rem;
   }
 
+  /* Remove the big bottom padding on notes panel for mobile */
+  .notes-panel {
+    padding-bottom: 0.5rem !important;
+  }
+
   /* Hide section cards but keep widget panel visible */
   .section-card { display: none !important; }
   .add-section-btn { display: none !important; }
