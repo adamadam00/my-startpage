@@ -688,16 +688,17 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                 key={note.id} 
                 className={`note-item ${editing === note.id ? 'note-selected' : ''} ${collapsedNotes.has(note.id) ? 'note-collapsed' : ''}`}
                 style={note.shared_to ? { background: 'var(--notes-shared-bg)' } : {}}
+                onClick={() => {
+                  if (collapsedNotes.has(note.id)) {
+                    setCollapsedNotes(prev => { const next = new Set(prev); next.delete(note.id); return next })
+                  }
+                }}
                 onDoubleClick={(e) => {
                   if (editing === note.id) return
+                  if (collapsedNotes.has(note.id)) return
                   e.preventDefault()
                   window.getSelection()?.removeAllRanges()
-                  setCollapsedNotes(prev => {
-                    const next = new Set(prev)
-                    if (next.has(note.id)) next.delete(note.id)
-                    else next.add(note.id)
-                    return next
-                  })
+                  setCollapsedNotes(prev => { const next = new Set(prev); next.add(note.id); return next })
                 }}
                 onDragOver={(e) => {
                   // Allow file drops to pass through to contentEditable
@@ -749,8 +750,8 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                 <>
                   {/* Up/Down reorder buttons - always visible on hover */}
                   <div className="note-reorder-btns">
-                    <button className="note-reorder-btn" title="Move up" onClick={(e) => { e.stopPropagation(); moveUp(note.id) }}>▲</button>
-                    <button className="note-reorder-btn" title="Move down" onClick={(e) => { e.stopPropagation(); moveDown(note.id) }}>▼</button>
+                    <button className="note-reorder-btn" title="Move up" onMouseDown={e => e.preventDefault()} onClick={(e) => { e.stopPropagation(); moveUp(note.id) }}>▲</button>
+                    <button className="note-reorder-btn" title="Move down" onMouseDown={e => e.preventDefault()} onClick={(e) => { e.stopPropagation(); moveDown(note.id) }}>▼</button>
                   </div>
                   <div className="note-main">
                     {editing === note.id ? (
@@ -926,6 +927,13 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                       />
                     ) : (
                       <>
+                        {note.shared_to && (
+                          <div style={{ position: 'absolute', top: '0.3rem', right: '0.4rem', fontSize: '0.6em', color: 'var(--accent)', opacity: 0.7, pointerEvents: 'none', zIndex: 2 }}
+                            title={note.shared_to === '*' ? 'Shared to all workspaces' : `Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || ''}`}
+                          >
+                            {note.shared_to === '*' ? '🔗 All' : `🔗 ${workspaces.find(w => w.id === note.shared_to)?.name || ''}`}
+                          </div>
+                        )}
                         <div
                           key="view-mode"
                           className="note-content"
