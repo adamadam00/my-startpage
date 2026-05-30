@@ -3205,7 +3205,9 @@ input[type='range']::-moz-range-thumb {
   }
 
   .topbar-widgets {
-    display: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
   }
 
   .search-compact {
@@ -3479,10 +3481,17 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   .section-card { display: none !important; }
   .add-section-btn { display: none !important; }
 
+  /* Hide old "Archive Column" label since widget panel has its own */
+  .col-header-label { display: none !important; }
+
+  /* Hide column header rows on mobile (the row with + button) */
+  .sections-col-header-row { display: none !important; }
+
   /* Widget panel always full width on mobile */
   .widget-panel {
     width: 100% !important;
     margin-bottom: 0.75rem;
     display: block !important;
+    min-height: 50px;
   }
 }
