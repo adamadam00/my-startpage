@@ -1818,6 +1818,24 @@ export default function App() {
 
   const [bgImage, setBgImage] = useState(() => localStorage.getItem('bg_image') || '')
   const [search, setSearch] = useState('')
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768)
+  const [homeLinks, setHomeLinks] = useState([])
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  // Fetch home workspace links once for mobile search
+  useEffect(() => {
+    if (!sessionRef.current?.user?.id) return
+    const homeWs = workspaces.find(w => w.name?.toLowerCase() === 'home')
+    if (!homeWs) return
+    supabase.from('links').select('*').eq('workspace_id', homeWs.id).then(({ data }) => {
+      setHomeLinks(data || [])
+    })
+  }, [workspaces])
   const [webSearch, setWebSearch] = useState('')
   const [bmSearch, setBmSearch] = useState('')
   const [searchMode, setSearchMode] = useState('web')
@@ -2152,10 +2170,11 @@ export default function App() {
   }, [session])
 
   const filteredLinks = useMemo(() => {
+    const sourceLinks = isMobile ? homeLinks : links
     const q = search.trim().toLowerCase()
-    if (!q) return links
-    return links.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
-  }, [links, search])
+    if (!q) return sourceLinks
+    return sourceLinks.filter(l => (l.title || '').toLowerCase().includes(q) || (l.url || '').toLowerCase().includes(q))
+  }, [links, homeLinks, isMobile, search])
 
   const filteredBookmarks = useMemo(() => {
     const q = bmQuery.trim().toLowerCase()
