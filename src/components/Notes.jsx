@@ -1356,14 +1356,14 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     {canShare && (
                       <select
                         className="input"
-                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, maxWidth: '110px', textOverflow: 'ellipsis' }}
                         value={editShareNote}
                         onChange={e => setEditShareNote(e.target.value)}
                       >
                         <option value=''>No sharing</option>
-                        <option value='*'>Share to: All workspaces</option>
+                        <option value='*'>→ All workspaces</option>
                         {otherWorkspaces.map(w => (
-                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
+                          <option key={w.id} value={w.id}>→ {w.name}</option>
                         ))}
                       </select>
                     )}
