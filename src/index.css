@@ -3487,54 +3487,58 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 
   /* Topbar: 2 rows. Row 1: clock + weather + settings. Row 2: search */
   .topbar {
-    flex-wrap: wrap !important;
+    flex-wrap: nowrap !important;
     align-items: center !important;
     padding: 0.4rem 0.5rem !important;
     gap: 0.4rem !important;
-    column-gap: 0.4rem;
-    row-gap: 0.4rem;
   }
-  /* Force everything for row 1 to share one wrapping group via explicit order */
+
+  /* topbar-widgets is the main container - put EVERYTHING in 2 rows via flex-wrap */
+  .topbar-widgets {
+    flex: 1 !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+    align-items: center !important;
+    min-width: 0 !important;
+  }
+
+  /* Row 1 items: clock, weather */
   .clock-compact { order: 1; flex-shrink: 0; }
-  .topbar-divider { display: none !important; }
   .weather-compact { order: 2; flex: 1 1 auto; min-width: 0; }
-  .topbar-actions { 
-    order: 3 !important; 
+  .topbar-divider { display: none !important; }
+
+  /* topbar-actions (cog) stays in row 1 at far right - it's a sibling of topbar-widgets */
+  .topbar-actions {
     flex-shrink: 0 !important;
-    display: flex !important; 
+    display: flex !important;
     gap: 0.35rem;
   }
-  /* Row 2: search + mode toggles + google */
-  .topbar-widgets { 
-    order: 10 !important; 
-    flex-basis: 100% !important; 
-    width: 100% !important; 
-    display: flex !important; 
-    gap: 0.35rem; 
-    align-items: center;
-  }
-  .search-compact { order: 11 !important; flex: 1; min-width: 0; flex-basis: auto !important; }
 
-  /* Uniform button sizing — but only visible buttons */
+  /* Row 2 items inside topbar-widgets: google + search-compact */
+  .topbar-google-btn { order: 10; flex-shrink: 0; }
+  .search-compact { order: 11; flex: 1 1 100%; min-width: 0; }
+
+  /* Hide the "new tab" + button inside topbar-widgets */
+  .topbar-widgets > a[title="New tab"] { display: none !important; }
+
+  /* Uniform button sizing - all topbar buttons same size */
   .topbar-widgets .icon-btn:not(.topbar-news-btn):not(.topbar-cal-btn):not(.topbar-gmail-btn),
-  .topbar-widgets a.icon-btn,
   .topbar-actions .icon-btn,
   .topbar-google-btn {
-    width: 36px !important;
-    height: 36px !important;
-    min-width: 36px !important;
-    font-size: 1.1rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    font-size: 1rem !important;
     padding: 0 !important;
     align-items: center !important;
     justify-content: center !important;
   }
 
-  /* Re-assert hides (must come after display rules above) */
+  /* Re-assert hides */
   .topbar-news-btn,
   .topbar-cal-btn,
   .topbar-gmail-btn { display: none !important; }
-
-  /* Hide collapse button on mobile (first button in topbar-actions) */
   .topbar-actions button:first-child { display: none !important; }
 
   /* Hide the empty "Archive Section" label heading on mobile */
