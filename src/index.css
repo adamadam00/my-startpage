@@ -3492,6 +3492,14 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   /* Hide column header rows on mobile (the row with + button) */
   .sections-col-header-row { display: none !important; }
 
+  /* Hide non-archive columns entirely on mobile - they're empty anyway */
+  .sections-grid > div:not(:last-child) { display: none !important; }
+
+  /* Remove sections-grid bottom padding */
+  .sections-grid { padding: 0 !important; min-height: 0 !important; }
+  .section-col { min-height: 0 !important; }
+  .main-col { padding-bottom: 0 !important; }
+
   /* Widget panel always full width on mobile */
   .widget-panel {
     width: 100% !important;

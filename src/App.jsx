@@ -2622,6 +2622,17 @@ export default function App() {
 					  ))}
 					</div>
 				  )}
+				  {isMobile && searchMode === 'links' && search && filteredLinks.length > 0 && (
+					<div className="bm-dropdown" style={{ fontSize: '13px' }}>
+					  {filteredLinks.slice(0, 15).map(l => (
+						<a key={l.id} className="bm-result" href={l.url} target="_blank" rel="noopener noreferrer" onClick={() => setSearch('')}>
+						  <span className="bm-result-url">{(l.url || '').replace(/^https?:\/\//, '').split('/')[0]}</span>
+						  <span className="bm-result-folder">link</span>
+						  <span className="bm-result-title">{l.title}</span>
+						</a>
+					  ))}
+					</div>
+				  )}
 				</div>}
 			  </div>
 			  <div className="topbar-actions">
