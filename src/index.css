@@ -3491,15 +3491,29 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
     align-items: center !important;
     padding: 0.4rem 0.5rem !important;
     gap: 0.4rem !important;
+    column-gap: 0.4rem;
+    row-gap: 0.4rem;
   }
+  /* Force everything for row 1 to share one wrapping group via explicit order */
   .clock-compact { order: 1; flex-shrink: 0; }
   .topbar-divider { display: none !important; }
-  .weather-compact { order: 2; flex-shrink: 1; min-width: 0; }
-  /* Spacer pushes settings to far right of row 1 */
-  .topbar-actions { order: 3; margin-left: auto; display: flex !important; gap: 0.35rem; flex-shrink: 0; }
-  /* Row 2: search mode buttons + search input + google */
-  .topbar-widgets { order: 9; flex-basis: 100% !important; width: 100% !important; display: flex !important; gap: 0.35rem; align-items: center; }
-  .search-compact { order: 10; flex: 1; min-width: 0; }
+  .weather-compact { order: 2; flex: 1 1 auto; min-width: 0; }
+  .topbar-actions { 
+    order: 3 !important; 
+    flex-shrink: 0 !important;
+    display: flex !important; 
+    gap: 0.35rem;
+  }
+  /* Row 2: search + mode toggles + google */
+  .topbar-widgets { 
+    order: 10 !important; 
+    flex-basis: 100% !important; 
+    width: 100% !important; 
+    display: flex !important; 
+    gap: 0.35rem; 
+    align-items: center;
+  }
+  .search-compact { order: 11 !important; flex: 1; min-width: 0; flex-basis: auto !important; }
 
   /* Uniform button sizing — but only visible buttons */
   .topbar-widgets .icon-btn:not(.topbar-news-btn):not(.topbar-cal-btn):not(.topbar-gmail-btn),
