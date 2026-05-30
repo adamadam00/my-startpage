@@ -2073,15 +2073,16 @@ export default function App() {
         CacheManager.save('activeWorkspace', currentWs) // Cache active workspace
       }
       
-      const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }] = await Promise.all([
+      const [{ data: secData }, { data: linkData }, { data: noteData }, { data: sharedNoteData }, { data: allSharedData }] = await Promise.all([
         supabase.from('sections').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('links').select('*').eq('workspace_id', currentWs).order('position', { ascending: true }),
         supabase.from('notes').select('*').eq('workspace_id', currentWs).order('created_at', { ascending: false }),
         supabase.from('notes').select('*').eq('shared_to', currentWs).order('created_at', { ascending: false }),
+        supabase.from('notes').select('*').eq('shared_to', '*').order('created_at', { ascending: false }),
       ])
       
-      // Merge own notes + shared notes (deduplicate by id)
-      const allNotes = [...(noteData || []), ...(sharedNoteData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
+      // Merge own notes + shared notes + all-shared (deduplicate by id)
+      const allNotes = [...(noteData || []), ...(sharedNoteData || []), ...(allSharedData || [])].filter((n, i, arr) => arr.findIndex(x => x.id === n.id) === i)
       
       setSections(secData || [])
       setLinks(linkData || [])

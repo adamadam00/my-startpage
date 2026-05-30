@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import DOMPurify from 'dompurify'
 
 // Shared formatting toolbar for both new and edit notes
 function NoteToolbar({ targetSelector, onUpdate }) {
@@ -290,7 +289,7 @@ const parseFormatting = (text) => {
     // Add note-bullets class to any ul tags that don't have it
     let html = text.replace(/<ul>/g, '<ul class="note-bullets">')
     html = html.replace(/<ul /g, '<ul class="note-bullets" ')
-    return <span dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />
+    return <span dangerouslySetInnerHTML={{ __html: html }} />
   }
   
   const lines = text.split('\n')
@@ -653,6 +652,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                       onChange={e => setShareNote(e.target.value)}
                     >
                       <option value=''>No sharing</option>
+                      <option value='*'>Share to: All workspaces</option>
                       {otherWorkspaces.map(w => (
                         <option key={w.id} value={w.id}>Share to: {w.name}</option>
                       ))}
@@ -660,7 +660,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                   )}
                   <div style={{ flex: 1 }} />
                   <button type="button" className="btn-xs" onClick={() => { setAdding(false); setText(''); setShareNote('') }}>×</button>
-                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Create</button>
+                  <button type="button" className="btn btn-primary btn-xs" onClick={add}>Save</button>
                 </div>
               </div>
             </div>
@@ -904,7 +904,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                               // Clear first to prevent duplication
                               el.innerHTML = ''
                               // Then set new content
-                              el.innerHTML = DOMPurify.sanitize(editText)
+                              el.innerHTML = editText
                             }
                             // Only focus and set cursor on initial edit
                             if (!el.dataset.initialized) {
@@ -1072,7 +1072,7 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                           {note.shared_to && (
                             <span 
                               style={{ fontSize: '0.8em', marginRight: '0.3rem' }}
-                              title={`Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}
+                              title={note.shared_to === '*' ? 'Shared to all workspaces' : `Shared to ${workspaces.find(w => w.id === note.shared_to)?.name || note.shared_to}`}
                             >
                               🔄
                             </span>
@@ -1352,31 +1352,38 @@ export default function Notes({ notes = [], workspaceId, workspace, workspaces =
                     >
                       📎
                     </button>
-                    <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                      {canShare && (
-                        <select
-                          className="input"
-                          style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 1, minWidth: 0 }}
-                          value={editShareNote}
-                          onChange={e => setEditShareNote(e.target.value)}
-                        >
-                          <option value=''>No sharing</option>
-                          {otherWorkspaces.map(w => (
-                            <option key={w.id} value={w.id}>→ {w.name}</option>
-                          ))}
-                        </select>
-                      )}
-                      <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1, minWidth: 0 }}>
-                        {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { month: 'numeric', day: 'numeric', year: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true }) : ''}
-                      </span>
-                    </div>
+                    <div style={{ flex: 1, minWidth: '0.2rem' }} />
+                    {canShare && (
+                      <select
+                        className="input"
+                        style={{ fontSize: '0.68em', padding: '0.1rem 0.2rem', flexShrink: 0 }}
+                        value={editShareNote}
+                        onChange={e => setEditShareNote(e.target.value)}
+                      >
+                        <option value=''>No sharing</option>
+                        <option value='*'>Share to: All workspaces</option>
+                        {otherWorkspaces.map(w => (
+                          <option key={w.id} value={w.id}>Share to: {w.name}</option>
+                        ))}
+                      </select>
+                    )}
+                    <span style={{ fontSize: '0.6em', color: 'var(--text)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                      {note.updated_at ? new Date(note.updated_at).toLocaleString('en-US', { 
+                        month: 'numeric', 
+                        day: 'numeric', 
+                        year: '2-digit',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true 
+                      }) : ''}
+                    </span>
                     <button
                       type="button"
                       className="btn-xs"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => remove(note.id)}
                       title="Delete note"
-                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.3rem' }}
+                      style={{ color: 'var(--danger)', flexShrink: 0, marginLeft: '0.2rem' }}
                     >
                       🗑
                     </button>
