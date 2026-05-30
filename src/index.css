@@ -3499,8 +3499,8 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   .topbar-actions { order: 4; display: flex; gap: 0.35rem; }
   .search-compact { order: 10; flex-basis: 100%; width: 100%; }
 
-  /* Uniform button sizing — Google button matches others */
-  .topbar-widgets .icon-btn,
+  /* Uniform button sizing — but only visible buttons */
+  .topbar-widgets .icon-btn:not(.topbar-news-btn):not(.topbar-cal-btn):not(.topbar-gmail-btn),
   .topbar-widgets a.icon-btn,
   .topbar-actions .icon-btn,
   .topbar-google-btn {
@@ -3509,10 +3509,14 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
     min-width: 36px !important;
     font-size: 1.1rem !important;
     padding: 0 !important;
-    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
   }
+
+  /* Re-assert hides (must come after display rules above) */
+  .topbar-news-btn,
+  .topbar-cal-btn,
+  .topbar-gmail-btn { display: none !important; }
 
   /* Hide collapse button on mobile (first button in topbar-actions) */
   .topbar-actions button:first-child { display: none !important; }
