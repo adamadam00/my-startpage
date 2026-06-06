@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notes from './components/Notes'
+import Notepad from './components/Notepad'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import CacheManager from './lib/cacheManager'
@@ -1849,6 +1850,9 @@ export default function App() {
   const [importingBackup, setImportingBackup] = useState(false)
 
   const [allCollapsed, setAllCollapsed] = useState(false)
+  const [notepadMode, setNotepadMode] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('notepadMode') ?? 'false') } catch { return false }
+  })
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand, setTriggerExpand] = useState(0)
   const [notesTrigger, setNotesTrigger] = useState(undefined)
@@ -2626,6 +2630,12 @@ export default function App() {
 			  </div>
 			  <div className="topbar-actions">
 				<button
+				  className={`icon-btn topbar-quick-btn topbar-notepad-btn${notepadMode ? ' active' : ''}`}
+				  title={notepadMode ? 'Switch to Notes' : 'Switch to Notepad'}
+				  onClick={() => { const next = !notepadMode; setNotepadMode(next); localStorage.setItem('notepadMode', JSON.stringify(next)) }}
+				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
+				>📝</button>
+				<button
 				  className="icon-btn topbar-quick-btn"
 				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  onClick={toggleAll}
@@ -2678,15 +2688,24 @@ export default function App() {
 				/>
 			  </div>}
 			  {!(theme.hideNotes ?? false) && <div className="side-col">
-				<Notes
-				  notes={notes}
-				  workspaceId={activeWs}
-				  workspace={workspaces.find(w => w.id === activeWs)}
-				  workspaces={workspaces}
-				  userId={session.user.id}
-				  onRefresh={handleRefresh}
-				  forceOpen={notesTrigger}
-				/>
+				{notepadMode ? (
+				  <Notepad
+					userId={session.user.id}
+					workspaceId={activeWs}
+					workspaces={workspaces}
+					onRefresh={handleRefresh}
+				  />
+				) : (
+				  <Notes
+					notes={notes}
+					workspaceId={activeWs}
+					workspace={workspaces.find(w => w.id === activeWs)}
+					workspaces={workspaces}
+					userId={session.user.id}
+					onRefresh={handleRefresh}
+					forceOpen={notesTrigger}
+				  />
+				)}
 			  </div>}
 			</main>
 
