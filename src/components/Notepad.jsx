@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import DOMPurify from 'dompurify'
 
@@ -216,12 +217,15 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
         ))}
         <div style={{ position: 'relative' }}>
           <button className="notepad-tab notepad-tab-add" onClick={() => setShowNewTabMenu(p => !p)} title="New tab">+</button>
-          {showNewTabMenu && (
-            <div className="notepad-new-tab-menu">
-              <button onClick={() => addTab(false)}>Local tab</button>
-              <button onClick={() => addTab(true)}>Shared tab 🔗</button>
-            </div>
-          )}
+          {showNewTabMenu && createPortal(
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998 }} onClick={() => setShowNewTabMenu(false)}>
+              <div className="notepad-new-tab-menu" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
+                <div style={{ padding: '0.5rem 0.6rem', fontSize: '0.8em', fontWeight: 600, color: 'var(--text-dim)', borderBottom: '1px solid var(--border)' }}>New Tab</div>
+                <button onClick={() => addTab(false)}>📄 Local tab</button>
+                <button onClick={() => addTab(true)}>🔗 Shared tab (all workspaces)</button>
+              </div>
+            </div>,
+          document.body)}
         </div>
       </div>
 
