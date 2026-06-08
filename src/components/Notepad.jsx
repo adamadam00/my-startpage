@@ -91,6 +91,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
 
   // ── TAB MANAGEMENT ──────────────────────────────────────────
   const addTab = async (shared = false) => {
+    if (!userId || !workspaceId) { console.error('No userId or workspaceId'); return }
     const nextOrder = tabs.length
     const title = shared ? `Share ${nextOrder + 1}` : `Tab ${nextOrder + 1}`
     const { data, error } = await supabase.from('notepads').insert({
@@ -101,10 +102,9 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
       tab_order: nextOrder,
       shared_to: shared ? '*' : null,
     }).select().single()
-    if (!error && data) {
-      setTabs(prev => [...prev, data])
-      setActiveTab(data.id)
-    }
+    if (error) { console.error('Add tab error:', error.message); alert('Could not create tab: ' + error.message); return }
+    setTabs(prev => [...prev, data])
+    setActiveTab(data.id)
     setShowNewTabMenu(false)
   }
 
@@ -239,6 +239,9 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
         <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dashed')} title="Dashed line">┄</button>
         <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dotted')} title="Dotted line">┈</button>
         <div className="np-sep" />
+        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertUnorderedList')} title="Bullet list">•</button>
+        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
+        <div className="np-sep" />
         {colors.map((c, i) => {
           const col = getComputedStyle(document.documentElement).getPropertyValue(c.var).trim() || c.fallback
           return <button key={i} className="np-color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(col)} style={{ background: col }} />
@@ -258,19 +261,58 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           suppressContentEditableWarning
           onInput={handleInput}
           onPaste={(e) => {
-            // Paste as plain text to avoid style injection
             e.preventDefault()
             const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain')
             document.execCommand('insertHTML', false, DOMPurify.sanitize(text))
             handleInput()
           }}
-          data-placeholder="Start typing..."
+          onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('notepad-drag-over') }}
+          onDragLeave={(e) => { e.currentTarget.classList.remove('notepad-drag-over') }}
+          onDrop={async (e) => {
+            e.preventDefault()
+            e.currentTarget.classList.remove('notepad-drag-over')
+            if (!e.dataTransfer.files.length || !currentTab) return
+            const file = e.dataTransfer.files[0]
+            const fileName = `${Date.now()}_${file.name}`
+            const filePath = `${userId}/${fileName}`
+            const { error: upErr } = await supabase.storage.from('note-files').upload(filePath, file)
+            if (upErr) { alert('Upload failed: ' + upErr.message); return }
+            const { data: urlData } = supabase.storage.from('note-files').getPublicUrl(filePath)
+            const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
+            if (isImage) {
+              document.execCommand('insertHTML', false, `<img src="${urlData.publicUrl}" style="max-width:100%;border-radius:4px;margin:0.3em 0" />`)
+              handleInput()
+            }
+            const newFiles = [...(currentTab.files || []), { name: file.name, url: urlData.publicUrl, path: filePath }]
+            await supabase.from('notepads').update({ files: newFiles }).eq('id', currentTab.id)
+            fetchTabs()
+          }}
+          data-placeholder="Start typing or drag files here..."
         />
       </div>
 
       {/* ── BOTTOM BAR (files, always visible) ───────────── */}
-      {currentTab?.files && currentTab.files.length > 0 && (
-        <div className="notepad-files-bar">
+      <div className="notepad-files-bar" 
+        onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('notepad-drag-over') }}
+        onDragLeave={(e) => { e.currentTarget.classList.remove('notepad-drag-over') }}
+        onDrop={async (e) => {
+          e.preventDefault(); e.currentTarget.classList.remove('notepad-drag-over')
+          if (!e.dataTransfer.files.length || !currentTab) return
+          const file = e.dataTransfer.files[0]
+          const fileName = `${Date.now()}_${file.name}`
+          const filePath = `${userId}/${fileName}`
+          const { error: upErr } = await supabase.storage.from('note-files').upload(filePath, file)
+          if (upErr) { alert('Upload failed: ' + upErr.message); return }
+          const { data: urlData } = supabase.storage.from('note-files').getPublicUrl(filePath)
+          const newFiles = [...(currentTab.files || []), { name: file.name, url: urlData.publicUrl, path: filePath }]
+          await supabase.from('notepads').update({ files: newFiles }).eq('id', currentTab.id)
+          fetchTabs()
+        }}
+      >
+        {(!currentTab?.files || currentTab.files.length === 0) && (
+          <span style={{ fontSize: '0.7em', color: 'var(--text-dim)', opacity: 0.4 }}>Drop files here or click 📎</span>
+        )}
+        {currentTab?.files && currentTab.files.length > 0 && <>
           {currentTab.files.map((file, i) => {
             const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
             return (
@@ -281,8 +323,8 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
               </div>
             )
           })}
-        </div>
-      )}
+        </>}
+      </div>
     </div>
   )
 }

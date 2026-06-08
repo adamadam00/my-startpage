@@ -3579,6 +3579,13 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   min-height: 0;
   border-radius: var(--section-radius, var(--radius));
   overflow: hidden;
+  background-color: var(--card-with-opacity, var(--card));
+  background-image: var(--panels-gradient, none);
+  background-size: var(--viewport-width, 100vw) var(--viewport-height, 100vh);
+  background-repeat: no-repeat;
+  background-blend-mode: var(--panels-gradient-blend, normal);
+  border: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity, 1) * 100%), transparent);
+  box-shadow: var(--card-shadow, none);
 }
 
 .notepad-tabs {
@@ -3697,6 +3704,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  max-height: calc(100vh - 200px);
   padding: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb-color, var(--accent)) transparent;
@@ -3761,3 +3769,26 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .topbar-notepad-btn { color: var(--text-dim); }
 .topbar-notepad-btn:hover { color: var(--accent); }
 .topbar-notepad-btn.active { color: var(--accent); }
+
+/* Notepad drag-over highlight */
+.notepad-drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+
+/* Notepad files bar always visible */
+.notepad-files-bar {
+  min-height: 32px;
+}
+
+/* Notepad editor images */
+.notepad-editor img {
+  max-width: 100%;
+  border-radius: 4px;
+  margin: 0.3em 0;
+  cursor: default;
+}
+
+/* Notepad lists */
+.notepad-editor ul, .notepad-editor ol {
+  padding-left: 1.4em;
+  margin: 0.3em 0;
+}
+.notepad-editor li { margin: 0.15em 0; }
