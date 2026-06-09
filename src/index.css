@@ -3845,9 +3845,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 
 /* Notepad width override */
 .side-col.notepad-active {
-  width: var(--notepad-width, auto) !important;
-  min-width: var(--notepad-width, auto);
-  max-width: var(--notepad-width, none);
+  width: 100% !important;
 }
 
 /* Notepad file image preview with zoom */

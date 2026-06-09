@@ -2664,7 +2664,7 @@ export default function App() {
 			</div>
 
 			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
-			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? `1fr var(--notes-width, 240px)` : '1fr' }}>
+			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? `1fr ${notepadMode ? 'var(--notepad-width, 320px)' : 'var(--notes-width, 240px)'}` : '1fr' }}>
 			  {!(theme.hideCards ?? false) && <div className="main-col">
 				<Sections
 				  sections={sections}
