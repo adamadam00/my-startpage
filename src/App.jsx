@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
-import Notes from './components/Notes'
 import Notepad from './components/Notepad'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
@@ -1861,22 +1860,17 @@ export default function App() {
   const [importingBackup, setImportingBackup] = useState(false)
 
   const [allCollapsed, setAllCollapsed] = useState(false)
-  const [notepadMode, setNotepadMode] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('notepadMode') ?? 'false') } catch { return false }
-  })
+
   const [triggerCollapse, setTriggerCollapse] = useState(0)
   const [triggerExpand, setTriggerExpand] = useState(0)
-  const [notesTrigger, setNotesTrigger] = useState(undefined)
 
   const toggleAll = () => {
     if (allCollapsed) {
       setTriggerExpand(t => t + 1)
-      setNotesTrigger(true)
       setAllCollapsed(false)
       localStorage.setItem('widgetPanelCollapsed', 'false')
     } else {
       setTriggerCollapse(t => t + 1)
-      setNotesTrigger(false)
       setAllCollapsed(true)
       localStorage.setItem('widgetPanelCollapsed', 'true')
     }
@@ -2641,12 +2635,6 @@ export default function App() {
 			  </div>
 			  <div className="topbar-actions">
 				<button
-				  className={`icon-btn topbar-quick-btn topbar-notepad-btn${notepadMode ? ' active' : ''}`}
-				  title={notepadMode ? 'Switch to Notes' : 'Switch to Notepad'}
-				  onClick={() => { const next = !notepadMode; setNotepadMode(next); localStorage.setItem('notepadMode', JSON.stringify(next)) }}
-				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
-				>📝</button>
-				<button
 				  className="icon-btn topbar-quick-btn"
 				  title={allCollapsed ? 'Expand all sections' : 'Collapse all sections'}
 				  onClick={toggleAll}
@@ -2664,7 +2652,7 @@ export default function App() {
 			</div>
 
 			{/* ── MAIN LAYOUT ─────────────────────────────────── */}
-			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? `1fr ${notepadMode ? 'var(--notepad-width, 320px)' : 'var(--notes-width, 240px)'}` : '1fr' }}>
+			<main className="main-layout" style={{ gridTemplateColumns: !(theme.hideNotes ?? false) ? '1fr var(--notepad-width, 320px)' : '1fr' }}>
 			  {!(theme.hideCards ?? false) && <div className="main-col">
 				<Sections
 				  sections={sections}
@@ -2698,26 +2686,16 @@ export default function App() {
 				  }}
 				/>
 			  </div>}
-			  {!(theme.hideNotes ?? false) && <div className={`side-col${notepadMode ? ' notepad-active' : ''}`}>
+			  {!(theme.hideNotes ?? false) && <div className="side-col notepad-active">
 				{(() => {
 				  const homeWsId = workspaces.find(w => w.name?.toLowerCase() === 'home')?.id
 				  const wsId = isMobile && homeWsId ? homeWsId : activeWs
-				  return notepadMode ? (
+				  return (
 					<Notepad
 					  userId={session.user.id}
 					  workspaceId={wsId}
 					  workspaces={workspaces}
 					  onRefresh={handleRefresh}
-					/>
-				  ) : (
-					<Notes
-					  notes={notes}
-					  workspaceId={wsId}
-					  workspace={workspaces.find(w => w.id === wsId)}
-					  workspaces={workspaces}
-					  userId={session.user.id}
-					  onRefresh={handleRefresh}
-					  forceOpen={notesTrigger}
 					/>
 				  )
 				})()}

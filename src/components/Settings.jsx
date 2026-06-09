@@ -930,8 +930,7 @@ export default function Settings({
           if (sectionId === 'clock') return <Group title="Clock" defaultOpen={false} {...commonGroupProps}><Row label="Clock widget size"><Slider label="Clock widget size" val={Math.round((theme.clockWidgetSize ?? 1) * 10)} min={5} max={30} onChange={v => set('clockWidgetSize', v / 10)} unit="×" /></Row></Group>
           if (sectionId === 'favicons') return <Group title="Favicons" defaultOpen={false} {...commonGroupProps}><Row label="Show favicons"><Toggle label="Show favicons" checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} /></Row><Row label="Favicon size"><Slider label="Favicon size" val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" /></Row><Row label="Favicon opacity"><Slider label="Favicon opacity" val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('faviconOpacity', v / 100)} unit="%" /></Row><Row label="Greyscale"><Toggle label="Greyscale" checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} /></Row><Row label="Load delay"><Slider label="Load delay" val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5} onChange={v => set('faviconDelay', v)} unit="s" /></Row><Row label="Fade-in duration"><Slider label="Fade-in duration" val={theme.faviconFade ?? 0.3} min={0} max={2} step={0.1} onChange={v => set('faviconFade', v)} unit="s" /></Row></Group>
           if (sectionId === 'notes') return (
-            <Group title="Notes" defaultOpen={false} {...commonGroupProps}>
-              <Row label="Panel width"><Slider val={theme.notesWidth ?? 288} min={200} max={400} onChange={v => set('notesWidth', v)} unit="px" /></Row>
+            <Group title="Notepad" defaultOpen={false} {...commonGroupProps}>
               <Row label="Font family">
                 <select className="input" style={{ fontSize: '0.78em' }} value={theme.notesFontFamily || 'inherit'} onChange={e => set('notesFontFamily', e.target.value)}>
                   <option value="inherit">Same as app</option>
@@ -943,15 +942,9 @@ export default function Settings({
                 </select>
               </Row>
               <Row label="Font size"><Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row>
-              <Row label="Word wrap"><Toggle checked={theme.notesWordWrap ?? true} onChange={v => set('notesWordWrap', v)} /></Row>
-              <Row label="Mobile: notes first"><Toggle checked={theme.mobileNotesFirst ?? true} onChange={v => set('mobileNotesFirst', v)} /></Row>
               <Row label="Notepad width"><Slider val={theme.notepadWidth ?? 320} min={250} max={600} onChange={v => set('notepadWidth', v)} unit="px" /></Row>
               <Row label="Info column width"><Slider val={theme.archiveColWidth ?? 280} min={180} max={500} onChange={v => set('archiveColWidth', v)} unit="px" /></Row>
-              <div style={{ padding: '0.75rem 0 0.25rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
-                <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', width: '100%' }} onClick={onClearAllNotes}>
-                  Clear All Notes
-                </button>
-              </div>
+              <Row label="Mobile: notepad first"><Toggle checked={theme.mobileNotesFirst ?? true} onChange={v => set('mobileNotesFirst', v)} /></Row>
             </Group>
           )
 
