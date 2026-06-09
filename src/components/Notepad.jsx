@@ -226,7 +226,6 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
 
   const changeFontSize = (delta) => {
     editorRef.current?.focus()
-    // fontSize command uses values 1-7
     const current = document.queryCommandValue('fontSize')
     const size = Math.min(7, Math.max(1, (parseInt(current) || 3) + delta))
     document.execCommand('fontSize', false, String(size))
@@ -238,44 +237,17 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     const sel = window.getSelection()
     if (!sel.rangeCount || sel.isCollapsed) { alert('Select the text you want to convert to bullets'); return }
     
-    const range = sel.getRangeAt(0)
-    const frag = range.cloneContents()
-    const temp = document.createElement('div')
-    temp.appendChild(frag)
+    // Use plain text to avoid DOM traversal issues
+    const text = sel.toString()
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    if (lines.length === 0) return
     
-    // Get text content, split by newlines/br/div/p
-    const html = temp.innerHTML
-    const lines = html
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/?(div|p)[^>]*>/gi, '\n')
-      .replace(/&nbsp;/g, ' ')
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l.length > 0)
-    
-    // Convert any line starting with -, –, —, • (with or without space after)
     const items = lines.map(line => {
-      const cleaned = line.replace(/^<[^>]+>/, '').trim() // strip any leading HTML tag
-      if (/^\s*[-–—•]\s*/.test(cleaned)) {
-        return `<li>${cleaned.replace(/^\s*[-–—•]\s*/, '')}</li>`
-      }
-      return `<li>${cleaned}</li>` // convert all selected lines to bullets
-    })
+      const cleaned = line.replace(/^\s*[-–—•]\s*/, '')
+      return '<li>' + DOMPurify.sanitize(cleaned || line) + '</li>'
+    }).join('')
     
-    // Break out of any existing list first
-    const container = range.commonAncestorContainer
-    const parentList = container.closest ? container.closest('ul,ol') : container.parentElement?.closest('ul,ol')
-    if (parentList) {
-      // Select the parent list items and replace them
-      const listRange = document.createRange()
-      listRange.selectNodeContents(parentList)
-      sel.removeAllRanges()
-      sel.addRange(listRange)
-    }
-    
-    // Use execCommand for proper undo support
-    document.execCommand('insertHTML', false, DOMPurify.sanitize('<ul>' + items.join('') + '</ul>'))
-    
+    document.execCommand('insertHTML', false, '<ul>' + items + '</ul>')
     handleInput()
   }
 
