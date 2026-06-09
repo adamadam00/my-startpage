@@ -68,13 +68,19 @@ function ClockWidget() {
         if (angle < 0) angle += 360
         if (lastAngleRef.current !== null) {
           const diff = angle - lastAngleRef.current
-          if (diff < -270) lapRef.current++
-          if (diff > 270) lapRef.current = Math.max(0, lapRef.current-1)
+          // Only count lap changes for large jumps (crossing 12 o'clock)
+          if (diff < -300) lapRef.current++
+          if (diff > 300 && lapRef.current > 0) lapRef.current--
         }
         lastAngleRef.current = angle
         const laps = Math.max(0, lapRef.current), frac = angle/360
-        if (type === 'hour') setTotalMins(Math.round((laps*12+frac*12)*60/30)*30)
-        else { const baseH = hasTarget ? Math.floor(tMins/60) : 0; setTotalMins(baseH*60 + Math.round(frac*60/10)*10 % 60) }
+        if (type === 'hour') {
+          // Snap to 10 min for smoother feel
+          setTotalMins(Math.round((laps*12+frac*12)*60/10)*10)
+        } else {
+          const baseH = hasTarget ? Math.floor(tMins/60) : 0
+          setTotalMins(Math.max(0, baseH*60 + Math.round(frac*60/5)*5 % 60))
+        }
       })
     }
     const up = () => { if (pending) cancelAnimationFrame(pending); window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up) }
@@ -1130,6 +1136,7 @@ function applyTheme(t) {
   if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
   if (t.notesFontSize) s('--notes-font-size', t.notesFontSize + 'px')
   if (t.notepadWidth) s('--notepad-width', t.notepadWidth + 'px')
+  if (t.archiveColWidth) s('--archive-col-width', t.archiveColWidth + 'px')
   s('--mobile-notes-order', (t.mobileNotesFirst ?? true) ? '-1' : '1')
   s('--mobile-widget-order', (t.mobileNotesFirst ?? true) ? '0' : '-1')
   if (t.notesFontFamily) s('--notes-font-family', t.notesFontFamily)
@@ -2692,24 +2699,28 @@ export default function App() {
 				/>
 			  </div>}
 			  {!(theme.hideNotes ?? false) && <div className={`side-col${notepadMode ? ' notepad-active' : ''}`}>
-				{notepadMode ? (
-				  <Notepad
-					userId={session.user.id}
-					workspaceId={activeWs}
-					workspaces={workspaces}
-					onRefresh={handleRefresh}
-				  />
-				) : (
-				  <Notes
-					notes={notes}
-					workspaceId={activeWs}
-					workspace={workspaces.find(w => w.id === activeWs)}
-					workspaces={workspaces}
-					userId={session.user.id}
-					onRefresh={handleRefresh}
-					forceOpen={notesTrigger}
-				  />
-				)}
+				{(() => {
+				  const homeWsId = workspaces.find(w => w.name?.toLowerCase() === 'home')?.id
+				  const wsId = isMobile && homeWsId ? homeWsId : activeWs
+				  return notepadMode ? (
+					<Notepad
+					  userId={session.user.id}
+					  workspaceId={wsId}
+					  workspaces={workspaces}
+					  onRefresh={handleRefresh}
+					/>
+				  ) : (
+					<Notes
+					  notes={notes}
+					  workspaceId={wsId}
+					  workspace={workspaces.find(w => w.id === wsId)}
+					  workspaces={workspaces}
+					  userId={session.user.id}
+					  onRefresh={handleRefresh}
+					  forceOpen={notesTrigger}
+					/>
+				  )
+				})()}
 			  </div>}
 			</main>
 
