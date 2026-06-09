@@ -307,34 +307,30 @@ function LinksList({
     })
   );
 
+  const [localLinks, setLocalLinks] = useState(links)
+  useEffect(() => { setLocalLinks(links) }, [links])
+
   async function handleDragEnd(event) {
     const { active, over } = event;
     if (!active || !over || active.id === over.id) return;
 
-    const current = [...links];
+    const current = [...localLinks];
     const oldIndex = current.findIndex((l) => `link-${l.id}` === String(active.id));
     const newIndex = current.findIndex((l) => `link-${l.id}` === String(over.id));
-
     if (oldIndex === -1 || newIndex === -1) return;
 
     const next = arrayMove(current, oldIndex, newIndex);
+    setLocalLinks(next); // optimistic — instant UI update
 
-    const results = await Promise.all(
+    Promise.all(
       next.map((link, index) =>
-        supabase
-          .from("links")
-          .update({ position: index })
-          .eq("id", link.id)
+        supabase.from("links").update({ position: index }).eq("id", link.id)
       )
-    );
-
-    const failed = results.find((r) => r.error);
-    if (failed?.error) {
-      alert(failed.error.message);
-      return;
-    }
-
-    onRefresh?.();
+    ).then(results => {
+      const failed = results.find(r => r.error);
+      if (failed?.error) { alert(failed.error.message); setLocalLinks(links); }
+      else onRefresh?.();
+    });
   }
 
   return (
@@ -344,11 +340,11 @@ function LinksList({
       onDragEnd={handleDragEnd}
     >
       <SortableContext
-        items={links.map((link) => `link-${link.id}`)}
+        items={localLinks.map((link) => `link-${link.id}`)}
         strategy={verticalListSortingStrategy}
       >
         <div className="links-list">
-          {links.map((link, index) => (
+          {localLinks.map((link, index) => (
             <LinkRow
               key={link.id}
               link={link}
