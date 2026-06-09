@@ -109,6 +109,15 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     setShowNewTabMenu(false)
   }
 
+  const renameTab = async (id) => {
+    const tab = tabs.find(t => t.id === id)
+    if (!tab) return
+    const name = await window.prompt('Tab name:', tab.title || '')
+    if (!name?.trim()) return
+    const { error } = await supabase.from('notepads').update({ title: name.trim() }).eq('id', id)
+    if (!error) setTabs(prev => prev.map(t => t.id === id ? { ...t, title: name.trim() } : t))
+  }
+
   const closeTab = async (id) => {
     if (tabs.length <= 1) return // keep at least one
     const ok = await window.confirm('Delete this notepad tab? Content will be lost.')
@@ -126,6 +135,24 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     editorRef.current?.focus()
     document.execCommand(cmd, false, val)
     handleInput()
+  }
+
+  const dashToBullets = () => {
+    if (!editorRef.current) return
+    const html = editorRef.current.innerHTML
+    // Convert lines starting with - or – to list items
+    const lines = html.split(/<br\s*\/?>/gi)
+    const converted = lines.map(line => {
+      const trimmed = line.replace(/^&nbsp;/g, '').trim()
+      if (/^[-–—]\s+/.test(trimmed)) return `<li>${trimmed.replace(/^[-–—]\s+/, '')}</li>`
+      return line
+    })
+    const hasItems = converted.some(l => l.startsWith('<li>'))
+    if (hasItems) {
+      const result = converted.map(l => l.startsWith('<li>') ? l : (l.trim() ? `${l}<br>` : '')).join('')
+      editorRef.current.innerHTML = DOMPurify.sanitize(`<ul>${result}</ul>`)
+      handleInput()
+    }
   }
 
   const insertHR = (style = 'solid') => {
@@ -186,11 +213,16 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
   }
 
   // ── COLOR DOTS ──────────────────────────────────────────────
+  const [customColor, setCustomColor] = useState('#ffffff')
   const colors = [
     { var: '--note-color-1', fallback: '#ff6b6b' },
     { var: '--note-color-2', fallback: '#6c8fff' },
     { var: '--note-color-3', fallback: '#6bffb8' },
     { var: '--note-color-4', fallback: '#ffd32a' },
+    { fallback: '#ffffff' },
+    { fallback: '#ff9f43' },
+    { fallback: '#a55eea' },
+    { fallback: '#0abde3' },
   ]
 
   // ── RENDER ──────────────────────────────────────────────────
@@ -205,7 +237,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
             onClick={async () => { await saveNow(); setActiveTab(tab.id) }}
           >
             {tab.shared_to && <span style={{ marginRight: '0.25rem' }}>🔗</span>}
-            <span className="notepad-tab-title">{tab.title}</span>
+            <span className="notepad-tab-title" onDoubleClick={(e) => { e.stopPropagation(); renameTab(tab.id) }}>{tab.title}</span>
             {tabs.length > 1 && (
               <button
                 className="notepad-tab-close"
@@ -219,7 +251,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <button className="notepad-tab notepad-tab-add" onClick={() => setShowNewTabMenu(p => !p)} title="New tab">+</button>
           {showNewTabMenu && createPortal(
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9998 }} onClick={() => setShowNewTabMenu(false)}>
-              <div className="notepad-new-tab-menu" style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
+              <div className="notepad-new-tab-menu" style={{ position: 'fixed', top: '120px', right: '20px', zIndex: 9999 }} onClick={e => e.stopPropagation()}>
                 <div style={{ padding: '0.5rem 0.6rem', fontSize: '0.8em', fontWeight: 600, color: 'var(--text-dim)', borderBottom: '1px solid var(--border)' }}>New Tab</div>
                 <button onClick={() => addTab(false)}>📄 Local tab</button>
                 <button onClick={() => addTab(true)}>🔗 Shared tab (all workspaces)</button>
@@ -247,12 +279,17 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
         <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
         <div className="np-sep" />
         {colors.map((c, i) => {
-          const col = getComputedStyle(document.documentElement).getPropertyValue(c.var).trim() || c.fallback
-          return <button key={i} className="np-color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(col)} style={{ background: col }} />
+          const col = c.var ? (getComputedStyle(document.documentElement).getPropertyValue(c.var).trim() || c.fallback) : c.fallback
+          return <button key={i} className="np-color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(col)} style={{ background: col }} title={col} />
         })}
+        <label className="np-color-dot" style={{ background: customColor, position: 'relative', cursor: 'pointer' }} title="Custom color">
+          <input type="color" value={customColor} onChange={e => { setCustomColor(e.target.value); setColor(e.target.value) }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+        </label>
+        <div className="np-sep" />
+        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={dashToBullets} title="Convert dashes to bullets">⇢•</button>
         <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={attachFile} title="Attach file">📎</button>
         <div style={{ flex: 1 }} />
-        {saving && <span style={{ fontSize: '0.65em', color: 'var(--text-dim)', opacity: 0.6 }}>Saving...</span>}
+        <span className={`np-save-light ${saving ? 'saving' : (lastSavedRef.current ? 'saved' : '')}`} title={saving ? 'Saving...' : 'Saved'} />
         {currentTab?.shared_to && <span style={{ fontSize: '0.65em', color: 'var(--accent)', opacity: 0.7 }}>🔗 {currentTab.shared_to === '*' ? 'All workspaces' : workspaces.find(w => w.id === currentTab.shared_to)?.name || ''}</span>}
       </div>
 

@@ -3772,8 +3772,23 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 
 /* Notepad files bar always visible */
 .notepad-files-bar {
-  min-height: 32px;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
 }
+
+/* Save indicator light */
+.np-save-light {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-dim);
+  opacity: 0.2;
+  transition: background 0.3s, opacity 0.3s;
+}
+.np-save-light.saving { background: #ffd32a; opacity: 1; }
+.np-save-light.saved { background: #2ed573; opacity: 0.8; }
 
 /* Notepad editor images */
 .notepad-editor img {
