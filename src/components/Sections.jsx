@@ -74,8 +74,9 @@ function LinkRow({
     },
   });
 
-  const [showColors, setShowColors] = useState(false);
-  const [showActions, setShowActions] = useState(false);
+  const [editingLink, setEditingLink] = useState(false);
+  const [editTitle, setEditTitle] = useState('');
+  const [editUrl, setEditUrl] = useState('');
   const dragMoved = useRef(null);
 
   const style = {
@@ -87,49 +88,22 @@ function LinkRow({
   const href = normalizeUrl(link.url);
   const favicon = getFavicon(href);
 
-  async function handleRename(e) {
+  function openEdit(e) {
     e.preventDefault();
     e.stopPropagation();
-
-    const nextTitle = window.prompt("Rename link title", link.title ?? "");
-    if (nextTitle === null) return;
-
-    const trimmed = nextTitle.trim();
-    if (!trimmed) return;
-
-    const { error } = await supabase
-      .from("links")
-      .update({ title: trimmed })
-      .eq("id", link.id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    onRefresh?.();
+    setEditTitle(link.title || '');
+    setEditUrl(link.url || '');
+    setEditingLink(true);
   }
 
-  async function handleEditUrl(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    const nextUrl = window.prompt("Edit link URL", link.url ?? "");
-    if (nextUrl === null) return;
-
-    const trimmed = nextUrl.trim();
-    if (!trimmed) return;
-
+  async function saveEdit() {
+    if (!editTitle.trim()) return;
     const { error } = await supabase
       .from("links")
-      .update({ url: trimmed })
+      .update({ title: editTitle.trim(), url: editUrl.trim() })
       .eq("id", link.id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
+    if (error) { alert(error.message); return; }
+    setEditingLink(false);
     onRefresh?.();
   }
 
@@ -149,23 +123,7 @@ function LinkRow({
     onRefresh?.();
   }
 
-  async function handleColor(e, color) {
-    e.preventDefault();
-    e.stopPropagation();
 
-    const { error } = await supabase
-      .from("links")
-      .update({ color })
-      .eq("id", link.id);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    setShowColors(false);
-    onRefresh?.();
-  }
 
   return (
     <div ref={setNodeRef} style={style} className="link-item">
@@ -201,95 +159,21 @@ function LinkRow({
         {link.title}
       </a>
 
-      <div
-        className="link-actions-overlay"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className="link-act"
-          title="Actions"
-          aria-label="Actions"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowActions((v) => !v);
-          }}
-          onMouseEnter={() => setShowActions(true)}
-        >
-          ⚙
-        </button>
-
-        {showActions && (
-          <div 
-            className={`link-actions-menu ${linkIndex >= totalLinks - 2 ? 'position-above' : ''}`}
-            onMouseLeave={() => {
-              setShowActions(false);
-              setShowColors(false);
-            }}
-          >
-            <button
-              type="button"
-              className="link-act"
-              title="Rename title"
-              aria-label="Rename title"
-              onClick={handleRename}
-            >
-              ✎
-            </button>
-
-            <button
-              type="button"
-              className="link-act"
-              title="Edit URL"
-              aria-label="Edit URL"
-              onClick={handleEditUrl}
-            >
-              🔗
-            </button>
-
-            <button
-              type="button"
-              className="link-act"
-              title="Text colour"
-              aria-label="Text colour"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowColors((v) => !v);
-              }}
-            >
-              ●
-            </button>
-
-            {showColors &&
-              SWATCH_COLORS.map((swatch) => (
-                <button
-                  key={swatch.label}
-                  type="button"
-                  className="color-swatch-inline"
-                  title={swatch.label}
-                  aria-label={swatch.label}
-                  style={{
-                    background: swatch.value || "linear-gradient(135deg, #666, #222)",
-                    outline: !swatch.value ? "1px solid var(--border)" : "none",
-                  }}
-                  onClick={(e) => handleColor(e, swatch.value)}
-                />
-              ))}
-
-            <button
-              type="button"
-              className="link-act link-act-del"
-              title="Delete link"
-              aria-label="Delete link"
-              onClick={handleDelete}
-            >
-              ×
-            </button>
-          </div>
-        )}
+      <div className="link-actions-overlay" onClick={(e) => e.stopPropagation()}>
+        <button type="button" className="link-act" title="Edit" onClick={openEdit}>✎</button>
+        <button type="button" className="link-act link-act-del" title="Delete" onClick={handleDelete}>×</button>
       </div>
+      {editingLink && createPortal(
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 9999, padding: '1.25rem', background: 'var(--card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)', boxShadow: '0 8px 32px rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', gap: '0.6rem', minWidth: '280px', width: '320px' }}>
+          <div style={{ fontSize: '0.85em', fontWeight: 600, color: 'var(--text-dim)' }}>Edit Link</div>
+          <input autoFocus className="input" placeholder="Link title" value={editTitle} onChange={e => setEditTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') setEditingLink(false); if (e.key === 'Enter') e.target.nextElementSibling?.focus() }} />
+          <input className="input" placeholder="https://" value={editUrl} onChange={e => setEditUrl(e.target.value)} onKeyDown={e => { if (e.key === 'Escape') setEditingLink(false); if (e.key === 'Enter') saveEdit() }} />
+          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+            <button className="btn-xs" onClick={() => setEditingLink(false)}>Cancel</button>
+            <button className="btn-xs btn-primary" onClick={saveEdit}>Save</button>
+          </div>
+        </div>,
+      document.body)}
     </div>
   );
 }
