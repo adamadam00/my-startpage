@@ -3737,9 +3737,11 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   padding: 0.4rem 0.5rem;
   border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
   background: color-mix(in srgb, var(--card) 80%, transparent);
-  overflow-x: auto;
+  overflow-y: auto;
   flex-shrink: 0;
-  scrollbar-width: none;
+  flex-wrap: wrap;
+  max-height: 300px;
+  scrollbar-width: thin;
 }
 .notepad-files-bar::-webkit-scrollbar { display: none; }
 
@@ -3818,3 +3820,18 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   min-width: var(--notepad-width, auto);
   max-width: var(--notepad-width, none);
 }
+
+/* Notepad file image preview with zoom */
+.np-file-image {
+  padding: 0.4rem;
+  flex-shrink: 0;
+}
+.np-file-image-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.np-file-image:hover .np-file-image-controls { opacity: 1; }

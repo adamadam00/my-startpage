@@ -3,9 +3,64 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import DOMPurify from 'dompurify'
 
+// ── FILE ATTACHMENT with image preview + zoom ──────────────────────
+function NotepadFile({ file, tabId, onRefresh, userId }) {
+  const [imageUrl, setImageUrl] = useState(null)
+  const [scale, setScale] = useState(file.scale || 100)
+  const isImage = /\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i.test(file.name)
+
+  useEffect(() => {
+    if (isImage && file.path) {
+      supabase.storage.from('note-files').createSignedUrl(file.path, 3600)
+        .then(({ data }) => { if (data) setImageUrl(data.signedUrl) })
+    }
+  }, [file.path, isImage])
+
+  const handleScaleChange = async (val) => {
+    const newScale = parseInt(val)
+    setScale(newScale)
+    const { data: tab } = await supabase.from('notepads').select('files').eq('id', tabId).single()
+    const updated = (tab?.files || []).map(f => f.path === file.path ? { ...f, scale: newScale } : f)
+    await supabase.from('notepads').update({ files: updated }).eq('id', tabId)
+  }
+
+  const handleDelete = async () => {
+    if (!await window.confirm(`Delete "${file.name}"?`)) return
+    if (file.path) await supabase.storage.from('note-files').remove([file.path])
+    const { data: tab } = await supabase.from('notepads').select('files').eq('id', tabId).single()
+    const updated = (tab?.files || []).filter(f => f.path !== file.path)
+    await supabase.from('notepads').update({ files: updated }).eq('id', tabId)
+    onRefresh?.()
+  }
+
+  if (isImage && imageUrl) {
+    return (
+      <div className="np-file-image">
+        <img src={imageUrl} alt={file.name} style={{ width: `${scale}%`, maxWidth: '100%', height: 'auto', borderRadius: '4px', display: 'block' }} />
+        <div className="np-file-image-controls">
+          <input type="range" min="15" max="150" value={scale} onChange={e => handleScaleChange(e.target.value)} style={{ width: '80px', accentColor: 'var(--accent)' }} title="Scale image" />
+          <span style={{ fontSize: '0.65em', color: 'var(--text-dim)', minWidth: '2.5em' }}>{scale}%</span>
+          <button className="btn-xs" onClick={() => window.open(imageUrl, '_blank')} onMouseDown={e => e.preventDefault()} title="Open full size" style={{ fontSize: '0.75em', padding: '0.15rem 0.35rem' }}>↗</button>
+          <button className="btn-xs" onClick={handleDelete} onMouseDown={e => e.preventDefault()} title="Delete" style={{ fontSize: '0.75em', padding: '0.15rem 0.35rem', color: 'var(--danger)' }}>×</button>
+        </div>
+        <div style={{ fontSize: '0.65em', color: 'var(--text-dim)', marginTop: '0.1rem' }}>📎 {file.name}</div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="notepad-file-chip">
+      <a href={file.url || '#'} target="_blank" rel="noopener noreferrer" className="notepad-file-name">📎 {file.name}</a>
+      <button className="notepad-file-remove" onClick={handleDelete} title="Remove">×</button>
+    </div>
+  )
+}
+
 export default function Notepad({ userId, workspaceId, workspaces = [], onRefresh }) {
   const [tabs, setTabs] = useState([])
   const [activeTab, setActiveTab] = useState(null)
+  const activeTabRef = useRef(null)
+  useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showNewTabMenu, setShowNewTabMenu] = useState(false)
@@ -42,7 +97,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
         setTabs([newTab])
         setActiveTab(newTab.id)
       }
-    } else if (!activeTab || !unique.find(t => t.id === activeTab)) {
+    } else if (!activeTabRef.current || !unique.find(t => t.id === activeTabRef.current)) {
       setActiveTab(unique[0].id)
     }
   }, [userId, workspaceId])
@@ -360,16 +415,9 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <span style={{ fontSize: '0.7em', color: 'var(--text-dim)', opacity: 0.4 }}>Drop files here or click 📎</span>
         )}
         {currentTab?.files && currentTab.files.length > 0 && <>
-          {currentTab.files.map((file, i) => {
-            const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
-            return (
-              <div key={i} className="notepad-file-chip">
-                {isImage && <img src={file.url} alt="" className="notepad-file-thumb" />}
-                <a href={file.url} target="_blank" rel="noopener noreferrer" className="notepad-file-name">{file.name}</a>
-                <button className="notepad-file-remove" onClick={() => removeFile(i)} title="Remove">×</button>
-              </div>
-            )
-          })}
+          {currentTab.files.map((file, i) => (
+            <NotepadFile key={i} file={file} tabId={currentTab.id} onRefresh={fetchTabs} userId={userId} />
+          ))}
         </>}
       </div>
     </div>
