@@ -33,24 +33,14 @@ function NotepadFile({ file, tabId, onRefresh, userId }) {
     onRefresh?.()
   }
 
-  if (isImage && imageUrl) {
-    return (
-      <div className="np-file-image">
-        <img src={imageUrl} alt={file.name} style={{ width: `${scale}%`, maxWidth: '100%', height: 'auto', borderRadius: '4px', display: 'block' }} />
-        <div className="np-file-image-controls">
-          <input type="range" min="15" max="150" value={scale} onChange={e => handleScaleChange(e.target.value)} style={{ width: '80px', accentColor: 'var(--accent)' }} title="Scale image" />
-          <span style={{ fontSize: '0.65em', color: 'var(--text-dim)', minWidth: '2.5em' }}>{scale}%</span>
-          <button className="btn-xs" onClick={() => window.open(imageUrl, '_blank')} onMouseDown={e => e.preventDefault()} title="Open full size" style={{ fontSize: '0.75em', padding: '0.15rem 0.35rem' }}>↗</button>
-          <button className="btn-xs" onClick={handleDelete} onMouseDown={e => e.preventDefault()} title="Delete" style={{ fontSize: '0.75em', padding: '0.15rem 0.35rem', color: 'var(--danger)' }}>×</button>
-        </div>
-        <div style={{ fontSize: '0.65em', color: 'var(--text-dim)', marginTop: '0.1rem' }}>📎 {file.name}</div>
-      </div>
-    )
-  }
+  const downloadUrl = imageUrl || file.url || '#'
 
   return (
     <div className="notepad-file-chip">
-      <a href={file.url || '#'} target="_blank" rel="noopener noreferrer" className="notepad-file-name">📎 {file.name}</a>
+      {isImage && <img src={downloadUrl} alt="" className="notepad-file-thumb" />}
+      <a href={downloadUrl} target="_blank" rel="noopener noreferrer" className="notepad-file-name">
+        {file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name}
+      </a>
       <button className="notepad-file-remove" onClick={handleDelete} title="Remove">×</button>
     </div>
   )
@@ -193,20 +183,32 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     handleInput()
   }
 
+  const changeFontSize = (delta) => {
+    editorRef.current?.focus()
+    // fontSize command uses values 1-7
+    const current = document.queryCommandValue('fontSize')
+    const size = Math.min(7, Math.max(1, (parseInt(current) || 3) + delta))
+    document.execCommand('fontSize', false, String(size))
+    handleInput()
+  }
+
   const dashToBullets = () => {
     if (!editorRef.current) return
     const html = editorRef.current.innerHTML
-    // Convert lines starting with - or – to list items
-    const lines = html.split(/<br\s*\/?>/gi)
+    // Split by br, div, or p tags
+    const lines = html.split(/<br\s*\/?>|<\/div>|<\/p>/gi)
+    let changed = false
     const converted = lines.map(line => {
-      const trimmed = line.replace(/^&nbsp;/g, '').trim()
-      if (/^[-–—]\s+/.test(trimmed)) return `<li>${trimmed.replace(/^[-–—]\s+/, '')}</li>`
-      return line
-    })
-    const hasItems = converted.some(l => l.startsWith('<li>'))
-    if (hasItems) {
-      const result = converted.map(l => l.startsWith('<li>') ? l : (l.trim() ? `${l}<br>` : '')).join('')
-      editorRef.current.innerHTML = DOMPurify.sanitize(`<ul>${result}</ul>`)
+      // Strip leading tags like <div> or <p>
+      const clean = line.replace(/^<(div|p)[^>]*>/i, '').replace(/&nbsp;/g, ' ').trim()
+      if (/^[-–—•]\s*/.test(clean)) {
+        changed = true
+        return `<li>${clean.replace(/^[-–—•]\s*/, '')}</li>`
+      }
+      return line.trim() ? line : ''
+    }).filter(Boolean)
+    if (changed) {
+      editorRef.current.innerHTML = DOMPurify.sanitize(`<ul>${converted.join('')}</ul>`)
       handleInput()
     }
   }
@@ -328,9 +330,8 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('h2')} title="Heading 2" style={{ fontSize: '0.8em', fontWeight: 700 }}>H2</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('p')} title="Body text" style={{ fontSize: '0.75em' }}>P</button>
           <div className="np-sep" />
-          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('fontSize', '2')} title="Small text" style={{ fontSize: '0.65em' }}>A</button>
-          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('fontSize', '4')} title="Medium text" style={{ fontSize: '0.85em' }}>A</button>
-          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('fontSize', '6')} title="Large text" style={{ fontSize: '1.1em' }}>A</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => changeFontSize(-1)} title="Smaller text" style={{ fontSize: '0.7em', fontWeight: 700 }}>A−</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => changeFontSize(1)} title="Bigger text" style={{ fontSize: '1em', fontWeight: 700 }}>A+</button>
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('solid')} title="Solid line">─</button>
           <div className="np-sep" />
@@ -382,7 +383,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
             const { data: urlData } = supabase.storage.from('note-files').getPublicUrl(filePath)
             const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
             if (isImage) {
-              document.execCommand('insertHTML', false, `<img src="${urlData.publicUrl}" style="max-width:100%;border-radius:4px;margin:0.3em 0" />`)
+              document.execCommand('insertHTML', false, `<img src="${urlData.publicUrl}" style="width:100%;max-width:100%;height:auto;border-radius:4px;margin:0.3em 0;display:block" />`)
               handleInput()
             }
             const newFiles = [...(currentTab.files || []), { name: file.name, url: urlData.publicUrl, path: filePath }]
