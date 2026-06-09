@@ -262,17 +262,19 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
       return `<li>${cleaned}</li>` // convert all selected lines to bullets
     })
     
-    range.deleteContents()
-    const ul = document.createElement('ul')
-    ul.innerHTML = DOMPurify.sanitize(items.join(''))
-    range.insertNode(ul)
+    // Break out of any existing list first
+    const container = range.commonAncestorContainer
+    const parentList = container.closest ? container.closest('ul,ol') : container.parentElement?.closest('ul,ol')
+    if (parentList) {
+      // Select the parent list items and replace them
+      const listRange = document.createRange()
+      listRange.selectNodeContents(parentList)
+      sel.removeAllRanges()
+      sel.addRange(listRange)
+    }
     
-    // Move cursor after the list
-    sel.removeAllRanges()
-    const newRange = document.createRange()
-    newRange.setStartAfter(ul)
-    newRange.collapse(true)
-    sel.addRange(newRange)
+    // Use execCommand for proper undo support
+    document.execCommand('insertHTML', false, DOMPurify.sanitize('<ul>' + items.join('') + '</ul>'))
     
     handleInput()
   }
@@ -403,6 +405,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={dashToBullets} title="Convert dashes to bullets">⇢•</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => { editorRef.current?.focus(); document.execCommand('undo') }} title="Undo (Ctrl+Z)">↩</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={attachFile} title="Attach file">📎</button>
           <div style={{ flex: 1 }} />
           <span className={`np-save-light ${saving ? 'saving' : saved ? 'saved' : ''}`} title={saving ? 'Saving...' : saved ? 'Saved' : 'Idle'} />
