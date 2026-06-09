@@ -159,9 +159,13 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
         .from('notepads')
         .update({ content })
         .eq('id', activeTab)
-      if (!error) { lastSavedRef.current = content; setSaved(true); setTimeout(() => setSaved(false), 3000) }
+      if (!error) {
+        lastSavedRef.current = content
+        setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, content } : t))
+        setSaved(true); setTimeout(() => setSaved(false), 3000)
+      }
       setSaving(false)
-    }, 1500) // save after 1.5s of inactivity
+    }, 1500)
   }
 
   // Save on unmount / tab switch
@@ -171,6 +175,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     if (content === lastSavedRef.current) return
     await supabase.from('notepads').update({ content }).eq('id', activeTab)
     lastSavedRef.current = content
+    setTabs(prev => prev.map(t => t.id === activeTab ? { ...t, content } : t))
   }, [activeTab])
 
   useEffect(() => {
