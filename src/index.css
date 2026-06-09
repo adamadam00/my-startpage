@@ -1581,8 +1581,8 @@ html.bg-29-carbon::after {
   min-height: 0;
   overflow-y: auto;
   overflow-x: visible;
-  padding-right: 4px;
-  padding-left: 4px;
+  padding-right: 2px;
+  padding-left: 0;
   position: relative;
 }
 
@@ -2490,7 +2490,7 @@ html.bg-29-carbon::after {
 	min-height: 0;
 	align-self: flex-start;
 	flex: 0 0 auto;
-	padding: 0 4px;
+	padding: 0 1px;
 	padding-top: 0;
 	padding-bottom: 4rem;
 	overflow: visible;
@@ -3396,7 +3396,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 
 /* Sections */
 .wp-section {
-  padding: 0.6rem 0.75rem;
+  padding: 0.6rem 0.35rem 0.6rem 0.75rem;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
 }
 .wp-section:last-child { border-bottom: none; }
@@ -3428,7 +3428,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   transition: all 0.15s;
 }
 .wp-tab.active, .wp-tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-.wp-news-articles { display: flex; flex-direction: column; gap: 0; max-height: var(--wp-news-height, 280px); overflow-y: auto; padding-right: 0.2rem; scrollbar-width: thin; }
+.wp-news-articles { display: flex; flex-direction: column; gap: 0; max-height: var(--wp-news-height, 280px); overflow-y: auto; padding-right: 0; scrollbar-width: thin; }
 .wp-article {
   display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem;
   padding: 0.3rem 0;
