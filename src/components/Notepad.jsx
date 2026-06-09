@@ -194,7 +194,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
       const fileName = `${Date.now()}_${file.name}`
       const filePath = `${userId}/${fileName}`
       const { error: upErr } = await supabase.storage.from('note-files').upload(filePath, file)
-      if (upErr) { alert('Upload failed: ' + upErr.message); return }
+      if (upErr) { alert('Upload failed: ' + JSON.stringify(upErr)); return }
       const { data: urlData } = supabase.storage.from('note-files').getPublicUrl(filePath)
       const newFiles = [...(currentTab.files || []), { name: file.name, url: urlData.publicUrl, path: filePath }]
       await supabase.from('notepads').update({ files: newFiles }).eq('id', currentTab.id)
@@ -273,9 +273,11 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('h2')} title="Heading 2" style={{ fontSize: '0.8em', fontWeight: 700 }}>H2</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('p')} title="Body text" style={{ fontSize: '0.75em' }}>P</button>
           <div className="np-sep" />
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('fontSize', '2')} title="Small text" style={{ fontSize: '0.65em' }}>A</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('fontSize', '4')} title="Medium text" style={{ fontSize: '0.85em' }}>A</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('fontSize', '6')} title="Large text" style={{ fontSize: '1.1em' }}>A</button>
+          <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('solid')} title="Solid line">─</button>
-          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dashed')} title="Dashed line">┄</button>
-          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dotted')} title="Dotted line">┈</button>
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertUnorderedList')} title="Bullet list">•</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
@@ -321,7 +323,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
             const fileName = `${Date.now()}_${file.name}`
             const filePath = `${userId}/${fileName}`
             const { error: upErr } = await supabase.storage.from('note-files').upload(filePath, file)
-            if (upErr) { alert('Upload failed: ' + upErr.message); return }
+            if (upErr) { alert('Upload failed: ' + JSON.stringify(upErr)); return }
             const { data: urlData } = supabase.storage.from('note-files').getPublicUrl(filePath)
             const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(file.name)
             if (isImage) {
@@ -347,7 +349,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           const fileName = `${Date.now()}_${file.name}`
           const filePath = `${userId}/${fileName}`
           const { error: upErr } = await supabase.storage.from('note-files').upload(filePath, file)
-          if (upErr) { alert('Upload failed: ' + upErr.message); return }
+          if (upErr) { alert('Upload failed: ' + JSON.stringify(upErr)); return }
           const { data: urlData } = supabase.storage.from('note-files').getPublicUrl(filePath)
           const newFiles = [...(currentTab.files || []), { name: file.name, url: urlData.publicUrl, path: filePath }]
           await supabase.from('notepads').update({ files: newFiles }).eq('id', currentTab.id)
