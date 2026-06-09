@@ -1049,7 +1049,7 @@ export default function Sections({
               )}
               {isArchiveColumn && (
                 <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
-                  Archive Column
+                  Info Section
                 </span>
               )}
             </div>
@@ -1071,7 +1071,7 @@ export default function Sections({
               {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
               {isArchiveColumn && (
                 <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
-                  Archive Section
+                  Info Section
                 </div>
               )}
               {col.items.map((section) => (

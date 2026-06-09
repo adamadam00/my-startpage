@@ -55,6 +55,42 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
   const [saved, setSaved] = useState(false)
   const [showNewTabMenu, setShowNewTabMenu] = useState(false)
   const editorRef = useRef(null)
+  const [selectedImg, setSelectedImg] = useState(null) // { el, src, width }
+
+  // Handle clicks inside editor - detect image clicks
+  const handleEditorClick = (e) => {
+    // Remove previous selection highlight
+    editorRef.current?.querySelectorAll('.np-img-selected').forEach(el => el.classList.remove('np-img-selected'))
+    if (e.target.tagName === 'IMG') {
+      const el = e.target
+      el.classList.add('np-img-selected')
+      const width = parseInt(el.style.width) || 100
+      setSelectedImg({ el, src: el.src, width })
+    } else {
+      setSelectedImg(null)
+    }
+  }
+
+  const imgResize = (val) => {
+    if (!selectedImg?.el) return
+    const w = parseInt(val)
+    selectedImg.el.style.width = w + '%'
+    selectedImg.el.style.maxWidth = '100%'
+    setSelectedImg(prev => ({ ...prev, width: w }))
+    handleInput()
+  }
+
+  const imgDelete = () => {
+    if (!selectedImg?.el) return
+    selectedImg.el.remove()
+    setSelectedImg(null)
+    handleInput()
+  }
+
+  const imgDeselect = () => {
+    editorRef.current?.querySelectorAll('.np-img-selected').forEach(el => el.classList.remove('np-img-selected'))
+    setSelectedImg(null)
+  }
   const saveTimerRef = useRef(null)
   const lastSavedRef = useRef('')
 
@@ -363,6 +399,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           contentEditable
           suppressContentEditableWarning
           onInput={handleInput}
+          onClick={handleEditorClick}
           onPaste={(e) => {
             e.preventDefault()
             const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain')
@@ -393,6 +430,17 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           data-placeholder="Start typing or drag files here..."
         />
       </div>
+
+      {/* ── IMAGE CONTROLS (shown when image selected) ───── */}
+      {selectedImg && (
+        <div className="np-img-controls">
+          <input type="range" min="10" max="150" value={selectedImg.width} onChange={e => imgResize(e.target.value)} style={{ width: '100px', accentColor: 'var(--accent)' }} title="Scale image" />
+          <span style={{ fontSize: '0.7em', color: 'var(--text-dim)', minWidth: '2.5em' }}>{selectedImg.width}%</span>
+          <button className="btn-xs" onClick={() => window.open(selectedImg.src, '_blank')} onMouseDown={e => e.preventDefault()} title="Open full size">↗</button>
+          <button className="btn-xs" onClick={imgDelete} onMouseDown={e => e.preventDefault()} title="Delete image" style={{ color: 'var(--danger)' }}>×</button>
+          <button className="btn-xs" onClick={imgDeselect} onMouseDown={e => e.preventDefault()} title="Done">✓</button>
+        </div>
+      )}
 
       {/* ── BOTTOM BAR (files, always visible) ───────────── */}
       <div className="notepad-files-bar" 
