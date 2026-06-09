@@ -48,9 +48,14 @@ function NotepadFile({ file, tabId, onRefresh, userId }) {
 
 export default function Notepad({ userId, workspaceId, workspaces = [], onRefresh }) {
   const [tabs, setTabs] = useState([])
-  const [activeTab, setActiveTab] = useState(null)
+  const [activeTab, setActiveTab] = useState(() => {
+    try { return localStorage.getItem(`notepad_active_${workspaceId}`) || null } catch { return null }
+  })
   const activeTabRef = useRef(null)
-  useEffect(() => { activeTabRef.current = activeTab }, [activeTab])
+  useEffect(() => {
+    activeTabRef.current = activeTab
+    if (activeTab && workspaceId) localStorage.setItem(`notepad_active_${workspaceId}`, activeTab)
+  }, [activeTab, workspaceId])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [showNewTabMenu, setShowNewTabMenu] = useState(false)
@@ -230,23 +235,46 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
 
   const dashToBullets = () => {
     if (!editorRef.current) return
-    const html = editorRef.current.innerHTML
-    // Split by br, div, or p tags
-    const lines = html.split(/<br\s*\/?>|<\/div>|<\/p>/gi)
-    let changed = false
-    const converted = lines.map(line => {
-      // Strip leading tags like <div> or <p>
-      const clean = line.replace(/^<(div|p)[^>]*>/i, '').replace(/&nbsp;/g, ' ').trim()
-      if (/^[-–—•]\s*/.test(clean)) {
-        changed = true
-        return `<li>${clean.replace(/^[-–—•]\s*/, '')}</li>`
+    const sel = window.getSelection()
+    if (!sel.rangeCount || sel.isCollapsed) { alert('Select the text you want to convert to bullets'); return }
+    
+    const range = sel.getRangeAt(0)
+    const frag = range.cloneContents()
+    const temp = document.createElement('div')
+    temp.appendChild(frag)
+    
+    // Get text content, split by newlines/br/div/p
+    const html = temp.innerHTML
+    const lines = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/?(div|p)[^>]*>/gi, '\n')
+      .replace(/&nbsp;/g, ' ')
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+    
+    // Convert any line starting with -, –, —, • (with or without space after)
+    const items = lines.map(line => {
+      const cleaned = line.replace(/^<[^>]+>/, '').trim() // strip any leading HTML tag
+      if (/^\s*[-–—•]\s*/.test(cleaned)) {
+        return `<li>${cleaned.replace(/^\s*[-–—•]\s*/, '')}</li>`
       }
-      return line.trim() ? line : ''
-    }).filter(Boolean)
-    if (changed) {
-      editorRef.current.innerHTML = DOMPurify.sanitize(`<ul>${converted.join('')}</ul>`)
-      handleInput()
-    }
+      return `<li>${cleaned}</li>` // convert all selected lines to bullets
+    })
+    
+    range.deleteContents()
+    const ul = document.createElement('ul')
+    ul.innerHTML = DOMPurify.sanitize(items.join(''))
+    range.insertNode(ul)
+    
+    // Move cursor after the list
+    sel.removeAllRanges()
+    const newRange = document.createRange()
+    newRange.setStartAfter(ul)
+    newRange.collapse(true)
+    sel.addRange(newRange)
+    
+    handleInput()
   }
 
   const insertHR = (style = 'solid') => {
