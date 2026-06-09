@@ -3575,8 +3575,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .notepad-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
-  min-height: 0;
+  min-height: calc(100vh - 80px);
   border-radius: var(--section-radius, var(--radius));
   overflow: hidden;
   background-color: var(--card-with-opacity, var(--card));
@@ -3658,18 +3657,21 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 
 .notepad-toolbar {
   display: flex;
-  align-items: center;
-  gap: 0.25rem;
+  flex-direction: column;
+  gap: 0.2rem;
   padding: 0.35rem 0.5rem;
   background: var(--title-bg-with-opacity, var(--title-bg, var(--card)));
   border-top: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
   flex-shrink: 0;
-  flex-wrap: wrap;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 .notepad-toolbar::-webkit-scrollbar { display: none; }
+.np-row {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
 
 .np-btn {
   background: none;
@@ -3698,10 +3700,9 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .np-color-dot:hover { border-color: var(--text); transform: scale(1.15); }
 
 .notepad-body {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  min-height: 0;
-  max-height: calc(100vh - 200px);
+  min-height: 100px;
   padding: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--scrollbar-thumb-color, var(--accent)) transparent;
@@ -3804,3 +3805,15 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   margin: 0.3em 0;
 }
 .notepad-editor li { margin: 0.15em 0; }
+
+/* Custom color picker rainbow dot */
+.np-color-custom {
+  background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red) !important;
+}
+
+/* Notepad width override */
+.side-col.notepad-active {
+  width: var(--notepad-width, auto) !important;
+  min-width: var(--notepad-width, auto);
+  max-width: var(--notepad-width, none);
+}

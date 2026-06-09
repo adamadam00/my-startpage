@@ -945,6 +945,7 @@ export default function Settings({
               <Row label="Font size"><Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row>
               <Row label="Word wrap"><Toggle checked={theme.notesWordWrap ?? true} onChange={v => set('notesWordWrap', v)} /></Row>
               <Row label="Mobile: notes first"><Toggle checked={theme.mobileNotesFirst ?? true} onChange={v => set('mobileNotesFirst', v)} /></Row>
+              <Row label="Notepad width"><Slider val={theme.notepadWidth ?? 320} min={250} max={600} onChange={v => set('notepadWidth', v)} unit="px" /></Row>
               <div style={{ padding: '0.75rem 0 0.25rem', borderTop: '1px solid var(--border)', marginTop: '0.5rem' }}>
                 <button className="btn-xs" style={{ color: 'var(--danger)', borderColor: 'var(--danger)', width: '100%' }} onClick={onClearAllNotes}>
                   Clear All Notes

@@ -1126,6 +1126,7 @@ function applyTheme(t) {
   if (t.topbarFontSize) s('--topbar-font-size', t.topbarFontSize + 'px')
   if (t.clockWidgetSize) s('--clock-widget-size', t.clockWidgetSize + 'rem')
   if (t.notesFontSize) s('--notes-font-size', t.notesFontSize + 'px')
+  if (t.notepadWidth) s('--notepad-width', t.notepadWidth + 'px')
   s('--mobile-notes-order', (t.mobileNotesFirst ?? true) ? '-1' : '1')
   s('--mobile-widget-order', (t.mobileNotesFirst ?? true) ? '0' : '-1')
   if (t.notesFontFamily) s('--notes-font-family', t.notesFontFamily)
@@ -2687,7 +2688,7 @@ export default function App() {
 				  }}
 				/>
 			  </div>}
-			  {!(theme.hideNotes ?? false) && <div className="side-col">
+			  {!(theme.hideNotes ?? false) && <div className={`side-col${notepadMode ? ' notepad-active' : ''}`}>
 				{notepadMode ? (
 				  <Notepad
 					userId={session.user.id}

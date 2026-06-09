@@ -7,6 +7,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
   const [tabs, setTabs] = useState([])
   const [activeTab, setActiveTab] = useState(null)
   const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
   const [showNewTabMenu, setShowNewTabMenu] = useState(false)
   const editorRef = useRef(null)
   const saveTimerRef = useRef(null)
@@ -72,7 +73,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
         .from('notepads')
         .update({ content })
         .eq('id', activeTab)
-      if (!error) lastSavedRef.current = content
+      if (!error) { lastSavedRef.current = content; setSaved(true); setTimeout(() => setSaved(false), 3000) }
       setSaving(false)
     }, 1500) // save after 1.5s of inactivity
   }
@@ -216,7 +217,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
   const [customColor, setCustomColor] = useState('#ffffff')
   const colors = [
     { var: '--note-color-1', fallback: '#ff6b6b' },
-    { var: '--note-color-2', fallback: '#6c8fff' },
+    { var: '--note-color-2', fallback: '#4d9eff' },
     { var: '--note-color-3', fallback: '#6bffb8' },
     { var: '--note-color-4', fallback: '#ffd32a' },
     { fallback: '#ffffff' },
@@ -263,34 +264,37 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
 
       {/* ── TOP TOOLBAR (persistent) ─────────────────────── */}
       <div className="notepad-toolbar">
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('bold')} title="Bold"><b>B</b></button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('italic')} title="Italic"><i>I</i></button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('underline')} title="Underline"><u>U</u></button>
-        <div className="np-sep" />
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('h1')} title="Heading 1" style={{ fontSize: '0.85em', fontWeight: 800 }}>H1</button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('h2')} title="Heading 2" style={{ fontSize: '0.8em', fontWeight: 700 }}>H2</button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('p')} title="Body text" style={{ fontSize: '0.75em' }}>P</button>
-        <div className="np-sep" />
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('solid')} title="Solid line">─</button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dashed')} title="Dashed line">┄</button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dotted')} title="Dotted line">┈</button>
-        <div className="np-sep" />
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertUnorderedList')} title="Bullet list">•</button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
-        <div className="np-sep" />
-        {colors.map((c, i) => {
-          const col = c.var ? (getComputedStyle(document.documentElement).getPropertyValue(c.var).trim() || c.fallback) : c.fallback
-          return <button key={i} className="np-color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(col)} style={{ background: col }} title={col} />
-        })}
-        <label className="np-color-dot" style={{ background: customColor, position: 'relative', cursor: 'pointer' }} title="Custom color">
-          <input type="color" value={customColor} onChange={e => { setCustomColor(e.target.value); setColor(e.target.value) }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
-        </label>
-        <div className="np-sep" />
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={dashToBullets} title="Convert dashes to bullets">⇢•</button>
-        <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={attachFile} title="Attach file">📎</button>
-        <div style={{ flex: 1 }} />
-        <span className={`np-save-light ${saving ? 'saving' : (lastSavedRef.current ? 'saved' : '')}`} title={saving ? 'Saving...' : 'Saved'} />
-        {currentTab?.shared_to && <span style={{ fontSize: '0.65em', color: 'var(--accent)', opacity: 0.7 }}>🔗 {currentTab.shared_to === '*' ? 'All workspaces' : workspaces.find(w => w.id === currentTab.shared_to)?.name || ''}</span>}
+        <div className="np-row">
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('bold')} title="Bold"><b>B</b></button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('italic')} title="Italic"><i>I</i></button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('underline')} title="Underline"><u>U</u></button>
+          <div className="np-sep" />
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('h1')} title="Heading 1" style={{ fontSize: '0.85em', fontWeight: 800 }}>H1</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('h2')} title="Heading 2" style={{ fontSize: '0.8em', fontWeight: 700 }}>H2</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => setBlock('p')} title="Body text" style={{ fontSize: '0.75em' }}>P</button>
+          <div className="np-sep" />
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('solid')} title="Solid line">─</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dashed')} title="Dashed line">┄</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dotted')} title="Dotted line">┈</button>
+          <div className="np-sep" />
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertUnorderedList')} title="Bullet list">•</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
+          <div className="np-sep" />
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={dashToBullets} title="Convert dashes to bullets">⇢•</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={attachFile} title="Attach file">📎</button>
+          <div style={{ flex: 1 }} />
+          <span className={`np-save-light ${saving ? 'saving' : saved ? 'saved' : ''}`} title={saving ? 'Saving...' : saved ? 'Saved' : 'Idle'} />
+          {currentTab?.shared_to && <span style={{ fontSize: '0.65em', color: 'var(--accent)', opacity: 0.7 }}>🔗 {currentTab.shared_to === '*' ? 'All workspaces' : workspaces.find(w => w.id === currentTab.shared_to)?.name || ''}</span>}
+        </div>
+        <div className="np-row">
+          {colors.map((c, i) => {
+            const col = c.var ? (getComputedStyle(document.documentElement).getPropertyValue(c.var).trim() || c.fallback) : c.fallback
+            return <button key={i} className="np-color-dot" onMouseDown={e => e.preventDefault()} onClick={() => setColor(col)} style={{ background: col }} title={col} />
+          })}
+          <label className="np-color-dot np-color-custom" style={{ position: 'relative', cursor: 'pointer' }} title="Custom color">
+            <input type="color" value={customColor} onChange={e => { setCustomColor(e.target.value); setColor(e.target.value) }} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer', width: '100%', height: '100%' }} />
+          </label>
+        </div>
       </div>
 
       {/* ── EDITOR BODY (scrollable) ─────────────────────── */}
