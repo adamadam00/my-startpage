@@ -169,24 +169,17 @@ function LinkRow({
 
   return (
     <div ref={setNodeRef} style={style} className="link-item">
-      {faviconEnabled && favicon ? (
-        <img
-          className="link-favicon"
-          src={favicon}
-          alt=""
-          width="16"
-          height="16"
-          loading="lazy"
-        />
-      ) : null}
-
       <div
         {...attributes}
         {...listeners}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab', padding: '0 4px 0 2px', display: 'flex', alignItems: 'center', color: 'var(--handle-color, var(--text-muted))', opacity: 'var(--handle-opacity-global, 0.35)', flexShrink: 0, touchAction: 'none', fontSize: 'var(--handle-size, 10px)' }}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab', display: 'flex', alignItems: 'center', flexShrink: 0, touchAction: 'none' }}
         title="Drag to reorder"
       >
-        <svg width="1em" height="1.4em" viewBox="0 0 8 14" fill="currentColor"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+        {faviconEnabled && favicon ? (
+          <img className="link-favicon" src={favicon} alt="" width="16" height="16" loading="lazy" style={{ pointerEvents: 'none' }} />
+        ) : (
+          <svg width="10" height="14" viewBox="0 0 8 14" fill="currentColor" style={{ opacity: 'var(--handle-opacity-global, 0.35)', color: 'var(--handle-color, var(--text-muted))' }}><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="6" r="1.2"/><circle cx="6" cy="6" r="1.2"/><circle cx="2" cy="10" r="1.2"/><circle cx="6" cy="10" r="1.2"/></svg>
+        )}
       </div>
       <a
         className="link-title"
