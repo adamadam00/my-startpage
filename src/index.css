@@ -3138,6 +3138,31 @@ input[type='range']::-moz-range-thumb {
 
 /* Mobile */
 
+
+/* ── TABLET / INTERMEDIATE RESPONSIVE ──────────────────────────── */
+@media (max-width: 1200px) and (min-width: 769px) {
+  .sections-grid {
+    flex-wrap: wrap !important;
+  }
+  .section-col {
+    flex: 1 1 calc(50% - 1rem) !important;
+    min-width: 220px;
+  }
+}
+
+@media (max-width: 950px) and (min-width: 769px) {
+  .section-col {
+    flex: 1 1 100% !important;
+    min-width: 0;
+  }
+  .main-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .side-col {
+    order: -1;
+  }
+}
+
 @media (max-width: 768px) {
   html {
     overflow: auto;
@@ -3865,3 +3890,8 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   cursor: pointer;
 }
 .notepad-editor img { cursor: pointer; transition: outline 0.15s; }
+
+/* Weather rows clickable */
+a.wp-weather-now:hover .wp-weather-desc,
+a.wp-forecast-row:hover .wp-forecast-desc { color: var(--accent); }
+a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 3px; }

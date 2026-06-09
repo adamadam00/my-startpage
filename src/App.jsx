@@ -684,15 +684,18 @@ function WidgetPanelWeather({ theme }) {
   const dayLabel = d => new Date(d).toLocaleDateString([],{weekday:'short'})
 
   if (!wx) return <div className="wp-section wp-weather"><span style={{opacity:0.5}}>Loading weather...</span></div>
+  const bomUrl = 'https://www.bom.gov.au/vic/forecasts/melbourne.shtml'
   return (
     <div className="wp-section wp-weather">
-      <div className="wp-weather-now">
+      <a className="wp-weather-now" href={bomUrl} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none',color:'inherit'}}>
+        <span style={{fontSize:'0.7em',fontWeight:600,color:'var(--text-dim)',opacity:0.7,flexShrink:0,textTransform:'uppercase',letterSpacing:'0.04em'}}>Now</span>
         <span className="wp-weather-icon">{icons[wx.weathercode]||'🌡'}</span>
         <span className="wp-weather-temp">{Math.round(wx.temperature)}°</span>
         <span className="wp-weather-desc">{descs[wx.weathercode]||''}</span>
-      </div>
+        <span style={{marginLeft:'auto',fontSize:'0.65em',color:'var(--accent)',opacity:0.7,flexShrink:0}}>↗ BOM</span>
+      </a>
       {forecast.map(day => (
-        <div key={day.date} className="wp-forecast-row">
+        <a key={day.date} className="wp-forecast-row" href={bomUrl} target="_blank" rel="noopener noreferrer" style={{textDecoration:'none',color:'inherit'}}>
           <span style={{flexShrink:0}}>{icons[day.code]||'🌡'}</span>
           <span className="wp-forecast-day">{dayLabel(day.date)}</span>
           <span className="wp-forecast-desc">{descs[day.code]||''}</span>
@@ -700,7 +703,7 @@ function WidgetPanelWeather({ theme }) {
             <span className="wp-forecast-hi">{day.max}°</span>
             <span className="wp-forecast-lo">/{day.min}°</span>
           </div>
-        </div>
+        </a>
       ))}
     </div>
   )
