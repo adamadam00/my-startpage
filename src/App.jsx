@@ -53,8 +53,13 @@ function ClockWidget() {
 
   const onPointerDown = (type) => (e) => {
     e.preventDefault(); e.stopPropagation()
-    lapRef.current = hasTarget ? Math.floor(tMins/720) : 0
+    if (!hasTarget) setTotalMins(0) // initialize if not set
     lastAngleRef.current = null
+    lapRef.current = 0
+    // Calculate current time angle to use as offset
+    const currentHourAngle = (nowH / 12) * 360
+    const currentMinAngle = (nowM / 60) * 360
+    const startOffset = type === 'hour' ? currentHourAngle : currentMinAngle
     const svg = svgRef.current
     let pending = null
     const move = (ev) => {
@@ -67,18 +72,21 @@ function ClockWidget() {
         if (angle < 0) angle += 360
         if (lastAngleRef.current !== null) {
           const diff = angle - lastAngleRef.current
-          // Only count lap changes for large jumps (crossing 12 o'clock)
           if (diff < -300) lapRef.current++
           if (diff > 300 && lapRef.current > 0) lapRef.current--
         }
         lastAngleRef.current = angle
-        const laps = Math.max(0, lapRef.current), frac = angle/360
+        // Calculate delta from current time
+        let delta = angle - startOffset
+        if (delta < 0) delta += 360
+        const laps = Math.max(0, lapRef.current)
         if (type === 'hour') {
-          // Snap to 10 min for smoother feel
-          setTotalMins(Math.round((laps*12+frac*12)*60/10)*10)
+          const totalHours = laps * 12 + (delta / 360) * 12
+          setTotalMins(Math.round(totalHours * 60 / 10) * 10)
         } else {
-          const baseH = hasTarget ? Math.floor(tMins/60) : 0
-          setTotalMins(Math.max(0, baseH*60 + Math.round(frac*60/5)*5 % 60))
+          const baseH = Math.floor((totalMins ?? 0) / 60)
+          const deltaMins = (delta / 360) * 60
+          setTotalMins(Math.max(0, baseH * 60 + Math.round(deltaMins / 5) * 5))
         }
       })
     }
@@ -86,6 +94,13 @@ function ClockWidget() {
     window.addEventListener('pointermove', move, {passive:true})
     window.addEventListener('pointerup', up)
   }
+
+  // World clock
+  const worldTimes = [
+    { label: 'US-ET', tz: 'America/New_York' },
+    { label: 'UK', tz: 'Europe/London' },
+    { label: 'JP', tz: 'Asia/Tokyo' },
+  ]
 
   const hPos=handPos(tH%12,12,52), mPos=handPos(tM,60,72)
   const nowHPos=handPos(nowH,12,52), nowMPos=handPos(nowM,60,72)
@@ -132,6 +147,14 @@ function ClockWidget() {
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:'0.5rem'}}>
             <div>{hasTarget&&<button className="btn-xs" onClick={()=>setTotalMins(null)}>Reset</button>}</div>
             <button className="btn-xs" onClick={()=>setOpen(false)}>Close</button>
+          </div>
+          <div style={{display:'flex',justifyContent:'center',gap:'0.8rem',marginTop:'0.6rem',paddingTop:'0.5rem',borderTop:'1px solid var(--border)'}}>
+            {worldTimes.map(wt => (
+              <div key={wt.label} style={{textAlign:'center'}}>
+                <div style={{fontSize:'0.6em',color:'var(--text-dim)',textTransform:'uppercase',letterSpacing:'0.04em'}}>{wt.label}</div>
+                <div style={{fontSize:'0.8em',fontWeight:600,color:'var(--text)'}}>{now.toLocaleTimeString('en-US',{timeZone:wt.tz,hour:'numeric',minute:'2-digit',hour12:true})}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
