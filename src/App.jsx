@@ -2504,7 +2504,11 @@ export default function App() {
 			<div className="topbar">
 
 			  {/* Workspace tabs */}
-			  <div className="workspace-tabs">
+			  <select
+				className="workspace-dropdown"
+				value={activeWs}
+				onChange={(e) => setActiveWs(e.target.value)}
+			  >
 				{workspaces
 				  .filter(ws => {
 					const v = ws.visibility || 'both'
@@ -2513,15 +2517,9 @@ export default function App() {
 					return true
 				  })
 				  .map(ws => (
-				  <button
-					key={ws.id}
-					className={`workspace-tab${activeWs === ws.id ? ' active' : ''}`}
-					onClick={() => setActiveWs(ws.id)}
-				  >
-					{ws.name}
-				  </button>
-				))}
-			  </div>
+					<option key={ws.id} value={ws.id}>{ws.name}</option>
+				  ))}
+			  </select>
 
 			  <div className="topbar-divider" />
 
