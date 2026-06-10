@@ -3,7 +3,6 @@ import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notepad from './components/Notepad'
 import Settings2 from './components/Settings2'
-import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import CacheManager from './lib/cacheManager'
 import { useModal } from './lib/useModal'
@@ -1856,7 +1855,6 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState([])
   const [bmFolders, setBmFolders] = useState([])
   const [bmQuery, setBmQuery] = useState('')
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [settings2Open, setSettings2Open] = useState(false)
   const [loading, setLoading] = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
@@ -2707,50 +2705,12 @@ export default function App() {
 				theme={theme}
 				setTheme={setTheme}
 				onClose={() => setSettings2Open(false)}
-				onOpenLegacy={() => setSettingsOpen(true)}
 				workspaces={workspaces}
 				activeWs={activeWs}
 				setActiveWs={setActiveWs}
 				onAddWorkspace={addWorkspace}
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}
-			  />
-			)}
-
-			{/* ── SETTINGS ────────────────────────────────────── */}
-			{settingsOpen && (
-			  <Settings
-				theme={theme}
-				setTheme={setTheme}
-				onSave={() => { persistTheme(theme, true) }}
-				onClose={() => setSettingsOpen(false)}
-				onSignOut={handleSignOut}
-				bmFolders={bmFolders}
-				bookmarkCount={bookmarks.length}
-				userEmail={session?.user?.email ?? ''}
-				onImageUpload={handleImageUpload}
-				onBgImageUpload={handleBgImageUpload}
-				onExportBackup={exportFullBackup}
-				onExportCSV={exportCSV}
-				onExportTheme={exportTheme}
-				onImportTheme={handleImportTheme}
-				onImportBackup={handleImportBackup}
-				onResetWorkspaceLinks={resetWorkspaceLinks}
-				onClearAllNotes={clearAllNotes}
-				onResetTheme={() => setTheme(DEFAULT_THEME)}
-				fileRef={fileRef}
-				backupFileRef={backupFileRef}
-				themeFileRef={themeFileRef}
-				importingBackup={importingBackup}
-				workspaces={workspaces}
-				activeWs={activeWs}
-				mode={mode}
-				setMode={setMode}
-				onAddWorkspace={addWorkspace}
-				onRenameWorkspace={renameWorkspace}
-				onDeleteWorkspace={deleteWorkspace}
-				onReorderWorkspaces={reorderWorkspaces}
-				onSetActiveWs={setActiveWs}
 			  />
 			)}
 

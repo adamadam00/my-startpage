@@ -3925,9 +3925,9 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
 
 /* ── SETTINGS 2 ──────────────────────────────────────────────── */
 .s2-backdrop { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.5); display: flex; justify-content: flex-end; }
-.s2-panel { width: 400px; max-width: 92vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg2, #12121a); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.4); overflow: hidden; }
+.s2-panel { width: 480px; max-width: 94vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg2, #12121a); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.4); overflow: hidden; }
 
-.s2-header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.s2-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.4rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .s2-title { font-size: 1em; font-weight: 600; color: var(--text); }
 .s2-close { background: none; border: none; color: var(--text-dim); font-size: 1.3em; cursor: pointer; padding: 0.2rem; line-height: 1; }
 .s2-close:hover { color: var(--text); }
@@ -3937,7 +3937,7 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
 .s2-tab:hover { color: var(--text); }
 .s2-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
 
-.s2-content { flex: 1; overflow-y: auto; padding: 0.75rem 1.1rem; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-color, var(--accent)) transparent; }
+.s2-content { flex: 1; overflow-y: auto; padding: 0.85rem 1.4rem; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb-color, var(--accent)) transparent; }
 .s2-content::-webkit-scrollbar { width: 5px; }
 .s2-content::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb-color, var(--accent)); border-radius: 3px; }
 
@@ -3979,12 +3979,12 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
 .s2-adv-toggle:hover { color: var(--accent); opacity: 1; }
 
 /* Footer */
-.s2-footer { display: flex; gap: 0.5rem; padding: 0.7rem 1.1rem; border-top: 1px solid var(--border); flex-shrink: 0; }
+.s2-footer { display: flex; gap: 0.5rem; padding: 0.75rem 1.4rem; border-top: 1px solid var(--border); flex-shrink: 0; }
 .s2-btn { flex: 1; background: var(--bg3, #1a1a28); border: 1px solid var(--border); color: var(--text-dim); padding: 0.4rem 0.5rem; border-radius: 4px; font-size: 0.72em; cursor: pointer; font-family: inherit; }
 .s2-btn:hover { border-color: var(--accent); color: var(--text); }
 
 /* Settings search */
-.s2-search-row { padding: 0.5rem 1.1rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.s2-search-row { padding: 0.55rem 1.4rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .s2-search { width: 100%; background: var(--bg3, #1a1a28); color: var(--text); border: 1px solid var(--border); border-radius: 4px; font-size: 0.8em; padding: 0.35rem 0.5rem; font-family: inherit; outline: none; }
 .s2-search:focus { border-color: var(--accent); }
 .s2-search::placeholder { color: var(--text-dim); opacity: 0.5; }

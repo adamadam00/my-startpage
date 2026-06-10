@@ -63,7 +63,8 @@ const BG_PRESETS = [
 ]
 
 // ── MAIN ─────────────────────────────────────────────────────────
-export default function Settings2({ theme, setTheme, onClose, onOpenLegacy }) {
+export default function Settings2({ theme, setTheme, onClose, workspaces = [], activeWs, setActiveWs, onAddWorkspace, onRenameWorkspace, onDeleteWorkspace }) {
+  const [newWsName, setNewWsName] = useState('')
   const [tab, setTab] = useState('appearance')
   const [search, setSearch] = useState('')
   const [adv, setAdv] = useState({})
@@ -269,6 +270,19 @@ export default function Settings2({ theme, setTheme, onClose, onOpenLegacy }) {
 
             <div className="s2-section-title">Search engine</div>
             <Row label="Engine" {...r}><select className="s2-select" value={theme.searchEngineUrl || 'https://www.google.com/search?q='} onChange={e => set('searchEngineUrl', e.target.value)}><option value="https://www.google.com/search?q=">Google</option><option value="https://duckduckgo.com/?q=">DuckDuckGo</option><option value="https://www.bing.com/search?q=">Bing</option><option value="https://search.brave.com/search?q=">Brave</option><option value="https://www.perplexity.ai/search?q=">Perplexity</option></select></Row>
+
+            <div className="s2-section-title">Workspaces</div>
+            {workspaces.map(ws => (
+              <div key={ws.id} className="s2-row" style={{ gap: '0.3rem' }}>
+                <span className="s2-row-label" style={{ flex: 1, color: ws.id === activeWs ? 'var(--accent)' : undefined, cursor: 'pointer' }} onClick={() => setActiveWs?.(ws.id)}>{ws.name}</span>
+                <button className="btn-xs" style={{ fontSize: '0.7em', padding: '0.15rem 0.3rem' }} onClick={() => { const n = prompt('Rename workspace:', ws.name); if (n?.trim()) onRenameWorkspace?.(ws.id, n.trim()) }}>✎</button>
+                <button className="btn-xs" style={{ fontSize: '0.7em', padding: '0.15rem 0.3rem', color: 'var(--danger)' }} onClick={() => onDeleteWorkspace?.(ws.id)} disabled={workspaces.length <= 1}>✕</button>
+              </div>
+            ))}
+            <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.3rem' }}>
+              <input className="s2-input" style={{ flex: 1 }} placeholder="New workspace..." value={newWsName} onChange={e => setNewWsName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace?.(newWsName.trim()); setNewWsName('') } }} />
+              <button className="btn-xs btn-primary" style={{ fontSize: '0.72em' }} disabled={!newWsName.trim()} onClick={() => { if (newWsName.trim()) { onAddWorkspace?.(newWsName.trim()); setNewWsName('') } }}>Add</button>
+            </div>
           </>}
 
         </div>
@@ -282,11 +296,7 @@ export default function Settings2({ theme, setTheme, onClose, onOpenLegacy }) {
             <button className="s2-btn" onClick={() => setConfigMode(true)} title="Choose which settings to show">☰</button>
           </>)}
         </div>
-        {onOpenLegacy && !configMode && (
-          <div style={{ padding: '0 1.1rem 0.7rem' }}>
-            <button className="s2-legacy-btn" onClick={() => { onClose(); onOpenLegacy() }}>Open legacy settings panel ⚙</button>
-          </div>
-        )}
+
       </div>
     </div>
   )
