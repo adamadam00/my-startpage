@@ -2710,8 +2710,10 @@ export default function App() {
 				onOpenLegacy={() => setSettingsOpen(true)}
 				workspaces={workspaces}
 				activeWs={activeWs}
-				supabase={supabase}
-				session={session}
+				setActiveWs={setActiveWs}
+				onAddWorkspace={addWorkspace}
+				onRenameWorkspace={renameWorkspace}
+				onDeleteWorkspace={deleteWorkspace}
 			  />
 			)}
 
