@@ -2644,16 +2644,10 @@ export default function App() {
 				</button>
 				<button
 				  className="icon-btn topbar-quick-btn"
-				  title="Settings (legacy)"
-				  onClick={() => setSettingsOpen(true)}
-				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
-				>⚙</button>
-				<button
-				  className="icon-btn topbar-quick-btn"
 				  title="Settings"
 				  onClick={() => setSettings2Open(true)}
-				  style={{ fontSize: '1.1rem', width: '34px', height: '34px' }}
-				>⚙️</button>
+				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
+				>⚙</button>
 			  </div>
 			</div>
 
@@ -2713,6 +2707,7 @@ export default function App() {
 				theme={theme}
 				setTheme={setTheme}
 				onClose={() => setSettings2Open(false)}
+				onOpenLegacy={() => setSettingsOpen(true)}
 				workspaces={workspaces}
 				activeWs={activeWs}
 				supabase={supabase}

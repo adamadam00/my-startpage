@@ -21,13 +21,16 @@ const ColorPick = ({ value, onChange }) => (
   </label>
 )
 
-const Row = ({ label, children, hint }) => (
-  <div className="s2-row">
-    <span className="s2-row-label">{label}</span>
-    <div className="s2-row-ctrl">{children}</div>
-    {hint && <div className="s2-row-hint">{hint}</div>}
-  </div>
-)
+const Row = ({ label, children, hint, search }) => {
+  if (search && !label.toLowerCase().includes(search.toLowerCase())) return null
+  return (
+    <div className={`s2-row ${search && label.toLowerCase().includes(search.toLowerCase()) ? 's2-match' : ''}`}>
+      <span className="s2-row-label">{label}</span>
+      <div className="s2-row-ctrl">{children}</div>
+      {hint && <div className="s2-row-hint">{hint}</div>}
+    </div>
+  )
+}
 
 const AdvancedToggle = ({ show, onToggle }) => (
   <button className="s2-adv-toggle" onClick={onToggle}>
@@ -36,8 +39,9 @@ const AdvancedToggle = ({ show, onToggle }) => (
 )
 
 // ── MAIN COMPONENT ───────────────────────────────────────────────
-export default function Settings2({ theme, setTheme, onClose, workspaces, activeWs, supabase, session }) {
+export default function Settings2({ theme, setTheme, onClose, onOpenLegacy, workspaces, activeWs, supabase, session }) {
   const [tab, setTab] = useState('appearance')
+  const [search, setSearch] = useState('')
   const [adv, setAdv] = useState({})
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
@@ -84,35 +88,40 @@ export default function Settings2({ theme, setTheme, onClose, workspaces, active
           ))}
         </div>
 
+        {/* Search */}
+        <div className="s2-search-row">
+          <input className="s2-search" placeholder="Search settings..." value={search} onChange={e => setSearch(e.target.value)} autoComplete="off" />
+        </div>
+
         {/* Content */}
         <div className="s2-content">
 
           {/* ── APPEARANCE ─────────────────────────────────── */}
-          {tab === 'appearance' && <>
+          {(tab === 'appearance' || search) && <>
             <div className="s2-section-title">Colors</div>
-            <Row label="Background"><ColorPick value={theme.bg} onChange={v => set('bg', v)} /></Row>
-            <Row label="Cards"><ColorPick value={theme.card} onChange={v => set('card', v)} /></Row>
-            <Row label="Accent"><ColorPick value={theme.accent} onChange={v => set('accent', v)} /></Row>
-            <Row label="Primary text"><ColorPick value={theme.text} onChange={v => set('text', v)} /></Row>
-            <Row label="Secondary text"><ColorPick value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
-            <Row label="Border"><ColorPick value={theme.border} onChange={v => set('border', v)} /></Row>
+            <Row search={search} label="Background"><ColorPick value={theme.bg} onChange={v => set('bg', v)} /></Row>
+            <Row search={search} label="Cards"><ColorPick value={theme.card} onChange={v => set('card', v)} /></Row>
+            <Row search={search} label="Accent"><ColorPick value={theme.accent} onChange={v => set('accent', v)} /></Row>
+            <Row search={search} label="Primary text"><ColorPick value={theme.text} onChange={v => set('text', v)} /></Row>
+            <Row search={search} label="Secondary text"><ColorPick value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
+            <Row search={search} label="Border"><ColorPick value={theme.border} onChange={v => set('border', v)} /></Row>
 
             <AdvancedToggle show={showAdv('colors')} onToggle={() => toggleAdv('colors')} />
-            {showAdv('colors') && <>
-              <Row label="Card bg 2"><ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
-              <Row label="Card bg 3"><ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
-              <Row label="Title bg"><ColorPick value={theme.titleBg} onChange={v => set('titleBg', v)} /></Row>
-              <Row label="Border hover"><ColorPick value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
-              <Row label="Card opacity"><Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
-              <Row label="Border opacity"><Slider val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" /></Row>
-              <Row label="Link color"><ColorPick value={theme.linkColor || '#5b9eff'} onChange={v => set('linkColor', v)} /></Row>
-              <Row label="Visited link"><ColorPick value={theme.linkVisitedColor || '#c77dff'} onChange={v => set('linkVisitedColor', v)} /></Row>
-              <Row label="Scrollbar"><ColorPick value={theme.scrollbarThumbColor || '#7890ff'} onChange={v => set('scrollbarThumbColor', v)} /></Row>
-              <Row label="Handle opacity"><Slider val={theme.handleOpacity ?? 15} min={5} max={100} onChange={v => set('handleOpacity', v)} unit="%" /></Row>
+            {(showAdv('colors') || search) && <>
+              <Row search={search} label="Card bg 2"><ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
+              <Row search={search} label="Card bg 3"><ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
+              <Row search={search} label="Title bg"><ColorPick value={theme.titleBg} onChange={v => set('titleBg', v)} /></Row>
+              <Row search={search} label="Border hover"><ColorPick value={theme.borderHover} onChange={v => set('borderHover', v)} /></Row>
+              <Row search={search} label="Card opacity"><Slider val={Math.round((theme.cardOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('cardOpacity', v / 100)} unit="%" /></Row>
+              <Row search={search} label="Border opacity"><Slider val={Math.round((theme.borderOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('borderOpacity', v / 100)} unit="%" /></Row>
+              <Row search={search} label="Link color"><ColorPick value={theme.linkColor || '#5b9eff'} onChange={v => set('linkColor', v)} /></Row>
+              <Row search={search} label="Visited link"><ColorPick value={theme.linkVisitedColor || '#c77dff'} onChange={v => set('linkVisitedColor', v)} /></Row>
+              <Row search={search} label="Scrollbar"><ColorPick value={theme.scrollbarThumbColor || '#7890ff'} onChange={v => set('scrollbarThumbColor', v)} /></Row>
+              <Row search={search} label="Handle opacity"><Slider val={theme.handleOpacity ?? 15} min={5} max={100} onChange={v => set('handleOpacity', v)} unit="%" /></Row>
             </>}
 
             <div className="s2-section-title">Background</div>
-            <Row label="Pattern">
+            <Row search={search} label="Pattern">
               <select className="s2-select" value={theme.bgPreset || 'noise'} onChange={e => set('bgPreset', e.target.value)}>
                 <option value="noise">Noise</option>
                 <option value="dots">Dots</option>
@@ -124,51 +133,51 @@ export default function Settings2({ theme, setTheme, onClose, workspaces, active
                 <option value="starfield">Starfield</option>
               </select>
             </Row>
-            <Row label="Animation speed"><Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={300} onChange={v => set('bgAnimSpeed', v / 100)} unit="%" /></Row>
+            <Row search={search} label="Animation speed"><Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={300} onChange={v => set('bgAnimSpeed', v / 100)} unit="%" /></Row>
 
             <AdvancedToggle show={showAdv('bg')} onToggle={() => toggleAdv('bg')} />
-            {showAdv('bg') && <>
-              <Row label="Pattern color"><ColorPick value={theme.patternColor || '#2a2a3f'} onChange={v => set('patternColor', v)} /></Row>
-              <Row label="Pattern opacity"><Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('patternOpacity', v / 100)} unit="%" /></Row>
+            {(showAdv('bg') || search) && <>
+              <Row search={search} label="Pattern color"><ColorPick value={theme.patternColor || '#2a2a3f'} onChange={v => set('patternColor', v)} /></Row>
+              <Row search={search} label="Pattern opacity"><Slider val={Math.round((theme.patternOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('patternOpacity', v / 100)} unit="%" /></Row>
             </>}
 
             <div className="s2-section-title">Wallpaper</div>
-            <Row label="URL">
+            <Row search={search} label="URL">
               <input className="s2-input" value={theme.wallpaper || ''} onChange={e => set('wallpaper', e.target.value)} placeholder="https://..." />
             </Row>
             <AdvancedToggle show={showAdv('wallpaper')} onToggle={() => toggleAdv('wallpaper')} />
-            {showAdv('wallpaper') && <>
-              <Row label="Fit">
+            {(showAdv('wallpaper') || search) && <>
+              <Row search={search} label="Fit">
                 <select className="s2-select" value={theme.wallpaperFit || 'cover'} onChange={e => set('wallpaperFit', e.target.value)}>
                   <option value="cover">Cover</option>
                   <option value="contain">Contain</option>
                   <option value="fill">Fill</option>
                 </select>
               </Row>
-              <Row label="Position X"><Slider val={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => set('wallpaperX', v)} unit="%" /></Row>
-              <Row label="Position Y"><Slider val={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => set('wallpaperY', v)} unit="%" /></Row>
-              <Row label="Scale"><Slider val={theme.wallpaperScale ?? 100} min={50} max={200} onChange={v => set('wallpaperScale', v)} unit="%" /></Row>
-              <Row label="Blur"><Slider val={theme.wallpaperBlur ?? 0} min={0} max={30} onChange={v => set('wallpaperBlur', v)} unit="px" /></Row>
-              <Row label="Dim"><Slider val={theme.wallpaperDim ?? 35} min={0} max={100} onChange={v => set('wallpaperDim', v)} unit="%" /></Row>
+              <Row search={search} label="Position X"><Slider val={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => set('wallpaperX', v)} unit="%" /></Row>
+              <Row search={search} label="Position Y"><Slider val={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => set('wallpaperY', v)} unit="%" /></Row>
+              <Row search={search} label="Scale"><Slider val={theme.wallpaperScale ?? 100} min={50} max={200} onChange={v => set('wallpaperScale', v)} unit="%" /></Row>
+              <Row search={search} label="Blur"><Slider val={theme.wallpaperBlur ?? 0} min={0} max={30} onChange={v => set('wallpaperBlur', v)} unit="px" /></Row>
+              <Row search={search} label="Dim"><Slider val={theme.wallpaperDim ?? 35} min={0} max={100} onChange={v => set('wallpaperDim', v)} unit="%" /></Row>
             </>}
           </>}
 
           {/* ── LAYOUT ─────────────────────────────────────── */}
-          {tab === 'layout' && <>
+          {(tab === 'layout' || search) && <>
             <div className="s2-section-title">Grid</div>
-            <Row label="Columns"><Slider val={theme.sectionsCols ?? 6} min={1} max={10} onChange={v => set('sectionsCols', v)} /></Row>
-            <Row label="Topbar gap"><Slider val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" /></Row>
+            <Row search={search} label="Columns"><Slider val={theme.sectionsCols ?? 6} min={1} max={10} onChange={v => set('sectionsCols', v)} /></Row>
+            <Row search={search} label="Topbar gap"><Slider val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" /></Row>
 
             <AdvancedToggle show={showAdv('grid')} onToggle={() => toggleAdv('grid')} />
-            {showAdv('grid') && <>
-              <Row label="Section gap (v)"><Slider val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" /></Row>
-              <Row label="Section gap (h)"><Slider val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
-              <Row label="Link gap"><Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={-50} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
-              <Row label="Link padding"><Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-140} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
+            {(showAdv('grid') || search) && <>
+              <Row search={search} label="Section gap (v)"><Slider val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" /></Row>
+              <Row search={search} label="Section gap (h)"><Slider val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
+              <Row search={search} label="Link gap"><Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={-50} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
+              <Row search={search} label="Link padding"><Slider val={Math.round((theme.linksPaddingH ?? 0.75) * 100)} min={-140} max={200} step={5} onChange={v => set('linksPaddingH', v / 100)} unit="%" /></Row>
             </>}
 
             <div className="s2-section-title">Typography</div>
-            <Row label="Font">
+            <Row search={search} label="Font">
               <select className="s2-select" value={theme.font || "'DM Mono', monospace"} onChange={e => set('font', e.target.value)}>
                 <option value="'DM Mono', monospace">DM Mono</option>
                 <option value="'Inter', sans-serif">Inter</option>
@@ -178,32 +187,32 @@ export default function Settings2({ theme, setTheme, onClose, workspaces, active
                 <option value="system-ui, sans-serif">System UI</option>
               </select>
             </Row>
-            <Row label="Body size"><Slider val={theme.fontSize ?? 14} min={10} max={20} onChange={v => set('fontSize', v)} unit="px" /></Row>
-            <Row label="Topbar size"><Slider val={theme.topbarFontSize ?? 12} min={9} max={20} onChange={v => set('topbarFontSize', v)} unit="px" /></Row>
+            <Row search={search} label="Body size"><Slider val={theme.fontSize ?? 14} min={10} max={20} onChange={v => set('fontSize', v)} unit="px" /></Row>
+            <Row search={search} label="Topbar size"><Slider val={theme.topbarFontSize ?? 12} min={9} max={20} onChange={v => set('topbarFontSize', v)} unit="px" /></Row>
 
             <AdvancedToggle show={showAdv('typo')} onToggle={() => toggleAdv('typo')} />
-            {showAdv('typo') && <>
-              <Row label="Corner radius"><Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" /></Row>
-              <Row label="Section radius"><Slider val={theme.sectionRadius ?? 0} min={0} max={20} onChange={v => set('sectionRadius', v)} unit="px" /></Row>
-              <Row label="Page scale"><Slider val={Math.round((theme.pageScale ?? 1) * 100)} min={70} max={130} onChange={v => set('pageScale', v / 100)} unit="%" /></Row>
+            {(showAdv('typo') || search) && <>
+              <Row search={search} label="Corner radius"><Slider val={theme.radius ?? 10} min={0} max={24} onChange={v => set('radius', v)} unit="px" /></Row>
+              <Row search={search} label="Section radius"><Slider val={theme.sectionRadius ?? 0} min={0} max={20} onChange={v => set('sectionRadius', v)} unit="px" /></Row>
+              <Row search={search} label="Page scale"><Slider val={Math.round((theme.pageScale ?? 1) * 100)} min={70} max={130} onChange={v => set('pageScale', v / 100)} unit="%" /></Row>
             </>}
 
             <div className="s2-section-title">Cards</div>
-            <Row label="Shadow"><Toggle checked={theme.cardShadowEnabled ?? false} onChange={v => set('cardShadowEnabled', v)} /></Row>
+            <Row search={search} label="Shadow"><Toggle checked={theme.cardShadowEnabled ?? false} onChange={v => set('cardShadowEnabled', v)} /></Row>
             {theme.cardShadowEnabled && <>
-              <Row label="Shadow size"><Slider val={theme.cardShadowSize ?? 8} min={0} max={30} onChange={v => set('cardShadowSize', v)} unit="px" /></Row>
-              <Row label="Shadow opacity"><Slider val={Math.round((theme.cardShadowOpacity ?? 0.3) * 100)} min={0} max={100} onChange={v => set('cardShadowOpacity', v / 100)} unit="%" /></Row>
+              <Row search={search} label="Shadow size"><Slider val={theme.cardShadowSize ?? 8} min={0} max={30} onChange={v => set('cardShadowSize', v)} unit="px" /></Row>
+              <Row search={search} label="Shadow opacity"><Slider val={Math.round((theme.cardShadowOpacity ?? 0.3) * 100)} min={0} max={100} onChange={v => set('cardShadowOpacity', v / 100)} unit="%" /></Row>
             </>}
           </>}
 
           {/* ── NOTEPAD ────────────────────────────────────── */}
-          {tab === 'notepad' && <>
+          {(tab === 'notepad' || search) && <>
             <div className="s2-section-title">Dimensions</div>
-            <Row label="Notepad width"><Slider val={theme.notepadWidth ?? 320} min={250} max={600} onChange={v => set('notepadWidth', v)} unit="px" /></Row>
-            <Row label="Info column width"><Slider val={theme.archiveColWidth ?? 280} min={180} max={500} onChange={v => set('archiveColWidth', v)} unit="px" /></Row>
+            <Row search={search} label="Notepad width"><Slider val={theme.notepadWidth ?? 320} min={250} max={600} onChange={v => set('notepadWidth', v)} unit="px" /></Row>
+            <Row search={search} label="Info column width"><Slider val={theme.archiveColWidth ?? 280} min={180} max={500} onChange={v => set('archiveColWidth', v)} unit="px" /></Row>
 
             <div className="s2-section-title">Typography</div>
-            <Row label="Font">
+            <Row search={search} label="Font">
               <select className="s2-select" value={theme.notesFontFamily || 'inherit'} onChange={e => set('notesFontFamily', e.target.value)}>
                 <option value="inherit">Same as app</option>
                 <option value="'DM Mono', monospace">DM Mono</option>
@@ -213,29 +222,29 @@ export default function Settings2({ theme, setTheme, onClose, workspaces, active
                 <option value="system-ui, sans-serif">System UI</option>
               </select>
             </Row>
-            <Row label="Font size"><Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row>
+            <Row search={search} label="Font size"><Slider val={theme.notesFontSize ?? 13} min={10} max={20} onChange={v => set('notesFontSize', v)} unit="px" /></Row>
 
             <div className="s2-section-title">Colors</div>
-            <Row label="Text color"><ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
-            <Row label="Notepad opacity"><Slider val={Math.round((theme.notesCardBgOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('notesCardBgOpacity', v / 100)} unit="%" /></Row>
-            <Row label="Shared tab bg"><ColorPick value={theme.notesSharedBg || '#1a1a28'} onChange={v => set('notesSharedBg', v)} /></Row>
+            <Row search={search} label="Text color"><ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
+            <Row search={search} label="Notepad opacity"><Slider val={Math.round((theme.notesCardBgOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('notesCardBgOpacity', v / 100)} unit="%" /></Row>
+            <Row search={search} label="Shared tab bg"><ColorPick value={theme.notesSharedBg || '#1a1a28'} onChange={v => set('notesSharedBg', v)} /></Row>
           </>}
 
           {/* ── VISIBILITY ─────────────────────────────────── */}
-          {tab === 'visibility' && <>
+          {(tab === 'visibility' || search) && <>
             <div className="s2-section-title">Show / Hide</div>
-            <Row label="Clock"><Toggle checked={!(theme.hideClock ?? false)} onChange={v => set('hideClock', !v)} /></Row>
-            <Row label="Weather"><Toggle checked={!(theme.hideWeather ?? false)} onChange={v => set('hideWeather', !v)} /></Row>
-            <Row label="Search bar"><Toggle checked={!(theme.hideSearch ?? false)} onChange={v => set('hideSearch', !v)} /></Row>
-            <Row label="Cards"><Toggle checked={!(theme.hideCards ?? false)} onChange={v => set('hideCards', !v)} /></Row>
-            <Row label="Notepad"><Toggle checked={!(theme.hideNotes ?? false)} onChange={v => set('hideNotes', !v)} /></Row>
-            <Row label="Open links in new tab"><Toggle checked={theme.openInNewTab ?? true} onChange={v => set('openInNewTab', v)} /></Row>
+            <Row search={search} label="Clock"><Toggle checked={!(theme.hideClock ?? false)} onChange={v => set('hideClock', !v)} /></Row>
+            <Row search={search} label="Weather"><Toggle checked={!(theme.hideWeather ?? false)} onChange={v => set('hideWeather', !v)} /></Row>
+            <Row search={search} label="Search bar"><Toggle checked={!(theme.hideSearch ?? false)} onChange={v => set('hideSearch', !v)} /></Row>
+            <Row search={search} label="Cards"><Toggle checked={!(theme.hideCards ?? false)} onChange={v => set('hideCards', !v)} /></Row>
+            <Row search={search} label="Notepad"><Toggle checked={!(theme.hideNotes ?? false)} onChange={v => set('hideNotes', !v)} /></Row>
+            <Row search={search} label="Open links in new tab"><Toggle checked={theme.openInNewTab ?? true} onChange={v => set('openInNewTab', v)} /></Row>
 
             <div className="s2-section-title">Mobile</div>
-            <Row label="Notepad first"><Toggle checked={theme.mobileNotesFirst ?? true} onChange={v => set('mobileNotesFirst', v)} /></Row>
+            <Row search={search} label="Notepad first"><Toggle checked={theme.mobileNotesFirst ?? true} onChange={v => set('mobileNotesFirst', v)} /></Row>
 
             <div className="s2-section-title">Search</div>
-            <Row label="Search engine">
+            <Row search={search} label="Search engine">
               <select className="s2-select" value={theme.searchEngineUrl || 'https://www.google.com/search?q='} onChange={e => set('searchEngineUrl', e.target.value)}>
                 <option value="https://www.google.com/search?q=">Google</option>
                 <option value="https://duckduckgo.com/?q=">DuckDuckGo</option>
@@ -250,6 +259,11 @@ export default function Settings2({ theme, setTheme, onClose, workspaces, active
           <button className="s2-btn" onClick={saveAsDefault}>Save as default</button>
           <button className="s2-btn" onClick={resetToDefault}>Reset to default</button>
         </div>
+        {onOpenLegacy && (
+          <div style={{ padding: '0 1.1rem 0.7rem' }}>
+            <button className="s2-legacy-btn" onClick={() => { onClose(); onOpenLegacy() }}>Open legacy settings panel ⚙</button>
+          </div>
+        )}
       </div>
     </div>
   )
