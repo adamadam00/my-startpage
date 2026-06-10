@@ -3925,7 +3925,9 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
 
 /* ── SETTINGS 2 ──────────────────────────────────────────────── */
 .s2-backdrop { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.5); display: flex; justify-content: flex-end; }
-.s2-panel { width: 480px; max-width: 94vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg2, #12121a); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.4); overflow: hidden; }
+[data-settings-side="left"] .s2-backdrop { justify-content: flex-start; }
+.s2-panel { width: 480px; max-width: 94vw; height: 100vh; display: flex; flex-direction: column; background: var(--bg2, #12121a); border-left: 1px solid var(--border); box-shadow: -4px 0 24px rgba(0,0,0,0.4); }
+[data-settings-side="left"] .s2-panel { border-left: none; border-right: 1px solid var(--border); box-shadow: 4px 0 24px rgba(0,0,0,0.4); overflow: hidden; }
 
 .s2-header { display: flex; align-items: center; justify-content: space-between; padding: 0.85rem 1.4rem; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .s2-title { font-size: 1em; font-weight: 600; color: var(--text); }
@@ -4000,3 +4002,7 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
 .s2-config-row { cursor: pointer; padding: 0.25rem 0.3rem; border-radius: 4px; }
 .s2-config-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .s2-config-check { accent-color: var(--accent); width: 14px; height: 14px; margin-right: 0.4rem; cursor: pointer; flex-shrink: 0; }
+
+/* Settings side toggle */
+.s2-side-btn { background: none; border: none; color: var(--text-dim); font-size: 0.9em; cursor: pointer; padding: 0.2rem 0.3rem; line-height: 1; }
+.s2-side-btn:hover { color: var(--accent); }

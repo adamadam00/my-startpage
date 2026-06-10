@@ -104,6 +104,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
     <div className="s2-backdrop" onClick={onClose}>
       <div className="s2-panel" onClick={e => e.stopPropagation()}>
         <div className="s2-header">
+          <button className="s2-side-btn" onClick={() => set('settingsSide', (theme.settingsSide || 'right') === 'right' ? 'left' : 'right')} title="Move panel to other side">{(theme.settingsSide || 'right') === 'right' ? '◀' : '▶'}</button>
           <span className="s2-title">{configMode ? 'Choose visible settings' : 'Settings'}</span>
           <button className="s2-close" onClick={onClose}>×</button>
         </div>
