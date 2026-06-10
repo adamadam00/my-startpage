@@ -3995,3 +3995,8 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
 
 /* Highlight matching rows */
 .s2-row.s2-match { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 4px; padding-left: 0.3rem; padding-right: 0.3rem; }
+
+/* Settings configure mode */
+.s2-config-row { cursor: pointer; padding: 0.25rem 0.3rem; border-radius: 4px; }
+.s2-config-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.s2-config-check { accent-color: var(--accent); width: 14px; height: 14px; margin-right: 0.4rem; cursor: pointer; flex-shrink: 0; }
