@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useMemo } from 'react'
 import Auth from './components/Auth'
 import Sections from './components/Sections'
 import Notepad from './components/Notepad'
+import Settings2 from './components/Settings2'
 import Settings from './components/Settings'
 import { supabase } from './lib/supabase'
 import CacheManager from './lib/cacheManager'
@@ -1856,6 +1857,7 @@ export default function App() {
   const [bmFolders, setBmFolders] = useState([])
   const [bmQuery, setBmQuery] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settings2Open, setSettings2Open] = useState(false)
   const [loading, setLoading] = useState(true)
   const [importingBackup, setImportingBackup] = useState(false)
 
@@ -2642,10 +2644,16 @@ export default function App() {
 				</button>
 				<button
 				  className="icon-btn topbar-quick-btn"
-				  title="Settings"
+				  title="Settings (legacy)"
 				  onClick={() => setSettingsOpen(true)}
 				  style={{ fontSize: '1.3rem', width: '34px', height: '34px' }}
 				>⚙</button>
+				<button
+				  className="icon-btn topbar-quick-btn"
+				  title="Settings"
+				  onClick={() => setSettings2Open(true)}
+				  style={{ fontSize: '1.1rem', width: '34px', height: '34px' }}
+				>⚙️</button>
 			  </div>
 			</div>
 
@@ -2699,6 +2707,18 @@ export default function App() {
 				})()}
 			  </div>}
 			</main>
+
+			{settings2Open && (
+			  <Settings2
+				theme={theme}
+				setTheme={setTheme}
+				onClose={() => setSettings2Open(false)}
+				workspaces={workspaces}
+				activeWs={activeWs}
+				supabase={supabase}
+				session={session}
+			  />
+			)}
 
 			{/* ── SETTINGS ────────────────────────────────────── */}
 			{settingsOpen && (
