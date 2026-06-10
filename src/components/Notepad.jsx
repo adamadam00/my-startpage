@@ -377,6 +377,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => changeFontSize(1)} title="Bigger text" style={{ fontSize: '1em', fontWeight: 700 }}>A+</button>
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('solid')} title="Solid line">─</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => insertHR('dotted')} title="Dotted line">┈</button>
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertUnorderedList')} title="Bullet list">•</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
