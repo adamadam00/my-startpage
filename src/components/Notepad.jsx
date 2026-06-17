@@ -268,9 +268,11 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
     if (lines.length === 0) return
     
-    const html = lines.map(line => 
-      `<div class="np-todo"><span class="np-todo-box" contenteditable="false">☐</span> ${DOMPurify.sanitize(line)}</div>`
-    ).join('')
+    const html = lines.map(line => {
+      // Strip leading dash/bullet but not dashes within words
+      const cleaned = line.replace(/^\s*[-–—•]\s+/, '').replace(/^\s*[-–—•](?=[A-Za-z])/, '')
+      return `<div class="np-todo"><span class="np-todo-box" contenteditable="false">☐</span> ${DOMPurify.sanitize(cleaned || line)}</div>`
+    }).join('')
     
     document.execCommand('insertHTML', false, html)
     handleInput()

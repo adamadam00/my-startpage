@@ -4025,7 +4025,7 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
   transition: color 0.15s;
 }
 .np-todo-box:hover { color: var(--accent); }
-.np-todo-done { opacity: 0.5; }
+.np-todo-done { opacity: 0.35; }
 .np-todo-done .np-todo-box { color: var(--accent); }
 .np-todo-hidden { display: none !important; }
 .np-todo-collapsed {
