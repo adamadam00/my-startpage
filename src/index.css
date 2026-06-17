@@ -3148,7 +3148,11 @@ input[type='range']::-moz-range-thumb {
   }
   .section-col {
     flex: 1 1 calc(50% - 1rem) !important;
-    min-width: 220px;
+    min-width: 200px;
+  }
+  /* Shrink notepad a bit to give sections more room */
+  .main-layout {
+    grid-template-columns: 1fr min(var(--notepad-width, 280px), 30vw) !important;
   }
 }
 
@@ -3157,11 +3161,9 @@ input[type='range']::-moz-range-thumb {
     flex: 1 1 100% !important;
     min-width: 0;
   }
+  /* Keep notepad as side column but narrower */
   .main-layout {
-    grid-template-columns: 1fr !important;
-  }
-  .side-col {
-    order: -1;
+    grid-template-columns: 1fr min(var(--notepad-width, 260px), 28vw) !important;
   }
 }
 
