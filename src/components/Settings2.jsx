@@ -233,6 +233,11 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <Row label="Text color" {...r}><ColorPick value={theme.notesTextColor || '#e8e8f0'} onChange={v => set('notesTextColor', v)} /></Row>
             <Row label="Notepad opacity" {...r}><Slider val={Math.round((theme.notesCardBgOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('notesCardBgOpacity', v / 100)} unit="%" /></Row>
             <Row label="Shared tab bg" {...r}><ColorPick value={theme.notesSharedBg || '#1a1a28'} onChange={v => set('notesSharedBg', v)} /></Row>
+            <div className="s2-section-title">Checkboxes</div>
+            <Row label="Auto-collapse checked" {...r}><Toggle checked={theme.checkboxCollapseEnabled ?? true} onChange={v => set('checkboxCollapseEnabled', v)} /></Row>
+            {(theme.checkboxCollapseEnabled ?? true) && (
+              <Row label="Collapse after X checked" {...r}><Slider val={theme.checkboxCollapseCount ?? 3} min={2} max={8} onChange={v => set('checkboxCollapseCount', v)} /></Row>
+            )}
           </>}
 
           {/* ═══ WIDGETS ═══ */}

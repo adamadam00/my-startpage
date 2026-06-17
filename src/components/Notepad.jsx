@@ -46,7 +46,7 @@ function NotepadFile({ file, tabId, onRefresh, userId }) {
   )
 }
 
-export default function Notepad({ userId, workspaceId, workspaces = [], onRefresh }) {
+export default function Notepad({ userId, workspaceId, workspaces = [], onRefresh, theme }) {
   const [tabs, setTabs] = useState([])
   const [activeTab, setActiveTab] = useState(() => {
     try { return localStorage.getItem(`notepad_active_${workspaceId}`) || null } catch { return null }
@@ -64,6 +64,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
 
   // Handle clicks inside editor - detect image clicks
   const handleEditorClick = (e) => {
+    handleEditorClickForTodo(e)
     // Remove previous selection highlight
     editorRef.current?.querySelectorAll('.np-img-selected').forEach(el => el.classList.remove('np-img-selected'))
     if (e.target.tagName === 'IMG') {
@@ -237,6 +238,105 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     handleInput()
   }
 
+  // ── CHECKBOX / TODO ────────────────────────────────────────
+  const insertCheckboxes = () => {
+    if (!editorRef.current) return
+    const sel = window.getSelection()
+    
+    // If selection contains existing checkboxes, toggle them
+    if (sel.rangeCount && !sel.isCollapsed) {
+      const range = sel.getRangeAt(0)
+      const container = range.commonAncestorContainer.nodeType === 3 ? range.commonAncestorContainer.parentElement : range.commonAncestorContainer
+      const existing = container.querySelectorAll ? container.querySelectorAll('.np-todo') : []
+      if (existing.length > 0) {
+        existing.forEach(el => {
+          const box = el.querySelector('.np-todo-box')
+          if (!box) return
+          const isChecked = box.textContent === '☑'
+          box.textContent = isChecked ? '☐' : '☑'
+          el.classList.toggle('np-todo-done', !isChecked)
+        })
+        handleInput()
+        collapseChecked()
+        return
+      }
+    }
+    
+    // No existing checkboxes — convert selected lines to checkboxes
+    if (!sel.rangeCount || sel.isCollapsed) { alert('Select text to add checkboxes'); return }
+    const text = sel.toString()
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    if (lines.length === 0) return
+    
+    const html = lines.map(line => 
+      `<div class="np-todo"><span class="np-todo-box" contenteditable="false">☐</span> ${DOMPurify.sanitize(line)}</div>`
+    ).join('')
+    
+    document.execCommand('insertHTML', false, html)
+    handleInput()
+  }
+
+  // Handle clicks on checkbox boxes
+  const handleEditorClickForTodo = (e) => {
+    const box = e.target.closest('.np-todo-box')
+    if (!box) return
+    e.preventDefault()
+    e.stopPropagation()
+    const todo = box.closest('.np-todo')
+    if (!todo) return
+    const isChecked = box.textContent === '☑'
+    box.textContent = isChecked ? '☐' : '☑'
+    todo.classList.toggle('np-todo-done', !isChecked)
+    handleInput()
+    collapseChecked()
+  }
+
+  // Collapse consecutive checked items
+  const collapseChecked = () => {
+    if (!editorRef.current) return
+    const collapseEnabled = theme?.checkboxCollapseEnabled ?? true
+    const threshold = theme?.checkboxCollapseCount ?? 3
+    if (!collapseEnabled) return
+    
+    // Remove existing collapse markers
+    editorRef.current.querySelectorAll('.np-todo-collapsed').forEach(el => el.remove())
+    // Expand any hidden items first
+    editorRef.current.querySelectorAll('.np-todo-hidden').forEach(el => el.classList.remove('np-todo-hidden'))
+    
+    const todos = Array.from(editorRef.current.querySelectorAll('.np-todo'))
+    let streak = []
+    
+    const collapseStreak = (items) => {
+      if (items.length < threshold) return
+      // Hide middle items, show first and last
+      for (let i = 1; i < items.length - 1; i++) {
+        items[i].classList.add('np-todo-hidden')
+      }
+      // Add collapse marker after first item
+      const marker = document.createElement('div')
+      marker.className = 'np-todo-collapsed'
+      marker.contentEditable = 'false'
+      marker.textContent = `▸ ${items.length - 2} more checked`
+      marker.title = 'Click to expand'
+      marker.onclick = () => {
+        items.forEach(it => it.classList.remove('np-todo-hidden'))
+        marker.remove()
+        handleInput()
+      }
+      items[0].after(marker)
+    }
+    
+    for (const todo of todos) {
+      if (todo.classList.contains('np-todo-done')) {
+        streak.push(todo)
+      } else {
+        if (streak.length >= threshold) collapseStreak(streak)
+        streak = []
+      }
+    }
+    if (streak.length >= threshold) collapseStreak(streak)
+  }
+
   const dashToBullets = () => {
     if (!editorRef.current) return
     const sel = window.getSelection()
@@ -381,6 +481,7 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertUnorderedList')} title="Bullet list">•</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => exec('insertOrderedList')} title="Numbered list">1.</button>
+          <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={insertCheckboxes} title="Add/toggle checkboxes">☑</button>
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={dashToBullets} title="Convert dashes to bullets">⇢•</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => { editorRef.current?.focus(); document.execCommand('undo') }} title="Undo (Ctrl+Z)">↩</button>

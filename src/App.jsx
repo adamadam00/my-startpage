@@ -2717,6 +2717,7 @@ export default function App() {
 					  workspaceId={wsId}
 					  workspaces={workspaces}
 					  onRefresh={handleRefresh}
+					  theme={theme}
 					/>
 				  )
 				})()}
