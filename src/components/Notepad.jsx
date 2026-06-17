@@ -150,6 +150,18 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
 
   // ── AUTO-SAVE ───────────────────────────────────────────────
   const handleInput = () => {
+    // Clean up orphaned todo divs (checkbox deleted but wrapper remains)
+    if (editorRef.current) {
+      editorRef.current.querySelectorAll('.np-todo').forEach(todo => {
+        if (!todo.querySelector('.np-todo-box')) {
+          // Replace the div with its text content
+          const text = todo.innerHTML
+          const span = document.createElement('span')
+          span.innerHTML = text
+          todo.replaceWith(span)
+        }
+      })
+    }
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(async () => {
       if (!editorRef.current || !activeTab) return
@@ -243,11 +255,12 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
     if (!editorRef.current) return
     const sel = window.getSelection()
     
-    // If selection contains existing checkboxes, toggle them
+    // If selection contains existing checkboxes, toggle only those in selection
     if (sel.rangeCount && !sel.isCollapsed) {
       const range = sel.getRangeAt(0)
       const container = range.commonAncestorContainer.nodeType === 3 ? range.commonAncestorContainer.parentElement : range.commonAncestorContainer
-      const existing = container.querySelectorAll ? container.querySelectorAll('.np-todo') : []
+      const allTodos = container.querySelectorAll ? Array.from(container.querySelectorAll('.np-todo')) : []
+      const existing = allTodos.filter(el => range.intersectsNode(el))
       if (existing.length > 0) {
         existing.forEach(el => {
           const box = el.querySelector('.np-todo-box')
