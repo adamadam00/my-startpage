@@ -3142,26 +3142,50 @@ input[type='range']::-moz-range-thumb {
 
 
 /* ── TABLET / INTERMEDIATE RESPONSIVE ──────────────────────────── */
-@media (max-width: 1200px) and (min-width: 769px) {
+
+/* First squeeze: cards wrap to 3 columns, info + notepad stay */
+@media (max-width: 1400px) and (min-width: 1201px) {
   .sections-grid {
     flex-wrap: wrap !important;
   }
-  .section-col {
-    flex: 1 1 calc(50% - 1rem) !important;
-    min-width: 200px;
+  .section-col:not(:last-child) {
+    flex: 1 1 calc(33% - 1rem) !important;
+    min-width: 180px;
   }
-  /* Shrink notepad a bit to give sections more room */
+  .section-col:last-child {
+    flex: 0 0 var(--archive-col-width, auto) !important;
+  }
+}
+
+/* Tablet: cards wrap to 2 columns */
+@media (max-width: 1200px) and (min-width: 951px) {
+  .sections-grid {
+    flex-wrap: wrap !important;
+  }
+  .section-col:not(:last-child) {
+    flex: 1 1 calc(50% - 1rem) !important;
+    min-width: 170px;
+  }
+  .section-col:last-child {
+    flex: 0 0 var(--archive-col-width, auto) !important;
+  }
   .main-layout {
     grid-template-columns: 1fr min(var(--notepad-width, 280px), 30vw) !important;
   }
 }
 
+/* Small tablet: cards stack to 1 column, info + notepad stay */
 @media (max-width: 950px) and (min-width: 769px) {
-  .section-col {
+  .sections-grid {
+    flex-wrap: wrap !important;
+  }
+  .section-col:not(:last-child) {
     flex: 1 1 100% !important;
     min-width: 0;
   }
-  /* Keep notepad as side column but narrower */
+  .section-col:last-child {
+    flex: 0 0 var(--archive-col-width, auto) !important;
+  }
   .main-layout {
     grid-template-columns: 1fr min(var(--notepad-width, 260px), 28vw) !important;
   }
