@@ -1,4 +1,4 @@
-/* STARTPAGE CSS v2.2 - 17 Jun 2026 */
+/* STARTPAGE CSS v2.3 - 17 Jun 2026 */
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=DM+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=Figtree:wght@300;400;500;600&display=swap');
   
 :root {
@@ -2034,8 +2034,8 @@ html.bg-29-carbon::after {
 }
 
 .section-col {
-  flex: 1 1 180px;
-  min-width: 160px;
+  flex: 1 1 180px !important;
+  min-width: 160px !important;
   max-width: 100%;
   display: flex;
   flex-direction: column;
