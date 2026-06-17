@@ -2033,10 +2033,11 @@ html.bg-29-carbon::after {
 .sections-cards-area {
   flex: 1 1 0;
   min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--section-gap-h, 0px);
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: var(--section-gap-h, 4px);
+  align-items: start;
+  align-content: start;
 }
 
 .sections-info-area {
@@ -2052,9 +2053,7 @@ html.bg-29-carbon::after {
 }
 
 .section-col {
-  flex: 1 1 180px;
-  min-width: 160px;
-  max-width: calc(33.33% - 0.5rem);
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
