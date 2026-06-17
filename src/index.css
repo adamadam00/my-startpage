@@ -78,13 +78,15 @@
 
 html {
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background-color: var(--bg);
 }
 
 body {
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: transparent;
   color: var(--text);
   font-family: var(--font);
@@ -100,7 +102,8 @@ body {
 
 #root {
   min-height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 button {
