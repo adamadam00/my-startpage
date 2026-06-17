@@ -1562,7 +1562,8 @@ html.bg-29-carbon::after {
   padding: var(--main-gap-top) 0.4rem 0.5rem 0.75rem;
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   position: relative;
   z-index: 2;
   align-content: start;
