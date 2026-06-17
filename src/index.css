@@ -2054,7 +2054,7 @@ html.bg-29-carbon::after {
 .section-col {
   flex: 1 1 180px;
   min-width: 160px;
-  max-width: 100%;
+  max-width: calc(50% - 0.5rem);
   display: flex;
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
@@ -3220,6 +3220,7 @@ input[type='range']::-moz-range-thumb {
 
   .section-col {
     width: 100%;
+    max-width: 100%;
     flex: none;
     gap: 0.18rem;
   }
