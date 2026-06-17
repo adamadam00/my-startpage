@@ -936,10 +936,8 @@ export default function Sections({
         })}
       </div>
       <div className="sections-grid">
-        {columns.map((col) => {
-          const isArchiveColumn = col.index === columns.length - 1;
-          
-          return (
+        <div className="sections-cards-area">
+        {columns.filter((_, i) => i < columns.length - 1).map((col) => (
           <SortableContext
             key={col.id}
             id={col.id}
@@ -947,17 +945,11 @@ export default function Sections({
             strategy={verticalListSortingStrategy}
           >
             <SectionColumn col={col}>
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'above' && widgetPanel}
-              {isArchiveColumn && (
-                <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
-                  Archived Section
-                </div>
-              )}
               {col.items.map((section) => (
                 <SectionCard
                   key={section.id}
                   section={section}
-                  isArchiveColumn={isArchiveColumn}
+                  isArchiveColumn={false}
                   links={[...links]
                     .filter((l) => l.section_id === section.id)
                     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))}
@@ -969,10 +961,47 @@ export default function Sections({
                   faviconEnabled={faviconEnabled}
                 />
               ))}
-              {widgetPanel && isArchiveColumn && widgetPanelPosition === 'below' && widgetPanel}
             </SectionColumn>
           </SortableContext>
-        )})}
+        ))}
+        </div>
+        {columns.length > 0 && (() => {
+          const col = columns[columns.length - 1];
+          return (
+            <div className="sections-info-area">
+              {widgetPanel && widgetPanelPosition === 'above' && widgetPanel}
+              <div style={{ color: 'var(--col-header-color)', fontSize: '0.72em', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', padding: '0.4rem 0.5rem 0.2rem', opacity: 0.6 }}>
+                Archived Section
+              </div>
+              <SortableContext
+                key={col.id}
+                id={col.id}
+                items={col.items.map((s) => String(s.id))}
+                strategy={verticalListSortingStrategy}
+              >
+                <SectionColumn col={col}>
+                  {col.items.map((section) => (
+                    <SectionCard
+                      key={section.id}
+                      section={section}
+                      isArchiveColumn={true}
+                      links={[...links]
+                        .filter((l) => l.section_id === section.id)
+                        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))}
+                      onToggleCollapse={handleToggleCollapse}
+                      onDeleteSection={handleDeleteSection}
+                      onRenameSection={handleRenameSection}
+                      onRefresh={onRefresh}
+                      openInNewTab={openInNewTab}
+                      faviconEnabled={faviconEnabled}
+                    />
+                  ))}
+                </SectionColumn>
+              </SortableContext>
+              {widgetPanel && widgetPanelPosition === 'below' && widgetPanel}
+            </div>
+          );
+        })()}
       </div>
       <DragOverlay>
         {activeSection ? (

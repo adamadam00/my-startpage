@@ -1,4 +1,4 @@
-/* STARTPAGE CSS v2.3 - 17 Jun 2026 */
+/* STARTPAGE CSS v3.0 - 17 Jun 2026 */
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=DM+Mono:wght@300;400;500&family=IBM+Plex+Sans:wght@300;400;500;600&family=Outfit:wght@300;400;500;600&family=Space+Grotesk:wght@300;400;500;600&family=Figtree:wght@300;400;500;600&display=swap');
   
 :root {
@@ -1570,11 +1570,11 @@ html.bg-29-carbon::after {
 
 .main-col {
   min-height: 0;
+  min-width: 0;
   overflow-y: auto;
-  overflow-x: visible;
-  padding-right: 10px;
+  overflow-x: hidden;
+  padding-right: 2px;
   padding-left: 4px;
-  margin-left: -4px;
   position: relative;
 }
 
@@ -2023,19 +2023,37 @@ html.bg-29-carbon::after {
 .sections-grid {
   display: flex;
   flex-direction: row;
-  flex-wrap: wrap;
   align-items: flex-start;
-  gap: var(--section-gap-h, 0px);
-  padding: 0 8px 3rem 8px;
+  gap: 0.4rem;
+  padding: 0 4px 3rem 4px;
   width: 100%;
-  margin: -8px;
-  margin-top: 0;
   position: relative;
 }
 
+.sections-cards-area {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--section-gap-h, 0px);
+  align-items: flex-start;
+}
+
+.sections-info-area {
+  flex: 0 0 var(--archive-col-width, 200px);
+  min-width: var(--archive-col-width, 200px);
+  max-width: var(--archive-col-width, 200px);
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap, 0.18rem);
+  position: sticky;
+  top: 60px;
+  align-self: flex-start;
+}
+
 .section-col {
-  flex: 1 1 180px !important;
-  min-width: 160px !important;
+  flex: 1 1 180px;
+  min-width: 160px;
   max-width: 100%;
   display: flex;
   flex-direction: column;
@@ -3146,46 +3164,13 @@ input[type='range']::-moz-range-thumb {
 
 /* ── TABLET / INTERMEDIATE RESPONSIVE ──────────────────────────── */
 
-/* First squeeze: cards in 3 columns, info pinned right */
-@media (max-width: 1600px) and (min-width: 1281px) {
-  .sections-grid {
-    display: grid !important;
-    grid-template-columns: repeat(3, 1fr) var(--archive-col-width, 200px) !important;
-    grid-auto-rows: min-content;
-  }
-  .section-col:last-child {
-    grid-column: -1 !important;
-    grid-row: 1 / span 20 !important;
-  }
-}
-
-/* Tablet: cards in 2 columns */
 @media (max-width: 1280px) and (min-width: 1001px) {
-  .sections-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) var(--archive-col-width, 200px) !important;
-    grid-auto-rows: min-content;
-  }
-  .section-col:last-child {
-    grid-column: -1 !important;
-    grid-row: 1 / span 20 !important;
-  }
   .main-layout {
     grid-template-columns: 1fr min(var(--notepad-width, 280px), 28vw) !important;
   }
 }
 
-/* Small tablet: cards in 1 column */
 @media (max-width: 1000px) and (min-width: 769px) {
-  .sections-grid {
-    display: grid !important;
-    grid-template-columns: 1fr var(--archive-col-width, 200px) !important;
-    grid-auto-rows: min-content;
-  }
-  .section-col:last-child {
-    grid-column: -1 !important;
-    grid-row: 1 / span 20 !important;
-  }
   .main-layout {
     grid-template-columns: 1fr min(var(--notepad-width, 240px), 25vw) !important;
   }
@@ -3926,12 +3911,7 @@ a.wp-weather-now:hover .wp-weather-desc,
 a.wp-forecast-row:hover .wp-forecast-desc { color: var(--accent); }
 a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 3px; }
 
-/* Archive column (last section-col) width override */
-.section-col:last-child {
-  flex: 0 0 var(--archive-col-width, 200px);
-  min-width: var(--archive-col-width, 200px);
-  max-width: var(--archive-col-width, none);
-}
+/* Archive column handled by .sections-info-area */
 
 /* Workspace dropdown */
 .workspace-dropdown {
