@@ -3143,48 +3143,57 @@ input[type='range']::-moz-range-thumb {
 
 /* ── TABLET / INTERMEDIATE RESPONSIVE ──────────────────────────── */
 
-/* First squeeze: cards wrap to 3 columns, info + notepad stay */
+/* First squeeze: cards in 3 columns, info pinned right */
 @media (max-width: 1400px) and (min-width: 1201px) {
   .sections-grid {
-    flex-wrap: wrap !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) var(--archive-col-width, 200px) !important;
+    grid-auto-rows: min-content;
+    flex-wrap: nowrap !important;
   }
   .section-col:not(:last-child) {
-    flex: 1 1 calc(33% - 1rem) !important;
-    min-width: 180px;
+    min-width: 0 !important;
   }
   .section-col:last-child {
-    flex: 0 0 var(--archive-col-width, auto) !important;
+    grid-column: -1 !important;
+    grid-row: 1 / span 20 !important;
   }
 }
 
-/* Tablet: cards wrap to 2 columns */
+/* Tablet: cards in 2 columns */
 @media (max-width: 1200px) and (min-width: 951px) {
   .sections-grid {
-    flex-wrap: wrap !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) var(--archive-col-width, 200px) !important;
+    grid-auto-rows: min-content;
+    flex-wrap: nowrap !important;
   }
   .section-col:not(:last-child) {
-    flex: 1 1 calc(50% - 1rem) !important;
-    min-width: 170px;
+    min-width: 0 !important;
   }
   .section-col:last-child {
-    flex: 0 0 var(--archive-col-width, auto) !important;
+    grid-column: -1 !important;
+    grid-row: 1 / span 20 !important;
   }
   .main-layout {
     grid-template-columns: 1fr min(var(--notepad-width, 280px), 30vw) !important;
   }
 }
 
-/* Small tablet: cards stack to 1 column, info + notepad stay */
+/* Small tablet: cards in 1 column */
 @media (max-width: 950px) and (min-width: 769px) {
   .sections-grid {
-    flex-wrap: wrap !important;
+    display: grid !important;
+    grid-template-columns: 1fr var(--archive-col-width, 200px) !important;
+    grid-auto-rows: min-content;
+    flex-wrap: nowrap !important;
   }
   .section-col:not(:last-child) {
-    flex: 1 1 100% !important;
-    min-width: 0;
+    min-width: 0 !important;
   }
   .section-col:last-child {
-    flex: 0 0 var(--archive-col-width, auto) !important;
+    grid-column: -1 !important;
+    grid-row: 1 / span 20 !important;
   }
   .main-layout {
     grid-template-columns: 1fr min(var(--notepad-width, 260px), 28vw) !important;
