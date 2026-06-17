@@ -2054,7 +2054,7 @@ html.bg-29-carbon::after {
 .section-col {
   flex: 1 1 180px;
   min-width: 160px;
-  max-width: calc(50% - 0.5rem);
+  max-width: calc(33.33% - 0.5rem);
   display: flex;
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
@@ -4045,3 +4045,11 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
   user-select: none;
 }
 .np-todo-collapsed:hover { opacity: 1; text-decoration: underline; }
+
+/* Section columns inside info area take full width */
+.sections-info-area .section-col {
+  flex: 1 1 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: auto;
+}
