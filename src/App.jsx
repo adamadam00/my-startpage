@@ -119,7 +119,7 @@ function ClockWidget() {
         <span className="clock-compact-date">{date}</span>
       </div>
       {open && (
-        <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:360,userSelect:'none'}}>
+        <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:380,userSelect:'none'}}>
           <div style={{fontSize:'0.7em',color:'var(--text-dim)',textAlign:'center',marginBottom:'0.5rem'}}>Drag hour hand · each loop = +12h</div>
           <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{display:'block',margin:'0 auto',touchAction:'none'}}>
             <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
@@ -157,8 +157,8 @@ function ClockWidget() {
           <div style={{display:'flex',justifyContent:'center',gap:'0.6rem',marginTop:'0.6rem',paddingTop:'0.5rem',borderTop:'1px solid var(--border)',flexWrap:'wrap'}}>
             {worldTimes.map(wt => (
               <div key={wt.label} style={{textAlign:'center',minWidth:'55px'}}>
-                <div style={{fontSize:'0.55em',color:'var(--text-dim)',textTransform:'uppercase',letterSpacing:'0.04em'}}>{wt.label}</div>
-                <div style={{fontSize:'0.75em',fontWeight:600,color:'var(--text)'}}>{now.toLocaleTimeString('en-US',{timeZone:wt.tz,hour:'numeric',minute:'2-digit',hour12:true})}</div>
+                <div style={{fontSize:'0.7em',color:'var(--text-dim)',textTransform:'uppercase',letterSpacing:'0.04em'}}>{wt.label}</div>
+                <div style={{fontSize:'0.95em',fontWeight:600,color:'var(--text)'}}>{now.toLocaleTimeString('en-US',{timeZone:wt.tz,hour:'numeric',minute:'2-digit',hour12:true})}</div>
               </div>
             ))}
           </div>
@@ -166,14 +166,14 @@ function ClockWidget() {
             <div style={{display:'flex',alignItems:'center',gap:'0.3rem',justifyContent:'center'}}>
               <button className="btn-xs" onClick={()=>setCalcSign(s=>s*-1)} style={{minWidth:'30px',fontSize:'1.1em',fontWeight:700,color:calcSign>0?'var(--accent)':'var(--danger)'}}>{calcSign>0?'+':'−'}</button>
               <input type="number" min="0" max="99" value={calcD} onChange={e=>setCalcD(Math.max(0,parseInt(e.target.value)||0))} style={{width:'44px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'1em',padding:'0.35rem 0.25rem'}} />
-              <span style={{fontSize:'0.9em',color:'var(--text)'}}>d</span>
+              <span style={{fontSize:'0.85em',color:'var(--text)'}}>Day:</span>
               <input type="number" min="0" max="23" value={calcH} onChange={e=>setCalcH(Math.max(0,parseInt(e.target.value)||0))} style={{width:'44px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'1em',padding:'0.35rem 0.25rem'}} />
-              <span style={{fontSize:'0.9em',color:'var(--text)'}}>h</span>
+              <span style={{fontSize:'0.85em',color:'var(--text)'}}>Hr:</span>
               <input type="number" min="0" max="59" value={calcM} onChange={e=>setCalcM(Math.max(0,parseInt(e.target.value)||0))} style={{width:'44px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'1em',padding:'0.35rem 0.25rem'}} />
-              <span style={{fontSize:'0.9em',color:'var(--text)'}}>m</span>
+              <span style={{fontSize:'0.85em',color:'var(--text)'}}>Min:</span>
             </div>
             {(calcD>0||calcH>0||calcM>0) && (
-              <div style={{marginTop:'0.35rem',textAlign:'center'}}>
+              <div style={{marginTop:'0.7rem',textAlign:'center'}}>
                 <input readOnly value={calcResult.toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true})} onClick={e=>{ e.target.select(); navigator.clipboard?.writeText(e.target.value) }} style={{background:'var(--bg2)',border:'1px solid var(--accent)',borderRadius:'4px',color:'var(--accent)',textAlign:'center',fontSize:'0.95em',padding:'0.4rem 0.5rem',cursor:'pointer',width:'100%',fontWeight:600,fontFamily:'inherit'}} title="Click to copy" />
               </div>
             )}
