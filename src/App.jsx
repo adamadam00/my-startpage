@@ -119,7 +119,7 @@ function ClockWidget() {
         <span className="clock-compact-date">{date}</span>
       </div>
       {open && (
-        <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:240,userSelect:'none'}}>
+        <div style={{position:'absolute',top:'calc(100% + 8px)',left:'50%',transform:'translateX(-50%)',background:'var(--card)',border:'1px solid var(--border)',borderRadius:'var(--radius)',boxShadow:'0 8px 32px rgba(0,0,0,0.5)',padding:'1rem',zIndex:9999,width:320,userSelect:'none'}}>
           <div style={{fontSize:'0.7em',color:'var(--text-dim)',textAlign:'center',marginBottom:'0.5rem'}}>Drag hour hand · each loop = +12h</div>
           <svg ref={svgRef} viewBox="0 0 200 200" width="208" height="208" style={{display:'block',margin:'0 auto',touchAction:'none'}}>
             <circle cx="100" cy="100" r="96" fill="var(--bg2)" stroke="var(--border)" strokeWidth="2"/>
@@ -165,11 +165,11 @@ function ClockWidget() {
           <div style={{marginTop:'0.5rem',paddingTop:'0.5rem',borderTop:'1px solid var(--border)'}}>
             <div style={{display:'flex',alignItems:'center',gap:'0.3rem',justifyContent:'center'}}>
               <button className="btn-xs" onClick={()=>setCalcSign(s=>s*-1)} style={{minWidth:'24px',fontWeight:700,color:calcSign>0?'var(--accent)':'var(--danger)'}}>{calcSign>0?'+':'−'}</button>
-              <input type="number" min="0" max="99" value={calcD} onChange={e=>setCalcD(Math.max(0,parseInt(e.target.value)||0))} style={{width:'32px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.8em',padding:'0.2rem'}} />
-              <span style={{fontSize:'0.65em',color:'var(--text-dim)'}}>d</span>
-              <input type="number" min="0" max="23" value={calcH} onChange={e=>setCalcH(Math.max(0,parseInt(e.target.value)||0))} style={{width:'32px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.8em',padding:'0.2rem'}} />
-              <span style={{fontSize:'0.65em',color:'var(--text-dim)'}}>h</span>
-              <input type="number" min="0" max="59" value={calcM} onChange={e=>setCalcM(Math.max(0,parseInt(e.target.value)||0))} style={{width:'32px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.8em',padding:'0.2rem'}} />
+              <input type="number" min="0" max="99" value={calcD} onChange={e=>setCalcD(Math.max(0,parseInt(e.target.value)||0))} style={{width:'44px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.85em',padding:'0.3rem 0.2rem'}} />
+              <span style={{fontSize:'0.7em',color:'var(--text-dim)'}}>d</span>
+              <input type="number" min="0" max="23" value={calcH} onChange={e=>setCalcH(Math.max(0,parseInt(e.target.value)||0))} style={{width:'44px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.85em',padding:'0.3rem 0.2rem'}} />
+              <span style={{fontSize:'0.7em',color:'var(--text-dim)'}}>h</span>
+              <input type="number" min="0" max="59" value={calcM} onChange={e=>setCalcM(Math.max(0,parseInt(e.target.value)||0))} style={{width:'44px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.85em',padding:'0.3rem 0.2rem'}} />
               <span style={{fontSize:'0.65em',color:'var(--text-dim)'}}>m</span>
             </div>
             {(calcD>0||calcH>0||calcM>0) && (
