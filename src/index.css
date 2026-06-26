@@ -3937,7 +3937,7 @@ a.wp-forecast-row:hover { background: color-mix(in srgb, var(--accent) 8%, trans
   border: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
   border-radius: var(--radius-sm);
   padding: 0.25rem 0.4rem;
-  font-size: 0.8em;
+  font-size: 0.9em;
   font-family: inherit;
   cursor: pointer;
   outline: none;

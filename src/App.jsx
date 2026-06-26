@@ -97,10 +97,16 @@ function ClockWidget() {
 
   // World clock
   const worldTimes = [
-    { label: 'US-ET', tz: 'America/New_York' },
+    { label: 'Austin', tz: 'America/Chicago' },
     { label: 'UK', tz: 'Europe/London' },
-    { label: 'JP', tz: 'Asia/Tokyo' },
+    { label: 'Thailand', tz: 'Asia/Bangkok' },
+    { label: 'Tokyo', tz: 'Asia/Tokyo' },
   ]
+  const [calcSign, setCalcSign] = useState(1)
+  const [calcD, setCalcD] = useState(0)
+  const [calcH, setCalcH] = useState(0)
+  const [calcM, setCalcM] = useState(0)
+  const calcResult = new Date(now.getTime() + calcSign * (calcD * 86400000 + calcH * 3600000 + calcM * 60000))
 
   const hPos=handPos(tH%12,12,52), mPos=handPos(tM,60,72)
   const nowHPos=handPos(nowH,12,52), nowMPos=handPos(nowM,60,72)
@@ -148,13 +154,29 @@ function ClockWidget() {
             <div>{hasTarget&&<button className="btn-xs" onClick={()=>setTotalMins(null)}>Reset</button>}</div>
             <button className="btn-xs" onClick={()=>setOpen(false)}>Close</button>
           </div>
-          <div style={{display:'flex',justifyContent:'center',gap:'0.8rem',marginTop:'0.6rem',paddingTop:'0.5rem',borderTop:'1px solid var(--border)'}}>
+          <div style={{display:'flex',justifyContent:'center',gap:'0.6rem',marginTop:'0.6rem',paddingTop:'0.5rem',borderTop:'1px solid var(--border)',flexWrap:'wrap'}}>
             {worldTimes.map(wt => (
-              <div key={wt.label} style={{textAlign:'center'}}>
-                <div style={{fontSize:'0.6em',color:'var(--text-dim)',textTransform:'uppercase',letterSpacing:'0.04em'}}>{wt.label}</div>
-                <div style={{fontSize:'0.8em',fontWeight:600,color:'var(--text)'}}>{now.toLocaleTimeString('en-US',{timeZone:wt.tz,hour:'numeric',minute:'2-digit',hour12:true})}</div>
+              <div key={wt.label} style={{textAlign:'center',minWidth:'55px'}}>
+                <div style={{fontSize:'0.55em',color:'var(--text-dim)',textTransform:'uppercase',letterSpacing:'0.04em'}}>{wt.label}</div>
+                <div style={{fontSize:'0.75em',fontWeight:600,color:'var(--text)'}}>{now.toLocaleTimeString('en-US',{timeZone:wt.tz,hour:'numeric',minute:'2-digit',hour12:true})}</div>
               </div>
             ))}
+          </div>
+          <div style={{marginTop:'0.5rem',paddingTop:'0.5rem',borderTop:'1px solid var(--border)'}}>
+            <div style={{display:'flex',alignItems:'center',gap:'0.3rem',justifyContent:'center'}}>
+              <button className="btn-xs" onClick={()=>setCalcSign(s=>s*-1)} style={{minWidth:'24px',fontWeight:700,color:calcSign>0?'var(--accent)':'var(--danger)'}}>{calcSign>0?'+':'−'}</button>
+              <input type="number" min="0" max="99" value={calcD} onChange={e=>setCalcD(Math.max(0,parseInt(e.target.value)||0))} style={{width:'32px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.8em',padding:'0.2rem'}} />
+              <span style={{fontSize:'0.65em',color:'var(--text-dim)'}}>d</span>
+              <input type="number" min="0" max="23" value={calcH} onChange={e=>setCalcH(Math.max(0,parseInt(e.target.value)||0))} style={{width:'32px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.8em',padding:'0.2rem'}} />
+              <span style={{fontSize:'0.65em',color:'var(--text-dim)'}}>h</span>
+              <input type="number" min="0" max="59" value={calcM} onChange={e=>setCalcM(Math.max(0,parseInt(e.target.value)||0))} style={{width:'32px',background:'var(--bg2)',border:'1px solid var(--border)',borderRadius:'4px',color:'var(--text)',textAlign:'center',fontSize:'0.8em',padding:'0.2rem'}} />
+              <span style={{fontSize:'0.65em',color:'var(--text-dim)'}}>m</span>
+            </div>
+            {(calcD>0||calcH>0||calcM>0) && (
+              <div style={{marginTop:'0.35rem',textAlign:'center'}}>
+                <input readOnly value={calcResult.toLocaleString('en-US',{weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',hour12:true})} onClick={e=>{ e.target.select(); navigator.clipboard?.writeText(e.target.value) }} style={{background:'var(--bg2)',border:'1px solid var(--accent)',borderRadius:'4px',color:'var(--accent)',textAlign:'center',fontSize:'0.78em',padding:'0.3rem 0.4rem',cursor:'pointer',width:'100%',fontWeight:600,fontFamily:'inherit'}} title="Click to copy" />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -2528,7 +2550,7 @@ export default function App() {
 
 			  {/* Workspace tabs */}
 			  <select
-				className="workspace-dropdown"
+				className="workspace-dropdown" style={{fontSize:"0.9em"}}
 				value={activeWs}
 				onChange={(e) => setActiveWs(e.target.value)}
 			  >
