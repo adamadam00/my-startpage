@@ -2002,7 +2002,8 @@ export default function App() {
 
   useEffect(() => {
     if (!session) return
-    loadUserSettings().then(() => ensureWorkspace()).then(() => handleRefresh())
+    ensureWorkspace().then(() => handleRefresh())
+    loadUserSettings()
   }, [session])
 
   const loadUserSettings = async (force = false) => {
