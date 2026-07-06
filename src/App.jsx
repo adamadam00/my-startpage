@@ -1901,7 +1901,9 @@ export default function App() {
   const [bmFolders, setBmFolders] = useState([])
   const [bmQuery, setBmQuery] = useState('')
   const [settings2Open, setSettings2Open] = useState(false)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => {
+    try { return !(CacheManager.load('workspaces')?.length) } catch { return true }
+  })
   const [importingBackup, setImportingBackup] = useState(false)
 
   const [allCollapsed, setAllCollapsed] = useState(false)
