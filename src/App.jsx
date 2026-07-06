@@ -1709,6 +1709,7 @@ export default function App() {
   }, [modalAlert, modalConfirm, modalPrompt])
 
   const [session, setSession] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const sessionRef = useRef(null)
   const searchInputRef = useRef(null)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -1976,9 +1977,10 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null)
+      setAuthChecked(true)
       setLoading(false)
     })
-    const { data: listener } = supabase.auth.onAuthStateChange((_e, sess) => setSession(sess ?? null))
+    const { data: listener } = supabase.auth.onAuthStateChange((_e, sess) => { setSession(sess ?? null); setAuthChecked(true) })
     return () => listener.subscription.unsubscribe()
   }, [])
 
@@ -2494,8 +2496,10 @@ export default function App() {
 	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 	  const bgDataAttrs = theme.bgPreset === '03-dots' ? { 'data-pattern': theme.bgDotPattern || 'circles' } : {}
 
-	  if (loading) return <div className="center-fill">Loading…</div>
-	  if (!session) return <Auth />
+	  if (!session) {
+	    if (authChecked) return <Auth />
+	    return <div className="center-fill">Loading…</div>
+	  }
 
 	  return (
 		<>
