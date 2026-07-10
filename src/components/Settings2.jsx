@@ -40,12 +40,6 @@ const Row = ({ label, children, search, id, configMode, isVisible, toggleVisible
   )
 }
 
-const Adv = ({ id, show, onToggle }) => (
-  <button className="s2-adv-toggle" onClick={() => onToggle(id)}>
-    {show ? '▾ Hide advanced' : '▸ Show advanced'}
-  </button>
-)
-
 const rp = (search, configMode, isVisible, toggleVisible) => ({ search, configMode, isVisible, toggleVisible })
 
 const BG_PRESETS = [
@@ -63,19 +57,18 @@ const BG_PRESETS = [
 ]
 
 // ── MAIN ─────────────────────────────────────────────────────────
-export default function Settings2({ theme, setTheme, onClose, workspaces = [], activeWs, setActiveWs, onAddWorkspace, onRenameWorkspace, onDeleteWorkspace }) {
+export default function Settings2({ theme, setTheme, onClose, workspaces = [], activeWs, setActiveWs, onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onExportBackup, onExportCSV, onExportTheme, onImportBackup, onImportTheme, backupFileRef, themeFileRef, onSignOut }) {
   const [newWsName, setNewWsName] = useState('')
   const [tab, setTab] = useState('appearance')
   const [search, setSearch] = useState('')
-  const [adv, setAdv] = useState({})
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [configMode, setConfigMode] = useState(false)
   const [visible, setVisible] = useState(() => {
     try { return JSON.parse(localStorage.getItem('settings_visible') || '{}') } catch { return {} }
   })
 
   const set = (key, val) => setTheme(prev => ({ ...prev, [key]: val }))
-  const showAdv = (s) => adv[s] ?? false
-  const toggleAdv = (s) => setAdv(p => ({ ...p, [s]: !p[s] }))
+
   const isVisible = (key) => visible[key] ?? true
   const toggleVisible = (key) => {
     setVisible(prev => { const n = { ...prev, [key]: !(prev[key] ?? true) }; localStorage.setItem('settings_visible', JSON.stringify(n)); return n })
@@ -89,7 +82,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
   }
 
   const all = search || configMode
-  const advOpen = (s) => showAdv(s) || all
+  const advOpen = () => showAdvanced || all
   const r = rp(search, configMode, isVisible, toggleVisible)
 
   const TABS = [
@@ -115,6 +108,12 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
 
         <div className="s2-search-row">
           <input className="s2-search" placeholder="Search settings..." value={search} onChange={e => setSearch(e.target.value)} />
+          {!configMode && (
+            <label className="s2-adv-global">
+              <input type="checkbox" checked={showAdvanced} onChange={e => setShowAdvanced(e.target.checked)} />
+              <span>Advanced</span>
+            </label>
+          )}
         </div>
 
         <div className="s2-content">
@@ -128,8 +127,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
               ))}
             </div>
             <Row label="Animation speed" {...r}><Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={300} onChange={v => set('bgAnimSpeed', v / 100)} unit="%" /></Row>
-            <Adv id="bg" show={showAdv('bg')} onToggle={toggleAdv} />
-            {advOpen('bg') && <>
+            {advOpen() && <>
               <Row label="BG color 1" {...r}><ColorPick value={theme.bgC1 || '#2a4a6a'} onChange={v => set('bgC1', v)} /></Row>
               <Row label="BG color 2" {...r}><ColorPick value={theme.bgC2 || '#4a2a5a'} onChange={v => set('bgC2', v)} /></Row>
               <Row label="BG color 3" {...r}><ColorPick value={theme.bgC3 || '#1a3a4a'} onChange={v => set('bgC3', v)} /></Row>
@@ -145,8 +143,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <Row label="Primary text" {...r}><ColorPick value={theme.text} onChange={v => set('text', v)} /></Row>
             <Row label="Secondary text" {...r}><ColorPick value={theme.textDim} onChange={v => set('textDim', v)} /></Row>
             <Row label="Border" {...r}><ColorPick value={theme.border} onChange={v => set('border', v)} /></Row>
-            <Adv id="colors" show={showAdv('colors')} onToggle={toggleAdv} />
-            {advOpen('colors') && <>
+            {advOpen() && <>
               <Row label="Card bg 2" {...r}><ColorPick value={theme.bg2} onChange={v => set('bg2', v)} /></Row>
               <Row label="Card bg 3" {...r}><ColorPick value={theme.bg3} onChange={v => set('bg3', v)} /></Row>
               <Row label="Title bg" {...r}><ColorPick value={theme.titleBg} onChange={v => set('titleBg', v)} /></Row>
@@ -161,8 +158,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
 
             <div className="s2-section-title">Wallpaper</div>
             <Row label="URL" {...r}><input className="s2-input" value={theme.wallpaper || ''} onChange={e => set('wallpaper', e.target.value)} placeholder="https://..." /></Row>
-            <Adv id="wp" show={showAdv('wp')} onToggle={toggleAdv} />
-            {advOpen('wp') && <>
+            {advOpen() && <>
               <Row label="Fit" {...r}><select className="s2-select" value={theme.wallpaperFit || 'cover'} onChange={e => set('wallpaperFit', e.target.value)}><option value="cover">Cover</option><option value="contain">Contain</option><option value="fill">Fill</option></select></Row>
               <Row label="Position X" {...r}><Slider val={theme.wallpaperX ?? 50} min={0} max={100} onChange={v => set('wallpaperX', v)} unit="%" /></Row>
               <Row label="Position Y" {...r}><Slider val={theme.wallpaperY ?? 50} min={0} max={100} onChange={v => set('wallpaperY', v)} unit="%" /></Row>
@@ -191,8 +187,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <div className="s2-section-title">Grid</div>
             <Row label="Columns" {...r}><Slider val={theme.sectionsCols ?? 6} min={1} max={10} onChange={v => set('sectionsCols', v)} /></Row>
             <Row label="Topbar gap" {...r}><Slider val={theme.mainGapTop ?? 12} min={0} max={150} step={2} onChange={v => set('mainGapTop', v)} unit="px" /></Row>
-            <Adv id="grid" show={showAdv('grid')} onToggle={toggleAdv} />
-            {advOpen('grid') && <>
+            {advOpen() && <>
               <Row label="Section gap (v)" {...r}><Slider val={theme.sectionGap ?? 0} min={0} max={32} onChange={v => set('sectionGap', v)} unit="px" /></Row>
               <Row label="Section gap (h)" {...r}><Slider val={theme.sectionGapH ?? 0} min={0} max={32} onChange={v => set('sectionGapH', v)} unit="px" /></Row>
               <Row label="Link gap" {...r}><Slider val={Math.round((theme.linkGap ?? 0.5) * 100)} min={-50} max={200} step={5} onChange={v => set('linkGap', v / 100)} unit="%" /></Row>
@@ -213,8 +208,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
               <Row label="Shadow opacity" {...r}><Slider val={Math.round((theme.cardShadowOpacity ?? 0.3) * 100)} min={0} max={100} onChange={v => set('cardShadowOpacity', v / 100)} unit="%" /></Row>
               <Row label="Shadow color" {...r}><ColorPick value={theme.cardShadowColor || '#000000'} onChange={v => set('cardShadowColor', v)} /></Row>
             </>}
-            <Adv id="cards" show={showAdv('cards')} onToggle={toggleAdv} />
-            {advOpen('cards') && <>
+            {advOpen() && <>
               <Row label="Header height" {...r}><Slider val={Math.round((theme.headerPadding ?? 0.42) * 100)} min={10} max={80} step={2} onChange={v => set('headerPadding', v / 100)} unit="%" /></Row>
               <Row label="Page scale" {...r}><Slider val={Math.round((theme.pageScale ?? 1) * 100)} min={70} max={130} onChange={v => set('pageScale', v / 100)} unit="%" /></Row>
               <Row label="Section radius" {...r}><Slider val={theme.sectionRadius ?? 0} min={0} max={20} onChange={v => set('sectionRadius', v)} unit="px" /></Row>
@@ -248,8 +242,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <div className="s2-section-title">Favicons</div>
             <Row label="Show favicons" {...r}><Toggle checked={theme.faviconEnabled ?? true} onChange={v => set('faviconEnabled', v)} /></Row>
             <Row label="Favicon size" {...r}><Slider val={theme.faviconSize ?? 13} min={10} max={24} onChange={v => set('faviconSize', v)} unit="px" /></Row>
-            <Adv id="fav" show={showAdv('fav')} onToggle={toggleAdv} />
-            {advOpen('fav') && <>
+            {advOpen() && <>
               <Row label="Favicon opacity" {...r}><Slider val={Math.round((theme.faviconOpacity ?? 1) * 100)} min={0} max={100} onChange={v => set('faviconOpacity', v / 100)} unit="%" /></Row>
               <Row label="Greyscale" {...r}><Toggle checked={theme.faviconGreyscale ?? false} onChange={v => set('faviconGreyscale', v)} /></Row>
               <Row label="Load delay" {...r}><Slider val={theme.faviconDelay ?? 0} min={0} max={5} step={0.5} onChange={v => set('faviconDelay', v)} unit="s" /></Row>
@@ -288,6 +281,20 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.3rem' }}>
               <input className="s2-input" style={{ flex: 1 }} placeholder="New workspace..." value={newWsName} onChange={e => setNewWsName(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && newWsName.trim()) { onAddWorkspace?.(newWsName.trim()); setNewWsName('') } }} />
               <button className="btn-xs btn-primary" style={{ fontSize: '0.72em' }} disabled={!newWsName.trim()} onClick={() => { if (newWsName.trim()) { onAddWorkspace?.(newWsName.trim()); setNewWsName('') } }}>Add</button>
+            </div>
+
+            <div className="s2-section-title">Export / Backup</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.3rem 0' }}>
+              <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportBackup?.()}>↓ Export full backup (JSON)</button>
+              <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportCSV?.()}>↓ Export links (CSV)</button>
+              <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportTheme?.()}>↓ Export theme</button>
+              <button className="s2-btn" style={{ flex: 'none' }} onClick={() => backupFileRef?.current?.click()}>↑ Import backup (JSON/CSV)</button>
+              <button className="s2-btn" style={{ flex: 'none' }} onClick={() => themeFileRef?.current?.click()}>↑ Import theme</button>
+            </div>
+
+            <div className="s2-section-title">Account</div>
+            <div style={{ padding: '0.3rem 0' }}>
+              <button className="s2-btn" style={{ flex: 'none', color: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={() => onSignOut?.()}>Sign out</button>
             </div>
           </>}
 

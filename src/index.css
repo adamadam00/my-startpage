@@ -4083,3 +4083,9 @@ input[type="number"]:focus {
   border-color: var(--accent) !important;
   outline: none;
 }
+
+/* Settings global advanced toggle */
+.s2-search-row { display: flex; align-items: center; gap: 0.6rem; }
+.s2-adv-global { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72em; color: var(--text-dim); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+.s2-adv-global input { accent-color: var(--accent); cursor: pointer; }
+.s2-adv-global:hover { color: var(--text); }

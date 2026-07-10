@@ -2764,6 +2764,14 @@ export default function App() {
 				onAddWorkspace={addWorkspace}
 				onRenameWorkspace={renameWorkspace}
 				onDeleteWorkspace={deleteWorkspace}
+				onExportBackup={exportFullBackup}
+				onExportCSV={exportCSV}
+				onExportTheme={exportTheme}
+				onImportBackup={handleImportBackup}
+				onImportTheme={handleImportTheme}
+				backupFileRef={backupFileRef}
+				themeFileRef={themeFileRef}
+				onSignOut={handleSignOut}
 			  />
 			)}
 
