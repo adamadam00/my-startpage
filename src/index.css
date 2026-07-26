@@ -4089,3 +4089,85 @@ input[type="number"]:focus {
 .s2-adv-global { display: flex; align-items: center; gap: 0.3rem; font-size: 0.72em; color: var(--text-dim); cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 .s2-adv-global input { accent-color: var(--accent); cursor: pointer; }
 .s2-adv-global:hover { color: var(--text); }
+
+/* ═══════════════════════════════════════════════════════════════
+   30. DEEP SPACE — layered nebula with depth, drifting clouds,
+   parallax stars, atmospheric glow. Cohesive, realistic-styled.
+   ═══════════════════════════════════════════════════════════════ */
+html.bg-30-deepspace {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 0%, #0a0e1f 0%, transparent 60%),
+    radial-gradient(ellipse 100% 100% at 80% 100%, #0d0a1a 0%, transparent 55%),
+    linear-gradient(180deg, #050510 0%, #03030b 50%, #020208 100%);
+  overflow: hidden;
+}
+
+/* Layer 1: distant nebula clouds — soft coloured depth */
+html.bg-30-deepspace::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  width: 140%;
+  height: 140%;
+  background-image:
+    radial-gradient(ellipse 45% 35% at 25% 30%, var(--ds-neb1, rgba(70, 90, 180, 0.18)) 0%, transparent 55%),
+    radial-gradient(ellipse 40% 50% at 75% 55%, var(--ds-neb2, rgba(120, 60, 160, 0.15)) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 40% at 55% 80%, var(--ds-neb3, rgba(40, 90, 150, 0.13)) 0%, transparent 55%),
+    radial-gradient(ellipse 35% 45% at 88% 20%, var(--ds-neb2, rgba(90, 50, 140, 0.12)) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 10% 70%, var(--ds-neb1, rgba(50, 70, 160, 0.10)) 0%, transparent 55%);
+  filter: blur(30px);
+  animation: deepspace-nebula calc(120s / var(--ds-speed, 1)) ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+/* Layer 2: star field with subtle parallax + twinkle */
+html.bg-30-deepspace::after {
+  content: '';
+  position: fixed;
+  inset: -30%;
+  width: 160%;
+  height: 160%;
+  background-image:
+    /* bright foreground stars */
+    radial-gradient(1.4px 1.4px at 12% 18%, rgba(255,255,255,0.95) 0%, transparent 100%),
+    radial-gradient(1.6px 1.6px at 43% 8%, rgba(255,250,240,0.9) 0%, transparent 100%),
+    radial-gradient(1.3px 1.3px at 88% 78%, rgba(255,255,255,0.9) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 6% 88%, rgba(220,230,255,0.95) 0%, transparent 100%),
+    radial-gradient(1.4px 1.4px at 67% 62%, rgba(255,255,255,0.85) 0%, transparent 100%),
+    /* mid stars */
+    radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 52% 32%, rgba(200,210,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 71% 44%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 20% 42%, rgba(255,245,235,0.65) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 30%, rgba(210,220,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 38% 88%, rgba(255,255,255,0.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 92%, rgba(230,235,255,0.6) 0%, transparent 100%),
+    /* faint dust stars */
+    radial-gradient(0.6px 0.6px at 15% 55%, rgba(255,255,255,0.45) 0%, transparent 100%),
+    radial-gradient(0.6px 0.6px at 48% 50%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(0.6px 0.6px at 78% 88%, rgba(255,255,255,0.45) 0%, transparent 100%),
+    radial-gradient(0.6px 0.6px at 92% 60%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(0.6px 0.6px at 25% 12%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(0.6px 0.6px at 62% 20%, rgba(255,255,255,0.45) 0%, transparent 100%);
+  background-repeat: repeat;
+  background-size: calc(900px / var(--ds-density, 1)) calc(900px / var(--ds-density, 1));
+  animation: deepspace-stars calc(200s / var(--ds-speed, 1)) linear infinite, deepspace-twinkle calc(8s / var(--ds-speed, 1)) ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes deepspace-nebula {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.85; }
+  50%  { transform: translate(-2%, 1.5%) scale(1.05); opacity: 1; }
+  100% { transform: translate(1.5%, -1%) scale(1.02); opacity: 0.9; }
+}
+
+@keyframes deepspace-stars {
+  0%   { transform: translate(0, 0); }
+  100% { transform: translate(-4%, -3%); }
+}
+
+@keyframes deepspace-twinkle {
+  0%, 100% { opacity: 0.85; }
+  50%      { opacity: 1; }
+}

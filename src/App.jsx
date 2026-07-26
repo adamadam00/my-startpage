@@ -1581,6 +1581,12 @@ function applyTheme(t) {
   s('--bg-star-size', t.bgStarSize ?? 1)
   s('--bg-star-density', t.bgStarDensity ? t.bgStarDensity / 100 : 1)
   s('--bg-star-speed', (t.bgStarSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
+  // Deep space (30-deepspace)
+  s('--ds-neb1', t.dsNeb1 || 'rgba(70, 90, 180, 0.18)')
+  s('--ds-neb2', t.dsNeb2 || 'rgba(120, 60, 160, 0.15)')
+  s('--ds-neb3', t.dsNeb3 || 'rgba(40, 90, 150, 0.13)')
+  s('--ds-speed', (t.dsSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
+  s('--ds-density', t.dsDensity ?? 1)
   // Star streaks
   s('--bg-streak-bg', t.bgStreakBg || '#02020f')
   if (t.bgStreakC1) { const r = hexRgb(t.bgStreakC1); s('--bg-streak-c1', `rgba(${r},0.9)`) }

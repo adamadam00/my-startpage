@@ -1,6 +1,14 @@
 import { useState } from 'react'
 
 // ── HELPERS ──────────────────────────────────────────────────────
+const hexToRgba = (hex, alpha) => {
+  const h = hex.replace('#', '')
+  const r = parseInt(h.substring(0, 2), 16)
+  const g = parseInt(h.substring(2, 4), 16)
+  const b = parseInt(h.substring(4, 6), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
 const Toggle = ({ checked, onChange }) => (
   <button className="s2-toggle" data-on={checked} onClick={() => onChange(!checked)}>
     <span className="s2-toggle-thumb" />
@@ -47,6 +55,7 @@ const BG_PRESETS = [
   { label: '03-Shapes', v: '03-dots' }, { label: '04-Grid', v: '04-grid' },
   { label: '05-Gradient', v: '05-gradient' }, { label: '06-Mesh', v: '06-mesh' },
   { label: '07-Nebula', v: '07-nebula' }, { label: '08-Stars', v: '16-starfield-old' },
+  { label: '08c-DeepSpace', v: '30-deepspace' },
   { label: '08b-Streaks', v: '29-star-streaks' }, { label: '09-Plasma', v: '17-plasma' },
   { label: '10-Inferno', v: '18-inferno' }, { label: '11-Mint', v: '19-mint' },
   { label: '12-Dusk', v: '20-dusk' }, { label: '13-Mono', v: '21-mono' },
@@ -127,6 +136,23 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
               ))}
             </div>
             <Row label="Animation speed" {...r}><Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={300} onChange={v => set('bgAnimSpeed', v / 100)} unit="%" /></Row>
+            {theme.bgPreset === '30-deepspace' && (
+              <>
+                <div className="s2-section-title">Deep Space</div>
+                <Row label="Nebula color 1" {...r}><ColorPick value={theme.dsNeb1Hex || '#465ab4'} onChange={v => { set('dsNeb1Hex', v); set('dsNeb1', hexToRgba(v, theme.dsNeb1Opacity ?? 0.18)) }} /></Row>
+                <Row label="Nebula color 2" {...r}><ColorPick value={theme.dsNeb2Hex || '#783ca0'} onChange={v => { set('dsNeb2Hex', v); set('dsNeb2', hexToRgba(v, theme.dsNeb2Opacity ?? 0.15)) }} /></Row>
+                <Row label="Nebula color 3" {...r}><ColorPick value={theme.dsNeb3Hex || '#285a96'} onChange={v => { set('dsNeb3Hex', v); set('dsNeb3', hexToRgba(v, theme.dsNeb3Opacity ?? 0.13)) }} /></Row>
+                <Row label="Nebula intensity" {...r}><Slider val={Math.round((theme.dsNeb1Opacity ?? 0.18) * 100)} min={0} max={50} onChange={v => {
+                  const o = v / 100
+                  set('dsNeb1Opacity', o); set('dsNeb2Opacity', o * 0.83); set('dsNeb3Opacity', o * 0.72)
+                  set('dsNeb1', hexToRgba(theme.dsNeb1Hex || '#465ab4', o))
+                  set('dsNeb2', hexToRgba(theme.dsNeb2Hex || '#783ca0', o * 0.83))
+                  set('dsNeb3', hexToRgba(theme.dsNeb3Hex || '#285a96', o * 0.72))
+                }} unit="%" /></Row>
+                <Row label="Star density" {...r}><Slider val={Math.round((theme.dsDensity ?? 1) * 100)} min={40} max={250} onChange={v => set('dsDensity', v / 100)} unit="%" /></Row>
+                <Row label="Drift speed" {...r}><Slider val={Math.round((theme.dsSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('dsSpeed', v / 100)} unit="%" /></Row>
+              </>
+            )}
             {advOpen() && <>
               <Row label="BG color 1" {...r}><ColorPick value={theme.bgC1 || '#2a4a6a'} onChange={v => set('bgC1', v)} /></Row>
               <Row label="BG color 2" {...r}><ColorPick value={theme.bgC2 || '#4a2a5a'} onChange={v => set('bgC2', v)} /></Row>
