@@ -2078,7 +2078,7 @@ export default function App() {
     
     if (!data?.length) {
       const { data: created, error: err } = await supabase
-        .from('workspaces').insert({ user_id: session.user.id, name: 'Home' }).select().single()
+        .from('workspaces').insert({ user_id: session?.user?.id, name: 'Home' }).select().single()
       if (err) { alert(err.message); return }
       setWorkspaces([created])
       setActiveWs(created.id)
@@ -2272,7 +2272,7 @@ export default function App() {
     
     const { data, error } = await supabase
       .from('workspaces').insert({ 
-        user_id: session.user.id, 
+        user_id: session?.user?.id, 
         name: wsName.trim(),
         visibility: visibility 
       }).select().single()
@@ -2497,9 +2497,15 @@ export default function App() {
 	  const bgStyle = (bgImage && theme.bgPreset === 'image') ? { backgroundImage: `url(${bgImage})` } : {}
 	  const bgDataAttrs = theme.bgPreset === '03-dots' ? { 'data-pattern': theme.bgDotPattern || 'circles' } : {}
 
+	  // Render from cache immediately if we have cached workspaces.
+	  // Only show the login screen when auth is confirmed absent.
+	  const hasCachedContent = workspaces.length > 0
 	  if (!session) {
+	    // Auth confirmed logged out — show login (even if stale cache exists)
 	    if (authChecked) return <Auth />
-	    return <div className="center-fill">Loading…</div>
+	    // Still checking auth: show cached content if we have it, else Loading
+	    if (!hasCachedContent) return <div className="center-fill">Loading…</div>
+	    // else: fall through and render cached content while auth resolves in background
 	  }
 
 	  return (
@@ -2709,7 +2715,7 @@ export default function App() {
 				  links={searchMode === 'links' ? filteredLinks : links}
 				  widgetPanel={<WidgetPanel theme={theme} setTheme={setTheme} forceCollapsed={allCollapsed ? true : undefined} />}
 				  widgetPanelPosition={theme.widgetPanelPosition || 'above'}
-				  userId={session.user.id}
+				  userId={session?.user?.id}
 				  workspaceId={activeWs}
 				  onRefresh={handleRefresh}
 				  colCount={theme.sectionsCols ?? 6}
@@ -2724,7 +2730,7 @@ export default function App() {
 					const { error } = await supabase
 					  .from('sections')
 					  .insert({
-						user_id: session.user.id,
+						user_id: session?.user?.id,
 						workspace_id: activeWs,
 						name: sectionName,
 						position: sections.length,
@@ -2742,7 +2748,7 @@ export default function App() {
 				  const wsId = isMobile && homeWsId ? homeWsId : activeWs
 				  return (
 					<Notepad
-					  userId={session.user.id}
+					  userId={session?.user?.id}
 					  workspaceId={wsId}
 					  workspaces={workspaces}
 					  onRefresh={handleRefresh}
