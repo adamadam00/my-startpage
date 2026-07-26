@@ -56,6 +56,9 @@ const BG_PRESETS = [
   { label: '05-Gradient', v: '05-gradient' }, { label: '06-Mesh', v: '06-mesh' },
   { label: '07-Nebula', v: '07-nebula' }, { label: '08-Stars', v: '16-starfield-old' },
   { label: '08c-DeepSpace', v: '30-deepspace' },
+  { label: '31-Aurora', v: '31-aurora' },
+  { label: '32-Ocean', v: '32-ocean' },
+  { label: '33-Mesh', v: '33-mesh' },
   { label: '08b-Streaks', v: '29-star-streaks' }, { label: '09-Plasma', v: '17-plasma' },
   { label: '10-Inferno', v: '18-inferno' }, { label: '11-Mint', v: '19-mint' },
   { label: '12-Dusk', v: '20-dusk' }, { label: '13-Mono', v: '21-mono' },
@@ -151,6 +154,48 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
                 }} unit="%" /></Row>
                 <Row label="Star density" {...r}><Slider val={Math.round((theme.dsDensity ?? 1) * 100)} min={40} max={250} onChange={v => set('dsDensity', v / 100)} unit="%" /></Row>
                 <Row label="Drift speed" {...r}><Slider val={Math.round((theme.dsSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('dsSpeed', v / 100)} unit="%" /></Row>
+              </>
+            )}
+            {theme.bgPreset === '31-aurora' && (
+              <>
+                <div className="s2-section-title">Aurora</div>
+                <Row label="Light color 1" {...r}><ColorPick value={theme.auC1Hex || '#2ddca0'} onChange={v => { set('auC1Hex', v); set('auC1', hexToRgba(v, theme.auOpacity ?? 0.22)) }} /></Row>
+                <Row label="Light color 2" {...r}><ColorPick value={theme.auC2Hex || '#508cf0'} onChange={v => { set('auC2Hex', v); set('auC2', hexToRgba(v, (theme.auOpacity ?? 0.22) * 0.9)) }} /></Row>
+                <Row label="Light color 3" {...r}><ColorPick value={theme.auC3Hex || '#965ae6'} onChange={v => { set('auC3Hex', v); set('auC3', hexToRgba(v, (theme.auOpacity ?? 0.22) * 0.73)) }} /></Row>
+                <Row label="Intensity" {...r}><Slider val={Math.round((theme.auOpacity ?? 0.22) * 100)} min={5} max={50} onChange={v => {
+                  const o = v / 100
+                  set('auOpacity', o)
+                  set('auC1', hexToRgba(theme.auC1Hex || '#2ddca0', o))
+                  set('auC2', hexToRgba(theme.auC2Hex || '#508cf0', o * 0.9))
+                  set('auC3', hexToRgba(theme.auC3Hex || '#965ae6', o * 0.73))
+                }} unit="%" /></Row>
+                <Row label="Flow speed" {...r}><Slider val={Math.round((theme.auSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('auSpeed', v / 100)} unit="%" /></Row>
+              </>
+            )}
+            {theme.bgPreset === '32-ocean' && (
+              <>
+                <div className="s2-section-title">Deep Ocean</div>
+                <Row label="Water color" {...r}><ColorPick value={theme.ocTop || '#0a3550'} onChange={v => set('ocTop', v)} /></Row>
+                <Row label="Ray color" {...r}><ColorPick value={theme.ocRayHex || '#78c8e6'} onChange={v => { set('ocRayHex', v); set('ocRay', hexToRgba(v, theme.ocRayOpacity ?? 0.10)) }} /></Row>
+                <Row label="Ray intensity" {...r}><Slider val={Math.round((theme.ocRayOpacity ?? 0.10) * 100)} min={2} max={30} onChange={v => { const o = v / 100; set('ocRayOpacity', o); set('ocRay', hexToRgba(theme.ocRayHex || '#78c8e6', o)) }} unit="%" /></Row>
+                <Row label="Particle density" {...r}><Slider val={Math.round((theme.ocDensity ?? 1) * 100)} min={40} max={250} onChange={v => set('ocDensity', v / 100)} unit="%" /></Row>
+                <Row label="Drift speed" {...r}><Slider val={Math.round((theme.ocSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('ocSpeed', v / 100)} unit="%" /></Row>
+              </>
+            )}
+            {theme.bgPreset === '33-mesh' && (
+              <>
+                <div className="s2-section-title">Gradient Mesh</div>
+                <Row label="Blob color 1" {...r}><ColorPick value={theme.meC1Hex || '#5a46c8'} onChange={v => { set('meC1Hex', v); set('meC1', hexToRgba(v, theme.meOpacity ?? 0.30)) }} /></Row>
+                <Row label="Blob color 2" {...r}><ColorPick value={theme.meC2Hex || '#c83c82'} onChange={v => { set('meC2Hex', v); set('meC2', hexToRgba(v, (theme.meOpacity ?? 0.30) * 0.83)) }} /></Row>
+                <Row label="Blob color 3" {...r}><ColorPick value={theme.meC3Hex || '#3282d2'} onChange={v => { set('meC3Hex', v); set('meC3', hexToRgba(v, (theme.meOpacity ?? 0.30) * 0.73)) }} /></Row>
+                <Row label="Intensity" {...r}><Slider val={Math.round((theme.meOpacity ?? 0.30) * 100)} min={10} max={60} onChange={v => {
+                  const o = v / 100
+                  set('meOpacity', o)
+                  set('meC1', hexToRgba(theme.meC1Hex || '#5a46c8', o))
+                  set('meC2', hexToRgba(theme.meC2Hex || '#c83c82', o * 0.83))
+                  set('meC3', hexToRgba(theme.meC3Hex || '#3282d2', o * 0.73))
+                }} unit="%" /></Row>
+                <Row label="Morph speed" {...r}><Slider val={Math.round((theme.meSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('meSpeed', v / 100)} unit="%" /></Row>
               </>
             )}
             {advOpen() && <>
