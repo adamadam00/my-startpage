@@ -2048,6 +2048,7 @@ html.bg-29-carbon::after {
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
   align-self: flex-start;
+  padding-top: 0;
 }
 
 .section-col {
@@ -3626,8 +3627,8 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .notepad-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px);
-  max-height: calc(100vh - 80px);
+  height: calc(100vh - 80px - 1.8rem);
+  max-height: calc(100vh - 80px - 1.8rem);
   width: 100%;
   max-width: 100%;
   border-radius: var(--section-radius, var(--radius));
@@ -3876,6 +3877,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   width: 100% !important;
   max-width: 100% !important;
   overflow: hidden !important;
+  padding-top: 1.8rem;
 }
 
 /* Notepad file image preview with zoom */
