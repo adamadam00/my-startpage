@@ -2048,7 +2048,7 @@ html.bg-29-carbon::after {
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
   align-self: flex-start;
-  padding-top: 0;
+  padding-top: 2.1rem;
 }
 
 .section-col {
@@ -3368,11 +3368,18 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 /* ── Widget Panel ──────────────────────────────────────────────── */
 .widget-panel {
   margin-bottom: 0.75rem;
-  border-radius: var(--radius);
-  border: 1px solid var(--border);
-  background: var(--card);
+  border-radius: var(--section-radius);
+  outline: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
+  border: none;
+  background-color: var(--card-with-opacity, var(--card));
+  background-image: var(--panels-gradient, none);
+  background-size: var(--viewport-width, 100vw) var(--viewport-height, 100vh);
+  background-repeat: no-repeat;
+  background-blend-mode: var(--panels-gradient-blend, normal);
+  box-shadow: var(--card-shadow, none);
   overflow: hidden;
   position: relative;
+  z-index: 1;
 }
 .widget-panel[data-collapsed='true'] {
   margin-bottom: 0.5rem;
@@ -3381,10 +3388,10 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.4rem 0.6rem;
+  padding: var(--header-padding, 0.42rem) var(--card-padding, 0.5rem);
   user-select: none;
-  background: color-mix(in srgb, var(--card) 80%, var(--accent) 8%);
-  border-bottom: 1px solid var(--border);
+  background: var(--title-bg-with-opacity, var(--title-bg, var(--card)));
+  border-bottom: 1px solid color-mix(in srgb, var(--border) calc(var(--border-opacity) * 100%), transparent);
   gap: 0.4rem;
 }
 .widget-panel-icons { display: flex; gap: 0.3rem; align-items: center; }
@@ -3627,8 +3634,8 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .notepad-container {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 80px - 1.8rem);
-  max-height: calc(100vh - 80px - 1.8rem);
+  height: calc(100vh - 80px - 2.1rem);
+  max-height: calc(100vh - 80px - 2.1rem);
   width: 100%;
   max-width: 100%;
   border-radius: var(--section-radius, var(--radius));
@@ -3877,7 +3884,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   width: 100% !important;
   max-width: 100% !important;
   overflow: hidden !important;
-  padding-top: 1.8rem;
+  padding-top: 2.1rem;
 }
 
 /* Notepad file image preview with zoom */
