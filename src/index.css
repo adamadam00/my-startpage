@@ -2047,8 +2047,6 @@ html.bg-29-carbon::after {
   display: flex;
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
-  position: sticky;
-  top: 60px;
   align-self: flex-start;
 }
 
@@ -3877,7 +3875,7 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
 .side-col.notepad-active {
   width: 100% !important;
   max-width: 100% !important;
-  overflow-x: hidden;
+  overflow: hidden !important;
 }
 
 /* Notepad file image preview with zoom */

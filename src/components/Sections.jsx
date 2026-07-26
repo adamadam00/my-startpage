@@ -928,7 +928,7 @@ export default function Sections({
               )}
               {isArchiveColumn && (
                 <span className="col-header-label" style={{ color: 'var(--col-header-color)' }}>
-                  Info Section
+                  &nbsp;
                 </span>
               )}
             </div>
