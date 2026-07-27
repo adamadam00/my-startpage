@@ -2048,7 +2048,7 @@ html.bg-29-carbon::after {
   flex-direction: column;
   gap: var(--section-gap, 0.18rem);
   align-self: flex-start;
-  padding-top: 1.4rem;
+  padding-top: 0.5rem;
 }
 
 .section-col {
