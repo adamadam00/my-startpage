@@ -69,7 +69,7 @@ const BG_PRESETS = [
 ]
 
 // ── MAIN ─────────────────────────────────────────────────────────
-export default function Settings2({ theme, setTheme, onClose, workspaces = [], activeWs, setActiveWs, onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onExportBackup, onExportCSV, onExportTheme, onImportBackup, onImportTheme, backupFileRef, themeFileRef, onSignOut }) {
+export default function Settings2({ theme, setTheme, onClose, workspaces = [], activeWs, setActiveWs, onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onExportBackup, onExportCSV, onExportHTML, onExportTheme, onImportBackup, onImportTheme, backupFileRef, themeFileRef, onSignOut }) {
   const [newWsName, setNewWsName] = useState('')
   const [tab, setTab] = useState('appearance')
   const [search, setSearch] = useState('')
@@ -358,6 +358,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.3rem 0' }}>
               <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportBackup?.()}>↓ Export full backup (JSON)</button>
               <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportCSV?.()}>↓ Export links (CSV)</button>
+              <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportHTML?.()}>↓ Export bookmarks (HTML for Firefox)</button>
               <button className="s2-btn" style={{ flex: 'none' }} onClick={() => onExportTheme?.()}>↓ Export theme</button>
               <button className="s2-btn" style={{ flex: 'none' }} onClick={() => backupFileRef?.current?.click()}>↑ Import backup (JSON/CSV)</button>
               <button className="s2-btn" style={{ flex: 'none' }} onClick={() => themeFileRef?.current?.click()}>↑ Import theme</button>

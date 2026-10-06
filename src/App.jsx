@@ -2378,6 +2378,31 @@ export default function App() {
 		a.download = 'startpage-links.csv'; a.click()
 	  }
 
+	  const exportHTML = async () => {
+		const { data: secs } = await supabase.from('sections').select('*').eq('workspace_id', activeWs).order('position')
+		const { data: lnks } = await supabase.from('links').select('*').eq('workspace_id', activeWs).order('position')
+		const wsName = workspaces.find(w => w.id === activeWs)?.name || 'Startpage'
+		const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+		const now = Math.floor(Date.now() / 1000)
+		let html = '<!DOCTYPE NETSCAPE-Bookmark-file-1>\n'
+		html += '<!-- This is an automatically generated file. It will be read and overwritten. -->\n'
+		html += '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">\n'
+		html += '<TITLE>Bookmarks</TITLE>\n<H1>Bookmarks</H1>\n<DL><p>\n'
+		html += `    <DT><H3 ADD_DATE="${now}" LAST_MODIFIED="${now}">${esc(wsName)}</H3>\n    <DL><p>\n`
+		secs?.forEach(s => {
+			html += `        <DT><H3 ADD_DATE="${now}" LAST_MODIFIED="${now}">${esc(s.name)}</H3>\n        <DL><p>\n`
+			lnks?.filter(l => l.section_id === s.id).forEach(l => {
+				html += `            <DT><A HREF="${esc(l.url)}" ADD_DATE="${now}">${esc(l.title)}</A>\n`
+			})
+			html += '        </DL><p>\n'
+		})
+		html += '    </DL><p>\n</DL><p>\n'
+		const a = document.createElement('a')
+		a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+		a.download = `startpage-bookmarks-${wsName.toLowerCase().replace(/\s+/g, '-')}.html`
+		a.click()
+	  }
+
 	  const exportTheme = () => {
 		const { wallpaper, ...themeExport } = theme
 		const exportData = { ...themeExport, exportedAt: new Date().toISOString() }
@@ -2793,6 +2818,7 @@ export default function App() {
 				onDeleteWorkspace={deleteWorkspace}
 				onExportBackup={exportFullBackup}
 				onExportCSV={exportCSV}
+				onExportHTML={exportHTML}
 				onExportTheme={exportTheme}
 				onImportBackup={handleImportBackup}
 				onImportTheme={handleImportTheme}

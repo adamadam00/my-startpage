@@ -26,6 +26,20 @@ export default function Auth() {
     setLoading(false)
   }
 
+  const sendMagicLink = async () => {
+    if (!email) { setError('Enter your email first'); return }
+    setLoading(true)
+    setError('')
+    setMessage('')
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin }
+    })
+    if (error) setError(error.message)
+    else setMessage('Check your email for a login link.')
+    setLoading(false)
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -89,6 +103,19 @@ export default function Auth() {
             {loading ? '...' : mode === 'login' ? 'sign in' : 'create account'}
           </button>
         </form>
+
+        {mode === 'login' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '16px 0 12px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+              <span style={{ fontSize: '11px', color: 'var(--text-dim)' }}>or</span>
+              <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
+            </div>
+            <button onClick={sendMagicLink} disabled={loading} style={{ ...btnStyle, background: 'transparent', border: '1px solid var(--accent)', color: 'var(--accent)', marginTop: 0, width: '100%' }}>
+              {loading ? '...' : '✉ email me a login link'}
+            </button>
+          </>
+        )}
 
         <p style={{ marginTop: '18px', fontSize: '12px', color: 'var(--text-dim)', textAlign: 'center' }}>
           {mode === 'login' ? "no account? " : "have an account? "}
