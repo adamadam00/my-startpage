@@ -14,6 +14,7 @@ function inlineMarkdown(text) {
   let t = text
   // links [text](url)
   t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, label, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`)
+  // bold **x** or __x__
   t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
   t = t.replace(/__([^_]+)__/g, '<strong>$1</strong>')
   // italic *x* or _x_
