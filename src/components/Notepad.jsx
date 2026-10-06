@@ -3,6 +3,97 @@ import { createPortal } from 'react-dom'
 import { supabase } from '../lib/supabase'
 import DOMPurify from 'dompurify'
 
+// ── PASTE CONVERSION: plain text → formatted HTML ──────────────────
+// Escapes HTML, then applies inline Markdown (bold/italic/code/links).
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+// Inline markdown within a single line of already-escaped text.
+function inlineMarkdown(text) {
+  let t = text
+  // links [text](url)
+  t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, label, url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`)
+  t = t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  t = t.replace(/__([^_]+)__/g, '<strong>$1</strong>')
+  // italic *x* or _x_
+  t = t.replace(/(^|[^*])\*([^*]+)\*($|[^*])/g, '$1<em>$2</em>$3')
+  t = t.replace(/(^|[^_])_([^_]+)_($|[^_])/g, '$1<em>$2</em>$3')
+  // inline code `x`
+  t = t.replace(/`([^`]+)`/g, '<code>$1</code>')
+  return t
+}
+
+// Convert pasted plain text into HTML that respects line breaks,
+// optional dash-as-new-line, and Markdown block + inline formatting.
+function convertPastedText(raw, { dashNewline = false, markdown = true } = {}) {
+  let text = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+
+  // Optionally treat " - " or a leading "- " mid-line as a line break.
+  if (dashNewline) {
+    // Split on a dash that starts a list item: newline or start, optional space, dash, space.
+    // Also break when a " - " appears inline (common in pasted single-slab notes).
+    text = text.replace(/\s+-\s+/g, '\n- ')
+  }
+
+  const lines = text.split('\n')
+  const htmlParts = []
+  let inList = false
+  let inOrdered = false
+
+  const closeLists = () => {
+    if (inList) { htmlParts.push('</ul>'); inList = false }
+    if (inOrdered) { htmlParts.push('</ol>'); inOrdered = false }
+  }
+
+  for (let rawLine of lines) {
+    const line = rawLine.replace(/\s+$/, '')
+    const escaped = escapeHtml(line)
+    const content = markdown ? inlineMarkdown(escaped) : escaped
+
+    if (line.trim() === '') {
+      closeLists()
+      htmlParts.push('<div><br></div>')
+      continue
+    }
+
+    if (markdown) {
+      // Headings
+      const h = line.match(/^(#{1,3})\s+(.*)$/)
+      if (h) {
+        closeLists()
+        const level = h[1].length
+        const inner = inlineMarkdown(escapeHtml(h[2]))
+        htmlParts.push(`<h${level}>${inner}</h${level}>`)
+        continue
+      }
+      // Unordered list: -, *, +
+      const ul = line.match(/^\s*[-*+]\s+(.*)$/)
+      if (ul) {
+        if (inOrdered) { htmlParts.push('</ol>'); inOrdered = false }
+        if (!inList) { htmlParts.push('<ul>'); inList = true }
+        htmlParts.push('<li>' + inlineMarkdown(escapeHtml(ul[1])) + '</li>')
+        continue
+      }
+      // Ordered list: 1. 2. etc
+      const ol = line.match(/^\s*\d+[.)]\s+(.*)$/)
+      if (ol) {
+        if (inList) { htmlParts.push('</ul>'); inList = false }
+        if (!inOrdered) { htmlParts.push('<ol>'); inOrdered = true }
+        htmlParts.push('<li>' + inlineMarkdown(escapeHtml(ol[1])) + '</li>')
+        continue
+      }
+    } else {
+      // No markdown, but still honour dash bullets visually as lines
+    }
+
+    closeLists()
+    htmlParts.push('<div>' + content + '</div>')
+  }
+  closeLists()
+  return htmlParts.join('')
+}
+
 // ── FILE ATTACHMENT with image preview + zoom ──────────────────────
 function NotepadFile({ file, tabId, onRefresh, userId }) {
   const [imageUrl, setImageUrl] = useState(null)
@@ -58,6 +149,18 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
   }, [activeTab, workspaceId])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [pasteDashSplit, setPasteDashSplit] = useState(() => {
+    try { return localStorage.getItem('notepad_paste_dash_split') === '1' } catch { return false }
+  })
+  const toggleDashSplit = () => {
+    setPasteDashSplit(prev => {
+      const next = !prev
+      try { localStorage.setItem('notepad_paste_dash_split', next ? '1' : '0') } catch {}
+      return next
+    })
+  }
+  const pasteDashRef = useRef(pasteDashSplit)
+  useEffect(() => { pasteDashRef.current = pasteDashSplit }, [pasteDashSplit])
   const [showNewTabMenu, setShowNewTabMenu] = useState(false)
   const editorRef = useRef(null)
   const [selectedImg, setSelectedImg] = useState(null) // { el, src, width }
@@ -500,6 +603,13 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           <div className="np-sep" />
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={dashToBullets} title="Convert dashes to bullets">⇢•</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={() => { editorRef.current?.focus(); document.execCommand('undo') }} title="Undo (Ctrl+Z)">↩</button>
+          <button
+            className={`np-btn${pasteDashSplit ? ' np-btn-active' : ''}`}
+            onMouseDown={e => e.preventDefault()}
+            onClick={toggleDashSplit}
+            title={pasteDashSplit ? 'Paste: dash (-) starts a new line — ON' : 'Paste: dash (-) starts a new line — OFF'}
+            style={{ fontSize: '0.78em' }}
+          >-¶</button>
           <button className="np-btn" onMouseDown={e => e.preventDefault()} onClick={attachFile} title="Attach file">📎</button>
           <div style={{ flex: 1 }} />
           <span className={`np-save-light ${saving ? 'saving' : saved ? 'saved' : ''}`} title={saving ? 'Saving...' : saved ? 'Saved' : 'Idle'} />
@@ -527,8 +637,19 @@ export default function Notepad({ userId, workspaceId, workspaces = [], onRefres
           onClick={handleEditorClick}
           onPaste={(e) => {
             e.preventDefault()
-            const text = e.clipboardData.getData('text/html') || e.clipboardData.getData('text/plain')
-            document.execCommand('insertHTML', false, DOMPurify.sanitize(text))
+            const html = e.clipboardData.getData('text/html')
+            const plain = e.clipboardData.getData('text/plain')
+            let out
+            if (html && html.trim()) {
+              // Rich source (web page, doc) — keep its real structure.
+              out = DOMPurify.sanitize(html)
+            } else {
+              // Plain text (Notepad etc.) — rebuild line breaks + markdown.
+              out = DOMPurify.sanitize(
+                convertPastedText(plain, { dashNewline: pasteDashRef.current, markdown: true })
+              )
+            }
+            document.execCommand('insertHTML', false, out)
             handleInput()
           }}
           onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add('notepad-drag-over') }}

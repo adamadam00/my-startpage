@@ -3750,6 +3750,8 @@ background: color-mix(in srgb, var(--scrollbar-thumb-color, var(--accent)) 82%, 
   text-align: center;
 }
 .np-btn:hover { background: color-mix(in srgb, var(--accent) 20%, transparent); border-color: var(--border); }
+.np-btn-active { background: color-mix(in srgb, var(--accent) 30%, transparent); border-color: var(--accent); color: var(--accent); }
+.np-btn-active:hover { background: color-mix(in srgb, var(--accent) 40%, transparent); }
 .np-sep { width: 1px; height: 1.2em; background: var(--border); opacity: 0.4; margin: 0 0.15rem; }
 
 .np-color-dot {
