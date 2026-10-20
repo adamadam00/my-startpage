@@ -4544,5 +4544,6 @@ html.bg-35-rain::after {
   display: none !important;
 }
 
-/* Coffee bloom base (WebGL liquid layer draws over this) */
-.bg-40-coffee-bloom { background: #140b06; overflow: hidden; }
+/* WebGL liquid variants — base colour fallback behind the canvas */
+.bg-41-rose-swirl { background: #f6eeee; overflow: hidden; }
+.bg-42-jade-swirl { background: #04100d; overflow: hidden; }

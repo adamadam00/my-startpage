@@ -10,9 +10,10 @@ import './index.css'
 
 // ─── LIQUID BACKGROUND (WebGL — domain-warped flow, real liquid) ──────────────
 const LIQUID_CFG = {
-  '38-milk-rings':   { lo: [0.78, 0.75, 0.69], hi: [1.0, 0.995, 0.975], sh: [0.66, 0.62, 0.55], speed: 0.045, scale: 2.6 },
-  '39-ink-oil':      { lo: [0.03, 0.03, 0.045], hi: [0.24, 0.27, 0.40], sh: [0.0, 0.0, 0.0],     speed: 0.040, scale: 2.6 },
-  '40-coffee-bloom': { lo: [0.12, 0.07, 0.035], hi: [0.86, 0.69, 0.46], sh: [0.05, 0.025, 0.012], speed: 0.050, scale: 2.4 },
+  '38-milk-rings': { lo: [0.78, 0.75, 0.69], hi: [1.0, 0.995, 0.975], sh: [0.66, 0.62, 0.55], speed: 0.045, scale: 2.6 },
+  '39-ink-oil':    { lo: [0.02, 0.02, 0.03], hi: [0.20, 0.20, 0.23],  sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
+  '41-rose-swirl': { lo: [0.82, 0.72, 0.73], hi: [1.0, 0.96, 0.95],   sh: [0.74, 0.58, 0.60], speed: 0.045, scale: 2.6 },
+  '42-jade-swirl': { lo: [0.03, 0.06, 0.055], hi: [0.20, 0.36, 0.32], sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
 }
 const LIQUID_FS = [
   'precision highp float;',
@@ -37,9 +38,11 @@ const LIQUID_FS = [
 ].join('\n')
 const LIQUID_VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}'
 
-function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0 }) {
+function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0, speed = 1 }) {
   const ref = useRef(null)
   const cfg = LIQUID_CFG[preset]
+  const live = useRef({ contrast, speed })
+  live.current = { contrast, speed }
   useEffect(() => {
     if (!cfg) return
     const cv = ref.current
@@ -78,7 +81,9 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0 }) {
       gl.useProgram(prog)
       gl.uniform2f(uRes, cv.width, cv.height)
       gl.uniform1f(uTime, (performance.now() - t0) / 1000)
-      gl.uniform1f(uScale, cfg.scale); gl.uniform1f(uContrast, contrast); gl.uniform1f(uSpeed, cfg.speed)
+      gl.uniform1f(uScale, cfg.scale)
+      gl.uniform1f(uContrast, live.current.contrast)
+      gl.uniform1f(uSpeed, cfg.speed * live.current.speed)
       gl.uniform3fv(uLo, cfg.lo); gl.uniform3fv(uHi, cfg.hi); gl.uniform3fv(uSh, cfg.sh)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
       timer = setTimeout(() => { raf = requestAnimationFrame(draw) }, 1000 / 30)
@@ -89,7 +94,7 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0 }) {
       if (ro) ro.disconnect(); else window.removeEventListener('resize', resize)
       const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext()
     }
-  }, [preset, contrast])
+  }, [preset])
   if (!cfg) return null
   return (
     <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength) }}>
@@ -2676,7 +2681,7 @@ export default function App() {
 		  
 		  <div className="app" ref={contentRef}>
 
-			<LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} blur={theme.creamBlur ?? 0} />
+			<LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} blur={theme.creamBlur ?? 0} speed={theme.creamSpeed ?? 1} />
 
 			{/* Background blur overlay */}
 			{(theme.bgBlur ?? 0) > 0 ? (

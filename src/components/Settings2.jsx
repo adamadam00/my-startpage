@@ -65,7 +65,8 @@ const BG_PRESETS = [
   { label: '35-Ink', v: '37-ink-plasma', palette: 'ink' },
   { label: '36-MilkSwirl', v: '38-milk-rings', palette: 'milk' },
   { label: '37-InkSwirl', v: '39-ink-oil', palette: 'ink' },
-  { label: '38-Coffee', v: '40-coffee-bloom', palette: 'coffee' },
+  { label: '38-RoseSwirl', v: '41-rose-swirl', palette: 'rose' },
+  { label: '39-JadeSwirl', v: '42-jade-swirl', palette: 'jade' },
 ]
 
 // Complete colour palettes applied when a themed preset is chosen.
@@ -94,17 +95,29 @@ const THEME_PALETTES = {
     colHeaderColor: '#6a6a80',
     notesCardBg: '#0b0b11', notesTextColor: '#e4e4ee', notesTextBg: '#060609', notesSharedBg: '#121219',
   },
-  coffee: {
+  rose: {
     cardsGradientEnabled: false,
-    bg: '#140b06', bg2: '#1d1109', bg3: '#2a1a0e',
-    card: '#1d1109', cardOpacity: 1, titleBg: '#160d06',
-    border: '#3a2614', borderHover: '#4e351c', borderOpacity: 1,
-    text: '#f0e2cf', textDim: '#b89b76', textMuted: '#8a7254', titleColor: '#d8bf98',
-    linkColor: '#d2a35a', linkVisitedColor: '#c98a5a',
-    accent: '#c98a3c', danger: '#e0683c', success: '#8fb36a',
-    scrollbarColor: '#2a1a0e', scrollbarThumbColor: '#6b4a28',
-    colHeaderColor: '#b89b76',
-    notesCardBg: '#1d1109', notesTextColor: '#f0e2cf', notesTextBg: '#160d06', notesSharedBg: '#2a1a0e',
+    bg: '#f6eeee', bg2: '#efe4e4', bg3: '#e6d8d8',
+    card: '#fcf6f5', cardOpacity: 1, titleBg: '#f1e6e6',
+    border: '#ddcccd', borderHover: '#c9b3b4', borderOpacity: 1,
+    text: '#2e2627', textDim: '#7a6668', textMuted: '#9a8486', titleColor: '#4e4042',
+    linkColor: '#b0607a', linkVisitedColor: '#9a5fa0',
+    accent: '#c56a7a', danger: '#c0392b', success: '#2e8b57',
+    scrollbarColor: '#e6d8d8', scrollbarThumbColor: '#c3a9ab',
+    colHeaderColor: '#9a8486',
+    notesCardBg: '#fcf6f5', notesTextColor: '#2e2627', notesTextBg: '#f6eeee', notesSharedBg: '#f1e6e6',
+  },
+  jade: {
+    cardsGradientEnabled: false,
+    bg: '#04100d', bg2: '#081a16', bg3: '#0e2620',
+    card: '#081a16', cardOpacity: 1, titleBg: '#061511',
+    border: '#163a30', borderHover: '#1e5244', borderOpacity: 1,
+    text: '#dff0ea', textDim: '#78b0a0', textMuted: '#548274', titleColor: '#a8d8c8',
+    linkColor: '#4fd0a8', linkVisitedColor: '#5fb0c8',
+    accent: '#3cc99a', danger: '#ff6b80', success: '#6bffc0',
+    scrollbarColor: '#0e2620', scrollbarThumbColor: '#2a6b58',
+    colHeaderColor: '#78b0a0',
+    notesCardBg: '#081a16', notesTextColor: '#dff0ea', notesTextBg: '#061511', notesSharedBg: '#0e2620',
   },
 }
 
@@ -244,12 +257,13 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
                 <Row label="Morph speed" {...r}><Slider val={Math.round((theme.meSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('meSpeed', v / 100)} unit="%" /></Row>
               </>
             )}
-            {(theme.bgPreset === '38-milk-rings' || theme.bgPreset === '39-ink-oil' || theme.bgPreset === '40-coffee-bloom') && (
+            {['38-milk-rings', '39-ink-oil', '41-rose-swirl', '42-jade-swirl'].includes(theme.bgPreset) && (
               <>
                 <div className="s2-section-title">Swirl</div>
                 <Row label="Strength" {...r}><Slider val={Math.round((theme.creamStrength ?? 1) * 100)} min={10} max={200} onChange={v => set('creamStrength', v / 100)} unit="%" /></Row>
                 <Row label="Contrast" {...r}><Slider val={Math.round((theme.creamContrast ?? 1.7) * 100)} min={80} max={400} onChange={v => set('creamContrast', v / 100)} unit="%" /></Row>
                 <Row label="Blur" {...r}><Slider val={theme.creamBlur ?? 0} min={0} max={40} onChange={v => set('creamBlur', v)} unit="px" /></Row>
+                <Row label="Speed" {...r}><Slider val={Math.round((theme.creamSpeed ?? 1) * 100)} min={10} max={300} onChange={v => set('creamSpeed', v / 100)} unit="%" /></Row>
               </>
             )}
             {advOpen() && <>
