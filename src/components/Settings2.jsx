@@ -61,9 +61,35 @@ const BG_PRESETS = [
   { label: '31-Aurora', v: '31-aurora' },
   { label: '32-Ocean', v: '32-ocean' },
   { label: '33-Mesh', v: '33-mesh' },
-  { label: '34-Milk', v: '36-milk-plasma' },
-  { label: '35-Ink', v: '37-ink-plasma' },
+  { label: '34-Milk', v: '36-milk-plasma', palette: 'milk' },
+  { label: '35-Ink', v: '37-ink-plasma', palette: 'ink' },
 ]
+
+// Complete colour palettes applied when a themed preset is chosen.
+const THEME_PALETTES = {
+  milk: {
+    bg: '#f2efe8', bg2: '#e9e5dc', bg3: '#ded9ce',
+    card: '#faf8f3', cardOpacity: 1, titleBg: '#efe9df',
+    border: '#d3cdc0', borderHover: '#bdb6a6', borderOpacity: 1,
+    text: '#2a2a27', textDim: '#6b6960', textMuted: '#8a8678', titleColor: '#4a473f',
+    linkColor: '#3a6ea5', linkVisitedColor: '#8a4fa8',
+    accent: '#bf6a3a', danger: '#c0392b', success: '#2e8b57',
+    scrollbarColor: '#ded9ce', scrollbarThumbColor: '#b5a894',
+    colHeaderColor: '#8a8478',
+    notesCardBg: '#faf8f3', notesTextColor: '#2a2a27', notesTextBg: '#f5f2ea', notesSharedBg: '#efe9df',
+  },
+  ink: {
+    bg: '#040406', bg2: '#0a0a10', bg3: '#121219',
+    card: '#0b0b11', cardOpacity: 1, titleBg: '#08080d',
+    border: '#1e1e2a', borderHover: '#2c2c3c', borderOpacity: 1,
+    text: '#e4e4ee', textDim: '#8a8a9a', textMuted: '#6a6a7a', titleColor: '#9a9ab0',
+    linkColor: '#6b9eff', linkVisitedColor: '#b589e0',
+    accent: '#6a7cd0', danger: '#ff6b80', success: '#6bffc0',
+    scrollbarColor: '#121219', scrollbarThumbColor: '#3a3a5a',
+    colHeaderColor: '#6a6a80',
+    notesCardBg: '#0b0b11', notesTextColor: '#e4e4ee', notesTextBg: '#060609', notesSharedBg: '#121219',
+  },
+}
 
 // ── MAIN ─────────────────────────────────────────────────────────
 export default function Settings2({ theme, setTheme, onClose, workspaces = [], activeWs, setActiveWs, onAddWorkspace, onRenameWorkspace, onDeleteWorkspace, onExportBackup, onExportCSV, onExportHTML, onExportTheme, onImportBackup, onImportTheme, backupFileRef, themeFileRef, onSignOut }) {
@@ -132,7 +158,13 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
             <div className="s2-section-title">Background</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', padding: '0.2rem 0 0.5rem' }}>
               {BG_PRESETS.map(p => (
-                <button key={p.v} className={`btn-xs${theme.bgPreset === p.v ? ' btn-primary' : ''}`} style={{ fontSize: '0.65em' }} onClick={() => set('bgPreset', p.v)}>{p.label}</button>
+                <button key={p.v} className={`btn-xs${theme.bgPreset === p.v ? ' btn-primary' : ''}`} style={{ fontSize: '0.65em' }} onClick={() => {
+                  if (p.palette && THEME_PALETTES[p.palette]) {
+                    setTheme(prev => ({ ...prev, ...THEME_PALETTES[p.palette], bgPreset: p.v }))
+                  } else {
+                    set('bgPreset', p.v)
+                  }
+                }}>{p.label}</button>
               ))}
             </div>
             <Row label="Animation speed" {...r}><Slider val={Math.round((theme.bgAnimSpeed ?? 1) * 100)} min={0} max={300} onChange={v => set('bgAnimSpeed', v / 100)} unit="%" /></Row>
