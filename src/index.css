@@ -978,6 +978,12 @@ html.bg-29-carbon::after {
   100% { transform: translate(-35px,55px) scale(0.97); }
 }
 
+/* Slow continuous swirl for plasma vein layers (milk / ink) */
+@keyframes plasma-swirl {
+  0%   { transform: rotate(0deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1.08); }
+}
+
 @keyframes fog-a {
   0%   { transform: translate(0,0) scale(1.00); }
   33%  { transform: translate(58px,-40px) scale(1.04); }
@@ -4418,13 +4424,13 @@ html.bg-35-rain::after {
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
 .bg-36-milk-plasma::after {
-  content: ''; position: absolute; inset: -120px;
+  content: ''; position: absolute; inset: -40%;
   background:
-    radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
-    radial-gradient(ellipse 80% 45% at 15% 75%, var(--plasma-c6) 0%,transparent 65%),
-    radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c1) 0%,transparent 65%);
-  filter: blur(65px);
-  animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
+    conic-gradient(from 0deg at 46% 50%, transparent 0deg, rgba(150,130,210,0.08) 40deg, transparent 95deg, rgba(240,170,130,0.06) 165deg, transparent 230deg, rgba(130,200,180,0.08) 300deg, transparent 360deg),
+    conic-gradient(from 150deg at 60% 58%, transparent 0deg, rgba(120,170,230,0.06) 55deg, transparent 130deg, rgba(230,150,185,0.06) 240deg, transparent 330deg);
+  filter: blur(40px);
+  transform-origin: 50% 50%;
+  animation: plasma-swirl 100s linear infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -4447,11 +4453,11 @@ html.bg-35-rain::after {
   animation: plasma-shift-a 20s ease-in-out infinite alternate;
 }
 .bg-37-ink-plasma::after {
-  content: ''; position: absolute; inset: -120px;
+  content: ''; position: absolute; inset: -40%;
   background:
-    radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
-    radial-gradient(ellipse 80% 45% at 15% 75%, var(--plasma-c6) 0%,transparent 65%),
-    radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c1) 0%,transparent 65%);
-  filter: blur(65px);
-  animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
+    conic-gradient(from 0deg at 46% 50%, transparent 0deg, rgba(44,44,96,0.32) 40deg, transparent 95deg, rgba(22,62,72,0.26) 165deg, transparent 230deg, rgba(62,32,84,0.30) 300deg, transparent 360deg),
+    conic-gradient(from 150deg at 60% 58%, transparent 0deg, rgba(30,42,74,0.26) 55deg, transparent 130deg, rgba(48,26,66,0.28) 240deg, transparent 330deg);
+  filter: blur(45px);
+  transform-origin: 50% 50%;
+  animation: plasma-swirl 115s linear infinite;
 }
