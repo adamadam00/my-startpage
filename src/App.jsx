@@ -7,7 +7,62 @@ import { supabase } from './lib/supabase'
 import CacheManager from './lib/cacheManager'
 import { useModal } from './lib/useModal'
 import './index.css'
- 
+
+// ─── LIQUID BACKGROUND (live animated SVG — swirl then fade) ──────────────────
+const LIQUID_SVGS = {
+  '38-milk-rings': `<svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style="position:absolute;inset:0">
+<defs>
+<radialGradient id="lqmb" cx="46%" cy="43%" r="74%">
+<stop offset="0%" stop-color="#ffffff"/><stop offset="12%" stop-color="#e8e4db"/>
+<stop offset="26%" stop-color="#fbf8f2"/><stop offset="40%" stop-color="#e5e1d7"/>
+<stop offset="56%" stop-color="#f4f1ea"/><stop offset="72%" stop-color="#e2ded3"/>
+<stop offset="88%" stop-color="#f1eee7"/><stop offset="100%" stop-color="#eae6dd"/>
+</radialGradient>
+<filter id="lqmf" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.0038 0.0048" numOctaves="2" seed="4" result="t">
+<animate attributeName="baseFrequency" dur="34s" values="0.0038 0.0048;0.0052 0.0036;0.0038 0.0048" keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite"/>
+</feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="t" scale="200" xChannelSelector="R" yChannelSelector="G"/>
+<feGaussianBlur stdDeviation="3.2"/>
+</filter>
+</defs>
+<g>
+<animateTransform attributeName="transform" type="rotate" values="0 500 500;95 500 500" keyTimes="0;1" dur="17s" calcMode="spline" keySplines="0.25 0 0.35 1" repeatCount="indefinite"/>
+<animate attributeName="opacity" dur="17s" values="0;1;1;0" keyTimes="0;0.22;0.6;1" calcMode="spline" keySplines="0.4 0 0.6 1;0 0 1 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+<rect x="-20%" y="-20%" width="140%" height="140%" fill="url(#lqmb)" filter="url(#lqmf)"/>
+</g></svg>`,
+  '39-ink-oil': `<svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style="position:absolute;inset:0">
+<defs>
+<radialGradient id="lqob" cx="47%" cy="44%" r="74%">
+<stop offset="0%" stop-color="#1a1a23"/><stop offset="12%" stop-color="#060608"/>
+<stop offset="26%" stop-color="#20202b"/><stop offset="40%" stop-color="#08080b"/>
+<stop offset="56%" stop-color="#22222e"/><stop offset="72%" stop-color="#070709"/>
+<stop offset="88%" stop-color="#18181f"/><stop offset="100%" stop-color="#0d0d13"/>
+</radialGradient>
+<filter id="lqof" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+<feTurbulence type="fractalNoise" baseFrequency="0.0036 0.0046" numOctaves="2" seed="9" result="t">
+<animate attributeName="baseFrequency" dur="38s" values="0.0036 0.0046;0.0050 0.0034;0.0036 0.0046" keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite"/>
+</feTurbulence>
+<feDisplacementMap in="SourceGraphic" in2="t" scale="210" xChannelSelector="R" yChannelSelector="G"/>
+<feGaussianBlur stdDeviation="3.4"/>
+</filter>
+</defs>
+<g>
+<animateTransform attributeName="transform" type="rotate" values="0 500 500;90 500 500" keyTimes="0;1" dur="20s" calcMode="spline" keySplines="0.25 0 0.35 1" repeatCount="indefinite"/>
+<animate attributeName="opacity" dur="20s" values="0;1;1;0" keyTimes="0;0.22;0.6;1" calcMode="spline" keySplines="0.4 0 0.6 1;0 0 1 1;0.4 0 0.6 1" repeatCount="indefinite"/>
+<rect x="-20%" y="-20%" width="140%" height="140%" fill="url(#lqob)" filter="url(#lqof)"/>
+</g></svg>`,
+}
+function LiquidBackground({ preset, strength = 1, contrast = 1.4 }) {
+  const svg = LIQUID_SVGS[preset]
+  if (!svg) return null
+  return (
+    <div aria-hidden="true" className="liquid-bg"
+      style={{ opacity: Math.min(1, strength), filter: `contrast(${contrast})` }}
+      dangerouslySetInnerHTML={{ __html: svg }} />
+  )
+}
+
 // ─── CLOCK WIDGET ─────────────────────────────────────────────────────────────
 function ClockWidget() {
   const [now, setNow] = useState(new Date())
@@ -1587,6 +1642,9 @@ function applyTheme(t) {
   s('--ds-neb3', t.dsNeb3 || 'rgba(40, 90, 150, 0.13)')
   s('--ds-speed', (t.dsSpeed ?? 1) * (t.bgAnimSpeed ?? 1))
   s('--ds-density', t.dsDensity ?? 1)
+  // Milk/Ink cream swirl strength + contrast
+  s('--cream-strength', t.creamStrength ?? 1)
+  s('--cream-contrast', t.creamContrast ?? 1.7)
   // Aurora (31)
   s('--au-c1', t.auC1 || 'rgba(45, 220, 160, 0.22)')
   s('--au-c2', t.auC2 || 'rgba(80, 140, 240, 0.20)')
@@ -2561,6 +2619,7 @@ export default function App() {
 	  return (
 		<>
 		  <Modal />
+		  <LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} />
 		  {/* Offline indicator */}
 		  {!isOnline && (
 			<div style={{

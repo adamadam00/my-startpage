@@ -231,6 +231,13 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
                 <Row label="Morph speed" {...r}><Slider val={Math.round((theme.meSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('meSpeed', v / 100)} unit="%" /></Row>
               </>
             )}
+            {(theme.bgPreset === '38-milk-rings' || theme.bgPreset === '39-ink-oil') && (
+              <>
+                <div className="s2-section-title">Swirl</div>
+                <Row label="Strength" {...r}><Slider val={Math.round((theme.creamStrength ?? 1) * 100)} min={10} max={200} onChange={v => set('creamStrength', v / 100)} unit="%" /></Row>
+                <Row label="Contrast" {...r}><Slider val={Math.round((theme.creamContrast ?? 1.7) * 100)} min={80} max={400} onChange={v => set('creamContrast', v / 100)} unit="%" /></Row>
+              </>
+            )}
             {advOpen() && <>
               <Row label="BG color 1" {...r}><ColorPick value={theme.bgC1 || '#2a4a6a'} onChange={v => set('bgC1', v)} /></Row>
               <Row label="BG color 2" {...r}><ColorPick value={theme.bgC2 || '#4a2a5a'} onChange={v => set('bgC2', v)} /></Row>
