@@ -51,21 +51,16 @@ const Row = ({ label, children, search, id, configMode, isVisible, toggleVisible
 const rp = (search, configMode, isVisible, toggleVisible) => ({ search, configMode, isVisible, toggleVisible })
 
 const BG_PRESETS = [
-  { label: '01-Solid', v: '01-solid' }, { label: '02-Noise', v: '02-noise' },
-  { label: '03-Shapes', v: '03-dots' }, { label: '04-Grid', v: '04-grid' },
-  { label: '05-Gradient', v: '05-gradient' }, { label: '06-Mesh', v: '06-mesh' },
-  { label: '07-Nebula', v: '07-nebula' }, { label: '08-Stars', v: '16-starfield-old' },
-  { label: '08c-DeepSpace', v: '30-deepspace' },
+  { label: '01-Solid', v: '01-solid' },
+  { label: '04-Grid', v: '04-grid' },
+  { label: '06-Mesh', v: '06-mesh' },
+  { label: '08-Stars', v: '16-starfield-old' },
+  { label: '09-Plasma', v: '17-plasma' },
+  { label: '11-Mint', v: '19-mint' },
+  { label: '17-Silver', v: '25-silver-radial' },
   { label: '31-Aurora', v: '31-aurora' },
   { label: '32-Ocean', v: '32-ocean' },
   { label: '33-Mesh', v: '33-mesh' },
-  { label: '08b-Streaks', v: '29-star-streaks' }, { label: '09-Plasma', v: '17-plasma' },
-  { label: '10-Inferno', v: '18-inferno' }, { label: '11-Mint', v: '19-mint' },
-  { label: '12-Dusk', v: '20-dusk' }, { label: '13-Mono', v: '21-mono' },
-  { label: '14-Fog', v: '22-fog' }, { label: '15-Scan', v: '23-scan' },
-  { label: '16-Bokeh', v: '24-light-bokeh' }, { label: '17-Silver', v: '25-silver-radial' },
-  { label: '18-Wall', v: '26-wall-texture' }, { label: '19-Concrete', v: '27-concrete' },
-  { label: '20-Metal', v: '28-brushed-metal' },
 ]
 
 // ── MAIN ─────────────────────────────────────────────────────────
