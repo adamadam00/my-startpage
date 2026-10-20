@@ -566,10 +566,26 @@ export default function Sections({
       items: [],
     }));
 
-    // The archive/info column is ALWAYS the last column (safeColCount - 1),
-    // never inferred from the data. Clamp each section's col_index into the
-    // valid range so an empty archive column can't misroute 3rd-column cards.
     const archiveIndex = safeColCount - 1
+
+    // Identify the archive group: sections whose col_index is the highest
+    // present (these belong in the info column, under the widget panel).
+    // Using the max — rather than a fixed index — keeps archived sections
+    // pinned to the info column even when their stored col_index predates
+    // the current column count.
+    const maxColIndex = localSections.reduce((max, s) => {
+      const ci = Number.isFinite(s.col_index) ? s.col_index : 0
+      return Math.max(max, ci)
+    }, 0)
+
+    // Count how many DISTINCT columns the card sections occupy below the max.
+    // If the max group is the ONLY group, there is no real archive to pin —
+    // treat everything as card columns so a 3rd column can't be stolen.
+    const belowMax = localSections.some((s) => {
+      const ci = Number.isFinite(s.col_index) ? s.col_index : 0
+      return ci < maxColIndex
+    })
+    const hasArchiveGroup = maxColIndex > 0 && belowMax
 
     ;[...localSections]
       .sort((a, b) => {
@@ -580,7 +596,10 @@ export default function Sections({
       })
       .forEach((section) => {
         const raw = Number.isFinite(section.col_index) ? section.col_index : 0;
-        const col = Math.min(Math.max(raw, 0), archiveIndex)
+        const isArchive = hasArchiveGroup && raw >= maxColIndex
+        const col = isArchive
+          ? archiveIndex
+          : Math.min(Math.max(raw, 0), Math.max(safeColCount - 2, 0))
         cols[col].items.push(section);
       });
 
