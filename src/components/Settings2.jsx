@@ -69,6 +69,7 @@ const BG_PRESETS = [
 // Complete colour palettes applied when a themed preset is chosen.
 const THEME_PALETTES = {
   milk: {
+    cardsGradientEnabled: false,
     bg: '#f2efe8', bg2: '#e9e5dc', bg3: '#ded9ce',
     card: '#faf8f3', cardOpacity: 1, titleBg: '#efe9df',
     border: '#d3cdc0', borderHover: '#bdb6a6', borderOpacity: 1,
@@ -80,6 +81,7 @@ const THEME_PALETTES = {
     notesCardBg: '#faf8f3', notesTextColor: '#2a2a27', notesTextBg: '#f5f2ea', notesSharedBg: '#efe9df',
   },
   ink: {
+    cardsGradientEnabled: false,
     bg: '#040406', bg2: '#0a0a10', bg3: '#121219',
     card: '#0b0b11', cardOpacity: 1, titleBg: '#08080d',
     border: '#1e1e2a', borderHover: '#2c2c3c', borderOpacity: 1,
