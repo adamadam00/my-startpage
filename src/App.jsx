@@ -20,7 +20,7 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.6 }) {
     if (!cfg) return
     const cv = ref.current
     if (!cv) return
-    const W = 168, H = 96
+    const W = 260, H = 150
     cv.width = W; cv.height = H
     const ctx = cv.getContext('2d')
     const img = ctx.createImageData(W, H)
@@ -37,11 +37,11 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.6 }) {
         const yn = y / H
         for (let x = 0; x < W; x++) {
           const xn = x / W
-          const wx = Math.sin(yn * 6.0 + t * 0.7) * 0.5 + Math.sin(yn * 2.3 - t * 0.5) * 0.4
-          const wy = Math.sin(xn * 5.0 - t * 0.6) * 0.5 + Math.sin(xn * 3.1 + t * 0.4) * 0.4
-          let v = Math.sin((xn * 4.0 + wx) * PI + t)
-                + Math.sin((yn * 3.3 + wy) * PI - t * 0.8)
-                + Math.sin(((xn + yn) * 2.5 + wx * wy) * PI + t * 0.5)
+          const wx = Math.sin(yn * 13.0 + t * 0.7) * 0.42 + Math.sin(yn * 5.5 - t * 0.5) * 0.3
+          const wy = Math.sin(xn * 11.0 - t * 0.6) * 0.42 + Math.sin(xn * 7.0 + t * 0.4) * 0.3
+          let v = Math.sin((xn * 11.0 + wx) * PI + t)
+                + Math.sin((yn * 9.0 + wy) * PI - t * 0.8)
+                + Math.sin(((xn + yn) * 7.0 + wx * wy) * PI + t * 0.5)
           v = Math.tanh((v / 3) * k)
           const m = v * 0.5 + 0.5
           d[i++] = r0 + (r1 - r0) * m
@@ -59,7 +59,7 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.6 }) {
   if (!cfg) return null
   return (
     <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength) }}>
-      <canvas ref={ref} style={{ width: '110%', height: '110%', position: 'absolute', top: '-5%', left: '-5%', filter: 'blur(14px)' }} />
+      <canvas ref={ref} style={{ width: '110%', height: '110%', position: 'absolute', top: '-5%', left: '-5%', filter: 'blur(9px)' }} />
     </div>
   )
 }
