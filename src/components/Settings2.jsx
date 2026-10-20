@@ -63,6 +63,7 @@ const BG_PRESETS = [
   { label: '33-Mesh', v: '33-mesh' },
   { label: '34-Milk', v: '36-milk-plasma', palette: 'milk' },
   { label: '35-Ink', v: '37-ink-plasma', palette: 'ink' },
+  { label: '36-MilkRings', v: '38-milk-rings', palette: 'milk' },
 ]
 
 // Complete colour palettes applied when a themed preset is chosen.
