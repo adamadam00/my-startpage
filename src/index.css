@@ -4476,26 +4476,57 @@ html.bg-35-rain::after {
   animation: plasma-shift-a 30s ease-in-out infinite alternate;
 }
 .bg-38-milk-rings::after {
-  content: ''; position: absolute; inset: -40%;
-  background: repeating-radial-gradient(circle at 46% 48%,
-    rgba(255,255,255,0) 0px,
-    rgba(255,255,255,0.055) 26px,
-    rgba(120,110,150,0.03) 44px,
-    rgba(255,255,255,0) 66px);
-  filter: blur(5px);
-  transform-origin: 46% 48%;
-  animation: plasma-rings 18s ease-out infinite;
+  content: ''; position: absolute; inset: -45%;
+  background:
+    repeating-radial-gradient(ellipse 112% 94% at 42% 44%,
+      rgba(255,255,255,0) 0px, rgba(255,255,255,0.05) 24px,
+      rgba(120,110,150,0.028) 42px, rgba(255,255,255,0) 64px),
+    repeating-radial-gradient(ellipse 92% 116% at 57% 55%,
+      rgba(255,255,255,0) 0px, rgba(255,255,255,0.035) 31px,
+      rgba(150,140,185,0.02) 54px, rgba(255,255,255,0) 80px);
+  filter: blur(6px);
+  transform-origin: 48% 48%;
+  animation: plasma-rings 20s ease-in-out infinite;
 }
 
 @keyframes plasma-rings {
-  0%   { transform: scale(0.35); opacity: 0; }
-  22%  { opacity: 1; }
-  100% { transform: scale(2.3); opacity: 0; }
+  0%   { transform: scale(0.4) rotate(0deg); opacity: 0; }
+  18%  { opacity: 1; }
+  82%  { opacity: 1; }
+  100% { transform: scale(2.15) rotate(16deg); opacity: 0; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   39. INK OIL — near-black base, subtle organic rings (black oil)
+   ═══════════════════════════════════════════════════════════════ */
+.bg-39-ink-oil { background: #040406; overflow: hidden; }
+.bg-39-ink-oil::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 80% 60% at 25% 30%, rgba(40,40,92,0.42) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 80% at 78% 68%, rgba(20,56,66,0.36) 0%,transparent 65%),
+    radial-gradient(ellipse 70% 50% at 55% 88%, rgba(56,28,76,0.34) 0%,transparent 65%);
+  filter: blur(55px);
+  animation: plasma-shift-a 30s ease-in-out infinite alternate;
+}
+.bg-39-ink-oil::after {
+  content: ''; position: absolute; inset: -45%;
+  background:
+    repeating-radial-gradient(ellipse 112% 94% at 42% 44%,
+      rgba(96,108,156,0) 0px, rgba(96,108,156,0.16) 24px,
+      rgba(18,22,44,0.14) 42px, rgba(96,108,156,0) 64px),
+    repeating-radial-gradient(ellipse 92% 116% at 57% 55%,
+      rgba(70,124,134,0) 0px, rgba(70,124,134,0.12) 31px,
+      rgba(34,20,54,0.12) 54px, rgba(70,124,134,0) 80px);
+  filter: blur(6px);
+  transform-origin: 48% 48%;
+  animation: plasma-rings 22s ease-in-out infinite;
 }
 
 /* Pin milk/ink plasma + rings layers right at the back */
 .bg-36-milk-plasma::before, .bg-36-milk-plasma::after,
 .bg-37-ink-plasma::before,  .bg-37-ink-plasma::after,
-.bg-38-milk-rings::before,  .bg-38-milk-rings::after {
+.bg-38-milk-rings::before,  .bg-38-milk-rings::after,
+.bg-39-ink-oil::before,     .bg-39-ink-oil::after {
   z-index: -1;
 }
