@@ -566,10 +566,10 @@ export default function Sections({
       items: [],
     }));
 
-    const maxColIndex = localSections.reduce((max, s) => {
-      const ci = Number.isFinite(s.col_index) ? s.col_index : 0
-      return Math.max(max, ci)
-    }, 0)
+    // The archive/info column is ALWAYS the last column (safeColCount - 1),
+    // never inferred from the data. Clamp each section's col_index into the
+    // valid range so an empty archive column can't misroute 3rd-column cards.
+    const archiveIndex = safeColCount - 1
 
     ;[...localSections]
       .sort((a, b) => {
@@ -580,10 +580,7 @@ export default function Sections({
       })
       .forEach((section) => {
         const raw = Number.isFinite(section.col_index) ? section.col_index : 0;
-        const isArchive = maxColIndex > 0 && raw >= maxColIndex
-        const col = isArchive
-          ? safeColCount - 1
-          : Math.min(raw, Math.max(safeColCount - 2, 0))
+        const col = Math.min(Math.max(raw, 0), archiveIndex)
         cols[col].items.push(section);
       });
 

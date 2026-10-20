@@ -1836,10 +1836,14 @@ export default function App() {
 
   const persistTheme = (t, immediate = false) => {
     clearTimeout(saveThemeRef.current)
+    // Capture the workspace the change was made in, NOW — not when the
+    // debounced save fires. Otherwise switching workspace within the debounce
+    // window writes this theme into the workspace you switched TO.
+    const wsIdAtChange = activeWsRef.current
     const doSave = async () => {
       const uid = sessionRef.current?.user?.id
-      const wsId = activeWsRef.current  // always current value, not stale closure
-      
+      const wsId = wsIdAtChange
+
       console.log('[persistTheme] uid:', uid, 'wsId:', wsId)
       
       if (!uid) {
