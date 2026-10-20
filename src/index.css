@@ -4492,3 +4492,10 @@ html.bg-35-rain::after {
   22%  { opacity: 1; }
   100% { transform: scale(2.3); opacity: 0; }
 }
+
+/* Pin milk/ink plasma + rings layers right at the back */
+.bg-36-milk-plasma::before, .bg-36-milk-plasma::after,
+.bg-37-ink-plasma::before,  .bg-37-ink-plasma::after,
+.bg-38-milk-rings::before,  .bg-38-milk-rings::after {
+  z-index: -1;
+}
