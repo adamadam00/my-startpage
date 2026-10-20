@@ -8,46 +8,58 @@ import CacheManager from './lib/cacheManager'
 import { useModal } from './lib/useModal'
 import './index.css'
 
-// ─── LIQUID BACKGROUND (live animated SVG — flowing liquid) ───────────────────
+// ─── LIQUID BACKGROUND (canvas — flowing liquid, guaranteed to paint) ─────────
 const LIQUID_CFG = {
-  '38-milk-rings': {
-    cx: '46%', cy: '43%',
-    stops: [['0%','#ffffff'],['14%','#dcd4c5'],['28%','#ffffff'],['42%','#d9d1c1'],['58%','#f6f2ea'],['72%','#d4ccbb'],['86%','#f1ece3'],['100%','#ded5c5']],
-    bf: '0.0038 0.0048', bfVals: '0.0038 0.0048;0.0054 0.0034;0.0038 0.0048', bfDur: '30s',
-    scale: 220, blur: 3, rockVals: '-7 500 500;7 500 500;-7 500 500', rockDur: '44s', seed: 4,
-  },
-  '39-ink-oil': {
-    cx: '47%', cy: '44%',
-    stops: [['0%','#32323f'],['14%','#070709'],['28%','#363645'],['42%','#08080b'],['58%','#282832'],['72%','#060608'],['86%','#1e1e27'],['100%','#0c0c12']],
-    bf: '0.0036 0.0046', bfVals: '0.0036 0.0046;0.0052 0.0032;0.0036 0.0046', bfDur: '34s',
-    scale: 230, blur: 3.2, rockVals: '-6 500 500;6 500 500;-6 500 500', rockDur: '52s', seed: 9,
-  },
+  '38-milk-rings': { base: [203, 194, 177], hi: [255, 255, 255], speed: 0.0065 },
+  '39-ink-oil':    { base: [6, 6, 9],       hi: [58, 60, 80],     speed: 0.0055 },
 }
-function LiquidBackground({ preset, strength = 1, contrast = 1.5 }) {
-  const c = LIQUID_CFG[preset]
-  if (!c) return null
-  const key = preset.replace(/\W/g, '')
-  const gid = 'lg_' + key, fid = 'lf_' + key
+function LiquidBackground({ preset, strength = 1, contrast = 1.6 }) {
+  const ref = useRef(null)
+  const cfg = LIQUID_CFG[preset]
+  useEffect(() => {
+    if (!cfg) return
+    const cv = ref.current
+    if (!cv) return
+    const W = 168, H = 96
+    cv.width = W; cv.height = H
+    const ctx = cv.getContext('2d')
+    const img = ctx.createImageData(W, H)
+    const d = img.data
+    const [r0, g0, b0] = cfg.base, [r1, g1, b1] = cfg.hi
+    const k = Math.max(0.4, contrast), sp = cfg.speed
+    let t = 0, timer = null, raf = null, running = true
+    const PI = Math.PI
+    const frame = () => {
+      if (!running) return
+      t += sp
+      let i = 0
+      for (let y = 0; y < H; y++) {
+        const yn = y / H
+        for (let x = 0; x < W; x++) {
+          const xn = x / W
+          const wx = Math.sin(yn * 6.0 + t * 0.7) * 0.5 + Math.sin(yn * 2.3 - t * 0.5) * 0.4
+          const wy = Math.sin(xn * 5.0 - t * 0.6) * 0.5 + Math.sin(xn * 3.1 + t * 0.4) * 0.4
+          let v = Math.sin((xn * 4.0 + wx) * PI + t)
+                + Math.sin((yn * 3.3 + wy) * PI - t * 0.8)
+                + Math.sin(((xn + yn) * 2.5 + wx * wy) * PI + t * 0.5)
+          v = Math.tanh((v / 3) * k)
+          const m = v * 0.5 + 0.5
+          d[i++] = r0 + (r1 - r0) * m
+          d[i++] = g0 + (g1 - g0) * m
+          d[i++] = b0 + (b1 - b0) * m
+          d[i++] = 255
+        }
+      }
+      ctx.putImageData(img, 0, 0)
+      timer = setTimeout(() => { raf = requestAnimationFrame(frame) }, 1000 / 26)
+    }
+    frame()
+    return () => { running = false; clearTimeout(timer); cancelAnimationFrame(raf) }
+  }, [preset, contrast])
+  if (!cfg) return null
   return (
-    <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength), filter: `contrast(${contrast})` }}>
-      <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
-        <defs>
-          <radialGradient id={gid} cx={c.cx} cy={c.cy} r="74%">
-            {c.stops.map(([o, col], i) => <stop key={i} offset={o} stopColor={col} />)}
-          </radialGradient>
-          <filter id={fid} x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
-            <feTurbulence type="fractalNoise" baseFrequency={c.bf} numOctaves="2" seed={c.seed} result="t">
-              <animate attributeName="baseFrequency" dur={c.bfDur} values={c.bfVals} keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite" />
-            </feTurbulence>
-            <feDisplacementMap in="SourceGraphic" in2="t" scale={c.scale} xChannelSelector="R" yChannelSelector="G" />
-            <feGaussianBlur stdDeviation={c.blur} />
-          </filter>
-        </defs>
-        <g>
-          <animateTransform attributeName="transform" type="rotate" values={c.rockVals} keyTimes="0;0.5;1" dur={c.rockDur} calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite" />
-          <rect x="-25%" y="-25%" width="150%" height="150%" fill={`url(#${gid})`} filter={`url(#${fid})`} />
-        </g>
-      </svg>
+    <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength) }}>
+      <canvas ref={ref} style={{ width: '110%', height: '110%', position: 'absolute', top: '-5%', left: '-5%', filter: 'blur(14px)' }} />
     </div>
   )
 }
