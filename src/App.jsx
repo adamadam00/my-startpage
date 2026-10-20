@@ -8,56 +8,47 @@ import CacheManager from './lib/cacheManager'
 import { useModal } from './lib/useModal'
 import './index.css'
 
-// ─── LIQUID BACKGROUND (live animated SVG — swirl then fade) ──────────────────
-const LIQUID_SVGS = {
-  '38-milk-rings': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style="position:absolute;inset:0">
-<defs>
-<radialGradient id="lqmb" cx="46%" cy="43%" r="74%">
-<stop offset="0%" stop-color="#ffffff"/><stop offset="14%" stop-color="#dcd4c5"/>
-<stop offset="28%" stop-color="#ffffff"/><stop offset="42%" stop-color="#d9d1c1"/>
-<stop offset="58%" stop-color="#f6f2ea"/><stop offset="72%" stop-color="#d4ccbb"/>
-<stop offset="86%" stop-color="#f1ece3"/><stop offset="100%" stop-color="#ded5c5"/>
-</radialGradient>
-<filter id="lqmf" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
-<feTurbulence type="fractalNoise" baseFrequency="0.0038 0.0048" numOctaves="2" seed="4" result="t">
-<animate attributeName="baseFrequency" dur="30s" values="0.0038 0.0048;0.0054 0.0034;0.0038 0.0048" keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite"/>
-</feTurbulence>
-<feDisplacementMap in="SourceGraphic" in2="t" scale="220" xChannelSelector="R" yChannelSelector="G"/>
-<feGaussianBlur stdDeviation="3"/>
-</filter>
-</defs>
-<g>
-<animateTransform attributeName="transform" type="rotate" values="-7 500 500;7 500 500;-7 500 500" keyTimes="0;0.5;1" dur="44s" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite"/>
-<rect x="-25%" y="-25%" width="150%" height="150%" fill="url(#lqmb)" filter="url(#lqmf)"/>
-</g></svg>`,
-  '39-ink-oil': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style="position:absolute;inset:0">
-<defs>
-<radialGradient id="lqob" cx="47%" cy="44%" r="74%">
-<stop offset="0%" stop-color="#32323f"/><stop offset="14%" stop-color="#070709"/>
-<stop offset="28%" stop-color="#363645"/><stop offset="42%" stop-color="#08080b"/>
-<stop offset="58%" stop-color="#282832"/><stop offset="72%" stop-color="#060608"/>
-<stop offset="86%" stop-color="#1e1e27"/><stop offset="100%" stop-color="#0c0c12"/>
-</radialGradient>
-<filter id="lqof" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
-<feTurbulence type="fractalNoise" baseFrequency="0.0036 0.0046" numOctaves="2" seed="9" result="t">
-<animate attributeName="baseFrequency" dur="34s" values="0.0036 0.0046;0.0052 0.0032;0.0036 0.0046" keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite"/>
-</feTurbulence>
-<feDisplacementMap in="SourceGraphic" in2="t" scale="230" xChannelSelector="R" yChannelSelector="G"/>
-<feGaussianBlur stdDeviation="3.2"/>
-</filter>
-</defs>
-<g>
-<animateTransform attributeName="transform" type="rotate" values="-6 500 500;6 500 500;-6 500 500" keyTimes="0;0.5;1" dur="52s" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite"/>
-<rect x="-25%" y="-25%" width="150%" height="150%" fill="url(#lqob)" filter="url(#lqof)"/>
-</g></svg>`,
+// ─── LIQUID BACKGROUND (live animated SVG — flowing liquid) ───────────────────
+const LIQUID_CFG = {
+  '38-milk-rings': {
+    cx: '46%', cy: '43%',
+    stops: [['0%','#ffffff'],['14%','#dcd4c5'],['28%','#ffffff'],['42%','#d9d1c1'],['58%','#f6f2ea'],['72%','#d4ccbb'],['86%','#f1ece3'],['100%','#ded5c5']],
+    bf: '0.0038 0.0048', bfVals: '0.0038 0.0048;0.0054 0.0034;0.0038 0.0048', bfDur: '30s',
+    scale: 220, blur: 3, rockVals: '-7 500 500;7 500 500;-7 500 500', rockDur: '44s', seed: 4,
+  },
+  '39-ink-oil': {
+    cx: '47%', cy: '44%',
+    stops: [['0%','#32323f'],['14%','#070709'],['28%','#363645'],['42%','#08080b'],['58%','#282832'],['72%','#060608'],['86%','#1e1e27'],['100%','#0c0c12']],
+    bf: '0.0036 0.0046', bfVals: '0.0036 0.0046;0.0052 0.0032;0.0036 0.0046', bfDur: '34s',
+    scale: 230, blur: 3.2, rockVals: '-6 500 500;6 500 500;-6 500 500', rockDur: '52s', seed: 9,
+  },
 }
-function LiquidBackground({ preset, strength = 1, contrast = 1.4 }) {
-  const svg = LIQUID_SVGS[preset]
-  if (!svg) return null
+function LiquidBackground({ preset, strength = 1, contrast = 1.5 }) {
+  const c = LIQUID_CFG[preset]
+  if (!c) return null
+  const key = preset.replace(/\W/g, '')
+  const gid = 'lg_' + key, fid = 'lf_' + key
   return (
-    <div aria-hidden="true" className="liquid-bg"
-      style={{ opacity: Math.min(1, strength), filter: `contrast(${contrast})` }}
-      dangerouslySetInnerHTML={{ __html: svg }} />
+    <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength), filter: `contrast(${contrast})` }}>
+      <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid slice" width="100%" height="100%" style={{ position: 'absolute', inset: 0 }}>
+        <defs>
+          <radialGradient id={gid} cx={c.cx} cy={c.cy} r="74%">
+            {c.stops.map(([o, col], i) => <stop key={i} offset={o} stopColor={col} />)}
+          </radialGradient>
+          <filter id={fid} x="-30%" y="-30%" width="160%" height="160%" colorInterpolationFilters="sRGB">
+            <feTurbulence type="fractalNoise" baseFrequency={c.bf} numOctaves="2" seed={c.seed} result="t">
+              <animate attributeName="baseFrequency" dur={c.bfDur} values={c.bfVals} keyTimes="0;0.5;1" calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="t" scale={c.scale} xChannelSelector="R" yChannelSelector="G" />
+            <feGaussianBlur stdDeviation={c.blur} />
+          </filter>
+        </defs>
+        <g>
+          <animateTransform attributeName="transform" type="rotate" values={c.rockVals} keyTimes="0;0.5;1" dur={c.rockDur} calcMode="spline" keySplines=".45 0 .55 1;.45 0 .55 1" repeatCount="indefinite" />
+          <rect x="-25%" y="-25%" width="150%" height="150%" fill={`url(#${gid})`} filter={`url(#${fid})`} />
+        </g>
+      </svg>
+    </div>
   )
 }
 
