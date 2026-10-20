@@ -21,7 +21,7 @@ const LIQUID_FS = [
   'float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
   'float noise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);',
   ' return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);}',
-  'float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<6;i++){v+=a*noise(p);p=p*2.02;a*=0.5;}return v;}',
+  'float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<4;i++){v+=a*noise(p);p=p*2.02;a*=0.5;}return v;}',
   'void main(){',
   ' vec2 uv=gl_FragCoord.xy/u_res.xy; uv.x*=u_res.x/u_res.y;',
   ' float t=u_time*u_speed;',
@@ -37,7 +37,7 @@ const LIQUID_FS = [
 ].join('\n')
 const LIQUID_VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}'
 
-function LiquidBackground({ preset, strength = 1, contrast = 1.4 }) {
+function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0 }) {
   const ref = useRef(null)
   const cfg = LIQUID_CFG[preset]
   useEffect(() => {
@@ -93,7 +93,7 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4 }) {
   if (!cfg) return null
   return (
     <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength) }}>
-      <canvas ref={ref} style={{ width: '100%', height: '100%', display: 'block' }} />
+      <canvas ref={ref} style={{ width: '100%', height: '100%', display: 'block', filter: blur > 0 ? `blur(${blur}px)` : 'none' }} />
     </div>
   )
 }
@@ -2676,7 +2676,7 @@ export default function App() {
 		  
 		  <div className="app" ref={contentRef}>
 
-			<LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} />
+			<LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} blur={theme.creamBlur ?? 0} />
 
 			{/* Background blur overlay */}
 			{(theme.bgBlur ?? 0) > 0 ? (

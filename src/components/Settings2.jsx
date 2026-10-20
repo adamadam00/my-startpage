@@ -249,6 +249,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
                 <div className="s2-section-title">Swirl</div>
                 <Row label="Strength" {...r}><Slider val={Math.round((theme.creamStrength ?? 1) * 100)} min={10} max={200} onChange={v => set('creamStrength', v / 100)} unit="%" /></Row>
                 <Row label="Contrast" {...r}><Slider val={Math.round((theme.creamContrast ?? 1.7) * 100)} min={80} max={400} onChange={v => set('creamContrast', v / 100)} unit="%" /></Row>
+                <Row label="Blur" {...r}><Slider val={theme.creamBlur ?? 0} min={0} max={40} onChange={v => set('creamBlur', v)} unit="px" /></Row>
               </>
             )}
             {advOpen() && <>
