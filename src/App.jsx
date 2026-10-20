@@ -2608,7 +2608,6 @@ export default function App() {
 	  return (
 		<>
 		  <Modal />
-		  <LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} />
 		  {/* Offline indicator */}
 		  {!isOnline && (
 			<div style={{
@@ -2630,6 +2629,8 @@ export default function App() {
 		  )}
 		  
 		  <div className="app" ref={contentRef}>
+
+			<LiquidBackground preset={theme.bgPreset} strength={theme.creamStrength ?? 1} contrast={theme.creamContrast ?? 1.7} />
 
 			{/* Background blur overlay */}
 			{(theme.bgBlur ?? 0) > 0 ? (

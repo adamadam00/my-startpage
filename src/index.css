@@ -4530,11 +4530,13 @@ html.bg-35-rain::after {
 }
 
 /* Live liquid background layer (milk / ink swirl) sits right at the back */
+/* Liquid layer sits inside .app, behind the content (topbar/main are z-index 2) */
 .liquid-bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
+  overflow: hidden;
 }
 /* These presets are drawn by the live SVG layer, not the baked pseudos */
 .bg-38-milk-rings::before, .bg-38-milk-rings::after,
