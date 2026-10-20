@@ -65,6 +65,7 @@ const BG_PRESETS = [
   { label: '35-Ink', v: '37-ink-plasma', palette: 'ink' },
   { label: '36-MilkSwirl', v: '38-milk-rings', palette: 'milk' },
   { label: '37-InkSwirl', v: '39-ink-oil', palette: 'ink' },
+  { label: '38-Coffee', v: '40-coffee-bloom', palette: 'coffee' },
 ]
 
 // Complete colour palettes applied when a themed preset is chosen.
@@ -92,6 +93,18 @@ const THEME_PALETTES = {
     scrollbarColor: '#121219', scrollbarThumbColor: '#3a3a5a',
     colHeaderColor: '#6a6a80',
     notesCardBg: '#0b0b11', notesTextColor: '#e4e4ee', notesTextBg: '#060609', notesSharedBg: '#121219',
+  },
+  coffee: {
+    cardsGradientEnabled: false,
+    bg: '#140b06', bg2: '#1d1109', bg3: '#2a1a0e',
+    card: '#1d1109', cardOpacity: 1, titleBg: '#160d06',
+    border: '#3a2614', borderHover: '#4e351c', borderOpacity: 1,
+    text: '#f0e2cf', textDim: '#b89b76', textMuted: '#8a7254', titleColor: '#d8bf98',
+    linkColor: '#d2a35a', linkVisitedColor: '#c98a5a',
+    accent: '#c98a3c', danger: '#e0683c', success: '#8fb36a',
+    scrollbarColor: '#2a1a0e', scrollbarThumbColor: '#6b4a28',
+    colHeaderColor: '#b89b76',
+    notesCardBg: '#1d1109', notesTextColor: '#f0e2cf', notesTextBg: '#160d06', notesSharedBg: '#2a1a0e',
   },
 }
 
@@ -231,7 +244,7 @@ export default function Settings2({ theme, setTheme, onClose, workspaces = [], a
                 <Row label="Morph speed" {...r}><Slider val={Math.round((theme.meSpeed ?? 1) * 100)} min={20} max={400} onChange={v => set('meSpeed', v / 100)} unit="%" /></Row>
               </>
             )}
-            {(theme.bgPreset === '38-milk-rings' || theme.bgPreset === '39-ink-oil') && (
+            {(theme.bgPreset === '38-milk-rings' || theme.bgPreset === '39-ink-oil' || theme.bgPreset === '40-coffee-bloom') && (
               <>
                 <div className="s2-section-title">Swirl</div>
                 <Row label="Strength" {...r}><Slider val={Math.round((theme.creamStrength ?? 1) * 100)} min={10} max={200} onChange={v => set('creamStrength', v / 100)} unit="%" /></Row>

@@ -8,58 +8,92 @@ import CacheManager from './lib/cacheManager'
 import { useModal } from './lib/useModal'
 import './index.css'
 
-// ─── LIQUID BACKGROUND (canvas — flowing liquid, guaranteed to paint) ─────────
+// ─── LIQUID BACKGROUND (WebGL — domain-warped flow, real liquid) ──────────────
 const LIQUID_CFG = {
-  '38-milk-rings': { base: [203, 194, 177], hi: [255, 255, 255], speed: 0.0065 },
-  '39-ink-oil':    { base: [6, 6, 9],       hi: [58, 60, 80],     speed: 0.0055 },
+  '38-milk-rings':   { lo: [0.78, 0.75, 0.69], hi: [1.0, 0.995, 0.975], sh: [0.66, 0.62, 0.55], speed: 0.045, scale: 2.6 },
+  '39-ink-oil':      { lo: [0.03, 0.03, 0.045], hi: [0.24, 0.27, 0.40], sh: [0.0, 0.0, 0.0],     speed: 0.040, scale: 2.6 },
+  '40-coffee-bloom': { lo: [0.12, 0.07, 0.035], hi: [0.86, 0.69, 0.46], sh: [0.05, 0.025, 0.012], speed: 0.050, scale: 2.4 },
 }
-function LiquidBackground({ preset, strength = 1, contrast = 1.6 }) {
+const LIQUID_FS = [
+  'precision highp float;',
+  'uniform vec2 u_res; uniform float u_time, u_scale, u_contrast, u_speed;',
+  'uniform vec3 u_lo, u_hi, u_sh;',
+  'float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}',
+  'float noise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.0-2.0*f);',
+  ' return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);}',
+  'float fbm(vec2 p){float v=0.0,a=0.5;for(int i=0;i<6;i++){v+=a*noise(p);p=p*2.02;a*=0.5;}return v;}',
+  'void main(){',
+  ' vec2 uv=gl_FragCoord.xy/u_res.xy; uv.x*=u_res.x/u_res.y;',
+  ' float t=u_time*u_speed;',
+  ' vec2 q=vec2(fbm(uv*u_scale+vec2(0.0,t)),fbm(uv*u_scale+vec2(5.2,1.3)-t*0.8));',
+  ' vec2 r=vec2(fbm(uv*u_scale+3.5*q+vec2(1.7,9.2)+t*0.6),fbm(uv*u_scale+3.5*q+vec2(8.3,2.8)-t*0.5));',
+  ' float f=fbm(uv*u_scale+3.5*r);',
+  ' float e=0.35/max(0.3,u_contrast);',
+  ' vec3 col=mix(u_lo,u_hi,smoothstep(0.5-e,0.5+e,f));',
+  ' col=mix(col,u_sh,smoothstep(0.75,0.15,length(r))*0.5);',
+  ' col=mix(col,u_hi,smoothstep(0.55,0.95,dot(q,r))*0.3);',
+  ' gl_FragColor=vec4(col,1.0);',
+  '}'
+].join('\n')
+const LIQUID_VS = 'attribute vec2 p;void main(){gl_Position=vec4(p,0.0,1.0);}'
+
+function LiquidBackground({ preset, strength = 1, contrast = 1.4 }) {
   const ref = useRef(null)
   const cfg = LIQUID_CFG[preset]
   useEffect(() => {
     if (!cfg) return
     const cv = ref.current
     if (!cv) return
-    const W = 260, H = 150
-    cv.width = W; cv.height = H
-    const ctx = cv.getContext('2d')
-    const img = ctx.createImageData(W, H)
-    const d = img.data
-    const [r0, g0, b0] = cfg.base, [r1, g1, b1] = cfg.hi
-    const k = Math.max(0.4, contrast), sp = cfg.speed
-    let t = 0, timer = null, raf = null, running = true
-    const PI = Math.PI
-    const frame = () => {
-      if (!running) return
-      t += sp
-      let i = 0
-      for (let y = 0; y < H; y++) {
-        const yn = y / H
-        for (let x = 0; x < W; x++) {
-          const xn = x / W
-          const wx = Math.sin(yn * 13.0 + t * 0.7) * 0.42 + Math.sin(yn * 5.5 - t * 0.5) * 0.3
-          const wy = Math.sin(xn * 11.0 - t * 0.6) * 0.42 + Math.sin(xn * 7.0 + t * 0.4) * 0.3
-          let v = Math.sin((xn * 11.0 + wx) * PI + t)
-                + Math.sin((yn * 9.0 + wy) * PI - t * 0.8)
-                + Math.sin(((xn + yn) * 7.0 + wx * wy) * PI + t * 0.5)
-          v = Math.tanh((v / 3) * k)
-          const m = v * 0.5 + 0.5
-          d[i++] = r0 + (r1 - r0) * m
-          d[i++] = g0 + (g1 - g0) * m
-          d[i++] = b0 + (b1 - b0) * m
-          d[i++] = 255
-        }
-      }
-      ctx.putImageData(img, 0, 0)
-      timer = setTimeout(() => { raf = requestAnimationFrame(frame) }, 1000 / 26)
+    const gl = cv.getContext('webgl') || cv.getContext('experimental-webgl')
+    if (!gl) return
+    const mkShader = (type, src) => {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s)
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s))
+      return s
     }
-    frame()
-    return () => { running = false; clearTimeout(timer); cancelAnimationFrame(raf) }
+    const prog = gl.createProgram()
+    gl.attachShader(prog, mkShader(gl.VERTEX_SHADER, LIQUID_VS))
+    gl.attachShader(prog, mkShader(gl.FRAGMENT_SHADER, LIQUID_FS))
+    gl.linkProgram(prog); gl.useProgram(prog)
+    const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf)
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW)
+    const lp = gl.getAttribLocation(prog, 'p'); gl.enableVertexAttribArray(lp)
+    gl.vertexAttribPointer(lp, 2, gl.FLOAT, false, 0, 0)
+    const U = n => gl.getUniformLocation(prog, n)
+    const uRes = U('u_res'), uTime = U('u_time'), uScale = U('u_scale'), uContrast = U('u_contrast'),
+      uSpeed = U('u_speed'), uLo = U('u_lo'), uHi = U('u_hi'), uSh = U('u_sh')
+    const RS = 0.55 // internal render scale (perf)
+    const resize = () => {
+      const w = Math.max(1, Math.floor(cv.clientWidth * RS)), h = Math.max(1, Math.floor(cv.clientHeight * RS))
+      if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h }
+      gl.viewport(0, 0, cv.width, cv.height)
+    }
+    let ro
+    try { ro = new ResizeObserver(resize); ro.observe(cv) } catch (e) { window.addEventListener('resize', resize) }
+    resize()
+    let raf = null, timer = null, running = true
+    const t0 = performance.now()
+    const draw = () => {
+      if (!running) return
+      gl.useProgram(prog)
+      gl.uniform2f(uRes, cv.width, cv.height)
+      gl.uniform1f(uTime, (performance.now() - t0) / 1000)
+      gl.uniform1f(uScale, cfg.scale); gl.uniform1f(uContrast, contrast); gl.uniform1f(uSpeed, cfg.speed)
+      gl.uniform3fv(uLo, cfg.lo); gl.uniform3fv(uHi, cfg.hi); gl.uniform3fv(uSh, cfg.sh)
+      gl.drawArrays(gl.TRIANGLES, 0, 3)
+      timer = setTimeout(() => { raf = requestAnimationFrame(draw) }, 1000 / 30)
+    }
+    draw()
+    return () => {
+      running = false; cancelAnimationFrame(raf); clearTimeout(timer)
+      if (ro) ro.disconnect(); else window.removeEventListener('resize', resize)
+      const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext()
+    }
   }, [preset, contrast])
   if (!cfg) return null
   return (
     <div aria-hidden="true" className="liquid-bg" style={{ opacity: Math.min(1, strength) }}>
-      <canvas ref={ref} style={{ width: '110%', height: '110%', position: 'absolute', top: '-5%', left: '-5%', filter: 'blur(9px)' }} />
+      <canvas ref={ref} style={{ width: '100%', height: '100%', display: 'block' }} />
     </div>
   )
 }

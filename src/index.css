@@ -4543,3 +4543,6 @@ html.bg-35-rain::after {
 .bg-39-ink-oil::before,    .bg-39-ink-oil::after {
   display: none !important;
 }
+
+/* Coffee bloom base (WebGL liquid layer draws over this) */
+.bg-40-coffee-bloom { background: #140b06; overflow: hidden; }
