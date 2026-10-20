@@ -4397,3 +4397,61 @@ html.bg-35-rain::after {
   0%   { background-position: 0 0; }
   100% { background-position: 0 200px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   36. MILK PLASMA — milky off-white base, soft pastel plasma drift
+   ═══════════════════════════════════════════════════════════════ */
+.bg-36-milk-plasma { background: #f2efe8; overflow: hidden; }
+.bg-36-milk-plasma {
+  --plasma-c1: rgba(150,130,210,0.26); --plasma-c2: rgba(240,170,130,0.20);
+  --plasma-c3: rgba(130,200,180,0.22); --plasma-c4: rgba(120,170,230,0.18);
+  --plasma-c5: rgba(230,150,185,0.18); --plasma-c6: rgba(215,195,120,0.18);
+}
+.bg-36-milk-plasma::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, var(--plasma-c1) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  filter: blur(45px);
+  animation: plasma-shift-a 20s ease-in-out infinite alternate;
+}
+.bg-36-milk-plasma::after {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
+    radial-gradient(ellipse 80% 45% at 15% 75%, var(--plasma-c6) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c1) 0%,transparent 65%);
+  filter: blur(65px);
+  animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   37. INK PLASMA — near-black base, deep dark plasma drift
+   ═══════════════════════════════════════════════════════════════ */
+.bg-37-ink-plasma { background: #040406; overflow: hidden; }
+.bg-37-ink-plasma {
+  --plasma-c1: rgba(44,44,96,0.55);  --plasma-c2: rgba(22,62,72,0.50);
+  --plasma-c3: rgba(62,32,84,0.48);  --plasma-c4: rgba(30,42,74,0.44);
+  --plasma-c5: rgba(48,26,66,0.46);  --plasma-c6: rgba(34,48,62,0.40);
+}
+.bg-37-ink-plasma::before {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, var(--plasma-c1) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, var(--plasma-c2) 0%,transparent 65%),
+    radial-gradient(ellipse 70% 50% at 50% 90%, var(--plasma-c3) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 70% at 90% 10%, var(--plasma-c4) 0%,transparent 65%);
+  filter: blur(45px);
+  animation: plasma-shift-a 20s ease-in-out infinite alternate;
+}
+.bg-37-ink-plasma::after {
+  content: ''; position: absolute; inset: -120px;
+  background:
+    radial-gradient(ellipse 65% 55% at 70% 25%, var(--plasma-c5) 0%,transparent 65%),
+    radial-gradient(ellipse 80% 45% at 15% 75%, var(--plasma-c6) 0%,transparent 65%),
+    radial-gradient(ellipse 50% 60% at 45% 55%, var(--plasma-c1) 0%,transparent 65%);
+  filter: blur(65px);
+  animation: plasma-shift-b 28s ease-in-out infinite alternate-reverse;
+}

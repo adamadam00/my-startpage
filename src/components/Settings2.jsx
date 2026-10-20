@@ -61,6 +61,8 @@ const BG_PRESETS = [
   { label: '31-Aurora', v: '31-aurora' },
   { label: '32-Ocean', v: '32-ocean' },
   { label: '33-Mesh', v: '33-mesh' },
+  { label: '34-Milk', v: '36-milk-plasma' },
+  { label: '35-Ink', v: '37-ink-plasma' },
 ]
 
 // ── MAIN ─────────────────────────────────────────────────────────
