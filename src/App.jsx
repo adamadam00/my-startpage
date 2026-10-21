@@ -11,7 +11,7 @@ import './index.css'
 // ─── LIQUID BACKGROUND (WebGL — domain-warped flow, real liquid) ──────────────
 const LIQUID_CFG = {
   '38-milk-rings': { lo: [0.78, 0.75, 0.69], hi: [1.0, 0.995, 0.975], sh: [0.66, 0.62, 0.55], speed: 0.045, scale: 2.6 },
-  '39-ink-oil':    { lo: [0.02, 0.02, 0.03], hi: [0.20, 0.20, 0.23],  sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
+  '39-ink-oil':    { lo: [0.04, 0.04, 0.05], hi: [0.30, 0.30, 0.34],  sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
   '41-rose-swirl': { lo: [0.82, 0.72, 0.73], hi: [1.0, 0.96, 0.95],   sh: [0.74, 0.58, 0.60], speed: 0.045, scale: 2.6 },
   '42-jade-swirl': { lo: [0.03, 0.06, 0.055], hi: [0.20, 0.36, 0.32], sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
 }
@@ -74,10 +74,11 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0, spee
     let ro
     try { ro = new ResizeObserver(resize); ro.observe(cv) } catch (e) { window.addEventListener('resize', resize) }
     resize()
-    let raf = null, timer = null, running = true
-    const t0 = performance.now()
+    const FPS = 22
+    let raf = null, timer = null, running = true, paused = false, pauseAt = 0
+    let t0 = performance.now()
     const draw = () => {
-      if (!running) return
+      if (!running || paused) return
       gl.useProgram(prog)
       gl.uniform2f(uRes, cv.width, cv.height)
       gl.uniform1f(uTime, (performance.now() - t0) / 1000)
@@ -86,11 +87,22 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0, spee
       gl.uniform1f(uSpeed, cfg.speed * live.current.speed)
       gl.uniform3fv(uLo, cfg.lo); gl.uniform3fv(uHi, cfg.hi); gl.uniform3fv(uSh, cfg.sh)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
-      timer = setTimeout(() => { raf = requestAnimationFrame(draw) }, 1000 / 30)
+      timer = setTimeout(() => { raf = requestAnimationFrame(draw) }, 1000 / FPS)
     }
+    const onVis = () => {
+      if (document.hidden) {
+        paused = true; pauseAt = performance.now()
+        cancelAnimationFrame(raf); clearTimeout(timer)
+      } else if (paused) {
+        t0 += performance.now() - pauseAt  // skip the paused gap so it resumes smoothly
+        paused = false; draw()
+      }
+    }
+    document.addEventListener('visibilitychange', onVis)
     draw()
     return () => {
       running = false; cancelAnimationFrame(raf); clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVis)
       if (ro) ro.disconnect(); else window.removeEventListener('resize', resize)
       const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext()
     }
@@ -2137,33 +2149,16 @@ export default function App() {
         .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
-      const localRaw = localStorage.getItem('current_theme')
-      const localTheme = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
+      // The per-workspace theme (loadWorkspaceTheme) is the single source of
+      // truth for what's applied. user_settings.theme is only a global backup —
+      // we never apply it over the active workspace, or themes bleed between
+      // workspaces. Bootstrap the global row from local only if it's empty.
       const remoteTheme = data?.theme ?? {}
-      const hasLocal = Object.keys(localTheme).length > 5
       const hasRemote = Object.keys(remoteTheme).length > 5
-      console.log('[settings]', force ? 'FORCE' : 'auto', '| local:', hasLocal, '| remote:', hasRemote)
-
-      if (hasRemote) {
-        const localTs = localTheme._savedAt || 0
-        const remoteTs = remoteTheme._savedAt || 0
-        if (force || !hasLocal || remoteTs > localTs) {
-          const wall = localTheme.wallpaper ?? null
-          const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wall ? { wallpaper: wall } : {}) }
-          setThemeState(merged)
-          localStorage.setItem('current_theme', JSON.stringify(merged))
-          console.log('[settings] ✅ applied Supabase theme (_savedAt:', remoteTs, ')')
-        } else {
-          persistTheme(localTheme, true)
-          console.log('[settings] local kept, pushed to Supabase (_savedAt:', localTs, ')')
-        }
-      } else {
-        if (hasLocal) {
-          persistTheme(localTheme, true)
-          console.log('[settings] 🚀 bootstrapping Supabase from local')
-        } else {
-          console.log('[settings] neither local nor remote has data — using defaults')
-        }
+      if (!hasRemote) {
+        const localRaw = localStorage.getItem('current_theme')
+        const localTheme = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
+        if (Object.keys(localTheme).length > 5) persistTheme(localTheme, true)
       }
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
@@ -2308,6 +2303,11 @@ export default function App() {
           setThemeState(workspaceTheme)
           localStorage.setItem('current_theme', JSON.stringify(workspaceTheme))
           console.log('[workspace] Applied workspace theme for', activeWs)
+        } else {
+          // No theme saved for this workspace yet — start from defaults rather
+          // than inheriting the previously-active workspace's theme.
+          setThemeState({ ...DEFAULT_THEME })
+          localStorage.setItem('current_theme', JSON.stringify({ ...DEFAULT_THEME }))
         }
       }
       
