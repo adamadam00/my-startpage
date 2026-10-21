@@ -74,10 +74,11 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0, spee
     let ro
     try { ro = new ResizeObserver(resize); ro.observe(cv) } catch (e) { window.addEventListener('resize', resize) }
     resize()
-    let raf = null, timer = null, running = true
-    const t0 = performance.now()
+    const FPS = 22
+    let raf = null, timer = null, running = true, paused = false, pauseAt = 0
+    let t0 = performance.now()
     const draw = () => {
-      if (!running) return
+      if (!running || paused) return
       gl.useProgram(prog)
       gl.uniform2f(uRes, cv.width, cv.height)
       gl.uniform1f(uTime, (performance.now() - t0) / 1000)
@@ -86,11 +87,22 @@ function LiquidBackground({ preset, strength = 1, contrast = 1.4, blur = 0, spee
       gl.uniform1f(uSpeed, cfg.speed * live.current.speed)
       gl.uniform3fv(uLo, cfg.lo); gl.uniform3fv(uHi, cfg.hi); gl.uniform3fv(uSh, cfg.sh)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
-      timer = setTimeout(() => { raf = requestAnimationFrame(draw) }, 1000 / 30)
+      timer = setTimeout(() => { raf = requestAnimationFrame(draw) }, 1000 / FPS)
     }
+    const onVis = () => {
+      if (document.hidden) {
+        paused = true; pauseAt = performance.now()
+        cancelAnimationFrame(raf); clearTimeout(timer)
+      } else if (paused) {
+        t0 += performance.now() - pauseAt  // skip the paused gap so it resumes smoothly
+        paused = false; draw()
+      }
+    }
+    document.addEventListener('visibilitychange', onVis)
     draw()
     return () => {
       running = false; cancelAnimationFrame(raf); clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVis)
       if (ro) ro.disconnect(); else window.removeEventListener('resize', resize)
       const ext = gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext()
     }
