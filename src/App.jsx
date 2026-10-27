@@ -404,6 +404,8 @@ const NEWS_FEEDS = [
   { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
   { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
   { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
+  { id: 'bbc',      label: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { id: 'ap',       label: 'AP',        url: 'https://news.google.com/rss/search?q=when:1d%20site:apnews.com&hl=en-AU&gl=AU&ceid=AU:en' },
   { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
   { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
 ]
@@ -425,21 +427,30 @@ function parseFeedXml(text) {
   } catch { return [] }
 }
 
-// Fetch a feed LIVE (cache-busted) via a CORS proxy, parse it, and fall back
-// to rss2json only if the live fetch fails. Keeps headlines current.
+// Fetch with a hard timeout so a slow/dead proxy can't hang on "Loading…".
+async function fetchTimeout(url, ms) {
+  const ctrl = new AbortController()
+  const id = setTimeout(() => ctrl.abort(), ms)
+  try { return await fetch(url, { signal: ctrl.signal }) }
+  finally { clearTimeout(id) }
+}
+
+// rss2json first (reliable), then a live cache-busted fetch as a fallback.
 async function fetchFeedItems(url) {
   const bust = Date.now()
   try {
-    const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url) + '&_=' + bust)
+    const r = await fetchTimeout(RSS_PROXY + encodeURIComponent(url) + '&_=' + bust, 8000)
+    const d = await r.json()
+    if (d && Array.isArray(d.items) && d.items.length) {
+      return d.items.map(it => ({ title: it.title, link: it.link, pubDate: it.pubDate }))
+    }
+  } catch {}
+  try {
+    const r = await fetchTimeout('https://api.allorigins.win/raw?url=' + encodeURIComponent(url) + '&_=' + bust, 8000)
     if (r.ok) {
       const items = parseFeedXml(await r.text())
       if (items.length) return items
     }
-  } catch {}
-  try {
-    const r = await fetch(RSS_PROXY + encodeURIComponent(url) + '&_=' + bust)
-    const d = await r.json()
-    return (d.items || []).map(it => ({ title: it.title, link: it.link, pubDate: it.pubDate }))
   } catch {}
   return []
 }
