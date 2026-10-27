@@ -435,9 +435,17 @@ async function fetchTimeout(url, ms) {
   finally { clearTimeout(id) }
 }
 
-// rss2json first (reliable), then a live cache-busted fetch as a fallback.
+// Own Vercel API route first (server-side fetch, no CORS). Falls back to
+// rss2json for local dev (where /api isn't running), then a live proxy.
 async function fetchFeedItems(url) {
   const bust = Date.now()
+  try {
+    const r = await fetchTimeout('/api/rss?url=' + encodeURIComponent(url) + '&_=' + bust, 9000)
+    if (r.ok) {
+      const d = await r.json()
+      if (d && Array.isArray(d.items) && d.items.length) return d.items
+    }
+  } catch {}
   try {
     const r = await fetchTimeout(RSS_PROXY + encodeURIComponent(url) + '&_=' + bust, 8000)
     const d = await r.json()
