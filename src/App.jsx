@@ -11,7 +11,7 @@ import './index.css'
 // ─── LIQUID BACKGROUND (WebGL — domain-warped flow, real liquid) ──────────────
 const LIQUID_CFG = {
   '38-milk-rings': { lo: [0.78, 0.75, 0.69], hi: [1.0, 0.995, 0.975], sh: [0.66, 0.62, 0.55], speed: 0.045, scale: 2.6 },
-  '39-ink-oil':    { lo: [0.02, 0.02, 0.03], hi: [0.20, 0.20, 0.23],  sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
+  '39-ink-oil':    { lo: [0.04, 0.04, 0.05], hi: [0.30, 0.30, 0.34],  sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
   '41-rose-swirl': { lo: [0.82, 0.72, 0.73], hi: [1.0, 0.96, 0.95],   sh: [0.74, 0.58, 0.60], speed: 0.045, scale: 2.6 },
   '42-jade-swirl': { lo: [0.03, 0.06, 0.055], hi: [0.20, 0.36, 0.32], sh: [0.0, 0.0, 0.0],    speed: 0.040, scale: 2.6 },
 }
@@ -404,11 +404,45 @@ const NEWS_FEEDS = [
   { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
   { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
   { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
-  { id: 'reuters',  label: 'Reuters',   url: 'https://feeds.reuters.com/reuters/topNews' },
   { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
   { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
+
+// Parse raw RSS/Atom XML → normalized items
+function parseFeedXml(text) {
+  try {
+    const doc = new DOMParser().parseFromString(text, 'text/xml')
+    if (doc.querySelector('parsererror')) return []
+    let nodes = Array.from(doc.querySelectorAll('item'))
+    if (!nodes.length) nodes = Array.from(doc.querySelectorAll('entry'))
+    return nodes.map(n => {
+      const get = sel => n.querySelector(sel)?.textContent?.trim() || ''
+      let link = get('link')
+      if (!link) { const l = n.querySelector('link'); link = l?.getAttribute('href') || '' }
+      return { title: get('title'), link, pubDate: get('pubDate') || get('published') || get('updated') || '' }
+    }).filter(a => a.title)
+  } catch { return [] }
+}
+
+// Fetch a feed LIVE (cache-busted) via a CORS proxy, parse it, and fall back
+// to rss2json only if the live fetch fails. Keeps headlines current.
+async function fetchFeedItems(url) {
+  const bust = Date.now()
+  try {
+    const r = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url) + '&_=' + bust)
+    if (r.ok) {
+      const items = parseFeedXml(await r.text())
+      if (items.length) return items
+    }
+  } catch {}
+  try {
+    const r = await fetch(RSS_PROXY + encodeURIComponent(url) + '&_=' + bust)
+    const d = await r.json()
+    return (d.items || []).map(it => ({ title: it.title, link: it.link, pubDate: it.pubDate }))
+  } catch {}
+  return []
+}
 
 function NewsWidget({ theme, setTheme }) {
   const set = (k, v) => setTheme(prev => ({ ...prev, [k]: v }))
@@ -430,13 +464,8 @@ function NewsWidget({ theme, setTheme }) {
   const fetchFeed = async (feed) => {
     setLoading(true)
     setArticles([])
-    try {
-      const res = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
-      const data = await res.json()
-      setArticles((data.items || []).slice(0, 10))
-    } catch {
-      setArticles([])
-    }
+    const items = await fetchFeedItems(feed.url)
+    setArticles(items.slice(0, 10))
     setLoading(false)
   }
 
@@ -882,11 +911,8 @@ function WidgetPanelNews({ theme, setTheme }) {
   const fetchFeed = async (feed) => {
     if (!feed) return
     setLoading(true); setArticles([])
-    try {
-      const r = await fetch(RSS_PROXY + encodeURIComponent(feed.url))
-      const d = await r.json()
-      setArticles((d.items||[]).slice(0,12))
-    } catch { setArticles([]) }
+    const items = await fetchFeedItems(feed.url)
+    setArticles(items.slice(0, 12))
     setLoading(false)
   }
 
@@ -2149,33 +2175,16 @@ export default function App() {
         .from('user_settings').select('theme').eq('user_id', uid).maybeSingle()
       if (error) { console.error('[settings] load error:', error.message); return }
 
-      const localRaw = localStorage.getItem('current_theme')
-      const localTheme = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
+      // The per-workspace theme (loadWorkspaceTheme) is the single source of
+      // truth for what's applied. user_settings.theme is only a global backup —
+      // we never apply it over the active workspace, or themes bleed between
+      // workspaces. Bootstrap the global row from local only if it's empty.
       const remoteTheme = data?.theme ?? {}
-      const hasLocal = Object.keys(localTheme).length > 5
       const hasRemote = Object.keys(remoteTheme).length > 5
-      console.log('[settings]', force ? 'FORCE' : 'auto', '| local:', hasLocal, '| remote:', hasRemote)
-
-      if (hasRemote) {
-        const localTs = localTheme._savedAt || 0
-        const remoteTs = remoteTheme._savedAt || 0
-        if (force || !hasLocal || remoteTs > localTs) {
-          const wall = localTheme.wallpaper ?? null
-          const merged = { ...DEFAULT_THEME, ...remoteTheme, ...(wall ? { wallpaper: wall } : {}) }
-          setThemeState(merged)
-          localStorage.setItem('current_theme', JSON.stringify(merged))
-          console.log('[settings] ✅ applied Supabase theme (_savedAt:', remoteTs, ')')
-        } else {
-          persistTheme(localTheme, true)
-          console.log('[settings] local kept, pushed to Supabase (_savedAt:', localTs, ')')
-        }
-      } else {
-        if (hasLocal) {
-          persistTheme(localTheme, true)
-          console.log('[settings] 🚀 bootstrapping Supabase from local')
-        } else {
-          console.log('[settings] neither local nor remote has data — using defaults')
-        }
+      if (!hasRemote) {
+        const localRaw = localStorage.getItem('current_theme')
+        const localTheme = localRaw ? (() => { try { return JSON.parse(localRaw) } catch { return {} } })() : {}
+        if (Object.keys(localTheme).length > 5) persistTheme(localTheme, true)
       }
     } catch (e) { console.error('[settings] exception:', e.message) }
   }
@@ -2320,6 +2329,11 @@ export default function App() {
           setThemeState(workspaceTheme)
           localStorage.setItem('current_theme', JSON.stringify(workspaceTheme))
           console.log('[workspace] Applied workspace theme for', activeWs)
+        } else {
+          // No theme saved for this workspace yet — start from defaults rather
+          // than inheriting the previously-active workspace's theme.
+          setThemeState({ ...DEFAULT_THEME })
+          localStorage.setItem('current_theme', JSON.stringify({ ...DEFAULT_THEME }))
         }
       }
       
