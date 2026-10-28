@@ -30,6 +30,11 @@ function parseFeed(xml) {
     const pubDate = clean(pick(b, 'pubDate') || pick(b, 'published') || pick(b, 'updated') || pick(b, 'dc:date'))
     if (title) items.push({ title, link, pubDate })
   }
+  // Newest first — guards against feeds that aren't already date-ordered.
+  items.sort((a, b) => {
+    const ta = Date.parse(a.pubDate) || 0, tb = Date.parse(b.pubDate) || 0
+    return tb - ta
+  })
   return items
 }
 

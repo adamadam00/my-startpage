@@ -401,13 +401,13 @@ function WeatherWidget() {
 
 // ─── NEWS WIDGET ───────────────────────────────────────────────────────────────
 const NEWS_FEEDS = [
-  { id: 'abc',      label: 'ABC AU',    url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
-  { id: 'guardian', label: 'Guardian',  url: 'https://www.theguardian.com/au/rss' },
-  { id: 'sbs',      label: 'SBS',       url: 'https://www.sbs.com.au/news/feed' },
-  { id: 'bbc',      label: 'BBC World', url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
-  { id: 'ap',       label: 'AP',        url: 'https://news.google.com/rss/search?q=when:1d%20site:apnews.com&hl=en-AU&gl=AU&ceid=AU:en' },
-  { id: 'verge',    label: 'The Verge', url: 'https://www.theverge.com/rss/index.xml' },
-  { id: 'dezeen',   label: 'Dezeen',    url: 'https://feeds.feedburner.com/dezeen' },
+  { id: 'abc',       label: 'ABC AU',     url: 'https://www.abc.net.au/news/feed/51120/rss.xml' },
+  { id: 'guardian',  label: 'Guardian',   url: 'https://www.theguardian.com/au/rss' },
+  { id: 'bbc',       label: 'BBC World',  url: 'https://feeds.bbci.co.uk/news/world/rss.xml' },
+  { id: 'ap',        label: 'AP',         url: 'https://news.google.com/rss/search?q=when:1d%20site:apnews.com&hl=en-AU&gl=AU&ceid=AU:en' },
+  { id: 'verge',     label: 'The Verge',  url: 'https://www.theverge.com/rss/index.xml' },
+  { id: 'designboom',label: 'Designboom', url: 'https://www.designboom.com/feed/' },
+  { id: 'core77',    label: 'Core77',     url: 'https://www.core77.com/rss' },
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
