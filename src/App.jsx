@@ -407,7 +407,6 @@ const NEWS_FEEDS = [
   { id: 'ap',        label: 'AP',         url: 'https://news.google.com/rss/search?q=when:1d%20site:apnews.com&hl=en-AU&gl=AU&ceid=AU:en' },
   { id: 'verge',     label: 'The Verge',  url: 'https://www.theverge.com/rss/index.xml' },
   { id: 'designboom',label: 'Designboom', url: 'https://www.designboom.com/feed/' },
-  { id: 'core77',    label: 'Core77',     url: 'https://www.core77.com/rss' },
 ]
 const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url='
 
